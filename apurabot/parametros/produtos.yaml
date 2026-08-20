@@ -1,0 +1,24 @@
+# Cadastro de produtos → categoria tributária.
+#
+# 829 produtos distintos em Julho/2026. Este arquivo guarda as EXCEÇÕES ao
+# default por prefixo (classificacao.yaml). Produto novo sem categoria e sem
+# prefixo conhecido vira pendência SEM REGRA.
+#
+# A construção completa do cadastro é parte da Entrega 1.
+
+produtos:
+  # --- fretes (a descrição já traz a finalidade) ---
+  700000001: { categoria: frete_venda,          descricao: Fretes sobre Vendas }
+  700000002: { categoria: frete_transferencia,  descricao: "Fretes sobre Transf/ Remessa/ Retorno (Custo)" }
+  700000003: { categoria: frete_compra,         descricao: "Fretes sobre Compra de Insumos (Custo)" }
+  701000177: { categoria: frete_transferencia,  descricao: "Fretes sobre Transf/ Retorno - Venda conjunta" }
+
+  # --- ativo imobilizado → CIAP ---
+  606000001: { categoria: ativo_imobilizado,    descricao: MAQUINAS E EQUIPAMENTOS }
+
+  # --- revenda: não estorna (Pontos de Atenção) ---
+  # Enxofre em Flocos Brimfert — entrada a 18% em Guará, mantida integralmente
+  # por ser revenda. Código a confirmar na Entrega 1.
+
+  # --- produtos químicos: estornam o excedente sobre 4% ---
+  # ÁCIDO FOSFÓRICO RAFINADO e demais — códigos a confirmar na Entrega 1.

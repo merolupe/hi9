@@ -1,0 +1,78 @@
+# Classificação da operação.
+#
+# Ordem de avaliação: a primeira regra que casar vence. O que não casar em
+# nenhuma vira status SEM REGRA e bloqueia o encerramento da competência —
+# nunca é classificado por adivinhação.
+
+# ---------------------------------------------------------------------------
+# 1. Relevância para ICMS
+# ---------------------------------------------------------------------------
+relevancia_icms:
+  cst_com_icms: ["00", "20", "90"]
+  cst_sem_icms: ["40", "41", "50", "51", "60"]
+  exige_icms_diferente_de_zero: true
+  excluir_documento_cancelado: true          # coluna AF preenchida
+
+# ---------------------------------------------------------------------------
+# 2. Exceções por CFOP — têm precedência sobre tudo
+# ---------------------------------------------------------------------------
+excecoes_cfop:
+  - cfop: [5927]
+    categoria: quebra
+    regra: estorna_100_credito_entrada
+    descricao: Baixa de estoque por perda, roubo ou deterioração
+  - cfop: [5556, 6556]
+    categoria: devolucao_uso_consumo
+    regra: estorna_credito_da_compra
+  - cfop: [1201, 1202, 2201, 2202]
+    categoria: devolucao_venda
+    regra: mantem_100
+  - cfop: [1410, 1411, 2410, 2411]
+    categoria: devolucao_compra
+    regra: estorna_credito_da_compra
+  - cfop: [1902, 1903, 2902, 2903, 1906, 2906]
+    categoria: retorno_industrializacao
+    regra: mantem_100
+
+# ---------------------------------------------------------------------------
+# 3. Fretes — a finalidade vem na descrição do CT-e (coluna R)
+# ---------------------------------------------------------------------------
+fretes:
+  identificacao: { especie_documento: CT, modelo_documento: "57" }
+  finalidades:
+    - texto: "Fretes sobre Vendas"                        -> frete_venda
+    - texto: "Fretes sobre Compra de Insumos (Custo)"     -> frete_compra
+    - texto: "Fretes sobre Compras (Almoxarifado)"        -> frete_compra
+    - texto: "Fretes sobre Compra Revenda"                -> frete_compra_revenda
+    - texto: "Fretes sobre Transf/ Remessa/ Retorno"      -> frete_transferencia
+    - texto: "Fretes sobre Transf/ Retorno - Venda conjunta" -> frete_transferencia
+  # Fallback quando a descrição não casar: CFOP do serviço de transporte.
+  fallback_cfop:
+    frete_compra: [1352, 2352, 1353, 2353]
+    frete_venda: [5352, 6352, 5353, 6353]
+  sem_correspondencia: SEM_REGRA
+
+# ---------------------------------------------------------------------------
+# 4. Mercadorias — prefixo do código do produto (coluna Q)
+#    Default por prefixo; o cadastro em produtos.yaml sobrepõe caso a caso.
+# ---------------------------------------------------------------------------
+prefixo_produto:
+  "1": materia_prima          # produtos e insumos
+  "2": embalagem              # big bags, sacos, lapelas
+  "6": ativo_imobilizado      # CIAP
+  "7": frete                  # serviços de transporte
+
+# CFOPs que, independentemente do produto, indicam revenda
+cfop_revenda: [1102, 2102, 1113, 2113]
+# CFOPs de compra para industrialização
+cfop_industrializacao: [1101, 2101, 3101]
+
+# ---------------------------------------------------------------------------
+# 5. DIFAL — itens fora do processo produtivo usam o ICMS do XML
+#    Ver decisão pendente nº 8.
+# ---------------------------------------------------------------------------
+difal:
+  cfop_uso_consumo: [1556, 2556]
+  cfop_ativo: [1551, 2551]
+  fonte_do_icms: xml_da_nota
+  nunca_sobrescrever_livro: true

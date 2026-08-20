@@ -1,0 +1,57 @@
+# Cadastro de estabelecimentos.
+# O casamento é feito pelo CODIGO da empresa (coluna G do Livro Fiscal),
+# nunca pelo nome — os nomes têm espaçamento irregular na origem.
+#
+# Revisão: Gerência Fiscal/Tributária | Vigência: a partir de 2026-01-01
+
+filiais:
+  - codigo: 1
+    nome: HINOVE (MATRIZ)
+    uf: SP
+    regime: sp_equilibrio_fiscal
+    centralizacao: { participa: true, papel: centralizado }
+
+  - codigo: 2
+    nome: HINOVE (RIO BRILHANTE)
+    uf: MS
+    regime: ms_estorno_proporcional
+    beneficio_fiscal: ms_rio_brilhante        # Termo de Acordo
+    centralizacao: { participa: false }
+
+  # ATENÇÃO: códigos abaixo a confirmar na extração do Sankhya.
+  # Julho/2026 só expôs os códigos 1 e 2 nas linhas amostradas.
+  - codigo: null
+    nome: HINOVE (REGISTRO)
+    uf: SP
+    regime: sp_equilibrio_fiscal
+    centralizacao: { participa: true, papel: centralizado }
+
+  - codigo: null
+    nome: HINOVE (FILIAL GUARÁ)
+    uf: SP
+    regime: sp_equilibrio_fiscal
+    centralizacao: { participa: true, papel: centralizadora }
+
+  - codigo: null
+    nome: HINOVE (CORUMBÁ- MS)
+    uf: MS
+    regime: ms_estorno_proporcional
+    centralizacao: { participa: false }
+
+  - codigo: null
+    nome: HINOVE (BARRA DO GARÇAS - MT)
+    uf: MT
+    regime: mt_diferimento
+    centralizacao: { participa: false }
+
+  - codigo: null
+    nome: HINOVE (LONDRINA)
+    uf: PR
+    regime: pr_diferimento
+    centralizacao: { participa: false }
+
+# Fora do escopo do Apurabot — carregam apenas saldo credor.
+# Ver decisão pendente nº 6.
+fora_de_escopo:
+  - { nome: MICROBIO, uf: MS }
+  - { nome: HINOVE FERTILIZANTES ESPECIAIS, uf: SP }

@@ -1,0 +1,37 @@
+# Equalização da carga efetiva.
+#
+# A carga bruta (ICMS ÷ valor contábil) traz artefatos — 0,100315 · 0,105467 —
+# porque o valor contábil inclui parcelas fora da base do ICMS (frete, pedágio,
+# IPI, descontos). A equalização traz o valor para a carga nominal.
+#
+# Algoritmo:
+#   carga_bruta   = ICMS ÷ valor_contabil × 100
+#   candidatas    = cargas nominais ≤ alíquota do ICMS
+#   carga_efetiva = candidata mais próxima da carga_bruta
+#
+# Aderência medida contra a classificação manual de Julho/2026: 99,87%
+# (2.333 de 2.336 linhas). Ver docs/apurabot/05-achados-julho-2026.md.
+
+equalizacao:
+  cargas_nominais: [4.0, 7.0, 12.0, 17.0, 18.0, 19.0, 20.5, 25.0]
+  limite_teto_aliquota: true      # a carga nominal nunca excede a alíquota
+  tolerancia_percentual: 2.5      # acima disso → pendência CARGA NÃO EQUALIZADA
+  marcar_pendencia_fora_da_regua: true
+
+# Tabelas de carga efetiva de adubos e fertilizantes (aba "Pontos de Atenção").
+# Servem de conferência da equalização, não de substituto dela.
+
+intraestadual:
+  - { origem: SP, aliquota_geral: 18.0, reducao: 77.78, carga_efetiva: 4.0, cst: "20" }
+  - { origem: MG, aliquota_geral: 18.0, reducao: 77.78, carga_efetiva: 4.0, cst: "20" }
+  - { origem: MS, aliquota_geral: 17.0, reducao: 76.47, carga_efetiva: 4.0, cst: "20" }
+  - { origem: PR, aliquota_geral: 19.0, reducao: 78.95, carga_efetiva: 4.0, cst: "20" }
+  - { origem: MT, aliquota_geral: 17.0, carga_efetiva: diferimento, cst: "51" }
+  - { origem: PR, aliquota_geral: 19.0, carga_efetiva: diferimento, cst: "51" }
+
+interestadual:
+  # vale para adubos/fertilizantes e para ácido nítrico, sulfúrico, fosfórico,
+  # fosfato natural bruto e enxofre
+  - { aliquota_geral: 4.0,  reducao: 0.0,   carga_efetiva: 4.0, cst: "00" }
+  - { aliquota_geral: 7.0,  reducao: 42.86, carga_efetiva: 4.0, cst: "20" }
+  - { aliquota_geral: 12.0, reducao: 66.67, carga_efetiva: 4.0, cst: "20" }

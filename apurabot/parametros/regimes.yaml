@@ -1,0 +1,59 @@
+# Regimes de apuração por UF.
+# RASCUNHO — pendente de homologação da Gerência Fiscal/Tributária.
+# Fonte: aba "Pontos de Atenção" da apuração de Julho/2026 + escopo funcional v1.0.
+
+regimes:
+
+  sp_equilibrio_fiscal:
+    descricao: >
+      Mantém o crédito até a carga de saída e estorna o excedente.
+      estorno = valor_contabil × (carga_efetiva_entrada − carga_saida_referencia)
+    vigencia_inicio: 2025-01-01
+    carga_saida_referencia: 4.0
+    base_do_estorno: valor_contabil        # confirmado contra Julho/2026
+    isentos_de_estorno:
+      - materia_prima
+      - produto_acabado
+      - revenda
+      - retorno_industrializacao
+      - ciap
+      - devolucao_venda
+    frete_venda_intraestadual: sem_credito # diferido/isento
+    difal: conta_grafica
+
+  ms_estorno_proporcional:
+    descricao: >
+      Estorno conforme a alíquota de entrada vigente, em apuração individualizada.
+      Ver decisão pendente nº 2 — Corumbá e Rio Brilhante seguem lógicas distintas.
+    vigencia_inicio: 2025-01-01
+    credito_mantido_maximo: 4.0
+    credito_mantido_entrada_4pct: 0.941176 # escopo v1.0 item 5.3 — ver pendência nº 3
+    difal: guia_avulsa
+
+  mt_diferimento:
+    descricao: Saídas diferidas — estorna 100% do crédito de entrada.
+    vigencia_inicio: 2025-01-01
+    estorno_percentual: 100.0
+
+  pr_diferimento:
+    descricao: Saídas diferidas — mantém 100% do crédito de entrada.
+    vigencia_inicio: 2025-01-01
+    estorno_percentual: 0.0
+
+beneficios_fiscais:
+
+  ms_rio_brilhante:
+    descricao: >
+      Crédito presumido sobre o saldo devedor, por Termo de Acordo com o estado
+      de MS. Estrutura confirmada contra Julho/2026 com 0,19% de diferença.
+      Ver decisão pendente nº 1.
+    vigencia_inicio: 2025-01-01
+    homologado: false                      # <- não usar em produção sem resposta
+    credito_presumido:
+      saida_intraestadual: 67.0
+      saida_interestadual: 80.0
+      base: saldo_devedor
+      rateio_do_credito_mantido: participacao_do_debito   # a confirmar
+    controle_credito_outorgado:
+      codigo_ajuste: MS090004
+      descricao: Apropriação de crédito outorgado para abatimento de débitos

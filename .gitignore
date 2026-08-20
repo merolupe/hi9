@@ -1,0 +1,32 @@
+# ============================================================
+# DADOS FISCAIS — NUNCA versionar
+# O repositório guarda código, regras e documentação.
+# Livro Fiscal, XMLs, base de bens e apurações contêm dados
+# fiscais reais da Hinove e ficam fora do git.
+# ============================================================
+competencias/
+*.xls
+*.xlsx
+*.xlsm
+*.xml
+*.pdf
+!docs/**/*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+~$*
+.vscode/
+.idea/
