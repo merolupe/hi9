@@ -88,14 +88,28 @@ interno em MS. **Não encontrei esse percentual aplicado na apuração de Julho.
 **Pergunta:** a regra dos 0,941176% está em vigor? Se sim, em quais operações
 exatamente, e por que não aparece em Julho/2026?
 
-## 4. 🟡 Carga efetiva — confirmar a régua de valores nominais
+## 4. ✅ Carga efetiva — régua de valores nominais *(parcialmente respondida)*
 
 O algoritmo de equalização reproduz 99,87% da classificação manual usando a régua
 `{4, 7, 12, 17, 18, 19, 20,5, 25}` com a restrição "a carga nominal nunca excede a
 alíquota do ICMS" (detalhes em `05-achados-julho-2026.md`).
 
-**Pergunta:** essa régua está completa? Alguma UF ou operação pode gerar carga
-nominal fora dessa lista (ex.: 25% em energia/comunicação, 19% em PR)?
+**Respondido em 21/08/2026 — os 20,5%:** não devem constar na base. Apareceram em
+30 CT-e de frete sobre compra de insumos da filial Guará (CFOP 1353 e 1352) e
+foram aceitos na apuração manual de Julho/2026.
+
+**Tratamento implementado:** 20,5% sai das cargas homologadas e entra como carga
+*tolerada* em `parametros/cargas.yaml`. Na prática:
+
+- a equalização continua reconhecendo o valor, para que a regressão de
+  Julho/2026 reproduza o resultado da apuração manual;
+- todo documento que cair nessa carga recebe o alerta `CARGA NÃO HOMOLOGADA`,
+  apontando para revisão do lançamento na origem;
+- o alerta **não bloqueia** o encerramento da competência — é sinalização, não
+  impedimento.
+
+**Ainda em aberto:** a régua homologada `{4, 7, 12, 17, 18, 19, 25}` está
+completa? Alguma UF ou operação pode gerar carga nominal fora dela?
 
 **Padrão assumido:** régua acima; carga que não encoste em nenhum valor dentro da
 tolerância vira pendência `CARGA NÃO EQUALIZADA` em vez de ser arredondada.
