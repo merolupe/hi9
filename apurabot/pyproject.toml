@@ -1,0 +1,23 @@
+[project]
+name = "apurabot"
+version = "0.1.0"
+description = "Apuração mensal de ICMS da Hinove Agrociência S.A."
+requires-python = ">=3.10"
+dependencies = [
+    "openpyxl>=3.1",   # leitura e escrita de .xlsx
+    "xlrd==2.0.1",     # leitura de .xls (formato antigo do Sankhya)
+    "PyYAML>=6.0",     # parâmetros tributários
+]
+
+[project.scripts]
+apurabot = "apurabot.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

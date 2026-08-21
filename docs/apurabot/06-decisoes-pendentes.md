@@ -10,6 +10,8 @@
 
 ## 1. 🔴 Rio Brilhante — critério do crédito presumido
 
+> **Em espera (21/08/2026):** deixada em aberto até a chegada do Termo de Acordo.
+
 **A estrutura da regra está confirmada nos dados.** *Pontos de Atenção* diz:
 intra 67% e inter 80% de crédito sobre o saldo devedor. Reproduzindo:
 
@@ -88,14 +90,28 @@ interno em MS. **Não encontrei esse percentual aplicado na apuração de Julho.
 **Pergunta:** a regra dos 0,941176% está em vigor? Se sim, em quais operações
 exatamente, e por que não aparece em Julho/2026?
 
-## 4. 🟡 Carga efetiva — confirmar a régua de valores nominais
+## 4. ✅ Carga efetiva — régua de valores nominais *(parcialmente respondida)*
 
 O algoritmo de equalização reproduz 99,87% da classificação manual usando a régua
 `{4, 7, 12, 17, 18, 19, 20,5, 25}` com a restrição "a carga nominal nunca excede a
 alíquota do ICMS" (detalhes em `05-achados-julho-2026.md`).
 
-**Pergunta:** essa régua está completa? Alguma UF ou operação pode gerar carga
-nominal fora dessa lista (ex.: 25% em energia/comunicação, 19% em PR)?
+**Respondido em 21/08/2026 — os 20,5%:** não devem constar na base. Apareceram em
+30 CT-e de frete sobre compra de insumos da filial Guará (CFOP 1353 e 1352) e
+foram aceitos na apuração manual de Julho/2026.
+
+**Tratamento implementado:** 20,5% sai das cargas homologadas e entra como carga
+*tolerada* em `parametros/cargas.yaml`. Na prática:
+
+- a equalização continua reconhecendo o valor, para que a regressão de
+  Julho/2026 reproduza o resultado da apuração manual;
+- todo documento que cair nessa carga recebe o alerta `CARGA NÃO HOMOLOGADA`,
+  apontando para revisão do lançamento na origem;
+- o alerta **não bloqueia** o encerramento da competência — é sinalização, não
+  impedimento.
+
+**Ainda em aberto:** a régua homologada `{4, 7, 12, 17, 18, 19, 25}` está
+completa? Alguma UF ou operação pode gerar carga nominal fora dela?
 
 **Padrão assumido:** régua acima; carga que não encoste em nenhum valor dentro da
 tolerância vira pendência `CARGA NÃO EQUALIZADA` em vez de ser arredondada.
@@ -166,3 +182,67 @@ deve apenas registrar, ou bloquear o fechamento quando lançador = aprovador?
 
 **Padrão assumido:** registra os dois nomes, permite que sejam a mesma pessoa e
 sinaliza no painel de auditoria — sem bloquear.
+
+
+---
+
+## 11. 🟡 Complemento de ICMS — de onde vem a carga
+
+O produto `701000075` (COMPLEMENTO DE ICMS) aparece em **6 linhas** de
+Julho/2026, somando **R$ 17.490,73** de ICMS — 5 entradas e 1 saída. Todas
+chegam com **valor contábil zerado**, então `ICMS ÷ valor contábil` não existe
+e a carga não pode ser calculada.
+
+A apuração manual atribuiu **carga 4%** às seis. Não há regra escrita em
+*Pontos de Atenção* para o caso.
+
+**Pergunta:** os 4% são a regra, ou foram o que coube naquele mês? Se for regra,
+ela vale para todo complemento ou depende da operação que está sendo
+complementada?
+
+**Padrão assumido:** carga 4%, parametrizada em `classificacao.yaml` com
+`homologado: false`, gerando alerta `CARGA NÃO HOMOLOGADA` sem bloquear.
+
+## 12. 🟡 NBPT BLUE 20% — revenda ou produto químico?
+
+O produto `132010008` (NBPT BLUE 20%) entra com **CFOP 2102**, compra para
+comercialização, o que apontaria para **revenda** e crédito integral. Mas é um
+aditivo inibidor de urease, o que apontaria para **produto químico** e estorno
+do que excede 4%.
+
+Em Julho são 3 linhas, R$ 30.660,00 de ICMS, a 7% e a 12% — o que dá
+**R$ 12.978,00 de estorno** se for químico e **zero** se for revenda.
+
+**Pergunta:** qual das duas?
+
+**Padrão assumido:** produto químico, marcado como não homologado no cadastro.
+
+## 13. 🟡 Complemento de preço — 22 linhas sem regra
+
+O produto `401002106` (COMPLEMENTO DE PREÇO) aparece em **22 linhas de saída**
+com CFOP 6102, somando **R$ 2.181,70** de ICMS. Nenhuma regra escrita cobre o
+caso, então hoje ele é a **única pendência** que bloqueia o encerramento de
+Julho/2026.
+
+**Pergunta:** complemento de preço de venda segue a mesma regra da venda que ele
+complementa, ou tem tratamento próprio?
+
+**Padrão assumido:** nenhum — fica como `SEM REGRA`, que é o comportamento
+correto para o que não tem regra.
+
+## 14. 🟢 A tolerância da equalização está frouxa
+
+A régua homologada é `{4, 7, 12, 17, 18, 19, 20,5, 25}` e a tolerância é de
+**2,5 pontos**. O maior vão entre degraus é de 5 pontos (7→12 e 12→17), ou seja,
+exatamente o dobro da tolerância. Na prática, **qualquer carga entre ~1,5% e
+~27,5% encaixa em algum degrau** e nada é sinalizado.
+
+Em Julho isso não escondeu nada — a maior distância observada foi de 1,97 ponto,
+e as 30 linhas de 20,5% já são sinalizadas pela via da carga tolerada. Mas a
+rede está larga.
+
+**Pergunta:** apertar a tolerância para 1,5 ponto? Isso passaria a sinalizar
+cargas a mais de 1,5 ponto de qualquer degrau, sem bloquear o fechamento.
+
+**Padrão assumido:** manter 2,5 até haver decisão — apertar sem combinar geraria
+pendências novas no primeiro fechamento.

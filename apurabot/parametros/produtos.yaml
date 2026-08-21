@@ -1,24 +1,87 @@
 # Cadastro de produtos → categoria tributária.
 #
-# 829 produtos distintos em Julho/2026. Este arquivo guarda as EXCEÇÕES ao
-# default por prefixo (classificacao.yaml). Produto novo sem categoria e sem
-# prefixo conhecido vira pendência SEM REGRA.
+# 829 produtos distintos em Julho/2026. Este arquivo guarda o que o padrão por
+# prefixo (classificacao.yaml) não resolve. Produto novo sem categoria e sem
+# prefixo conhecido vira pendência SEM REGRA — nunca classificação por
+# adivinhação.
 #
-# A construção completa do cadastro é parte da Entrega 1.
+# `homologado: false` marca a categoria que eu inferi da apuração de Julho/2026
+# e que ainda não foi confirmada pela Gerência Fiscal/Tributária.
+#
+# PRIORIDADE DE CADASTRO: os 14 produtos abaixo são os únicos que aparecem em
+# ENTRADAS com carga acima de 4% na competência 07/2026 — ou seja, os únicos em
+# que a categoria muda o valor do estorno. Os demais 815 produtos entram a 4% ou
+# em saídas, onde a categoria não altera o resultado.
 
 produtos:
-  # --- fretes (a descrição já traz a finalidade) ---
-  700000001: { categoria: frete_venda,          descricao: Fretes sobre Vendas }
-  700000002: { categoria: frete_transferencia,  descricao: "Fretes sobre Transf/ Remessa/ Retorno (Custo)" }
-  700000003: { categoria: frete_compra,         descricao: "Fretes sobre Compra de Insumos (Custo)" }
-  701000177: { categoria: frete_transferencia,  descricao: "Fretes sobre Transf/ Retorno - Venda conjunta" }
 
-  # --- ativo imobilizado → CIAP ---
-  606000001: { categoria: ativo_imobilizado,    descricao: MAQUINAS E EQUIPAMENTOS }
+  # --- fretes: a finalidade já vem na descrição do CT-e ---
+  700000001: { categoria: frete_venda,         descricao: Fretes sobre Vendas }
+  700000002: { categoria: frete_transferencia, descricao: "Fretes sobre Transf/ Remessa/ Retorno (Custo)" }
+  700000003: { categoria: frete_compra,        descricao: "Fretes sobre Compra de Insumos (Custo)" }
+  701000177: { categoria: frete_transferencia, descricao: "Fretes sobre Transf/ Retorno - Venda conjunta" }
 
-  # --- revenda: não estorna (Pontos de Atenção) ---
-  # Enxofre em Flocos Brimfert — entrada a 18% em Guará, mantida integralmente
-  # por ser revenda. Código a confirmar na Entrega 1.
+  # --- serviço de industrialização por terceiros ---
+  # O prefixo 7 o classificaria como frete, o que ele não é.
+  702000073:
+    categoria: industrializacao_terceiros
+    descricao: Ind. / Ensaque 1.000 Kg Multitrans
+    homologado: false
+
+  # --- revenda: mantém o crédito integral ---
+  110010150:
+    categoria: revenda
+    descricao: Enxofre em Flocos Brimfert Granel
+    observacao: >
+      Confirmado pela apuração manual de Julho/2026 — a aba ESTORNO traz
+      "Enxofre - Revenda" com estorno zero sobre R$ 474.416,28 de ICMS a 18%.
 
   # --- produtos químicos: estornam o excedente sobre 4% ---
-  # ÁCIDO FOSFÓRICO RAFINADO e demais — códigos a confirmar na Entrega 1.
+  130030002:
+    categoria: produto_quimico
+    descricao: ÁCIDO FOSFÓRICO RAFINADO
+    homologado: false
+  132010068:
+    categoria: produto_quimico
+    descricao: MAX OIL MT - Aditivo Recobrimento Granel
+    homologado: false
+  132010008:
+    categoria: produto_quimico
+    descricao: NBPT BLUE 20%
+    homologado: false
+    observacao: >
+      Entra com CFOP 2102 (compra para comercialização), o que sugeriria
+      revenda e crédito integral. Classificado como químico por ser aditivo.
+      Muda R$ 30.660,00 de ICMS — ver decisão pendente nº 12.
+
+  # --- insumo energético ---
+  401052046:
+    categoria: insumo_energetico
+    descricao: CAVACO DE MADEIRA
+    homologado: false
+    observacao: >
+      A aba ESTORNO lista "Cavaco" entre os itens do grupo de 12% de Guará que
+      estornou, então o tratamento observado é o mesmo de produto químico.
+
+  # --- embalagens: estornam o excedente sobre 4% ---
+  # Todas com prefixo 2, já cobertas pelo padrão. Ficam explícitas porque
+  # entram com CFOP de compra para industrialização, que confundiria a leitura.
+  201000007: { categoria: embalagem, descricao: BIG BAG 100X100X140 C/ LINER V/V 190Gr }
+  201000021: { categoria: embalagem, descricao: BIG BAG PCR HiPhós NPK 90X90X140 C/ LINER }
+  201000024: { categoria: embalagem, descricao: BIG BAG PCR HiPhós 90X90X110 C/ LINER V/V }
+  202000998: { categoria: embalagem, descricao: SACO VVD PEBD HINOVE HiSol NPK 25 KG }
+  401004996:
+    categoria: embalagem
+    descricao: LACRE DE SEGURANÇA PP - 30 CM - AZUL
+    homologado: false
+
+  # --- ativo imobilizado / CIAP ---
+  606000001: { categoria: ativo_imobilizado, descricao: MAQUINAS E EQUIPAMENTOS }
+
+  # --- pendente de definição ---
+  401002106:
+    categoria: SEM REGRA
+    descricao: COMPLEMENTO DE PREÇO
+    observacao: >
+      22 linhas de saída com CFOP 6102 e R$ 2.181,70 de ICMS em Julho/2026.
+      Sem regra escrita. Ver decisão pendente nº 13.

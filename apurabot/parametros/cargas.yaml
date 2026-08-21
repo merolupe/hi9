@@ -13,7 +13,25 @@
 # (2.333 de 2.336 linhas). Ver docs/apurabot/05-achados-julho-2026.md.
 
 equalizacao:
-  cargas_nominais: [4.0, 7.0, 12.0, 17.0, 18.0, 19.0, 20.5, 25.0]
+  # Cargas nominais homologadas — o que se espera encontrar na base.
+  cargas_nominais: [4.0, 7.0, 12.0, 17.0, 18.0, 19.0, 25.0]
+
+  # Cargas que a régua reconhece para não quebrar a apuração, mas que NÃO
+  # deveriam existir na base. São equalizadas normalmente e o documento recebe
+  # o alerta CARGA NÃO HOMOLOGADA. Alerta não bloqueia o encerramento: aponta
+  # para revisão do lançamento na origem.
+  cargas_toleradas:
+    - carga: 20.5
+      motivo: >
+        Não deveria constar na base. Apareceu em 30 CT-e de frete sobre compra
+        de insumos da filial Guará (CFOP 1353 e 1352) e foi aceita na apuração
+        manual de Julho/2026. Mantida na régua para que o teste de regressão
+        reproduza o resultado daquela competência.
+      decidido_por: Gerência Fiscal/Tributária
+      data_da_decisao: 2026-08-21
+      competencia_observada: 2026-07
+
+  # A régua efetiva do algoritmo é cargas_nominais + cargas_toleradas.
   limite_teto_aliquota: true      # a carga nominal nunca excede a alíquota
   tolerancia_percentual: 2.5      # acima disso → pendência CARGA NÃO EQUALIZADA
   marcar_pendencia_fora_da_regua: true
