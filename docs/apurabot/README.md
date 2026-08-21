@@ -2,20 +2,34 @@
 
 Apuração mensal de ICMS da Hinove Agrociência S.A. a partir do Livro Fiscal.
 
+## Situação em 21/08/2026
+
+**Julho/2026 é reproduzido da ingestão até a apuração por estabelecimento, e
+fecha sem nenhuma pendência.** 63 testes automáticos.
+
+| | |
+|---|---|
+| Linhas do Livro Fiscal | 6.504 · 2.345 relevantes para ICMS |
+| Equalização de carga | 99,87% de aderência ao trabalho manual |
+| Estorno por filial | exato em 6 das 7; Rio Brilhante difere pelos R$ 8.947,80 já explicados |
+| Pendências no fechamento | **0** |
+| Extração | `Movimento Livros Fiscais` é o padrão; a antiga continua suportada |
+
 ## Por onde começar
 
 | Documento | Para quem | O que responde |
 |---|---|---|
 | [01 — Arquitetura](01-arquitetura.md) | Desenvolvedor + Gerência | Como a ferramenta é construída e por quê |
-| [02 — Plano de execução](02-plano-de-execucao.md) | Todos | O que é entregue, em que ordem, e o que trava o quê |
-| [03 — Dicionário do Livro Fiscal](03-dicionario-livro-fiscal.md) | Desenvolvedor | O que é cada uma das 52 colunas |
+| [02 — Plano de execução](02-plano-de-execucao.md) | Todos | O que já entregou, o que falta e o que trava o quê |
+| [03 — Dicionário do Livro Fiscal](03-dicionario-livro-fiscal.md) | Desenvolvedor | Os dois layouts, coluna a coluna |
 | [04 — Matriz de regras de ICMS](04-matriz-de-regras-icms.md) | **Fiscal/Tributário** | Toda a regra tributária, para homologação |
 | [05 — Achados de Julho/2026](05-achados-julho-2026.md) | Todos | O que a análise da apuração real revelou |
-| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 10 perguntas que precisam de resposta |
+| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 16 registradas: 7 respondidas, 9 em aberto |
 
-## Situação
+## Fases
 
-- **Fase 1 — ICMS:** em planejamento. Entrega 0 (mapeamento técnico) concluída.
+- **Fase 1 — ICMS:** Entregas 0 e 1 concluídas; Entrega 2 fecha com os ajustes
+  manuais; Entrega 3 (benefício de RB) aguarda decisão sobre R$ 55 mil.
 - **Fase 2 — PIS/Cofins:** não iniciada.
-- **Benefício fiscal de MS:** trazido para a Fase 1 por decisão estratégica
-  (o escopo v1.0 previa Fase 3).
+- **Benefício fiscal de MS:** trazido para a Fase 1 por decisão estratégica. O
+  Termo de Acordo n. 1.190/2018 está analisado e a regra, documentada.

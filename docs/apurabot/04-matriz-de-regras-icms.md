@@ -52,17 +52,91 @@ carga 17% estorna 13%; carga 18% estorna 14%; carga 20,5% estorna 16,5%.
 
 ## 3. MS — estorno proporcional e benefício de Rio Brilhante
 
+### 3.1. A mecânica de MS não é a de SP
+
+Confirmado contra a **apuração individualizada de Corumbá (Empresa 9)**, aba
+`ENTRADAS`. Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor
+contábil:
+
+```
+estorno = ICMS × parcela não tributada da operação
+```
+
+A parcela não tributada é a coluna *REDUÇÃO ATUAL* da tabela de operação
+interestadual, e o que sobra leva a carga exatamente a 4%:
+
+| Carga da entrada | Parcela não tributada | Crédito que resta | Confere |
+|---|---|---|---|
+| 12% | 66,67% | 33,33% | 12% × 0,3333 = **4,00%** |
+| 7% | 42,86% | 57,14% | 7% × 0,5714 = **4,00%** |
+| 4% | — | 100% | já está em 4% |
+
+Reproduz Julho/2026 na sexta casa decimal: R$ 19.961,553359 de estorno e
+R$ 12.079,216641 de crédito a apropriar.
+
+> **Por que SP é diferente:** em SP o estorno é `valor contábil × (carga − 4%)`.
+> Onde base e valor contábil coincidem os dois caminhos quase se encontram, mas
+> não são o mesmo cálculo — a diferença aparece assim que a base é reduzida.
+
+### 3.2. Crédito indevido de transferência
+
+O crédito de **CFOP 2152** (transferência interestadual recebida) **não é
+apropriado**. Em Julho/2026 foram R$ 14.424,02 em Corumbá, a contraparte exata
+do débito de CFOP 6152 de Guará.
+
+Não é estorno: é crédito que não podia ter sido tomado, e por isso fica em
+parcela própria na apuração. A identidade que a auditoria valida passa a ser:
+
+```
+crédito mantido + estorno + crédito indevido = crédito bruto
+```
+
+> A apuração **consolidada** de Julho somava esse valor ao crédito mantido
+> (26.503,24 = 12.079,22 + 14.424,02). A **individualizada** de Corumbá, não.
+> Vale a individualizada.
+
+### 3.3. Demais regras de MS
+
 | Item | Regra | Situação |
 |---|---|---|
-| Entradas em geral | Estorno conforme alíquota de entrada vigente, limitando o crédito mantido | A homologar: base exata do proporcional (ver `06-decisoes-pendentes.md`) |
 | Entrada interestadual > 4% | Crédito mantido limitado a 4% | Escopo v1.0, item 5.3 |
 | Entrada a 4% | Crédito mantido de **0,941176%** | Escopo v1.0, item 5.3 |
 | Fertilizante interno MS | Manutenção de **0,941176%** | Escopo v1.0, item 5.4 |
-| **B.F. Rio Brilhante — saída intraestadual** | Crédito presumido de **67% sobre o saldo devedor** | Produção própria de RB |
-| **B.F. Rio Brilhante — saída interestadual** | Crédito presumido de **80% sobre o saldo devedor** | Produção própria de RB |
 | DIFAL em MS | Informa na apuração e recolhe em **guia avulsa** | Não entra em conta gráfica |
 
-O benefício de RB movimenta ainda um **controle de crédito outorgado**
+### 3.4. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
+
+Firmado em 19/09/2018 entre o Estado de MS e a Hinove, publicado no DOE 9.755.
+Base legal: LC estadual 93/2001 e Lei 4.049/2011.
+
+**Cláusula terceira — em vigor até 31/12/2032:**
+
+| Inciso | Benefício | Alcance |
+|---|---|---|
+| **I** | **67%** do saldo devedor do ICMS | **Exclusivamente** operações com produtos resultantes de **própria industrialização neste Estado** |
+| **II** | adicional de **13%**, totalizando **80%** | **Exclusivamente** operações **interestaduais** |
+| III | Diferimento na importação de máquinas e equipamentos do processo industrial | — |
+| IV | Diferimento do DIFAL em transferências e aquisições interestaduais de máquinas | — |
+| V | Diferimento na importação das matérias-primas da cláusula primeira, IV | — |
+| VI | Regime especial de apuração mensal do DIFAL sobre ativo, uso e consumo e material de construção | — |
+
+**Parágrafo terceiro:** *"As matérias-primas não envolvidas no processo fabril
+não poderão gozar dos incentivos previstos neste instrumento."*
+
+**Parágrafo primeiro:** a fruição é condicionada à contribuição mensal ao
+**FADEFE** sobre o benefício efetivamente utilizado.
+
+**Cláusula quarta — expirou em 31/12/2022.** Dava 50% do saldo devedor nas saídas
+interestaduais com mercadorias adquiridas em outras UFs, e 50% do imposto nas
+saídas interestaduais com itens importados. A cláusula oitava fixa o prazo de
+forma expressa.
+
+> **Em Julho/2026, portanto, revenda de mercadoria de terceiros não tem
+> benefício algum.** O cálculo do benefício **não está implementado** — aplicar a
+> regra como escrita muda o resultado de Julho em R$ 55 mil em relação ao que foi
+> lançado. Ver `06-decisoes-pendentes.md`, item 1.
+
+O benefício movimenta ainda um **controle de crédito outorgado**
 (código de ajuste `MS090004` — apropriação de crédito outorgado para abatimento
 de débitos), com saldo anterior, créditos recebidos por transferência, créditos
 utilizados no período e saldo a transportar.

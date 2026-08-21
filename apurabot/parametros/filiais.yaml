@@ -35,7 +35,7 @@ filiais:
   - codigo: null
     nome: HINOVE (CORUMBÁ- MS)
     uf: MS
-    regime: ms_estorno_excedente
+    regime: ms_estorno_proporcional
     centralizacao: { participa: false }
 
   - codigo: null

@@ -66,6 +66,16 @@ COLUNAS = {
     "Nome (Cidade de Destino)": "cidade_destino",
     "Vlr. ICMS Complemento": "icms_complemento",
     "Nome Fantasia (Empresa Origem)": "estabelecimento_origem",
+    # --- colunas do extrato "Movimento Livros Fiscais", o padrão a partir de
+    # 08/2026. O TOP nomeia a operação como ela foi lançada, em vez de deixá-la
+    # ser inferida de CFOP + prefixo do produto.
+    "Tipo Operação": "top",
+    "Descrição (Tipo de Operação)": "top_descricao",
+    "Observação": "observacao",
+    "Vlr. DIFAL UF Remet.": "difal_uf_remetente",
+    "Vlr. DIFAL UF Destino": "difal_uf_destino",
+    "Nro. único pedido": "nro_unico_pedido",
+    "Origem": "origem_lancamento",
 }
 
 # Sem estas o motor não roda. As demais podem faltar sem quebrar a apuração.
@@ -77,8 +87,26 @@ ESSENCIAIS = (
 )
 
 
+# Quantas linhas do topo do arquivo são vasculhadas atrás do cabeçalho.
+LINHAS_ATE_O_CABECALHO = 10
+
+
 class LayoutInvalido(Exception):
     """O arquivo não tem o layout esperado do Livro Fiscal."""
+
+
+def _linha_do_cabecalho(linhas: list[list[str]]) -> int:
+    """Índice da linha de cabeçalho — a que tem mais colunas essenciais.
+
+    A extração da apuração começa direto no cabeçalho; a do "Movimento Livros
+    Fiscais" traz antes duas linhas de metadados do relatório.
+    """
+    melhor, nota_melhor = 0, -1
+    for i, linha in enumerate(linhas):
+        nota = sum(1 for c in ESSENCIAIS if c in set(linha))
+        if nota > nota_melhor:
+            melhor, nota_melhor = i, nota
+    return melhor
 
 
 @dataclass
@@ -119,6 +147,12 @@ class LinhaLivro:
     def produto_codigo(self) -> str:
         produto = self.dados.get("produto")
         return "" if produto is None else str(int(produto))
+
+    @property
+    def top(self) -> int | None:
+        """Tipo de operação (TOP). Ausente nas extrações antigas."""
+        valor = self.dados.get("top")
+        return int(valor) if valor else None
 
 
 @dataclass
@@ -164,7 +198,11 @@ def _linhas_xls(caminho: Path, aba: str | None) -> tuple[list[str], list[list[An
     ]
     aba = aba or _escolher_aba(candidatas)
     s = livro.sheet_by_name(aba)
-    cabecalho = [str(s.cell(0, c).value).strip() for c in range(s.ncols)]
+    primeira = _linha_do_cabecalho(
+        [[str(s.cell(r, c).value).strip() for c in range(s.ncols)]
+         for r in range(min(LINHAS_ATE_O_CABECALHO, s.nrows))]
+    )
+    cabecalho = [str(s.cell(primeira, c).value).strip() for c in range(s.ncols)]
 
     def valor(celula):
         if celula.ctype in (0, 5, 6):          # vazia, erro, em branco
@@ -180,15 +218,27 @@ def _linhas_xls(caminho: Path, aba: str | None) -> tuple[list[str], list[list[An
             return celula.value.strip() or None
         return celula.value
 
-    corpo = [[valor(s.cell(r, c)) for c in range(s.ncols)] for r in range(1, s.nrows)]
+    corpo = [
+        [valor(s.cell(r, c)) for c in range(s.ncols)]
+        for r in range(primeira + 1, s.nrows)
+    ]
     return cabecalho, corpo
 
 
 def _cabecalho_xls(livro, nome_aba: str) -> list[str]:
+    """Cabeçalho da aba, procurando-o nas primeiras linhas.
+
+    O extrato "Movimento Livros Fiscais" abre com duas linhas de metadados do
+    relatório (título, data de emissão, usuário) antes do cabeçalho.
+    """
     s = livro.sheet_by_name(nome_aba)
     if s.nrows == 0:
         return []
-    return [str(s.cell(0, c).value).strip() for c in range(s.ncols)]
+    linhas = [
+        [str(s.cell(r, c).value).strip() for c in range(s.ncols)]
+        for r in range(min(LINHAS_ATE_O_CABECALHO, s.nrows))
+    ]
+    return linhas[_linha_do_cabecalho(linhas)]
 
 
 def _linhas_xlsx(caminho: Path, aba: str | None) -> tuple[list[str], list[list[Any]]]:
@@ -196,18 +246,27 @@ def _linhas_xlsx(caminho: Path, aba: str | None) -> tuple[list[str], list[list[A
 
     wb = openpyxl.load_workbook(caminho, read_only=True, data_only=True)
 
+    def linhas_iniciais(nome: str) -> list[list[str]]:
+        return [
+            [str(c).strip() if c is not None else "" for c in linha]
+            for linha in wb[nome].iter_rows(
+                min_row=1, max_row=LINHAS_ATE_O_CABECALHO, values_only=True
+            )
+        ]
+
     def cabecalho_de(nome: str) -> list[str]:
-        for linha in wb[nome].iter_rows(min_row=1, max_row=1, values_only=True):
-            return [str(c).strip() if c is not None else "" for c in linha]
-        return []
+        linhas = linhas_iniciais(nome)
+        return linhas[_linha_do_cabecalho(linhas)] if linhas else []
 
     candidatas = [
         (nome, cabecalho_de(nome), wb[nome].max_row or 0) for nome in wb.sheetnames
     ]
     nome = aba or _escolher_aba(candidatas)
     aba = wb[nome]
+    primeira = _linha_do_cabecalho(linhas_iniciais(nome))
     it = aba.iter_rows(values_only=True)
-    cabecalho = [str(c).strip() if c is not None else "" for c in next(it)]
+    for _ in range(primeira + 1):
+        cabecalho = [str(c).strip() if c is not None else "" for c in next(it)]
 
     def valor(v):
         if isinstance(v, str):

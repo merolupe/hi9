@@ -24,10 +24,12 @@ class ApuracaoFilial:
     credito_bruto: float = 0.0
     credito_mantido: float = 0.0
     estorno: float = 0.0
+    credito_indevido: float = 0.0
     debito: float = 0.0
     linhas: int = 0
     por_carga: dict = field(default_factory=lambda: collections.defaultdict(
-        lambda: {"credito_bruto": 0.0, "credito_mantido": 0.0, "estorno": 0.0}
+        lambda: {"credito_bruto": 0.0, "credito_mantido": 0.0, "estorno": 0.0,
+                 "credito_indevido": 0.0}
     ))
 
     @property
@@ -37,7 +39,8 @@ class ApuracaoFilial:
 
     @property
     def confere(self) -> bool:
-        return abs(self.credito_mantido + self.estorno - self.credito_bruto) < 0.005
+        soma = self.credito_mantido + self.estorno + self.credito_indevido
+        return abs(soma - self.credito_bruto) < 0.005
 
 
 @dataclass
@@ -52,6 +55,7 @@ class Apuracao:
             t.credito_bruto += f.credito_bruto
             t.credito_mantido += f.credito_mantido
             t.estorno += f.estorno
+            t.credito_indevido += f.credito_indevido
             t.debito += f.debito
             t.linhas += f.linhas
         return t
@@ -87,6 +91,7 @@ def apurar(base: BaseTratada, parametros: Parametros | None = None) -> Apuracao:
         filial.credito_bruto += resultado.credito_bruto
         filial.credito_mantido += resultado.credito_mantido
         filial.estorno += resultado.estorno
+        filial.credito_indevido += resultado.credito_indevido
         filial.debito += resultado.debito
         filial.linhas += 1
 
@@ -96,5 +101,6 @@ def apurar(base: BaseTratada, parametros: Parametros | None = None) -> Apuracao:
             alvo["credito_bruto"] += resultado.credito_bruto
             alvo["credito_mantido"] += resultado.credito_mantido
             alvo["estorno"] += resultado.estorno
+            alvo["credito_indevido"] += resultado.credito_indevido
 
     return Apuracao(filiais=filiais, base=base)

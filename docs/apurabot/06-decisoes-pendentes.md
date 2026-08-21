@@ -8,113 +8,139 @@
 
 ---
 
-## 1. 🔴 Rio Brilhante — critério do crédito presumido
+## 1. 🔴 Rio Brilhante — critério do crédito presumido *(respondida pelo Termo, com ressalva)*
 
-> **Em espera (21/08/2026):** deixada em aberto até a chegada do Termo de Acordo.
+**Termo de Acordo n. 1.190/2018**, firmado em 19/09/2018 entre o Estado de MS e a
+Hinove, publicado no DOE 9.755. Base: LC estadual 93/2001 e Lei 4.049/2011.
 
-**A estrutura da regra está confirmada nos dados.** *Pontos de Atenção* diz:
-intra 67% e inter 80% de crédito sobre o saldo devedor. Reproduzindo:
+### Cláusula terceira — o benefício em vigor, até 31/12/2032
 
-| | Valor (R$) |
-|---|---|
-| Débito de saída INTRA (MS→MS) | 101.354,35 |
-| Débito de saída INTER (MG, SP, PR) | 404.637,06 |
-| Débito total | 505.991,41 ✓ confere com a apuração |
-| Crédito mantido | 138.666,94 |
-| Saldo devedor | 367.324,47 |
-| **67% × SD intra + 80% × SD inter** | **284.294,41** |
-| **B.F. lançado na apuração de Julho** | **283.766,56** |
-| Diferença | 527,85 (0,19%) |
+> **I** — benefício fiscal equivalente a **67%** do saldo devedor do ICMS,
+> aplicável **exclusivamente às operações realizadas com os produtos resultantes
+> de sua própria industrialização neste Estado**, que será deduzido do saldo
+> devedor que tenha resultado como efetiva e regularmente devido;
+>
+> **II** — adicional de **13%** ao previsto no inciso anterior, aplicável
+> **exclusivamente nas operações interestaduais**, resultando num percentual de
+> **80%**.
 
-**Pergunta:** como o crédito mantido é rateado entre as saídas intra e
-interestaduais? O rateio por débito e o rateio por valor contábil dão o mesmo
-resultado (284.294) — para chegar nos 283.766,56 lançados, o rateio teria que
-atribuir **17,10%** do crédito às operações internas, e não os 20,03% que a
-participação do débito indica.
+E o **parágrafo terceiro**: *"As matérias-primas não envolvidas no processo
+fabril não poderão gozar dos incentivos previstos neste instrumento."*
 
-**Perguntas relacionadas:**
-- A remessa para depósito fechado (CFOP 5905, R$ 33.039,71 de débito intra,
-  neutralizada por ajuste de crédito de mesmo valor) entra ou sai da base do
-  benefício?
-- O benefício alcança **todas** as saídas ou só as de **produção própria** de RB?
-  *Pontos de Atenção* diz "Saídas com Produção Própria de Rio Brilhante", mas o
-  cálculo de Julho só fecha considerando todas as saídas (só produção própria
-  daria R$ 213.973,78, R$ 69,8 mil abaixo do lançado).
-- Confirmar contra o texto do **Termo de Acordo** — o documento não foi anexado.
+Os incisos III a VI tratam de diferimento (importação de máquinas, DIFAL de
+ativo, importação de matéria-prima) e do regime especial de apuração mensal do
+DIFAL sobre ativo, uso e consumo e material de construção.
 
-**Padrão assumido enquanto não houver resposta:** 67% intra + 80% inter sobre o
-saldo devedor total, com crédito rateado pela participação do débito, e o
-resultado sinalizado como `A CONFERIR` no painel.
+### Cláusula quarta — expirou em 31/12/2022
 
-## 2. 🔴 MS — base do estorno proporcional
+Concedia **50%** do saldo devedor nas saídas interestaduais com **mercadorias
+adquiridas em outras UFs**, e **50%** do imposto nas saídas interestaduais com
+**itens importados**. A cláusula oitava é explícita: vale *"a partir da data de
+sua assinatura e até 31 de dezembro de 2022 em relação ao disposto na cláusula
+quarta"*.
 
-Corumbá e Rio Brilhante são rotulados igualmente como "Estorno Proporcional" na
-aba ESTORNO, mas **os números seguem lógicas diferentes**:
+**Em Julho/2026, portanto, revenda de mercadoria de terceiros não tem benefício.**
 
-**Corumbá** — segue a mesma fórmula de SP (estorno do que excede 4%):
+### 🔴 O que isso levanta sobre Julho/2026
 
-| Carga | Valor contábil | ICMS | Estorno pela fórmula de SP |
-|---|---|---|---|
-| 4% | 360.618,45 | 14.424,02 | — |
-| 7% | 84.000,00 | 5.880,00 | 2.520,00 |
-| 12% | 218.006,40 | 26.160,77 | 17.440,51 |
-| | | **46.464,79** | **19.960,51** |
+A regra é clara — o benefício alcança **só a produção própria**. Mas a apuração
+de Julho parece tê-lo aplicado sobre **todas** as saídas:
 
-Estorno lançado: **19.961,55** — diferença de R$ 1,04.
-
-**Rio Brilhante** — estorna praticamente 100% do crédito das entradas com carga 4%:
-
-| Carga | ICMS | Tratamento aparente |
+| Base do benefício | Cálculo (R$) | vs. lançado |
 |---|---|---|
-| 4% | 331.307,32 | estornado quase integralmente |
-| 7% | 24.044,44 | mantido |
-| 12% | 112.404,72 | mantido |
-| CIAP | 2.146,57 | mantido |
-| | **469.903,05** | estorno lançado **331.236,11** · mantido **138.666,94** |
+| Só produção própria — CFOP 5101, 6101, 5118. **O que o Termo diz** | 228.357,72 | **−55.408,84** |
+| Todas as saídas | 277.369,17 | −6.397,39 |
+| **Lançado na apuração de Julho** | **283.766,56** | — |
 
-`331.307,32 − 331.236,11 = 71,21`, exatamente o mesmo valor que falta no
-crédito mantido. Ou seja, houve um deslocamento manual de R$ 71,21 entre estorno
-e crédito mantido.
+Débito de saída de Rio Brilhante, separado como manda a cláusula:
 
-**Pergunta:** confirmar que a regra de MS é (a) estorno integral do crédito das
-entradas beneficiadas a 4% no estabelecimento que tem o benefício (RB), e
-(b) estorno do excedente sobre 4% no estabelecimento sem benefício (Corumbá) —
-e o que originou os resíduos de R$ 1,04 e R$ 71,21.
+| | Produção própria | Demais |
+|---|---|---|
+| **Intra** | 56.934,28 (5101, 5118) | 44.420,07 (5102, 5905, 5910) |
+| **Inter** | 355.339,89 (6101) | 49.297,17 (6102, 6934) |
 
-## 3. 🟡 Os 0,941176% do escopo não aparecem em Julho/2026
+**Pergunta:** o benefício de Julho foi mesmo calculado sobre todas as saídas? Se
+foi, há cerca de **R$ 55 mil** apropriados sobre operações que a cláusula terceira
+não alcança — revenda de terceiros (5102/6102) e remessas (5905/6934) — e cuja
+cobertura pela cláusula quarta acabou em 2022.
 
-O escopo v1.0 (itens 5.3 e 5.4) determina, para entradas destinadas a MS com
-alíquota de 4%, crédito mantido de **0,941176%** — e o mesmo para fertilizante
-interno em MS. **Não encontrei esse percentual aplicado na apuração de Julho.**
+**O cálculo não foi implementado**, justamente porque a resposta muda o resultado
+em R$ 55 mil. O regime `ms_beneficio_rio_brilhante` segue `homologado: false`.
 
-**Pergunta:** a regra dos 0,941176% está em vigor? Se sim, em quais operações
-exatamente, e por que não aparece em Julho/2026?
+**Ainda em aberto:**
+- Como o crédito é rateado entre operações beneficiadas e não beneficiadas?
+- A contribuição ao **FADEFE** (parágrafo primeiro) é condição de fruição — qual
+  o percentual, e entra na apuração como dedução?
 
-## 4. ✅ Carga efetiva — régua de valores nominais *(parcialmente respondida)*
+## 2. ✅ MS — base do estorno proporcional *(respondida)*
 
-O algoritmo de equalização reproduz 99,87% da classificação manual usando a régua
-`{4, 7, 12, 17, 18, 19, 20,5, 25}` com a restrição "a carga nominal nunca excede a
-alíquota do ICMS" (detalhes em `05-achados-julho-2026.md`).
+**Respondido em 21/08/2026**, com a apuração individualizada de Corumbá
+(Empresa 9) em mãos. Eram duas coisas erradas, não uma.
 
-**Respondido em 21/08/2026 — os 20,5%:** não devem constar na base. Apareceram em
-30 CT-e de frete sobre compra de insumos da filial Guará (CFOP 1353 e 1352) e
-foram aceitos na apuração manual de Julho/2026.
+**a) A fórmula.** MS não usa a mecânica de SP. O estorno incide sobre o **valor
+do ICMS**, aplicando a parcela não tributada da operação:
 
-**Tratamento implementado:** 20,5% sai das cargas homologadas e entra como carga
-*tolerada* em `parametros/cargas.yaml`. Na prática:
+| CFOP | Carga | ICMS | Parcela não tributada | Estorno |
+|---|---|---|---|---|
+| 2102 | 7% | 5.880,00 | 42,86% | 2.520,168 |
+| 2352 | 12% | 18.092,40 | 66,67% | 12.062,20308 |
+| 2353 | 12% | 8.068,37 | 66,67% | 5.379,182279 |
+| | | | **Total** | **19.961,553359** |
 
-- a equalização continua reconhecendo o valor, para que a regressão de
-  Julho/2026 reproduza o resultado da apuração manual;
-- todo documento que cair nessa carga recebe o alerta `CARGA NÃO HOMOLOGADA`,
-  apontando para revisão do lançamento na origem;
-- o alerta **não bloqueia** o encerramento da competência — é sinalização, não
-  impedimento.
+Bate na sexta casa com a Empresa 9 e com os R$ 19.961,55 da consolidada. A
+fórmula de SP dava R$ 19.960,51 — e era daí que vinha o resíduo de R$ 1,04 que
+eu não explicava.
 
-**Ainda em aberto:** a régua homologada `{4, 7, 12, 17, 18, 19, 25}` está
-completa? Alguma UF ou operação pode gerar carga nominal fora dela?
+**b) O crédito de transferência é indevido.** A linha de **CFOP 2152**
+(R$ 14.424,02, contraparte exata do CFOP 6152 de Guará) está marcada como
+*"Crédito Indevido"* na Empresa 9: sem estorno e sem apropriação.
 
-**Padrão assumido:** régua acima; carga que não encoste em nenhum valor dentro da
-tolerância vira pendência `CARGA NÃO EQUALIZADA` em vez de ser arredondada.
+O crédito a apropriar de Corumbá é **R$ 12.079,216641**, não os R$ 26.503,24 da
+apuração consolidada — que somava o crédito indevido ao mantido
+(12.079,22 + 14.424,02 = 26.503,24).
+
+**Implementado:** regime `ms_estorno_proporcional` com
+`formula_estorno: proporcional_parcela_nao_tributada`, e o crédito indevido em
+parcela própria, de forma que a identidade auditada passa a ser
+`mantido + estorno + indevido = bruto`.
+
+**Ainda em aberto:** o CFOP 2152 gera crédito indevido **sempre**, ou foi
+específico desta transferência? A regra está com `homologado: false`.
+
+## 3. ✅ Os 0,941176% — encerrada, não existem *(respondida)*
+
+Procurados em três lugares, não encontrados em nenhum:
+
+1. **Apuração consolidada de Julho/2026** — varredura célula a célula nas 7 abas.
+   Só aparece o fator que geraria o número (`4/17 = 0,235294`, em
+   `Pontos de Atenção!F72`), nunca o percentual aplicado.
+2. **Apuração individualizada de Corumbá (Empresa 9)** — a mecânica é outra:
+   estorno da parcela não tributada sobre o ICMS.
+3. **Termo de Acordo n. 1.190/2018** — as sete páginas não mencionam o percentual
+   nem nada equivalente.
+
+**Decisão de 21/08/2026: esquecer.** O parâmetro saiu de `regimes.yaml` — não
+fica como "não aplicado", porque não há regra a aplicar. O número vinha do escopo
+funcional v1.0, e a origem não se sustentou em nenhuma das três fontes.
+
+## 4. ✅ Carga efetiva — régua de valores nominais *(respondida)*
+
+**Respondido em 21/08/2026, em duas rodadas.**
+
+**Os 20,5%** não devem constar na base. Apareceram em 30 CT-e de frete sobre
+compra de insumos de Guará (CFOP 1353 e 1352) e foram aceitos na apuração manual.
+
+**A régua estava larga demais.** 19% e 25% não ocorrem nas operações da Hinove e
+saíram das homologadas.
+
+| | Cargas |
+|---|---|
+| **Homologadas** | 4 · 7 · 12 · 17 · 18 |
+| **Toleradas** — advertência, sem bloquear | 19 · 20,5 · 25 |
+
+A equalização continua reconhecendo as toleradas, para que a regressão de
+Julho/2026 reproduza o resultado. Todo documento que cair numa delas recebe o
+alerta `CARGA NÃO HOMOLOGADA`, apontando para revisão do lançamento na origem.
 
 ## 5. 🟡 Qual totalizador é o oficial
 
@@ -203,32 +229,37 @@ complementada?
 **Padrão assumido:** carga 4%, parametrizada em `classificacao.yaml` com
 `homologado: false`, gerando alerta `CARGA NÃO HOMOLOGADA` sem bloquear.
 
-## 12. 🟡 NBPT BLUE 20% — revenda ou produto químico?
+## 12. ✅ NBPT BLUE 20% — produto químico *(respondida)*
 
-O produto `132010008` (NBPT BLUE 20%) entra com **CFOP 2102**, compra para
-comercialização, o que apontaria para **revenda** e crédito integral. Mas é um
-aditivo inibidor de urease, o que apontaria para **produto químico** e estorno
-do que excede 4%.
+**Respondido em 21/08/2026:** segue o que a apuração fez. Conferido nos três
+lugares onde o produto entrou em Julho/2026:
 
-Em Julho são 3 linhas, R$ 30.660,00 de ICMS, a 7% e a 12% — o que dá
-**R$ 12.978,00 de estorno** se for químico e **zero** se for revenda.
+| Filial | CFOP | Carga | ICMS | Tratamento na apuração |
+|---|---|---|---|---|
+| Corumbá | 2102 | 7% | 5.880,00 | estorno de 2.520,17 pelos 42,86% — Empresa 9, aba ENTRADAS |
+| Guará | 2102 | 12% | 10.080,00 | dentro do grupo de 12% que estornou 8% |
+| Rio Brilhante | 2102 | 7% | 14.700,00 | mantido — carga fora das beneficiadas |
 
-**Pergunta:** qual das duas?
+Nos dois primeiros a apuração tratou como **crédito comum sujeito a estorno**, e
+não como revenda com crédito integral. Confirma `produto_quimico`, que é como já
+estava no cadastro. A marca `homologado: false` saiu.
 
-**Padrão assumido:** produto químico, marcado como não homologado no cadastro.
+## 13. ✅ Complemento de preço — acompanha a nota complementada *(respondida)*
 
-## 13. 🟡 Complemento de preço — 22 linhas sem regra
+**Respondido em 21/08/2026:** o complemento de preço acompanha a situação da nota
+que ele complementa. Saída de matéria-prima, por exemplo, vai a 4%.
 
-O produto `401002106` (COMPLEMENTO DE PREÇO) aparece em **22 linhas de saída**
-com CFOP 6102, somando **R$ 2.181,70** de ICMS. Nenhuma regra escrita cobre o
-caso, então hoje ele é a **única pendência** que bloqueia o encerramento de
-Julho/2026.
+Na prática o documento já resolve sozinho: em Julho as 22 linhas saíram com
+alíquota de 7% sobre base reduzida (ex.: contábil 2.343,26 · base 1.338,94 · ICMS
+93,73), o que dá **carga efetiva de 4%** — exatamente a carga de uma saída de
+matéria-prima. A equalização já chegava nesse número; faltava a categoria, e o
+produto ficava em `SEM REGRA`.
 
-**Pergunta:** complemento de preço de venda segue a mesma regra da venda que ele
-complementa, ou tem tratamento próprio?
+A ligação com a nota original está na **observação** do documento
+(*"COMPLEMENTO DE PREÇO REFERENTE A NF 57081"*), e é por ela que a memória de
+cálculo aponta para a nota complementada.
 
-**Padrão assumido:** nenhum — fica como `SEM REGRA`, que é o comportamento
-correto para o que não tem regra.
+**Com isso, Julho/2026 fecha sem nenhuma pendência.**
 
 ## 14. 🟢 A tolerância da equalização está frouxa
 
@@ -246,3 +277,72 @@ cargas a mais de 1,5 ponto de qualquer degrau, sem bloquear o fechamento.
 
 **Padrão assumido:** manter 2,5 até haver decisão — apertar sem combinar geraria
 pendências novas no primeiro fechamento.
+
+
+## 15. 🟡 Arredondamento da parcela não tributada — vale R$ 1,04
+
+A Empresa 9 aplica os percentuais **arredondados em 4 casas** — `0,4286` e
+`0,6667` — e não as frações exatas `3/7` e `2/3`:
+
+| | Exato (3/7 e 2/3) | Arredondado (0,4286 e 0,6667) |
+|---|---|---|
+| Estorno de Corumbá | 19.960,51 | **19.961,55** |
+
+Os R$ 1,04 de diferença são inteiramente arredondamento. O Apurabot usa os
+valores arredondados, porque é o que reproduz a apuração de Julho/2026, e eles
+estão explícitos em `parametros/regimes.yaml`.
+
+**Pergunta:** manter o arredondado, ou passar a usar a fração exata daqui para
+frente? Trocar muda o resultado de competências futuras — e faria a regressão de
+Julho falhar, que é o comportamento correto para uma mudança de regra.
+
+**Padrão assumido:** manter o arredondado.
+
+## 16. 🟡 Coluna TOP — extração definida, classificação a validar
+
+**Respondido em 21/08/2026: a extração com TOP passa a ser o padrão mensal.**
+
+O extrato `Movimento Livros Fiscais` já é lido pelo motor, e um teste prova que
+ele produz **apuração idêntica** à extração antiga — mesmo crédito bruto, mesmo
+estorno, mesmo crédito mantido, nas sete filiais. Ele traz ainda a `Observação`
+(que liga o complemento de preço à nota complementada), as colunas de DIFAL e os
+51 documentos cancelados que a extração antiga filtrava.
+
+### 🟡 O que falta decidir: usar o TOP para classificar
+
+O TOP nomeia a operação **como ela foi lançada**. Onde ele concorda com a
+heurística atual, trocar é ganho puro de confiabilidade. Mas há **três casos em
+que ele discorda**, e cada um é uma decisão tributária:
+
+| TOP | Descrição | Hoje classificado como | Linhas | ICMS (R$) |
+|---|---|---|---|---|
+| **2103** | Compra de MP | 210 como `materia_prima`, **4 como `produto_quimico`** | 214 | 368.978,94 |
+| **2124** | Compra com Moeda Importação- mãe | 47 como `materia_prima`, **1 como `revenda`** (Enxofre) | 48 | 3.129.066,39 |
+| **2130** | Compra em Moeda | 6 como `materia_prima`, **50 como `produto_quimico`** | 56 | 198.836,35 |
+
+Em SP, matéria-prima **não** estorna e produto químico **estorna** — então a
+escolha muda valor. O Enxofre é o caso mais claro: o TOP diz "compra
+importação", mas a apuração o trata como **revenda**, e é isso que a aba ESTORNO
+confirma com R$ 474.416,28 de estorno zero.
+
+**Proposta de desenho:** o TOP entra como sinal primário, e o **cadastro de
+produtos continua sobrepondo** — assim o TOP resolve os 95% e o cadastro guarda
+as exceções que o fiscal decidiu. A ordem ficaria:
+
+```
+1. lançamentos sem contábil (CIAP, complemento de ICMS)
+2. cadastro de produtos          ← exceção decidida pelo fiscal, vence tudo
+3. TOP                            ← a operação como foi lançada
+4. exceções por CFOP (quebra, devolução, retorno)
+5. finalidade do frete (descrição do CT-e)
+6. prefixo do código do produto
+7. SEM REGRA
+```
+
+**Pergunta:** o TOP `2103 Compra de MP` deve mandar sobre o cadastro no caso do
+ácido fosfórico — isto é, ele é matéria-prima porque foi lançado assim, ou é
+produto químico e o lançamento é que deveria mudar?
+
+**Enquanto não há resposta, a classificação por TOP não foi implementada.** A
+coluna é lida, viaja na base tratada e está disponível para conferência.
+
