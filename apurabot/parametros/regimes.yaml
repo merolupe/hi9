@@ -9,6 +9,7 @@ regimes:
       Mantém o crédito até a carga de saída e estorna o excedente.
       estorno = valor_contabil × (carga_efetiva_entrada − carga_saida_referencia)
     vigencia_inicio: 2025-01-01
+    formula_estorno: excedente_sobre_carga_saida
     carga_saida_referencia: 4.0
     base_do_estorno: valor_contabil        # confirmado contra Julho/2026
     isentos_de_estorno:
@@ -17,14 +18,53 @@ regimes:
       - revenda
       - retorno_industrializacao
       - ciap
+      - complemento_icms
       - devolucao_venda
     frete_venda_intraestadual: sem_credito # diferido/isento
     difal: conta_grafica
 
-  ms_estorno_proporcional:
+  ms_estorno_excedente:
     descricao: >
-      Estorno conforme a alíquota de entrada vigente, em apuração individualizada.
-      Ver decisão pendente nº 2 — Corumbá e Rio Brilhante seguem lógicas distintas.
+      Estorno do que excede a carga de saída, mesma mecânica de SP. É o que a
+      apuração manual de Julho/2026 aplicou em Corumbá — sobra um resíduo de
+      R$ 1,04 não explicado. Ver decisão pendente nº 2.
+    vigencia_inicio: 2025-01-01
+    formula_estorno: excedente_sobre_carga_saida
+    carga_saida_referencia: 4.0
+    base_do_estorno: valor_contabil
+    isentos_de_estorno:
+      - materia_prima
+      - produto_acabado
+      - revenda
+      - retorno_industrializacao
+      - ciap
+      - complemento_icms
+      - devolucao_venda
+    difal: guia_avulsa
+
+  ms_beneficio_rio_brilhante:
+    descricao: >
+      Estabelecimento com benefício fiscal por Termo de Acordo. As entradas
+      beneficiadas têm o crédito estornado integralmente, e o crédito presumido
+      entra depois sobre o saldo devedor.
+      NÃO HOMOLOGADO — é o que os números de Julho/2026 mostram (estorno de
+      R$ 331.236,11 contra R$ 331.307,32 de ICMS nas entradas a 4%, resíduo de
+      R$ 71,21), não uma regra escrita. Ver decisões pendentes nº 1 e nº 2.
+    vigencia_inicio: 2025-01-01
+    homologado: false
+    formula_estorno: integral_nas_cargas
+    cargas_estornadas: [4.0]
+    # O complemento de ICMS NÃO entra aqui: em Julho/2026 a linha de
+    # complemento de RB (R$ 5.249,34) foi estornada junto com as demais
+    # entradas a 4%. Só o CIAP fica de fora.
+    isentos_de_estorno:
+      - ciap
+    difal: guia_avulsa
+
+  ms_estorno_proporcional_legado:
+    descricao: >
+      Mantido só para não perder os parâmetros do escopo v1.0 enquanto a
+      decisão nº 3 não vem. Nenhuma filial aponta para cá.
     vigencia_inicio: 2025-01-01
     credito_mantido_maximo: 4.0
     # Escopo v1.0, itens 5.3 e 5.4. NÃO APLICADO: busca célula a célula nas 7
@@ -41,12 +81,15 @@ regimes:
   mt_diferimento:
     descricao: Saídas diferidas — estorna 100% do crédito de entrada.
     vigencia_inicio: 2025-01-01
-    estorno_percentual: 100.0
+    formula_estorno: integral
+    isentos_de_estorno: [ciap]
 
   pr_diferimento:
-    descricao: Saídas diferidas — mantém 100% do crédito de entrada.
+    descricao: >
+      Saídas diferidas — mantém 100% do crédito de entrada, que se acumula
+      como saldo credor. Ver decisão pendente nº 7.
     vigencia_inicio: 2025-01-01
-    estorno_percentual: 0.0
+    formula_estorno: nenhum
 
 beneficios_fiscais:
 

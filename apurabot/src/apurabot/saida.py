@@ -11,6 +11,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from .apuracao import Apuracao, apurar
 from .base_tratada import BaseTratada
 
 CABECALHO_BASE = [
@@ -160,6 +161,48 @@ def _aba_por_carga(wb, base: BaseTratada) -> None:
     aba.auto_filter.ref = aba.dimensions
 
 
+def _aba_apuracao(wb, apuracao: Apuracao) -> None:
+    aba = wb.create_sheet("APURAÇÃO POR FILIAL", 1)
+    colunas = [
+        ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
+        ("credito_bruto", 16), ("estorno", 16), ("credito_mantido", 17),
+        ("debito", 16), ("saldo", 16), ("confere", 10),
+    ]
+    _escreve_cabecalho(aba, colunas)
+    for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
+        aba.append([
+            f.estabelecimento, f.uf, f.regime, f.linhas, f.credito_bruto,
+            f.estorno, f.credito_mantido, f.debito, f.saldo,
+            "OK" if f.confere else "DIVERGE",
+        ])
+    total = apuracao.total
+    aba.append([
+        "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
+        total.credito_mantido, total.debito, total.saldo,
+        "OK" if total.confere else "DIVERGE",
+    ])
+    for celula in aba[aba.max_row]:
+        celula.font = Font(bold=True)
+    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=9):
+        for celula in linha:
+            celula.number_format = MOEDA
+
+    aba.append([])
+    aba.append(["Detalhe por carga efetiva"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["estabelecimento", "carga", "credito_bruto", "estorno", "credito_mantido"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
+        for carga, v in sorted(f.por_carga.items(), key=lambda kv: str(kv[0])):
+            aba.append([
+                f.estabelecimento, carga, v["credito_bruto"], v["estorno"],
+                v["credito_mantido"],
+            ])
+            for coluna in (3, 4, 5):
+                aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
+
+
 def escrever(base: BaseTratada, destino: Path | str) -> Path:
     """Grava a base tratada em .xlsx e devolve o caminho."""
     destino = Path(destino)
@@ -170,6 +213,7 @@ def escrever(base: BaseTratada, destino: Path | str) -> Path:
     _aba_base(wb, base)
     _aba_pendencias(wb, base)
     _aba_por_carga(wb, base)
+    _aba_apuracao(wb, apurar(base))
     _aba_resumo(wb, base)          # criada em posição 0, fica como primeira aba
     wb.save(destino)
     return destino

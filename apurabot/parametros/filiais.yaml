@@ -14,7 +14,7 @@ filiais:
   - codigo: 2
     nome: HINOVE (RIO BRILHANTE)
     uf: MS
-    regime: ms_estorno_proporcional
+    regime: ms_beneficio_rio_brilhante
     beneficio_fiscal: ms_rio_brilhante        # Termo de Acordo
     centralizacao: { participa: false }
 
@@ -35,7 +35,7 @@ filiais:
   - codigo: null
     nome: HINOVE (CORUMBÁ- MS)
     uf: MS
-    regime: ms_estorno_proporcional
+    regime: ms_estorno_excedente
     centralizacao: { participa: false }
 
   - codigo: null

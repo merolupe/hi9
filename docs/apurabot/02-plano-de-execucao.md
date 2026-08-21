@@ -67,9 +67,33 @@ estabelecimento × entrada/saída × carga.
 
 ---
 
-## Entrega 2 — Motor de ICMS: créditos, débitos e estornos
+## Entrega 2 — Motor de ICMS: créditos, débitos e estornos ✅ parcial
 
 **Escopo:** camadas 5 a 8, por regime.
+
+**Resultado medido contra Julho/2026 — crédito bruto, estorno e crédito mantido
+por estabelecimento:**
+
+| Estabelecimento | UF | Estorno calculado | Estorno manual | Diferença |
+|---|---|---|---|---|
+| Registro | SP | 50.481,97 | 50.481,97 | **0,00** |
+| Guará | SP | 426.771,68 | 426.771,68 | **0,00** |
+| Matriz | SP | 0,00 | 0,00 | **0,00** |
+| Barra do Garças | MT | 50.309,07 | 50.309,07 | **0,00** |
+| Londrina | PR | 0,00 | 0,00 | **0,00** |
+| Corumbá | MS | 19.960,51 | 19.961,55 | −1,04 |
+| Rio Brilhante | MS | 322.288,31 | 331.236,11 | −8.947,80 |
+
+O **crédito bruto bate em todas as sete**, e os débitos de saída batem com a aba
+`Dinamica`. As duas diferenças são conhecidas e o teste exige o valor exato de
+cada uma:
+
+- **Corumbá, R$ 1,04** — resíduo da planilha manual, decisão pendente nº 2.
+- **Rio Brilhante, R$ 8.947,80** — os R$ 9.019,01 da ICL Aditivos reclassificados
+  à mão, menos o resíduo de R$ 71,21 da planilha.
+
+**Falta nesta entrega:** ajustes manuais aprovados lidos de `ajustes.xlsx`, e o
+benefício fiscal de Rio Brilhante, que é a Entrega 3 e depende do Termo de Acordo.
 
 - SP — equilíbrio fiscal (estorno do excedente sobre 4%)
 - MS — estorno proporcional (Corumbá e Rio Brilhante)
