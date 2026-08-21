@@ -88,12 +88,59 @@ def test_pr_mantem_o_credito_inteiro(parametros):
 
 # -- MS --------------------------------------------------------------------
 
-def test_corumba_segue_a_mesma_mecanica_de_sp(parametros):
+def test_corumba_estorna_a_parcela_nao_tributada_sobre_o_icms(parametros):
+    """MS não é SP: o estorno incide sobre o ICMS, não sobre o valor contábil.
+
+    Empresa 9, aba ENTRADAS: CFOP 2352, ICMS 18.092,40 × 66,67% = 12.062,20308.
+    """
     r = calcular(
-        tratada("HINOVE (CORUMBÁ- MS)", "frete_venda", 12.0, 26_160.77, 218_006.40),
+        tratada("HINOVE (CORUMBÁ- MS)", "frete_venda", 12.0, 18_092.40, 150_770.00),
         parametros,
     )
-    assert r.estorno == pytest.approx(218_006.40 * 0.08, abs=0.005)
+    assert r.estorno == pytest.approx(12_062.20308, abs=0.0005)
+    assert r.credito_mantido == pytest.approx(6_030.19692, abs=0.0005)
+
+
+def test_corumba_a_sete_por_cento(parametros):
+    """Empresa 9: CFOP 2102, ICMS 5.880,00 × 42,86% = 2.520,168."""
+    r = calcular(
+        tratada("HINOVE (CORUMBÁ- MS)", "produto_quimico", 7.0, 5_880.00, 84_000.00),
+        parametros,
+    )
+    assert r.estorno == pytest.approx(2_520.168, abs=0.0005)
+
+
+def test_o_que_sobra_do_estorno_de_ms_leva_a_carga_a_quatro_por_cento(parametros):
+    """É a razão de ser dos percentuais: 12% × (1 − 0,6667) ≈ 4%."""
+    contabil, icms = 100_000.00, 12_000.00
+    r = calcular(
+        tratada("HINOVE (CORUMBÁ- MS)", "frete_venda", 12.0, icms, contabil), parametros
+    )
+    assert r.credito_mantido / contabil * 100 == pytest.approx(4.0, abs=0.005)
+
+
+def test_corumba_nao_estorna_carga_de_quatro_por_cento(parametros):
+    r = calcular(
+        tratada("HINOVE (CORUMBÁ- MS)", "materia_prima", 4.0, 1_000.00, 25_000.00),
+        parametros,
+    )
+    assert r.estorno == 0.0
+
+
+def test_credito_de_transferencia_recebida_e_indevido_e_nao_estorno(parametros):
+    """CFOP 2152 em Corumbá: o crédito não é apropriado nem estornado.
+
+    Fica em parcela própria para não se confundir com estorno na conciliação —
+    foi somá-lo ao crédito mantido que produziu a divergência da apuração
+    consolidada de Julho/2026.
+    """
+    linha = tratada("HINOVE (CORUMBÁ- MS)", "materia_prima", 4.0, 14_424.02, 360_618.45)
+    linha.origem.dados["cfop"] = 2152
+    r = calcular(linha, parametros)
+    assert r.credito_indevido == pytest.approx(14_424.02, abs=0.005)
+    assert r.credito_mantido == 0.0
+    assert r.estorno == 0.0
+    assert r.confere
 
 
 def test_rio_brilhante_estorna_integralmente_a_entrada_beneficiada(parametros):

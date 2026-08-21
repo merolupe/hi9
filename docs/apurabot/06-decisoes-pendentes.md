@@ -46,40 +46,40 @@ participação do débito indica.
 saldo devedor total, com crédito rateado pela participação do débito, e o
 resultado sinalizado como `A CONFERIR` no painel.
 
-## 2. 🔴 MS — base do estorno proporcional
+## 2. ✅ MS — base do estorno proporcional *(respondida)*
 
-Corumbá e Rio Brilhante são rotulados igualmente como "Estorno Proporcional" na
-aba ESTORNO, mas **os números seguem lógicas diferentes**:
+**Respondido em 21/08/2026**, com a apuração individualizada de Corumbá
+(Empresa 9) em mãos. Eram duas coisas erradas, não uma.
 
-**Corumbá** — segue a mesma fórmula de SP (estorno do que excede 4%):
+**a) A fórmula.** MS não usa a mecânica de SP. O estorno incide sobre o **valor
+do ICMS**, aplicando a parcela não tributada da operação:
 
-| Carga | Valor contábil | ICMS | Estorno pela fórmula de SP |
-|---|---|---|---|
-| 4% | 360.618,45 | 14.424,02 | — |
-| 7% | 84.000,00 | 5.880,00 | 2.520,00 |
-| 12% | 218.006,40 | 26.160,77 | 17.440,51 |
-| | | **46.464,79** | **19.960,51** |
+| CFOP | Carga | ICMS | Parcela não tributada | Estorno |
+|---|---|---|---|---|
+| 2102 | 7% | 5.880,00 | 42,86% | 2.520,168 |
+| 2352 | 12% | 18.092,40 | 66,67% | 12.062,20308 |
+| 2353 | 12% | 8.068,37 | 66,67% | 5.379,182279 |
+| | | | **Total** | **19.961,553359** |
 
-Estorno lançado: **19.961,55** — diferença de R$ 1,04.
+Bate na sexta casa com a Empresa 9 e com os R$ 19.961,55 da consolidada. A
+fórmula de SP dava R$ 19.960,51 — e era daí que vinha o resíduo de R$ 1,04 que
+eu não explicava.
 
-**Rio Brilhante** — estorna praticamente 100% do crédito das entradas com carga 4%:
+**b) O crédito de transferência é indevido.** A linha de **CFOP 2152**
+(R$ 14.424,02, contraparte exata do CFOP 6152 de Guará) está marcada como
+*"Crédito Indevido"* na Empresa 9: sem estorno e sem apropriação.
 
-| Carga | ICMS | Tratamento aparente |
-|---|---|---|
-| 4% | 331.307,32 | estornado quase integralmente |
-| 7% | 24.044,44 | mantido |
-| 12% | 112.404,72 | mantido |
-| CIAP | 2.146,57 | mantido |
-| | **469.903,05** | estorno lançado **331.236,11** · mantido **138.666,94** |
+O crédito a apropriar de Corumbá é **R$ 12.079,216641**, não os R$ 26.503,24 da
+apuração consolidada — que somava o crédito indevido ao mantido
+(12.079,22 + 14.424,02 = 26.503,24).
 
-`331.307,32 − 331.236,11 = 71,21`, exatamente o mesmo valor que falta no
-crédito mantido. Ou seja, houve um deslocamento manual de R$ 71,21 entre estorno
-e crédito mantido.
+**Implementado:** regime `ms_estorno_proporcional` com
+`formula_estorno: proporcional_parcela_nao_tributada`, e o crédito indevido em
+parcela própria, de forma que a identidade auditada passa a ser
+`mantido + estorno + indevido = bruto`.
 
-**Pergunta:** confirmar que a regra de MS é (a) estorno integral do crédito das
-entradas beneficiadas a 4% no estabelecimento que tem o benefício (RB), e
-(b) estorno do excedente sobre 4% no estabelecimento sem benefício (Corumbá) —
-e o que originou os resíduos de R$ 1,04 e R$ 71,21.
+**Ainda em aberto:** o CFOP 2152 gera crédito indevido **sempre**, ou foi
+específico desta transferência? A regra está com `homologado: false`.
 
 ## 3. 🟡 Os 0,941176% do escopo não aparecem em Julho/2026
 
@@ -246,3 +246,23 @@ cargas a mais de 1,5 ponto de qualquer degrau, sem bloquear o fechamento.
 
 **Padrão assumido:** manter 2,5 até haver decisão — apertar sem combinar geraria
 pendências novas no primeiro fechamento.
+
+
+## 15. 🟡 Arredondamento da parcela não tributada — vale R$ 1,04
+
+A Empresa 9 aplica os percentuais **arredondados em 4 casas** — `0,4286` e
+`0,6667` — e não as frações exatas `3/7` e `2/3`:
+
+| | Exato (3/7 e 2/3) | Arredondado (0,4286 e 0,6667) |
+|---|---|---|
+| Estorno de Corumbá | 19.960,51 | **19.961,55** |
+
+Os R$ 1,04 de diferença são inteiramente arredondamento. O Apurabot usa os
+valores arredondados, porque é o que reproduz a apuração de Julho/2026, e eles
+estão explícitos em `parametros/regimes.yaml`.
+
+**Pergunta:** manter o arredondado, ou passar a usar a fração exata daqui para
+frente? Trocar muda o resultado de competências futuras — e faria a regressão de
+Julho falhar, que é o comportamento correto para uma mudança de regra.
+
+**Padrão assumido:** manter o arredondado.

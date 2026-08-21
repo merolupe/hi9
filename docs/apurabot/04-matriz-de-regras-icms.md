@@ -52,9 +52,53 @@ carga 17% estorna 13%; carga 18% estorna 14%; carga 20,5% estorna 16,5%.
 
 ## 3. MS — estorno proporcional e benefício de Rio Brilhante
 
+### 3.1. A mecânica de MS não é a de SP
+
+Confirmado contra a **apuração individualizada de Corumbá (Empresa 9)**, aba
+`ENTRADAS`. Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor
+contábil:
+
+```
+estorno = ICMS × parcela não tributada da operação
+```
+
+A parcela não tributada é a coluna *REDUÇÃO ATUAL* da tabela de operação
+interestadual, e o que sobra leva a carga exatamente a 4%:
+
+| Carga da entrada | Parcela não tributada | Crédito que resta | Confere |
+|---|---|---|---|
+| 12% | 66,67% | 33,33% | 12% × 0,3333 = **4,00%** |
+| 7% | 42,86% | 57,14% | 7% × 0,5714 = **4,00%** |
+| 4% | — | 100% | já está em 4% |
+
+Reproduz Julho/2026 na sexta casa decimal: R$ 19.961,553359 de estorno e
+R$ 12.079,216641 de crédito a apropriar.
+
+> **Por que SP é diferente:** em SP o estorno é `valor contábil × (carga − 4%)`.
+> Onde base e valor contábil coincidem os dois caminhos quase se encontram, mas
+> não são o mesmo cálculo — a diferença aparece assim que a base é reduzida.
+
+### 3.2. Crédito indevido de transferência
+
+O crédito de **CFOP 2152** (transferência interestadual recebida) **não é
+apropriado**. Em Julho/2026 foram R$ 14.424,02 em Corumbá, a contraparte exata
+do débito de CFOP 6152 de Guará.
+
+Não é estorno: é crédito que não podia ter sido tomado, e por isso fica em
+parcela própria na apuração. A identidade que a auditoria valida passa a ser:
+
+```
+crédito mantido + estorno + crédito indevido = crédito bruto
+```
+
+> A apuração **consolidada** de Julho somava esse valor ao crédito mantido
+> (26.503,24 = 12.079,22 + 14.424,02). A **individualizada** de Corumbá, não.
+> Vale a individualizada.
+
+### 3.3. Demais regras de MS
+
 | Item | Regra | Situação |
 |---|---|---|
-| Entradas em geral | Estorno conforme alíquota de entrada vigente, limitando o crédito mantido | A homologar: base exata do proporcional (ver `06-decisoes-pendentes.md`) |
 | Entrada interestadual > 4% | Crédito mantido limitado a 4% | Escopo v1.0, item 5.3 |
 | Entrada a 4% | Crédito mantido de **0,941176%** | Escopo v1.0, item 5.3 |
 | Fertilizante interno MS | Manutenção de **0,941176%** | Escopo v1.0, item 5.4 |

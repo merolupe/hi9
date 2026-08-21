@@ -17,6 +17,7 @@ from ..parametros import Parametros
 EXCEDENTE = "excedente_sobre_carga_saida"
 INTEGRAL = "integral"
 INTEGRAL_NAS_CARGAS = "integral_nas_cargas"
+PROPORCIONAL = "proporcional_parcela_nao_tributada"
 NENHUM = "nenhum"
 
 
@@ -31,14 +32,23 @@ class ResultadoEstorno:
     credito_bruto: float = 0.0
     credito_mantido: float = 0.0
     estorno: float = 0.0
+    credito_indevido: float = 0.0
     debito: float = 0.0
     regime: str = ""
     regra: str = ""
 
     @property
     def confere(self) -> bool:
-        """Identidade que a auditoria valida: mantido + estorno = bruto."""
-        return abs(self.credito_mantido + self.estorno - self.credito_bruto) < 0.005
+        """Identidade que a auditoria valida.
+
+        crédito mantido + estorno + crédito indevido = crédito bruto
+
+        O crédito indevido fica em parcela própria porque não é estorno: é
+        crédito que não podia ter sido tomado. Somá-lo ao mantido — como fez a
+        apuração consolidada de Julho/2026 — esconde o problema no resultado.
+        """
+        soma = self.credito_mantido + self.estorno + self.credito_indevido
+        return abs(soma - self.credito_bruto) < 0.005
 
 
 def _regime_da_filial(estabelecimento: str | None, params: Parametros) -> tuple[str, dict]:
@@ -74,6 +84,15 @@ def calcular(tratada: LinhaTratada, params: Parametros) -> ResultadoEstorno:
     if dados.get("entrada_saida") == "Saída":
         return ResultadoEstorno(
             debito=icms, regime=nome_regime, regra="saída — débito de ICMS"
+        )
+
+    indevido = _credito_indevido(tratada, regime)
+    if indevido is not None:
+        return ResultadoEstorno(
+            credito_bruto=icms,
+            credito_indevido=icms,
+            regime=nome_regime,
+            regra=indevido,
         )
 
     categoria = tratada.classificacao.categoria
@@ -120,6 +139,23 @@ def _aplicar(
             return icms, f"entrada beneficiada a {carga:g}% — estorna 100% do crédito"
         return 0.0, f"carga {carga}% fora das beneficiadas — mantém o crédito"
 
+    if formula == PROPORCIONAL:
+        parcelas = {float(k): float(v) for k, v in
+                    (regime.get("parcela_nao_tributada") or {}).items()}
+        if carga is None:
+            return 0.0, "carga indeterminada — nada a estornar"
+        if carga not in parcelas:
+            raise RegimeDesconhecido(
+                f"a carga de {carga:g}% não tem `parcela_nao_tributada` no regime "
+                f"— cadastre-a em regimes.yaml ou confirme que a operação é válida"
+            )
+        parcela = parcelas[carga]
+        return (
+            icms * parcela,
+            f"ICMS × parcela não tributada da carga de {carga:g}% "
+            f"({parcela:.4%}) = {icms:,.2f} × {parcela}",
+        )
+
     if formula == EXCEDENTE:
         referencia = float(regime.get("carga_saida_referencia", 0.0))
         if carga is None or carga <= referencia:
@@ -136,3 +172,13 @@ def _aplicar(
         f"fórmula de estorno {formula!r} não é reconhecida — as válidas são "
         f"{EXCEDENTE}, {INTEGRAL}, {INTEGRAL_NAS_CARGAS} e {NENHUM}"
     )
+
+
+def _credito_indevido(tratada: LinhaTratada, regime: dict[str, Any]) -> str | None:
+    """Devolve o motivo se o crédito da linha não puder ser apropriado."""
+    for item in regime.get("creditos_indevidos") or []:
+        if tratada.origem.cfop_int in set(item.get("cfop") or []):
+            pendente = "" if item.get("homologado", True) else " (regra não homologada)"
+            motivo = " ".join(str(item.get("motivo", "")).split())
+            return f"CFOP {tratada.origem.cfop_int} — crédito indevido{pendente}: {motivo}"
+    return None

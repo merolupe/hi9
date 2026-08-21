@@ -23,23 +23,43 @@ regimes:
     frete_venda_intraestadual: sem_credito # diferido/isento
     difal: conta_grafica
 
-  ms_estorno_excedente:
+  ms_estorno_proporcional:
     descricao: >
-      Estorno do que excede a carga de saída, mesma mecânica de SP. É o que a
-      apuração manual de Julho/2026 aplicou em Corumbá — sobra um resíduo de
-      R$ 1,04 não explicado. Ver decisão pendente nº 2.
+      Estorno da parcela não tributada da operação: o crédito é reduzido até a
+      carga de 4%, aplicando o percentual de redução sobre o VALOR DO ICMS.
+      Não é a mecânica de SP — lá o estorno incide sobre o valor contábil.
+      Confirmado contra a apuração individualizada de Corumbá (Empresa 9),
+      aba ENTRADAS, colunas "Parcela não tributada" e "Valor ICMS a estornar".
     vigencia_inicio: 2025-01-01
-    formula_estorno: excedente_sobre_carga_saida
-    carga_saida_referencia: 4.0
-    base_do_estorno: valor_contabil
+    formula_estorno: proporcional_parcela_nao_tributada
+    base_do_estorno: valor_icms
+
+    # Percentual da operação que não é tributado, por carga efetiva da entrada.
+    # É a coluna "REDUÇÃO ATUAL" da tabela de operação interestadual, e o que
+    # sobra leva a carga a 4%: 12% × (1 − 0,6667) = 4,00% · 7% × (1 − 0,4286) = 4,00%.
+    #
+    # ATENÇÃO: são os percentuais ARREDONDADOS em 4 casas, e não as frações
+    # exatas (2/3 e 3/7). É o que a apuração de Julho/2026 usou, e a escolha
+    # vale R$ 1,04 em Corumbá. Ver decisão pendente nº 15.
+    parcela_nao_tributada:
+      4.0: 0.0
+      7.0: 0.4286
+      12.0: 0.6667
+
+    # Créditos que não podem ser apropriados. Não são estorno: são crédito que
+    # nunca existiu, e por isso ficam em coluna própria na apuração.
+    creditos_indevidos:
+      - cfop: [2152]
+        motivo: >
+          Transferência interestadual recebida. A apuração de Corumbá marca o
+          crédito como indevido — em Julho/2026 foram R$ 14.424,02, a contraparte
+          exata do débito de CFOP 6152 de Guará. A apuração consolidada somou
+          esse valor ao crédito mantido; a individualizada, não.
+        homologado: false
+
     isentos_de_estorno:
-      - materia_prima
-      - produto_acabado
-      - revenda
-      - retorno_industrializacao
       - ciap
       - complemento_icms
-      - devolucao_venda
     difal: guia_avulsa
 
   ms_beneficio_rio_brilhante:

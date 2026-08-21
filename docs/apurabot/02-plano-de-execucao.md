@@ -81,16 +81,19 @@ por estabelecimento:**
 | Matriz | SP | 0,00 | 0,00 | **0,00** |
 | Barra do Garças | MT | 50.309,07 | 50.309,07 | **0,00** |
 | Londrina | PR | 0,00 | 0,00 | **0,00** |
-| Corumbá | MS | 19.960,51 | 19.961,55 | −1,04 |
+| Corumbá | MS | 19.961,55 | 19.961,55 | **0,00** |
 | Rio Brilhante | MS | 322.288,31 | 331.236,11 | −8.947,80 |
 
 O **crédito bruto bate em todas as sete**, e os débitos de saída batem com a aba
-`Dinamica`. As duas diferenças são conhecidas e o teste exige o valor exato de
-cada uma:
+`Dinamica`. Sobra uma diferença, conhecida, e o teste exige o valor exato dela:
 
-- **Corumbá, R$ 1,04** — resíduo da planilha manual, decisão pendente nº 2.
 - **Rio Brilhante, R$ 8.947,80** — os R$ 9.019,01 da ICL Aditivos reclassificados
   à mão, menos o resíduo de R$ 71,21 da planilha.
+
+Corumbá é conferido contra a **apuração individualizada (Empresa 9)**, não contra
+a consolidada: estorno R$ 19.961,553359 e crédito a apropriar R$ 12.079,216641,
+exatos até a sexta casa. A consolidada trazia R$ 26.503,24 de crédito mantido
+porque somava a esse valor o crédito indevido de transferência.
 
 **Falta nesta entrega:** ajustes manuais aprovados lidos de `ajustes.xlsx`, e o
 benefício fiscal de Rio Brilhante, que é a Entrega 3 e depende do Termo de Acordo.
