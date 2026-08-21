@@ -29,10 +29,25 @@ técnico, foi resolvida com **99,87% de aderência** ao trabalho manual.
 
 ---
 
-## Entrega 1 — Base tratada e classificada
+## Entrega 1 — Base tratada e classificada ✅ concluída
 
 **Escopo:** camadas 1 a 4 (ingestão, normalização, equalização de carga,
 classificação).
+
+**Resultado medido contra Julho/2026:**
+
+| Verificação | Resultado |
+|---|---|
+| Linhas lidas do Livro Fiscal | 6.504 |
+| Linhas relevantes para ICMS | 2.345 — igual à aba `ICMS` da planilha manual |
+| Carga efetiva × classificação manual | 2.342 de 2.345 (99,87%) |
+| Totais por estabelecimento × entrada/saída × carga | idênticos à aba `Dinamica` |
+| Pendências | 22 linhas (`COMPLEMENTO DE PREÇO`, R$ 2.181,70) |
+| Testes | 24, dos quais 9 de regressão |
+
+As 3 divergências de carga são as notas da ICL Aditivos, reclassificadas à mão
+para aplicar a regra de MS. O teste de regressão **exige** que a diferença seja
+exatamente essa e de R$ 9.019,01 — qualquer outra falha o teste.
 
 - Leitura do Livro Fiscal `.xlsx` com validação de cabeçalho — falha clara se o
   layout do Sankhya mudar

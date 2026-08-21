@@ -1,0 +1,154 @@
+"""Camada 4 — classificação da operação.
+
+Regras avaliadas em ordem; a primeira que casar vence. O que não casar em
+nenhuma recebe `SEM REGRA` e bloqueia o encerramento da competência — nunca
+se classifica por adivinhação.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from ..ingestao import LinhaLivro
+from ..parametros import Parametros
+
+SEM_REGRA = "SEM REGRA"
+
+
+@dataclass(frozen=True)
+class ResultadoClassificacao:
+    categoria: str
+    regra: str
+    tratamento: str | None = None      # ex.: estorna_100_credito_entrada
+
+    @property
+    def e_pendencia(self) -> bool:
+        return self.categoria == SEM_REGRA
+
+
+def classificar(linha: LinhaLivro, params: Parametros) -> ResultadoClassificacao:
+    """Determina a categoria tributária de uma linha do Livro Fiscal."""
+    for etapa in (
+        _lancamento_sem_contabil,
+        _excecao_por_cfop,
+        _frete,
+        _mercadoria,
+    ):
+        resultado = etapa(linha, params)
+        if resultado is not None:
+            return resultado
+
+    return ResultadoClassificacao(
+        categoria=SEM_REGRA,
+        regra=(
+            f"CFOP {linha.cfop_int}, produto {linha.produto_codigo}, espécie "
+            f"{linha.dados.get('especie')} não casou com nenhuma regra"
+        ),
+    )
+
+
+def _lancamento_sem_contabil(linha, params) -> ResultadoClassificacao | None:
+    for item in params.classificacao.get("lancamentos_sem_contabil") or []:
+        produto = item.get("produto")
+        cfops = set(item.get("cfop") or [])
+        if (produto is not None and linha.produto_codigo == str(produto)) or (
+            cfops and linha.cfop_int in cfops
+        ):
+            return ResultadoClassificacao(
+                categoria=item["categoria"],
+                regra=f"lançamento sem contábil — {item.get('descricao', '')}",
+            )
+    return None
+
+
+def _excecao_por_cfop(linha, params) -> ResultadoClassificacao | None:
+    for excecao in params.classificacao.get("excecoes_cfop") or []:
+        if linha.cfop_int in set(excecao.get("cfop") or []):
+            return ResultadoClassificacao(
+                categoria=excecao["categoria"],
+                tratamento=excecao.get("regra"),
+                regra=(
+                    f"CFOP {linha.cfop_int} — "
+                    f"{excecao.get('descricao') or excecao['categoria']}"
+                ),
+            )
+    return None
+
+
+def _frete(linha, params) -> ResultadoClassificacao | None:
+    fretes = params.classificacao["fretes"]
+    identificacao = fretes["identificacao"]
+    especie = str(linha.dados.get("especie") or "").strip()
+    modelo = str(linha.dados.get("modelo") or "")
+    e_frete = especie == identificacao["especie_documento"] or modelo.startswith(
+        str(identificacao["modelo_documento"])
+    )
+    if not e_frete:
+        return None
+
+    descricao = str(linha.dados.get("produto_descricao") or "").casefold()
+    for finalidade in fretes["finalidades"]:
+        if finalidade["contem"].casefold() in descricao:
+            return ResultadoClassificacao(
+                categoria=finalidade["categoria"],
+                regra=f"CT-e com finalidade {finalidade['contem']!r}",
+            )
+
+    for categoria, cfops in (fretes.get("fallback_cfop") or {}).items():
+        if linha.cfop_int in set(cfops):
+            return ResultadoClassificacao(
+                categoria=categoria,
+                regra=(
+                    f"CT-e sem finalidade reconhecida na descrição; classificado "
+                    f"pelo CFOP {linha.cfop_int}"
+                ),
+            )
+
+    return ResultadoClassificacao(
+        categoria=SEM_REGRA,
+        regra=(
+            f"CT-e com descrição {linha.dados.get('produto_descricao')!r} e CFOP "
+            f"{linha.cfop_int} não casou com nenhuma finalidade de frete"
+        ),
+    )
+
+
+def _mercadoria(linha, params) -> ResultadoClassificacao | None:
+    classif = params.classificacao
+    codigo = linha.produto_codigo
+    if not codigo:
+        return None
+
+    # 1. Cadastro de produtos — a exceção manda sobre o padrão do prefixo.
+    cadastro = (params.produtos.get("produtos") or {})
+    item = cadastro.get(int(codigo)) if codigo.isdigit() else None
+    if item:
+        return ResultadoClassificacao(
+            categoria=item["categoria"],
+            regra=f"produto {codigo} no cadastro — {item.get('descricao', '')}",
+        )
+
+    # 2. Padrão pelo prefixo do código do produto.
+    #
+    # O prefixo vem ANTES do CFOP de propósito. O CFOP de compra diz para que
+    # a mercadoria foi adquirida; a regra de estorno pergunta o que ela É.
+    # Uma embalagem comprada com CFOP 1101 (compra para industrialização)
+    # continua sendo embalagem e continua estornando.
+    padrao = (classif.get("prefixo_produto") or {}).get(codigo[0])
+    if padrao:
+        return ResultadoClassificacao(
+            categoria=padrao,
+            regra=f"produto {codigo} — prefixo {codigo[0]} indica {padrao}",
+        )
+
+    # 3. Sem prefixo conhecido, o CFOP decide a natureza.
+    if linha.cfop_int in set(classif.get("cfop_revenda") or []):
+        return ResultadoClassificacao(
+            categoria="revenda", regra=f"CFOP {linha.cfop_int} — compra para revenda"
+        )
+    if linha.cfop_int in set(classif.get("cfop_industrializacao") or []):
+        return ResultadoClassificacao(
+            categoria="materia_prima",
+            regra=f"CFOP {linha.cfop_int} — compra para industrialização",
+        )
+
+    return None

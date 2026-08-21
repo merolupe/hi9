@@ -30,3 +30,6 @@ Thumbs.db
 ~$*
 .vscode/
 .idea/
+
+# Saídas geradas pelo motor
+Base_Tratada_*.xlsx

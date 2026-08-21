@@ -14,7 +14,29 @@ relevancia_icms:
   excluir_documento_cancelado: true          # coluna AF preenchida
 
 # ---------------------------------------------------------------------------
-# 2. Exceções por CFOP — têm precedência sobre tudo
+# 2. Lançamentos sem valor contábil — carga indeterminável por fórmula
+#    Estas linhas têm ICMS diferente de zero e valor contábil zero, então
+#    ICMS ÷ valor contábil não existe. A carga vem daqui, não do cálculo.
+# ---------------------------------------------------------------------------
+lancamentos_sem_contabil:
+  - produto: 615000001
+    cfop: [1604]
+    categoria: ciap
+    carga_efetiva: CIAP
+    descricao: Lançamento de crédito relativo à compra de bem para o ativo imobilizado
+
+  - produto: 701000075
+    categoria: complemento_icms
+    carga_efetiva: 4.0
+    descricao: Complemento de ICMS
+    # ATENÇÃO: os 4,0% são o que a apuração manual de Julho/2026 atribuiu às
+    # 6 linhas de complemento do mês (R$ 17.490,73 de ICMS). Não há regra
+    # escrita em "Pontos de Atenção" para esse caso.
+    # Pendente de confirmação — ver docs/apurabot/06-decisoes-pendentes.md nº 11.
+    homologado: false
+
+# ---------------------------------------------------------------------------
+# 3. Exceções por CFOP — têm precedência sobre tudo
 # ---------------------------------------------------------------------------
 excecoes_cfop:
   - cfop: [5927]
@@ -35,25 +57,40 @@ excecoes_cfop:
     regra: mantem_100
 
 # ---------------------------------------------------------------------------
-# 3. Fretes — a finalidade vem na descrição do CT-e (coluna R)
+# 4. Fretes — a finalidade vem na descrição do CT-e (coluna R)
 # ---------------------------------------------------------------------------
 fretes:
-  identificacao: { especie_documento: CT, modelo_documento: "57" }
+  identificacao:
+    especie_documento: CT
+    modelo_documento: "57"
+
+  # Avaliadas EM ORDEM, primeira que casar vence. O texto é procurado dentro
+  # da descrição do produto/serviço (coluna R), sem diferenciar maiúsculas.
+  # As mais específicas vêm primeiro: "Fretes sobre Compra Revenda" precisa
+  # ser testada antes de "Fretes sobre Compra".
   finalidades:
-    - texto: "Fretes sobre Vendas"                        -> frete_venda
-    - texto: "Fretes sobre Compra de Insumos (Custo)"     -> frete_compra
-    - texto: "Fretes sobre Compras (Almoxarifado)"        -> frete_compra
-    - texto: "Fretes sobre Compra Revenda"                -> frete_compra_revenda
-    - texto: "Fretes sobre Transf/ Remessa/ Retorno"      -> frete_transferencia
-    - texto: "Fretes sobre Transf/ Retorno - Venda conjunta" -> frete_transferencia
-  # Fallback quando a descrição não casar: CFOP do serviço de transporte.
+    - contem: "Fretes sobre Compra Revenda"
+      categoria: frete_compra_revenda
+    - contem: "Fretes sobre Compra de Insumos"
+      categoria: frete_compra
+    - contem: "Fretes sobre Compras (Almoxarifado)"
+      categoria: frete_compra
+    - contem: "Fretes sobre Transf/ Retorno - Venda conjunta"
+      categoria: frete_transferencia
+    - contem: "Fretes sobre Transf/ Remessa/ Retorno"
+      categoria: frete_transferencia
+    - contem: "Fretes sobre Vendas"
+      categoria: frete_venda
+
+  # Usado quando a descrição não casar com nenhuma finalidade acima.
   fallback_cfop:
     frete_compra: [1352, 2352, 1353, 2353]
     frete_venda: [5352, 6352, 5353, 6353]
+
   sem_correspondencia: SEM_REGRA
 
 # ---------------------------------------------------------------------------
-# 4. Mercadorias — prefixo do código do produto (coluna Q)
+# 5. Mercadorias — prefixo do código do produto (coluna Q)
 #    Default por prefixo; o cadastro em produtos.yaml sobrepõe caso a caso.
 # ---------------------------------------------------------------------------
 prefixo_produto:
@@ -68,7 +105,7 @@ cfop_revenda: [1102, 2102, 1113, 2113]
 cfop_industrializacao: [1101, 2101, 3101]
 
 # ---------------------------------------------------------------------------
-# 5. DIFAL — itens fora do processo produtivo usam o ICMS do XML
+# 6. DIFAL — itens fora do processo produtivo usam o ICMS do XML
 #    Ver decisão pendente nº 8.
 # ---------------------------------------------------------------------------
 difal:
