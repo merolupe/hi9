@@ -85,6 +85,19 @@ exigência central do documento de escopo.
                                            Painel 4 Resumo+memória   └──────────────┘
 ```
 
+### 3.0. A trava que a auditoria valida
+
+Em toda entrada com ICMS vale:
+
+```
+crédito mantido + estorno + crédito indevido = crédito bruto
+```
+
+O **crédito indevido** fica em parcela própria porque não é estorno: é crédito
+que não podia ter sido tomado. Somá-lo ao mantido — como a apuração consolidada
+de Julho/2026 fez com a transferência recebida em Corumbá — esconde o problema
+dentro do resultado.
+
 ### 3.1. Rastreabilidade obrigatória
 
 Toda linha que sai de qualquer camada carrega, além do valor:
@@ -217,8 +230,11 @@ Isso vira um teste automático:
 
 ## 8. O que esta arquitetura assume
 
-- O layout do Livro Fiscal do Sankhya é estável. A validação de cabeçalho falha
-  cedo e com mensagem clara se mudar (risco previsto no escopo).
+- **Dois layouts de extração são suportados.** O `Movimento Livros Fiscais`
+  (66 colunas, padrão a partir de 08/2026, traz o TOP) e a extração antiga da
+  apuração (52 colunas). A ingestão procura o cabeçalho nas 10 primeiras linhas
+  e valida 14 colunas essenciais, falhando com mensagem clara se faltar alguma.
+  Um teste prova que os dois produzem apuração idêntica.
 - O Fiscalbot já entregou o Livro com os lançamentos conferidos. O Apurabot
   apura, não corrige lançamento.
 - MS/Rio Brilhante entra **agora** (mudança estratégica em relação ao escopo v1.0,

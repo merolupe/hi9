@@ -78,7 +78,15 @@ def dinamica(arquivo_julho):
 def test_le_o_livro_inteiro(base_julho):
     assert len(base_julho.livro) == 6504
     assert base_julho.competencia == "2026-07"
-    assert base_julho.livro.colunas_ausentes == []
+
+    # A extração da apuração é anterior ao extrato "Movimento Livros Fiscais" e
+    # não traz as colunas dele. Nenhuma é essencial — a apuração roda sem elas,
+    # como as demais asserções deste arquivo comprovam.
+    assert set(base_julho.livro.colunas_ausentes) == {
+        "Tipo Operação", "Descrição (Tipo de Operação)", "Observação",
+        "Vlr. DIFAL UF Remet.", "Vlr. DIFAL UF Destino",
+        "Nro. único pedido", "Origem",
+    }
 
 
 def test_reproduz_a_quantidade_de_linhas_relevantes(base_julho, aba_icms):

@@ -298,29 +298,51 @@ Julho falhar, que é o comportamento correto para uma mudança de regra.
 
 **Padrão assumido:** manter o arredondado.
 
-## 16. 🟢 Coluna TOP — trocar heurística por dado
+## 16. 🟡 Coluna TOP — extração definida, classificação a validar
 
-O extrato `Movimento Livros Fiscais` traz duas colunas que a extração usada na
-apuração não tinha: **`Tipo Operação`** e **`Descrição (Tipo de Operação)`**.
-São 75 TOPs distintos em Julho/2026, e eles nomeiam a operação como ela foi
-lançada, em vez de deixá-la ser inferida de CFOP + prefixo do produto.
+**Respondido em 21/08/2026: a extração com TOP passa a ser o padrão mensal.**
 
-Confere exato com o que o motor hoje deduz por heurística:
+O extrato `Movimento Livros Fiscais` já é lido pelo motor, e um teste prova que
+ele produz **apuração idêntica** à extração antiga — mesmo crédito bruto, mesmo
+estorno, mesmo crédito mantido, nas sete filiais. Ele traz ainda a `Observação`
+(que liga o complemento de preço à nota complementada), as colunas de DIFAL e os
+51 documentos cancelados que a extração antiga filtrava.
 
-| TOP | Descrição | Linhas | ICMS (R$) | Hoje o motor deduz de |
+### 🟡 O que falta decidir: usar o TOP para classificar
+
+O TOP nomeia a operação **como ela foi lançada**. Onde ele concorda com a
+heurística atual, trocar é ganho puro de confiabilidade. Mas há **três casos em
+que ele discorda**, e cada um é uma decisão tributária:
+
+| TOP | Descrição | Hoje classificado como | Linhas | ICMS (R$) |
 |---|---|---|---|---|
-| 2310 | CIAP | 3 | 24.903,24 | CFOP 1604 |
-| 2316 + 3216 | NF Complementar ICMS | 6 | 17.490,73 | produto 701000075 |
-| 3217 | NF Complementar Preço | 22 | 2.181,70 | produto 401002106 |
-| 49 · 51 · 59 | Fretes | 1.652 | 891.356,65 | espécie CT-e + descrição |
-| 3297 + 8888 | Quebras (Acerto de Estoque) | 17 | — | CFOP 5927 |
-| 2108 | Compra de Embalagem | 4 | 23.475,30 | prefixo `2` do produto |
-| 2103 | Compra de MP | 214 | 368.978,94 | prefixo `1` do produto |
-| 21200-21202 | Retorno de Industrialização | 106 | 16.464,48 | CFOP 2903/2906 |
+| **2103** | Compra de MP | 210 como `materia_prima`, **4 como `produto_quimico`** | 214 | 368.978,94 |
+| **2124** | Compra com Moeda Importação- mãe | 47 como `materia_prima`, **1 como `revenda`** (Enxofre) | 48 | 3.129.066,39 |
+| **2130** | Compra em Moeda | 6 como `materia_prima`, **50 como `produto_quimico`** | 56 | 198.836,35 |
 
-**Proposta:** usar o TOP como sinal primário de classificação, mantendo a
-heurística atual como fallback para extrações que não tenham a coluna.
+Em SP, matéria-prima **não** estorna e produto químico **estorna** — então a
+escolha muda valor. O Enxofre é o caso mais claro: o TOP diz "compra
+importação", mas a apuração o trata como **revenda**, e é isso que a aba ESTORNO
+confirma com R$ 474.416,28 de estorno zero.
 
-**Pergunta:** a extração com TOP passa a ser o padrão mensal? Se sim, o cadastro
-de produtos encolhe muito — ele deixa de ser a fonte da categoria e vira só
-exceção.
+**Proposta de desenho:** o TOP entra como sinal primário, e o **cadastro de
+produtos continua sobrepondo** — assim o TOP resolve os 95% e o cadastro guarda
+as exceções que o fiscal decidiu. A ordem ficaria:
+
+```
+1. lançamentos sem contábil (CIAP, complemento de ICMS)
+2. cadastro de produtos          ← exceção decidida pelo fiscal, vence tudo
+3. TOP                            ← a operação como foi lançada
+4. exceções por CFOP (quebra, devolução, retorno)
+5. finalidade do frete (descrição do CT-e)
+6. prefixo do código do produto
+7. SEM REGRA
+```
+
+**Pergunta:** o TOP `2103 Compra de MP` deve mandar sobre o cadastro no caso do
+ácido fosfórico — isto é, ele é matéria-prima porque foi lançado assim, ou é
+produto químico e o lançamento é que deveria mudar?
+
+**Enquanto não há resposta, a classificação por TOP não foi implementada.** A
+coluna é lida, viaja na base tratada e está disponível para conferência.
+

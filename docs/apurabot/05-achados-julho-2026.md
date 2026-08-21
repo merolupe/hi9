@@ -153,11 +153,30 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 
 ## 7. Riscos que a análise reduziu ou confirmou
 
-| Risco do escopo v1.0 | Situação após a análise |
+| Risco do escopo v1.0 | Situação em 21/08/2026 |
 |---|---|
 | Volume elevado / desempenho | **Descartado.** 6,5 mil linhas. |
-| Equalização de carga exige julgamento humano | **Muito reduzido.** 99,87% por algoritmo. |
-| Classificação exige julgamento humano | **Reduzido.** Sinais existem na base; resta o cadastro de 829 produtos. |
-| Regra tributária não mapeada | **Ativo.** Tratado com status `SEM REGRA` bloqueando o fechamento. |
-| Automação de MS prematura | **Ativo e agora em fase 1.** Ver decisões pendentes. |
-| Mudança de layout do Sankhya | **Ativo.** Mitigado por validação de cabeçalho na ingestão. |
+| Equalização de carga exige julgamento humano | **Resolvido.** 99,87% por algoritmo, e as 3 divergências são intervenção manual, não erro. |
+| Classificação exige julgamento humano | **Muito reduzido.** Julho fecha com zero pendências, e o extrato novo traz o TOP, que nomeia a operação. |
+| Regra tributária não mapeada | **Reduzido.** Tratado com `SEM REGRA` bloqueando o fechamento; nada pendente em Julho. |
+| Automação de MS prematura | **Parcialmente resolvido.** Corumbá reproduz exato; o benefício de RB aguarda decisão. |
+| Mudança de layout do Sankhya | **Mitigado na prática.** O motor lê dois layouts e valida o cabeçalho, procurando-o nas 10 primeiras linhas. |
+
+## 8. O que a implementação corrigiu na própria análise
+
+Dois números desta análise estavam errados e só apareceram ao escrever o motor:
+
+**O denominador do 99,87%.** O script de análise pulava em silêncio 6 linhas de
+`COMPLEMENTO DE ICMS` (R$ 17.490,73) que chegam com valor contábil zero. Com o
+denominador completo o índice inicial era 99,62%; tratadas por parâmetro, voltou
+a 99,87% — desta vez sobre as 2.345 linhas.
+
+**A ordem da classificação.** O CFOP de compra vencia a categoria do produto, e
+embalagem comprada com CFOP 1101 virava matéria-prima. O CFOP diz *para que* a
+mercadoria foi comprada; a regra de estorno pergunta *o que ela é*. Invertido, a
+conferência do Enxofre de revenda passou a bater exato com a aba ESTORNO
+(R$ 474.416,28).
+
+E um terceiro, na apuração consolidada e não na minha análise: **Corumbá não
+usava a mecânica de SP**, e o crédito indevido de transferência estava somado ao
+crédito mantido. Ver `06-decisoes-pendentes.md`, item 2.

@@ -1,79 +1,80 @@
 # Apurabot — Dicionário do Livro Fiscal (Sankhya)
 
-> Layout observado na extração de Julho/2026: **52 colunas**, uma linha por item
-> de documento fiscal. A ingestão valida este cabeçalho e falha com mensagem
-> clara se o Sankhya mudar o layout.
+O Apurabot lê **dois layouts** de extração. Ambos foram conferidos contra
+Julho/2026 e produzem apuração idêntica, centavo a centavo.
 
-| # | Coluna | Uso no Apurabot |
-|---|---|---|
-| A | Report | — |
-| B | Status | Situação do documento |
-| C | Data Inclusão/Alteração | Auditoria de inclusão posterior |
-| D | **Nro único Nota** | **Chave interna do documento.** Agrupa os itens |
-| E | Diferença ICMS | Sinal de divergência vinda do Fiscalbot |
-| F | Sequência | Nº do item dentro da nota |
-| G | Empresa | Código do estabelecimento |
-| H | **Nome Fantasia (Empresa)** | **Estabelecimento apurado** |
-| I | Dt. do documento | Data de emissão |
-| J | **Dt. do movimento** | **Define a competência** |
-| K | Empresa/Parceiro | Código do parceiro |
-| L | Descrição Parceiro/Empresa | Nome do parceiro |
-| M | Nro. da nota | Número do documento |
-| N | **CFOP** | **Classificação da operação** |
-| O | Descrição da CFOP | Apoio à classificação |
-| P | **Cód. de tributação (CST)** | **Filtro de relevância para ICMS** |
-| Q | **Produto** | **Código — o prefixo indica a categoria** |
-| R | Descrição (Produto) | Nos CT-e, traz a **finalidade do frete** |
-| S | **Vlr. contábil** | **Base do cálculo do estorno** |
-| T | Base do ICMS | `ICMS ÷ base = alíquota exata` |
-| U | **Alíquota ICMS** | Teto da carga nominal na equalização |
-| V | **Vlr. do ICMS** | Crédito ou débito |
-| W | Carga | `ICMS ÷ valor contábil` — carga bruta, com artefatos |
-| X | **Carga efetiva** | **Carga nominal.** Hoje manual; passa a ser calculada |
-| Y | Isentas de ICMS | Conciliação |
-| Z | Outras ICMS | Conciliação |
-| AA | Vlr. do IPI | Compõe o valor contábil |
-| AB | **UF de Origem** | Intra × interestadual |
-| AC | **UF de Destino** | Intra × interestadual |
-| AD | Série da nota | Identificação |
-| AE | Destino | `Empresa` (transferência) ou `Parceiro` |
-| AF | Dt. Cancelamento | **Preenchida = documento excluído da apuração** |
-| AG | **Espécie do documento** | `NF` ou `CT` — separa mercadoria de frete |
-| AH | Tipo de ICMS | Com/sem crédito ou débito |
-| AI | Base retenção | ST |
-| AJ | ICMS retenção | ST |
-| AK | Tipo de IPI | — |
-| AL | Base do IPI | — |
-| AM | Alíquota de IPI | — |
-| AN | Isentas de IPI | — |
-| AO | Outras IPI | — |
-| AP | **Entrada/Saída** | **Separa crédito de débito** |
-| AQ | Modelo do Documento | `55` NF-e · `57` CT-e · `22` telecom · `06` energia |
-| AR | **Chave NF-e** | **Cruzamento com o XML no DIFAL** |
-| AS | Chave CT-e | Cruzamento de fretes |
-| AT | Chave CT-e de Referência | CT-e complementar/substituto |
-| AU | Cód. Cid. Início CT-e | Rota do frete |
-| AV | Nome (Cidade de Origem) | Rota do frete |
-| AW | Cód. Cid. Fim CT-e | Rota do frete |
-| AX | Nome (Cidade de Destino) | Rota do frete |
-| AY | Vlr. ICMS Complemento | Complemento de ICMS |
-| AZ | Nome Fantasia (Empresa Origem) | Origem em transferências |
+| Extração | Colunas | Cabeçalho | Situação |
+|---|---|---|---|
+| **Movimento Livros Fiscais** | 66 | linha 3 | **Padrão a partir de 08/2026** |
+| Extração da apuração | 52 | linha 1 | Legado — usada na apuração manual de Julho/2026 |
 
-## Estabelecimentos encontrados (Julho/2026)
+A ingestão procura o cabeçalho nas 10 primeiras linhas e valida 14 colunas
+essenciais. Se o Sankhya mudar o layout, ela falha com a lista do que faltou.
 
-| Estabelecimento | UF | Linhas | Regime |
+## Por que o extrato novo é melhor
+
+Ele traz três coisas que o antigo não tinha:
+
+| Coluna | Para quê |
+|---|---|
+| **`Tipo Operação` (TOP)** e `Descrição (Tipo de Operação)` | Nomeia a operação **como ela foi lançada**, em vez de deixá-la ser inferida de CFOP + prefixo do produto |
+| `Observação` | Liga o complemento de preço à nota complementada (*"COMPLEMENTO DE PREÇO REFERENTE A NF 57081"*) |
+| `Vlr. DIFAL UF Remet.` e `Vlr. DIFAL UF Destino` | Base para a Entrega 5 |
+
+E inclui os **documentos cancelados**, que o extrato antigo filtrava — 51 em
+Julho/2026, todos com ICMS zero. O motor os descarta na ingestão, mas tê-los na
+base permite o controle de integridade "documentos cancelados" que o escopo pede.
+
+## Colunas essenciais
+
+Sem estas o motor não roda:
+
+`Nro único Nota` · `Nome Fantasia (Empresa)` · `Dt. do movimento` · `CFOP` ·
+`Cód. de tributação` · `Vlr. contábil` · `Base do ICMS` · `Alíquota ICMS` ·
+`Vlr. do ICMS` · `UF de Origem` · `UF de Destino` · `Entrada/Saída` ·
+`Espécie do documento` · `Produto`
+
+## As colunas que o motor usa
+
+| Coluna | Uso no Apurabot |
+|---|---|
+| **Nro único Nota** | Chave interna do documento; agrupa os itens |
+| **Nome Fantasia (Empresa)** | Estabelecimento apurado |
+| **Dt. do movimento** | Define a competência |
+| **CFOP** + Descrição da CFOP | Classificação da operação e exceções (quebra, devolução, retorno) |
+| **Cód. de tributação (CST)** | Apoio à relevância; o discriminante real é ICMS ≠ 0 |
+| **Produto** | O prefixo indica a categoria: `1` produto · `2` embalagem · `6` ativo · `7` frete |
+| **Descrição (Produto)** | Nos CT-e, traz a **finalidade do frete** |
+| **Vlr. contábil** | Base do estorno em SP |
+| **Base do ICMS** | `ICMS ÷ base = alíquota exata` |
+| **Alíquota ICMS** | Teto da carga nominal na equalização |
+| **Vlr. do ICMS** | Crédito, débito e base do estorno em MS |
+| **UF de Origem / Destino** | Intra × interestadual — decide o adicional de 13% do benefício de RB |
+| **Entrada/Saída** | Separa crédito de débito |
+| **Espécie do documento** | `NF` ou `CT` — separa mercadoria de frete |
+| **Dt. Cancelamento** | Preenchida = documento excluído da apuração |
+| **Chave NF-e** | Cruzamento com o XML no DIFAL |
+| **Tipo Operação (TOP)** | Operação como lançada — ver seção abaixo |
+| **Observação** | Referência da nota complementada |
+
+Colunas de IPI, ST, FCP, cidades de CT-e, conta contábil e contatos são lidas e
+preservadas na base tratada para rastreabilidade, mas não entram no cálculo de
+ICMS.
+
+## Estabelecimentos
+
+| Estabelecimento | UF | Linhas em 07/2026 | Regime |
 |---|---|---|---|
 | HINOVE (FILIAL GUARÁ) | SP | 3.925 | Equilíbrio fiscal — **centralizadora** |
 | HINOVE (REGISTRO) | SP | 1.030 | Equilíbrio fiscal — centralizado |
 | HINOVE (MATRIZ) | SP | 181 | Equilíbrio fiscal — centralizado |
-| HINOVE (RIO BRILHANTE) | MS | 767 | Estorno + **benefício fiscal (Termo de Acordo)** |
+| HINOVE (RIO BRILHANTE) | MS | 767 | Estorno + **benefício fiscal (Termo de Acordo 1.190/2018)** |
 | HINOVE (CORUMBÁ- MS) | MS | 123 | Estorno proporcional |
 | HINOVE (BARRA DO GARÇAS - MT) | MT | 373 | Diferimento — estorna 100% |
 | HINOVE (LONDRINA) | PR | 104 | Diferimento — mantém 100% |
 
-> Atenção ao cadastro: o nome aparece como `HINOVE  (REGISTRO)` (dois espaços) e
-> `HINOVE (CORUMBÁ- MS)` (sem espaço antes de `MS`). A normalização casa o
-> estabelecimento por **código da empresa** (coluna G), não pelo nome.
+> O nome aparece como `HINOVE  (REGISTRO)` (dois espaços) e `HINOVE (CORUMBÁ- MS)`
+> (sem espaço antes de `MS`). A normalização compara os nomes ignorando espaçamento.
 
 ## Regra de relevância para ICMS
 
@@ -84,18 +85,35 @@ as de CST `40`, `41`, `50`, `51` e `60`, nenhuma das quais tinha ICMS.
 **Sobre o CST `90`:** das 1.805 linhas de CST 90 do mês, 1.800 têm ICMS zero e
 saem. As 5 restantes entraram na apuração manual e são de apenas dois tipos:
 
-| Tipo | CFOP | Linhas | Valor (R$) | Onde apareceu na apuração manual |
+| Tipo | CFOP | TOP | Linhas | Valor (R$) |
 |---|---|---|---|---|
-| Lançamento de crédito de ativo (CIAP) | 1604 | 3 | 24.903,24 | linhas "CIAP" da aba ESTORNO — RB 2.146,57 · Registro 10.545,88 · Guará 12.210,79 |
-| Devolução de compra de uso e consumo | 5556 | 2 | 13,59 | ajuste de crédito de Registro |
+| Lançamento de crédito de ativo (CIAP) | 1604 | 2310 | 3 | 24.903,24 |
+| Devolução de compra de uso e consumo | 5556 | 3001 | 2 | 13,59 |
 
-Ou seja, CST 90 não é uma categoria tributária a tratar: é o CST que o Sankhya usa
-para esses dois lançamentos. Ambos são relevantes e ambos já têm regra própria na
-matriz — CIAP mantém 100% conforme saídas tributadas; devolução de uso e consumo
-estorna o crédito da compra.
+CST 90 não é uma categoria tributária a tratar: é o CST que o Sankhya usa para
+esses dois lançamentos, e ambos já têm regra própria na matriz.
 
-> **Cuidado na equalização:** as 3 linhas de CIAP têm **valor contábil e base
-> iguais a zero** com ICMS diferente de zero. A fórmula `ICMS ÷ valor contábil`
-> divide por zero nelas. Por isso a carga dessas linhas não é numérica: elas são
-> identificadas pelo CFOP `1604` e recebem a marca `CIAP` antes da equalização,
-> exatamente como na planilha manual.
+> **Cuidado na equalização:** as linhas de CIAP e de complemento de ICMS têm
+> **valor contábil e base iguais a zero** com ICMS diferente de zero. A fórmula
+> `ICMS ÷ valor contábil` divide por zero nelas. São identificadas antes da
+> equalização, pelo bloco `lancamentos_sem_contabil` de `classificacao.yaml`.
+
+## O TOP — 75 tipos de operação em Julho/2026
+
+O TOP nomeia a operação. Confere exato com o que o motor hoje deduz por
+heurística:
+
+| TOP | Descrição | Linhas | ICMS (R$) | Hoje deduzido de |
+|---|---|---|---|---|
+| 2310 | CIAP | 3 | 24.903,24 | CFOP 1604 |
+| 2316 · 3216 | NF Complementar ICMS | 6 | 17.490,73 | produto 701000075 |
+| 3217 | NF Complementar Preço | 22 | 2.181,70 | produto 401002106 |
+| 49 · 51 · 59 | Fretes | 1.652 | 891.356,65 | espécie CT-e + descrição |
+| 3297 · 8888 | Quebras (Acerto de Estoque) | 17 | — | CFOP 5927 |
+| 2108 | Compra de Embalagem | 4 | 23.475,30 | prefixo `2` do produto |
+| 2103 | Compra de MP | 214 | 368.978,94 | prefixo `1` do produto |
+| 21200-21202 | Retorno de Industrialização | 106 | 16.464,48 | CFOP 2903/2906 |
+
+**O TOP ainda não é usado na classificação.** A ingestão já o lê e ele viaja na
+base tratada; usá-lo como sinal primário depende de uma decisão tributária —
+ver `06-decisoes-pendentes.md`, item 16.
