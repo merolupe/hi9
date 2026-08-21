@@ -78,5 +78,5 @@
 ## Regra de relevância para ICMS
 
 Uma linha entra na apuração de ICMS quando tem carga efetiva — o que equivale a
-CST `00`, `20` ou `90` **com ICMS diferente de zero**. Ficam de fora, sem exceção
+CST `00`, `20` ou `90`(?) **com ICMS diferente de zero**. Ficam de fora, sem exceção
 observada em Julho/2026, as linhas de CST `40`, `41`, `50`, `51` e `60`.
