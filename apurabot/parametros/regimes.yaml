@@ -81,23 +81,6 @@ regimes:
       - ciap
     difal: guia_avulsa
 
-  ms_estorno_proporcional_legado:
-    descricao: >
-      Mantido só para não perder os parâmetros do escopo v1.0 enquanto a
-      decisão nº 3 não vem. Nenhuma filial aponta para cá.
-    vigencia_inicio: 2025-01-01
-    credito_mantido_maximo: 4.0
-    # Escopo v1.0, itens 5.3 e 5.4. NÃO APLICADO: busca célula a célula nas 7
-    # abas da apuração de Julho/2026 não achou o percentual em uso. O fator que
-    # o gera está lá (Pontos de Atenção!F72 = 4/17 = 0,235294, e 4% × 4/17 =
-    # 0,941176%), mas a aplicação não. Decisão de 21/08/2026: seguir sem
-    # aplicar, com o teste de regressão como árbitro. Ver pendência nº 3.
-    credito_mantido_entrada_4pct:
-      valor: 0.941176
-      aplicado: false
-      fator_de_origem: 0.23529411764705882   # 4/17
-    difal: guia_avulsa
-
   mt_diferimento:
     descricao: Saídas diferidas — estorna 100% do crédito de entrada.
     vigencia_inicio: 2025-01-01

@@ -209,9 +209,24 @@ def test_retorno_de_industrializacao_bate_com_a_aba_estorno(base_julho):
     assert abs(total - 6_967.37) < CENTAVO
 
 
-def test_pendencias_bloqueiam_o_encerramento(base_julho):
-    """Em Julho/2026 sobram as 22 linhas de COMPLEMENTO DE PREÇO sem regra."""
-    assert not base_julho.pode_encerrar
-    pendentes = base_julho.com_pendencia
-    assert len(pendentes) == 22
-    assert {t.origem.produto_codigo for t in pendentes} == {"401002106"}
+def test_julho_fecha_sem_pendencia(base_julho):
+    """Com o COMPLEMENTO DE PREÇO classificado, não sobra nada bloqueando.
+
+    Era a última pendência da competência: 22 linhas, R$ 2.181,70 de ICMS.
+    A decisão de 21/08/2026 é que o complemento acompanha a nota complementada.
+    """
+    assert base_julho.com_pendencia == []
+    assert base_julho.pode_encerrar
+
+
+def test_cargas_toleradas_alertam_sem_bloquear(base_julho):
+    """As 30 linhas de 20,5% e as 6 de complemento de ICMS avisam, não travam."""
+    alertas = base_julho.com_alerta
+    assert len(alertas) == 36
+    assert all(not t.pendencias for t in alertas)
+
+
+def test_regua_homologada_nao_tem_dezenove_nem_vinte_e_cinco(parametros):
+    """Decisão de 21/08/2026: 19 e 25 saem das homologadas e viram toleradas."""
+    assert parametros.cargas_nominais == [4.0, 7.0, 12.0, 17.0, 18.0]
+    assert set(parametros.cargas_toleradas) == {19.0, 20.5, 25.0}
