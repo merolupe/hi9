@@ -104,7 +104,7 @@ beneficios_fiscais:
     documento: Termo de Acordo n. 1.190/2018
     vigencia_inicio: 2018-09-19
     vigencia_fim: 2032-12-31          # cláusula terceira, caput
-    homologado: true
+    homologado: false                 # <- o ALCANCE está em aberto, ver abaixo
 
     # Cláusula terceira, incisos I e II. O benefício é deduzido do saldo devedor
     # "que tenha resultado como efetiva e regularmente devido", ou seja, nunca
@@ -115,12 +115,19 @@ beneficios_fiscais:
       base: saldo_devedor
       limitado_ao_saldo_devedor: true
 
-    # "aplicável exclusivamente às operações realizadas com os produtos
-    # resultantes de sua própria industrialização neste Estado" — inciso I.
-    # Revenda de mercadoria de terceiros e remessas ficam de fora: o benefício
-    # que as alcançava era o da cláusula quarta, que expirou em 31/12/2022.
+    # ALCANCE DO BENEFÍCIO — EM ABERTO. Ver decisão pendente nº 1.
+    #
+    # O inciso I diz "aplicável exclusivamente às operações realizadas com os
+    # produtos resultantes de sua própria industrialização neste Estado". A
+    # apuração de Julho/2026, porém, aplicou os percentuais sobre TODAS as
+    # saídas. A diferença é de R$ 55 mil, e a decisão é da Gerência
+    # Fiscal/Tributária, não do motor.
+    #
+    # Enquanto não há decisão, o padrão é `todas_as_saidas` — reproduzir o que
+    # a apuração faz, e não impor uma leitura nova. Trocar para
+    # `cfop_de_producao_propria` é editar a linha abaixo.
     alcance:
-      criterio: cfop_de_producao_propria
+      criterio: todas_as_saidas       # ou: cfop_de_producao_propria
       cfop: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122]
       rateio_do_credito: participacao_do_debito
 

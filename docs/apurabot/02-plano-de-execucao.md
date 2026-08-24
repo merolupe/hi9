@@ -4,14 +4,14 @@
 > abrir, conferir e opinar — nunca com "está quase pronto".
 
 **Situação em 21/08/2026:** Julho/2026 é reproduzido da ingestão até a apuração
-por estabelecimento, e **fecha sem nenhuma pendência**. 80 testes automáticos.
+por estabelecimento, e **fecha sem nenhuma pendência**. 84 testes automáticos.
 
 | Entrega | Situação |
 |---|---|
 | 0 · Mapeamento técnico | ✅ concluída |
 | 1 · Base tratada e classificada | ✅ concluída |
 | 2 · Motor de ICMS: créditos, débitos e estornos | 🟡 falta só ajustes manuais |
-| 3 · Benefício fiscal de Rio Brilhante | ✅ concluída |
+| 3 · Benefício fiscal de Rio Brilhante | 🟡 motor pronto; alcance em aberto |
 | 4 · Centralização de São Paulo | ⬜ pode começar |
 | 5 · DIFAL | ⬜ falta o `.xlsx` de XML |
 | 6 · Interface e empacotamento | ⬜ pode começar |
@@ -86,28 +86,30 @@ reclassificados à mão, menos R$ 71,21 de resíduo da planilha.
 
 ---
 
-## Entrega 3 — Benefício fiscal de Rio Brilhante ✅
+## Entrega 3 — Benefício fiscal de Rio Brilhante 🟡
 
-**Termo de Acordo n. 1.190/2018, cláusula terceira**, em vigor até 31/12/2032:
-67% do saldo devedor nas operações com produtos de **própria industrialização**,
-mais 13% nas interestaduais (80%). A cláusula quarta, que alcançava revenda de
-mercadoria adquirida em outras UFs, expirou em 31/12/2022.
+**O motor está pronto**; o que falta é uma decisão tributária sobre o alcance.
 
-| | Débito (R$) | Crédito rateado | Saldo devedor | % | Benefício |
-|---|---|---|---|---|---|
-| Produção própria **intra** (5101, 5118) | 56.934,28 | 16.609,65 | 40.324,63 | 67% | **27.017,50** |
-| Produção própria **inter** (6101) | 355.339,89 | 103.664,62 | 251.675,27 | 80% | **201.340,22** |
-| Fora do alcance (5102, 6102, 5905, 6934) | 93.717,24 | 27.340,47 | — | — | — |
-| | | | | | **228.357,72** |
+Termo de Acordo n. 1.190/2018, cláusula terceira, em vigor até 31/12/2032: 67%
+do saldo devedor, mais 13% nas interestaduais. O texto restringe às operações
+com produtos de **própria industrialização**; a apuração de Julho aplicou sobre
+**todas** as saídas.
 
-A apuração manual de Julho lançou R$ 283.766,56 — **R$ 55.408,84 a mais**, valor
-que só fecha considerando todas as saídas. **O teste fixa o valor legal, não o
-lançado**, por decisão de 21/08/2026.
+| Critério | Benefício em Julho/2026 |
+|---|---|
+| `todas_as_saidas` — **padrão, reproduz a apuração** | R$ 277.369,17 |
+| `cfop_de_producao_propria` — leitura literal do Termo | R$ 228.357,72 |
+| Diferença | **R$ 49.011,45** |
 
-A memória de cálculo do benefício vai na aba `APURAÇÃO POR FILIAL`, passo a passo.
+O critério é parâmetro, os dois estão implementados e testados, e **nenhum é
+asseverado como correto**. Ver `06-decisoes-pendentes.md`, item 1.
 
-**Falta:** a contribuição ao **FADEFE**, condição de fruição — o Termo remete o
-percentual à lei. Ver `06-decisoes-pendentes.md`, item 17.
+Travas do motor: o benefício nunca supera o saldo devedor que o gerou, e tentar
+aplicar a cláusula quarta levanta erro com a data de expiração na mensagem. A
+memória de cálculo vai na aba `APURAÇÃO POR FILIAL`, passo a passo.
+
+**Falta ainda:** a contribuição ao **FADEFE**, condição de fruição — o Termo
+remete o percentual à lei. Ver item 17.
 
 ---
 
@@ -171,7 +173,7 @@ PER/DCOMP e emissão automática de NF-e de transferência.
 ```
 Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ⬜ ──► Entrega 6 ⬜ ──► Entrega 7 ⬜
                      │
-                     ├──►  Entrega 3 ✅  concluída
+                     ├──►  Entrega 3 🟡  motor pronto, alcance em aberto
                      ├──►  Entrega 5 ⬜   precisa: .xlsx de exemplo do XML
                      └──►  Entrega 8 ⬜   precisa: .xlsx da Base de Bens
 ```

@@ -12,6 +12,18 @@ from apurabot.nucleo.classificacao import ResultadoClassificacao
 CENTAVO = 0.005
 
 
+@pytest.fixture
+def parametros_literais(parametros):
+    """Parâmetros com o alcance na leitura literal do inciso I do Termo."""
+    import copy
+
+    p = copy.deepcopy(parametros)
+    p.regimes["beneficios_fiscais"]["ms_rio_brilhante"]["alcance"]["criterio"] = (
+        "cfop_de_producao_propria"
+    )
+    return p
+
+
 def saida(cfop, icms, uf_destino="MS"):
     dados = {
         "estabelecimento": "HINOVE (RIO BRILHANTE)",
@@ -43,11 +55,33 @@ def test_producao_propria_interestadual_rende_oitenta_por_cento(parametros):
 
 
 @pytest.mark.parametrize("cfop", [5102, 6102, 5905, 6934, 5910])
-def test_revenda_e_remessa_ficam_fora_do_alcance(parametros, cfop):
-    """A cláusula que as alcançava — a quarta — expirou em 31/12/2022."""
-    r = calcular([saida(cfop, 10_000.00)], "ms_rio_brilhante", 0.0, parametros)
+def test_no_criterio_literal_revenda_e_remessa_ficam_de_fora(parametros_literais, cfop):
+    """Leitura literal do inciso I: só produtos de própria industrialização.
+
+    Não é o critério em vigor — ver a decisão pendente nº 1. O teste garante
+    que, escolhido esse critério, ele faz o que promete.
+    """
+    r = calcular([saida(cfop, 10_000.00)], "ms_rio_brilhante", 0.0, parametros_literais)
     assert r.credito_presumido == 0.0
     assert r.debito_fora_do_alcance == 10_000.00
+
+
+def test_no_criterio_em_vigor_todas_as_saidas_entram(parametros):
+    """O padrão reproduz a apuração: revenda também recebe o benefício."""
+    r = calcular([saida(6102, 10_000.00, "SP")], "ms_rio_brilhante", 0.0, parametros)
+    assert r.credito_presumido == pytest.approx(8_000.00, abs=CENTAVO)
+    assert r.debito_fora_do_alcance == 0.0
+
+
+def test_criterio_de_alcance_desconhecido_falha(parametros):
+    import copy
+
+    from apurabot.nucleo.beneficio import BeneficioDesconhecido as Erro
+
+    p = copy.deepcopy(parametros)
+    p.regimes["beneficios_fiscais"]["ms_rio_brilhante"]["alcance"]["criterio"] = "xyz"
+    with pytest.raises(Erro, match="não é reconhecido"):
+        calcular([saida(5101, 100.0)], "ms_rio_brilhante", 0.0, p)
 
 
 def test_o_credito_mantido_abate_o_debito_antes_do_beneficio(parametros):
@@ -63,10 +97,10 @@ def test_credito_maior_que_o_debito_nao_gera_beneficio_negativo(parametros):
     assert r.credito_presumido == 0.0
 
 
-def test_o_credito_e_rateado_pela_participacao_do_debito(parametros):
+def test_o_credito_e_rateado_pela_participacao_do_debito(parametros_literais):
     """Inclusive com o que está fora do alcance — o crédito é da filial inteira."""
     linhas = [saida(6101, 60_000.00, "SP"), saida(6102, 40_000.00, "SP")]
-    r = calcular(linhas, "ms_rio_brilhante", 10_000.00, parametros)
+    r = calcular(linhas, "ms_rio_brilhante", 10_000.00, parametros_literais)
     assert r.inter.credito_rateado == pytest.approx(6_000.00, abs=CENTAVO)
     assert r.credito_fora_do_alcance == pytest.approx(4_000.00, abs=CENTAVO)
 

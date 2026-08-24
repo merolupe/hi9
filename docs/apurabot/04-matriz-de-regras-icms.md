@@ -131,10 +131,12 @@ interestaduais com mercadorias adquiridas em outras UFs, e 50% do imposto nas
 saídas interestaduais com itens importados. A cláusula oitava fixa o prazo de
 forma expressa.
 
-> **Em Julho/2026, portanto, revenda de mercadoria de terceiros não tem
-> benefício algum.** O cálculo do benefício **não está implementado** — aplicar a
-> regra como escrita muda o resultado de Julho em R$ 55 mil em relação ao que foi
-> lançado. Ver `06-decisoes-pendentes.md`, item 1.
+> **O alcance do benefício está em aberto.** O texto da cláusula terceira
+> restringe às operações com produtos de própria industrialização, mas a apuração
+> de Julho/2026 aplicou os percentuais sobre todas as saídas — diferença de
+> R$ 49 mil. Os dois critérios estão implementados como parâmetro, e o padrão
+> reproduz a apuração. **Nenhum é asseverado como correto** até a Gerência
+> Fiscal/Tributária decidir. Ver `06-decisoes-pendentes.md`, item 1.
 
 O benefício movimenta ainda um **controle de crédito outorgado**
 (código de ajuste `MS090004` — apropriação de crédito outorgado para abatimento

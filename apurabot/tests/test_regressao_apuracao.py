@@ -110,40 +110,77 @@ def test_mt_zera_o_credito_e_pr_zera_o_estorno(apuracao):
 # --------------------------------------------------------------------------
 
 BENEFICIO_LANCADO_EM_JULHO = 283_766.56
-BENEFICIO_PELO_TERMO = 228_357.72
 
 
-def test_beneficio_de_rio_brilhante_segue_o_termo_de_acordo(apuracao):
-    """O benefício alcança só a produção própria, como manda a cláusula terceira.
+def test_beneficio_de_rio_brilhante_reproduz_o_que_a_apuracao_faz(apuracao):
+    """O alcance do benefício é decisão em aberto, e o padrão não a antecipa.
 
-    A apuração manual de Julho/2026 lançou R$ 283.766,56, valor que só fecha
-    considerando TODAS as saídas. Aplicando a regra como o Termo escreve —
-    exclusivamente produtos de própria industrialização — o benefício é
-    R$ 228.357,72. A diferença de R$ 55.408,84 é a revenda de terceiros e as
-    remessas, que a cláusula quarta alcançava até 31/12/2022 e hoje não.
+    O parâmetro `alcance.criterio` está em `todas_as_saidas`, que é o que a
+    apuração de Julho/2026 fez. Com o crédito mantido daquela apuração
+    (R$ 138.666,94) o cálculo dá R$ 284.294,40 contra os R$ 283.766,56
+    lançados — 0,19%. Aqui o crédito é o corrigido, então o valor difere.
 
-    O teste fixa o valor legal, não o lançado.
+    A leitura literal do Termo (só produção própria) daria bem menos, e está
+    medida no teste seguinte. Nenhuma das duas é asseverada como correta —
+    ver docs/apurabot/06-decisoes-pendentes.md, item 1.
     """
     beneficio = apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio
     assert beneficio is not None
-    assert beneficio.credito_presumido == pytest.approx(
-        BENEFICIO_PELO_TERMO, abs=0.01
-    )
-    diferenca = beneficio.credito_presumido - BENEFICIO_LANCADO_EM_JULHO
-    assert diferenca == pytest.approx(-55_408.84, abs=0.01)
+    assert beneficio.criterio == "todas_as_saidas"
+    assert beneficio.credito_presumido == pytest.approx(277_369.17, abs=0.01)
+    assert beneficio.debito_fora_do_alcance == 0.0
 
 
+def test_a_leitura_literal_do_termo_daria_muito_menos(apuracao, base_julho):
+    """Quanto custa a decisão: R$ 49 mil de diferença entre as duas leituras.
+
+    O inciso I da cláusula terceira diz "exclusivamente às operações realizadas
+    com os produtos resultantes de sua própria industrialização neste Estado".
+    Restringindo a base aos CFOP de produção própria, o benefício cai.
+    """
+    import copy
+
+    from apurabot.nucleo.beneficio import calcular
+
+    params = copy.deepcopy(base_julho.parametros)
+    beneficio = params.regimes["beneficios_fiscais"]["ms_rio_brilhante"]
+    beneficio["alcance"]["criterio"] = "cfop_de_producao_propria"
+
+    filial = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
+    linhas = [
+        t for t in base_julho.linhas
+        if "RIO BRILHANTE" in str(t.origem.dados.get("estabelecimento"))
+    ]
+    literal = calcular(linhas, "ms_rio_brilhante", filial.credito_mantido, params)
+
+    assert literal.credito_presumido == pytest.approx(228_357.72, abs=0.01)
+    assert literal.debito_fora_do_alcance == pytest.approx(93_717.24, abs=CENTAVO)
+    diferenca = filial.beneficio.credito_presumido - literal.credito_presumido
+    assert diferenca == pytest.approx(49_011.45, abs=0.01)
+
+
+def test_a_apuracao_de_julho_nao_indica_prorrogacao_da_clausula_quarta(apuracao):
+    """Se a quarta valesse, a revenda interestadual teria 50%, não 67/80.
+
+    Débito de revenda interestadual (CFOP 6102) em Julho: R$ 47.298,29. Sob a
+    cláusula quarta o benefício dela seria metade do saldo devedor. O valor
+    lançado só fecha aplicando os percentuais da cláusula TERCEIRA sobre todas
+    as saídas — o que aponta para base ampliada, e não para a quarta prorrogada.
+    """
+    filial = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
+    beneficio = filial.beneficio
+    percentuais = {beneficio.intra.percentual, beneficio.inter.percentual}
+    assert percentuais == {67.0, 80.0}
+    assert 50.0 not in percentuais
 def test_so_rio_brilhante_tem_beneficio(apuracao):
     com_beneficio = [f.estabelecimento for f in apuracao.filiais.values() if f.beneficio]
     assert com_beneficio == ["HINOVE (RIO BRILHANTE)"]
 
 
-def test_a_base_do_beneficio_separa_producao_propria(apuracao):
+def test_a_base_do_beneficio_cobre_todo_o_debito_de_saida(apuracao):
+    """No critério em vigor, nada fica de fora — e a soma tem que fechar."""
     beneficio = apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio
-    assert beneficio.intra.debito == pytest.approx(56_934.28, abs=CENTAVO)
-    assert beneficio.inter.debito == pytest.approx(355_339.89, abs=CENTAVO)
-    assert beneficio.debito_fora_do_alcance == pytest.approx(93_717.24, abs=CENTAVO)
-    total = (beneficio.debito_beneficiado + beneficio.debito_fora_do_alcance)
+    total = beneficio.debito_beneficiado + beneficio.debito_fora_do_alcance
     assert total == pytest.approx(505_991.41, abs=CENTAVO)
 
 

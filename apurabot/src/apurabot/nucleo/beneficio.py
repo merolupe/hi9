@@ -23,6 +23,12 @@ from ..base_tratada import LinhaTratada
 from ..parametros import Parametros
 
 
+# Critérios de alcance. Qual deles vale é decisão da Gerência Fiscal/Tributária,
+# não do motor — ver docs/apurabot/06-decisoes-pendentes.md, item 1.
+CFOP_PRODUCAO_PROPRIA = "cfop_de_producao_propria"   # leitura literal do inciso I
+TODAS_AS_SAIDAS = "todas_as_saidas"                  # o que a apuração de Julho faz
+
+
 class BeneficioDesconhecido(Exception):
     """A filial aponta para um benefício que não existe ou não se aplica."""
 
@@ -48,6 +54,7 @@ class ParcelaBeneficiada:
 @dataclass
 class ResultadoBeneficio:
     documento: str = ""
+    criterio: str = ""
     intra: ParcelaBeneficiada = field(default_factory=ParcelaBeneficiada)
     inter: ParcelaBeneficiada = field(default_factory=ParcelaBeneficiada)
     debito_fora_do_alcance: float = 0.0
@@ -97,9 +104,17 @@ def calcular(
 
     presumido = beneficio["credito_presumido"]
     alcance = beneficio["alcance"]
+    criterio = alcance.get("criterio", CFOP_PRODUCAO_PROPRIA)
+    if criterio not in (CFOP_PRODUCAO_PROPRIA, TODAS_AS_SAIDAS):
+        raise BeneficioDesconhecido(
+            f"critério de alcance {criterio!r} não é reconhecido — os válidos são "
+            f"{CFOP_PRODUCAO_PROPRIA!r} e {TODAS_AS_SAIDAS!r}"
+        )
     cfops = set(alcance.get("cfop") or [])
 
-    resultado = ResultadoBeneficio(documento=beneficio.get("documento", nome_beneficio))
+    resultado = ResultadoBeneficio(
+        documento=beneficio.get("documento", nome_beneficio), criterio=criterio
+    )
     resultado.intra.percentual = float(presumido["saida_intraestadual"])
     resultado.inter.percentual = float(presumido["saida_interestadual"])
 
@@ -108,7 +123,7 @@ def calcular(
         icms = dados.get("valor_icms") or 0.0
         if not tratada.relevante or not icms or dados.get("entrada_saida") != "Saída":
             continue
-        if tratada.origem.cfop_int not in cfops:
+        if criterio == CFOP_PRODUCAO_PROPRIA and tratada.origem.cfop_int not in cfops:
             resultado.debito_fora_do_alcance += icms
             continue
         alvo = resultado.intra if not tratada.origem.interestadual else resultado.inter
@@ -148,11 +163,17 @@ def _ratear_credito(
 def _montar_memoria(resultado: ResultadoBeneficio, credito_mantido: float) -> None:
     linhas = [
         f"Termo: {resultado.documento}",
+        f"Alcance aplicado: {resultado.criterio}",
         f"Crédito mantido rateado pela participação do débito: {credito_mantido:,.2f}",
     ]
+    escopo = (
+        "de produção própria"
+        if resultado.criterio == CFOP_PRODUCAO_PROPRIA
+        else "(todas)"
+    )
     for nome, parcela in (("intraestadual", resultado.intra), ("interestadual", resultado.inter)):
         linhas.append(
-            f"Saída {nome} de produção própria: débito {parcela.debito:,.2f} "
+            f"Saída {nome} {escopo}: débito {parcela.debito:,.2f} "
             f"− crédito {parcela.credito_rateado:,.2f} = saldo devedor "
             f"{parcela.saldo_devedor:,.2f} × {parcela.percentual:g}% = "
             f"{parcela.credito_presumido:,.2f}"

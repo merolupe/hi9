@@ -8,50 +8,92 @@
 
 ---
 
-## 1. ✅ Rio Brilhante — crédito presumido *(respondida e implementada)*
+## 1. 🔴 Rio Brilhante — o alcance do benefício
 
 **Termo de Acordo n. 1.190/2018**, firmado em 19/09/2018, publicado no DOE 9.755.
 Base legal: LC estadual 93/2001 e Lei 4.049/2011.
 
-**Decisão de 21/08/2026: vale o que o Termo diz.**
+### O que o Termo diz
 
-### A regra implementada — cláusula terceira, em vigor até 31/12/2032
+**Cláusula terceira**, em vigor até 31/12/2032:
 
-| Inciso | Benefício | Alcance |
+| Inciso | Benefício | Alcance escrito |
 |---|---|---|
-| **I** | **67%** do saldo devedor do ICMS | **Exclusivamente** operações com produtos resultantes de **própria industrialização neste Estado** |
-| **II** | adicional de **13%**, totalizando **80%** | **Exclusivamente** operações **interestaduais** |
+| **I** | **67%** do saldo devedor do ICMS | *"aplicável **exclusivamente** às operações realizadas com os produtos resultantes de sua própria industrialização neste Estado"* |
+| **II** | adicional de **13%**, totalizando **80%** | *"aplicável **exclusivamente** nas operações interestaduais"* |
 
 O benefício é *"deduzido do saldo devedor que tenha resultado como efetiva e
-regularmente devido"* — nunca supera o saldo devedor que o gerou, e o motor
-valida isso.
+regularmente devido"*. Incisos III a VI tratam de diferimentos.
 
-**Cláusula quarta — expirou em 31/12/2022.** Dava 50% sobre saídas
-interestaduais com mercadorias adquiridas em outras UFs. Fica registrada em
-`regimes.yaml` com `aplicavel: false`, para que apuração de competência antiga
-continue reproduzível.
+**Cláusula quarta**, com prazo até 31/12/2022 pela cláusula oitava: crédito
+outorgado de **50%** do saldo devedor nas saídas interestaduais com mercadorias
+**adquiridas em outras UFs**, e crédito presumido de 50% do imposto nas saídas
+interestaduais com **itens importados**.
 
-### Resultado em Julho/2026
+### 🔴 A apuração de Julho/2026 não segue esse alcance
 
-| | Débito (R$) | Crédito rateado | Saldo devedor | % | Benefício |
-|---|---|---|---|---|---|
-| Produção própria **intra** (5101, 5118) | 56.934,28 | 16.609,65 | 40.324,63 | 67% | **27.017,50** |
-| Produção própria **inter** (6101) | 355.339,89 | 103.664,62 | 251.675,27 | 80% | **201.340,22** |
-| Fora do alcance (5102, 6102, 5905, 6934, 5910) | 93.717,24 | 27.340,47 | — | — | — |
-| | | | | | **228.357,72** |
+Os percentuais da cláusula terceira foram aplicados sobre **todas** as saídas:
 
-**A apuração manual de Julho lançou R$ 283.766,56** — R$ 55.408,84 a mais,
-valor que só fecha considerando **todas** as saídas. A diferença é revenda de
-terceiros e remessas, alcançadas pela cláusula quarta até 2022 e hoje não.
+| Hipótese | Benefício (R$) |
+|---|---|
+| A) Só produção própria — leitura literal do inciso I | 228.357,72 |
+| B) Cláusula terceira + quarta (50% na revenda interestadual) | 245.107,61 |
+| C) **Cláusula terceira sobre todas as saídas** | 277.369,17 |
+| C) idem, com o crédito mantido que a apuração manual usava | **284.294,40** |
+| **Lançado na apuração de Julho** | **283.766,56** |
 
-**O teste de regressão fixa o valor legal (R$ 228.357,72), não o lançado.**
+**A hipótese C fecha em 0,19%.** As outras não chegam perto.
 
-### Ainda em aberto
+### Isso indica prorrogação da cláusula quarta?
 
-- **Rateio do crédito.** O Termo não diz como dividir o crédito mantido entre
-  operações beneficiadas e não beneficiadas. Assumida a **participação do
-  débito**, parametrizado em `alcance.rateio_do_credito`.
-- **FADEFE** — ver item 17.
+**Não.** Se a quarta estivesse em vigor, a revenda interestadual (CFOP 6102,
+R$ 47.298,29 de débito em Julho) receberia **50%**, e o total ficaria em torno de
+R$ 245 mil. O que se observa são os percentuais da **terceira** — 67% e 80% —
+aplicados a uma base maior que a que a terceira descreve.
+
+Duas possibilidades, e nenhuma delas se resolve com os documentos em mãos:
+
+1. **Existe aditivo ao Termo** que amplia o alcance da cláusula terceira ou
+   prorroga a quarta com outra redação. O arquivo recebido é o instrumento
+   original de 2018 — não há aditivo entre as sete páginas.
+2. **A base foi ampliada na prática**, sem amparo no instrumento.
+
+### O que os dados dizem sobre "produção própria"
+
+Os produtos vendidos com CFOP de revenda são **disjuntos** dos vendidos como
+produção própria — nenhum aparece nos dois grupos:
+
+| Vendidos como revenda (5102/6102) |
+|---|
+| UREIA 46-00-00 (Bag 1.000 Kg · Prill · GR SC 50 Kg · Bag 500 Kg) |
+| Sulfato de Zinco 35% Imp. SC 25 Kg |
+| HINOFIX 5 L |
+| Nitrato de Cálcio Imp. Sc 25 Kg |
+
+Ureia comprada e revendida, importados revendidos. Pelo cadastro, o CFOP separa
+bem: essas saídas não são de produtos que Rio Brilhante industrializa.
+
+### Como está no motor
+
+O alcance é **parâmetro**, com os dois critérios implementados:
+
+```yaml
+alcance:
+  criterio: todas_as_saidas       # ou: cfop_de_producao_propria
+```
+
+**O padrão é `todas_as_saidas`** — reproduzir o que a apuração faz, sem impor
+leitura nova. O regime está `homologado: false`, e um teste mede quanto custa a
+decisão: **R$ 49.011,45** de diferença entre as duas leituras na competência de
+Julho.
+
+### Perguntas
+
+1. Existe **aditivo ou prorrogação** ao Termo de Acordo n. 1.190/2018 que amplie
+   o alcance da cláusula terceira ou estenda a quarta?
+2. Se não existir, o benefício deve passar a alcançar só a produção própria?
+3. Como o crédito mantido é rateado entre operações beneficiadas e não
+   beneficiadas? O Termo não diz. Assumida a **participação do débito**.
 
 ## 2. ✅ MS — base do estorno proporcional *(respondida)*
 
