@@ -24,7 +24,7 @@ nenhuma pendência.** 84 testes automáticos.
 | [03 — Dicionário do Livro Fiscal](03-dicionario-livro-fiscal.md) | Desenvolvedor | Os dois layouts, coluna a coluna |
 | [04 — Matriz de regras de ICMS](04-matriz-de-regras-icms.md) | **Fiscal/Tributário** | Toda a regra tributária, para homologação |
 | [05 — Achados de Julho/2026](05-achados-julho-2026.md) | Todos | O que a análise da apuração real revelou |
-| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 17 registradas: 10 respondidas, 7 em aberto |
+| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 17 registradas: 9 respondidas, 8 em aberto |
 
 ## Fases
 
