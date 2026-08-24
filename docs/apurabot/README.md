@@ -4,8 +4,8 @@ Apuração mensal de ICMS da Hinove Agrociência S.A. a partir do Livro Fiscal.
 
 ## Situação em 21/08/2026
 
-**Julho/2026 é reproduzido da ingestão até a apuração por estabelecimento, e
-fecha sem nenhuma pendência.** 63 testes automáticos.
+**Julho/2026 é reproduzido da ingestão até o benefício fiscal, e fecha sem
+nenhuma pendência.** 80 testes automáticos.
 
 | | |
 |---|---|
@@ -24,12 +24,12 @@ fecha sem nenhuma pendência.** 63 testes automáticos.
 | [03 — Dicionário do Livro Fiscal](03-dicionario-livro-fiscal.md) | Desenvolvedor | Os dois layouts, coluna a coluna |
 | [04 — Matriz de regras de ICMS](04-matriz-de-regras-icms.md) | **Fiscal/Tributário** | Toda a regra tributária, para homologação |
 | [05 — Achados de Julho/2026](05-achados-julho-2026.md) | Todos | O que a análise da apuração real revelou |
-| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 16 registradas: 7 respondidas, 9 em aberto |
+| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 17 registradas: 11 respondidas, 6 em aberto |
 
 ## Fases
 
-- **Fase 1 — ICMS:** Entregas 0 e 1 concluídas; Entrega 2 fecha com os ajustes
-  manuais; Entrega 3 (benefício de RB) aguarda decisão sobre R$ 55 mil.
+- **Fase 1 — ICMS:** Entregas 0, 1 e 3 concluídas; Entrega 2 fecha com os
+  ajustes manuais. Faltam centralização de SP, DIFAL, CIAP e a interface.
 - **Fase 2 — PIS/Cofins:** não iniciada.
-- **Benefício fiscal de MS:** trazido para a Fase 1 por decisão estratégica. O
-  Termo de Acordo n. 1.190/2018 está analisado e a regra, documentada.
+- **Benefício fiscal de MS:** trazido para a Fase 1 por decisão estratégica, e
+  **implementado** conforme o Termo de Acordo n. 1.190/2018.

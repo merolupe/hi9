@@ -98,16 +98,53 @@ beneficios_fiscais:
 
   ms_rio_brilhante:
     descricao: >
-      Crédito presumido sobre o saldo devedor, por Termo de Acordo com o estado
-      de MS. Estrutura confirmada contra Julho/2026 com 0,19% de diferença.
-      Ver decisão pendente nº 1.
-    vigencia_inicio: 2025-01-01
-    homologado: false                      # <- não usar em produção sem resposta
+      Termo de Acordo n. 1.190/2018, firmado em 19/09/2018 entre o Estado de MS
+      e a Hinove, publicado no DOE 9.755. Base legal: LC estadual 93/2001 e
+      Lei 4.049/2011.
+    documento: Termo de Acordo n. 1.190/2018
+    vigencia_inicio: 2018-09-19
+    vigencia_fim: 2032-12-31          # cláusula terceira, caput
+    homologado: true
+
+    # Cláusula terceira, incisos I e II. O benefício é deduzido do saldo devedor
+    # "que tenha resultado como efetiva e regularmente devido", ou seja, nunca
+    # supera o próprio saldo devedor.
     credito_presumido:
-      saida_intraestadual: 67.0
-      saida_interestadual: 80.0
+      saida_intraestadual: 67.0       # inciso I
+      saida_interestadual: 80.0       # inciso I + adicional de 13% do inciso II
       base: saldo_devedor
-      rateio_do_credito_mantido: participacao_do_debito   # a confirmar
+      limitado_ao_saldo_devedor: true
+
+    # "aplicável exclusivamente às operações realizadas com os produtos
+    # resultantes de sua própria industrialização neste Estado" — inciso I.
+    # Revenda de mercadoria de terceiros e remessas ficam de fora: o benefício
+    # que as alcançava era o da cláusula quarta, que expirou em 31/12/2022.
+    alcance:
+      criterio: cfop_de_producao_propria
+      cfop: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122]
+      rateio_do_credito: participacao_do_debito
+
+    # Cláusula terceira, parágrafo primeiro: a fruição é condicionada à
+    # contribuição mensal ao Fundo de Apoio ao Desenvolvimento Econômico e de
+    # Equilíbrio Fiscal do Estado, sobre o benefício efetivamente utilizado.
+    fadefe:
+      condicao_de_fruicao: true
+      percentual: null                # a informar — ver decisão pendente nº 17
+
     controle_credito_outorgado:
       codigo_ajuste: MS090004
       descricao: Apropriação de crédito outorgado para abatimento de débitos
+
+  # Cláusula quarta do mesmo Termo. EXPIRADA — a cláusula oitava, inciso I, fixa
+  # a vigência "a partir da data de sua assinatura e até 31 de dezembro de 2022".
+  # Fica registrada para que uma apuração de competência antiga continue
+  # reproduzível, como manda a regra de vigência do projeto.
+  ms_rio_brilhante_clausula_quarta:
+    descricao: >
+      Crédito outorgado de 50% do saldo devedor nas saídas interestaduais com
+      mercadorias adquiridas em outras UFs, e crédito presumido de 50% do
+      imposto nas saídas interestaduais com itens importados.
+    documento: Termo de Acordo n. 1.190/2018, cláusula quarta
+    vigencia_inicio: 2018-09-19
+    vigencia_fim: 2022-12-31
+    aplicavel: false

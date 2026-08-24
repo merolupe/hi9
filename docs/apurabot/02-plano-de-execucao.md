@@ -4,14 +4,14 @@
 > abrir, conferir e opinar — nunca com "está quase pronto".
 
 **Situação em 21/08/2026:** Julho/2026 é reproduzido da ingestão até a apuração
-por estabelecimento, e **fecha sem nenhuma pendência**. 63 testes automáticos.
+por estabelecimento, e **fecha sem nenhuma pendência**. 80 testes automáticos.
 
 | Entrega | Situação |
 |---|---|
 | 0 · Mapeamento técnico | ✅ concluída |
 | 1 · Base tratada e classificada | ✅ concluída |
 | 2 · Motor de ICMS: créditos, débitos e estornos | 🟡 falta só ajustes manuais |
-| 3 · Benefício fiscal de Rio Brilhante | 🔴 bloqueada por decisão, não por insumo |
+| 3 · Benefício fiscal de Rio Brilhante | ✅ concluída |
 | 4 · Centralização de São Paulo | ⬜ pode começar |
 | 5 · DIFAL | ⬜ falta o `.xlsx` de XML |
 | 6 · Interface e empacotamento | ⬜ pode começar |
@@ -86,24 +86,28 @@ reclassificados à mão, menos R$ 71,21 de resíduo da planilha.
 
 ---
 
-## Entrega 3 — Benefício fiscal de Rio Brilhante 🔴
+## Entrega 3 — Benefício fiscal de Rio Brilhante ✅
 
-**A regra é conhecida.** Termo de Acordo n. 1.190/2018, cláusula terceira: 67%
-do saldo devedor nas operações com produtos de **própria industrialização**,
-mais 13% nas interestaduais (80%), até 31/12/2032.
+**Termo de Acordo n. 1.190/2018, cláusula terceira**, em vigor até 31/12/2032:
+67% do saldo devedor nas operações com produtos de **própria industrialização**,
+mais 13% nas interestaduais (80%). A cláusula quarta, que alcançava revenda de
+mercadoria adquirida em outras UFs, expirou em 31/12/2022.
 
-**Está bloqueada por uma decisão, não por falta de insumo.** Aplicando a regra
-como o Termo escreve, o benefício de Julho seria R$ 228.357,72; foram lançados
-R$ 283.766,56 — **R$ 55.408,84 de diferença**, aparentemente por incluir revenda
-de terceiros e remessas na base, que a cláusula terceira não alcança e cuja
-cobertura pela cláusula quarta terminou em 31/12/2022.
+| | Débito (R$) | Crédito rateado | Saldo devedor | % | Benefício |
+|---|---|---|---|---|---|
+| Produção própria **intra** (5101, 5118) | 56.934,28 | 16.609,65 | 40.324,63 | 67% | **27.017,50** |
+| Produção própria **inter** (6101) | 355.339,89 | 103.664,62 | 251.675,27 | 80% | **201.340,22** |
+| Fora do alcance (5102, 6102, 5905, 6934) | 93.717,24 | 27.340,47 | — | — | — |
+| | | | | | **228.357,72** |
 
-Implementar antes da resposta seria escolher um número de R$ 55 mil no lugar do
-fiscal. Ver `06-decisoes-pendentes.md`, item 1.
+A apuração manual de Julho lançou R$ 283.766,56 — **R$ 55.408,84 a mais**, valor
+que só fecha considerando todas as saídas. **O teste fixa o valor legal, não o
+lançado**, por decisão de 21/08/2026.
 
-Falta ainda: rateio do crédito entre operações beneficiadas e não beneficiadas,
-o controle de crédito outorgado (`MS090004`) e a contribuição ao **FADEFE**, que
-é condição de fruição.
+A memória de cálculo do benefício vai na aba `APURAÇÃO POR FILIAL`, passo a passo.
+
+**Falta:** a contribuição ao **FADEFE**, condição de fruição — o Termo remete o
+percentual à lei. Ver `06-decisoes-pendentes.md`, item 17.
 
 ---
 
@@ -167,10 +171,10 @@ PER/DCOMP e emissão automática de NF-e de transferência.
 ```
 Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ⬜ ──► Entrega 6 ⬜ ──► Entrega 7 ⬜
                      │
-                     ├──►  Entrega 3 🔴  precisa: decisão sobre os R$ 55 mil
+                     ├──►  Entrega 3 ✅  concluída
                      ├──►  Entrega 5 ⬜   precisa: .xlsx de exemplo do XML
                      └──►  Entrega 8 ⬜   precisa: .xlsx da Base de Bens
 ```
 
 As entregas **4 e 6 podem começar imediatamente**, e fechar a 2 depende só de
-definir o formato do `ajustes.xlsx`.
+definir o formato do `ajustes.xlsx`. Nenhuma delas espera resposta do fiscal.

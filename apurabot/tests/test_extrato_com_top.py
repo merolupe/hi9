@@ -79,4 +79,4 @@ def test_mesma_base_tratada_nos_dois_extratos(arquivo_movimento, arquivo_julho):
     antiga, nova = tratar(arquivo_julho), tratar(arquivo_movimento)
     assert len(nova.relevantes) == len(antiga.relevantes) == 2345
     assert len(nova.com_pendencia) == len(antiga.com_pendencia) == 0
-    assert len(nova.com_alerta) == len(antiga.com_alerta) == 36
+    assert len(nova.com_alerta) == len(antiga.com_alerta) == 30

@@ -228,9 +228,14 @@ def test_julho_fecha_sem_pendencia(base_julho):
 
 
 def test_cargas_toleradas_alertam_sem_bloquear(base_julho):
-    """As 30 linhas de 20,5% e as 6 de complemento de ICMS avisam, não travam."""
+    """Só as 30 linhas de 20,5% avisam — e avisar não é travar.
+
+    O complemento de ICMS deixou de alertar quando a regra dos 4% foi
+    homologada, em 21/08/2026.
+    """
     alertas = base_julho.com_alerta
-    assert len(alertas) == 36
+    assert len(alertas) == 30
+    assert {t.carga.carga for t in alertas} == {20.5}
     assert all(not t.pendencias for t in alertas)
 
 

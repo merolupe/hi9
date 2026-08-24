@@ -103,3 +103,49 @@ def test_mt_zera_o_credito_e_pr_zera_o_estorno(apuracao):
     """A assimetria entre os dois diferimentos é regra, não engano."""
     assert apuracao.filiais["HINOVE (BARRA DO GARÇAS - MT)"].credito_mantido == 0.0
     assert apuracao.filiais["HINOVE (LONDRINA)"].estorno == 0.0
+
+
+# --------------------------------------------------------------------------
+# Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
+# --------------------------------------------------------------------------
+
+BENEFICIO_LANCADO_EM_JULHO = 283_766.56
+BENEFICIO_PELO_TERMO = 228_357.72
+
+
+def test_beneficio_de_rio_brilhante_segue_o_termo_de_acordo(apuracao):
+    """O benefício alcança só a produção própria, como manda a cláusula terceira.
+
+    A apuração manual de Julho/2026 lançou R$ 283.766,56, valor que só fecha
+    considerando TODAS as saídas. Aplicando a regra como o Termo escreve —
+    exclusivamente produtos de própria industrialização — o benefício é
+    R$ 228.357,72. A diferença de R$ 55.408,84 é a revenda de terceiros e as
+    remessas, que a cláusula quarta alcançava até 31/12/2022 e hoje não.
+
+    O teste fixa o valor legal, não o lançado.
+    """
+    beneficio = apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio
+    assert beneficio is not None
+    assert beneficio.credito_presumido == pytest.approx(
+        BENEFICIO_PELO_TERMO, abs=0.01
+    )
+    diferenca = beneficio.credito_presumido - BENEFICIO_LANCADO_EM_JULHO
+    assert diferenca == pytest.approx(-55_408.84, abs=0.01)
+
+
+def test_so_rio_brilhante_tem_beneficio(apuracao):
+    com_beneficio = [f.estabelecimento for f in apuracao.filiais.values() if f.beneficio]
+    assert com_beneficio == ["HINOVE (RIO BRILHANTE)"]
+
+
+def test_a_base_do_beneficio_separa_producao_propria(apuracao):
+    beneficio = apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio
+    assert beneficio.intra.debito == pytest.approx(56_934.28, abs=CENTAVO)
+    assert beneficio.inter.debito == pytest.approx(355_339.89, abs=CENTAVO)
+    assert beneficio.debito_fora_do_alcance == pytest.approx(93_717.24, abs=CENTAVO)
+    total = (beneficio.debito_beneficiado + beneficio.debito_fora_do_alcance)
+    assert total == pytest.approx(505_991.41, abs=CENTAVO)
+
+
+def test_o_beneficio_nao_supera_o_saldo_devedor_que_o_gerou(apuracao):
+    assert apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio.confere

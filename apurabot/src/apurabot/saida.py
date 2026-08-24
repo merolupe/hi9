@@ -166,26 +166,39 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
     colunas = [
         ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
         ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
-        ("credito_mantido", 17), ("debito", 16), ("saldo", 16), ("confere", 10),
+        ("credito_mantido", 17), ("debito", 16), ("credito_presumido", 18),
+        ("saldo", 16), ("confere", 10),
     ]
     _escreve_cabecalho(aba, colunas)
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         aba.append([
             f.estabelecimento, f.uf, f.regime, f.linhas, f.credito_bruto,
-            f.estorno, f.credito_indevido, f.credito_mantido, f.debito, f.saldo,
-            "OK" if f.confere else "DIVERGE",
+            f.estorno, f.credito_indevido, f.credito_mantido, f.debito,
+            f.credito_presumido, f.saldo, "OK" if f.confere else "DIVERGE",
         ])
     total = apuracao.total
     aba.append([
         "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
-        total.credito_indevido, total.credito_mantido, total.debito, total.saldo,
+        total.credito_indevido, total.credito_mantido, total.debito,
+        apuracao.credito_presumido, total.saldo,
         "OK" if total.confere else "DIVERGE",
     ])
     for celula in aba[aba.max_row]:
         celula.font = Font(bold=True)
-    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=10):
+    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=11):
         for celula in linha:
             celula.number_format = MOEDA
+
+    aba.append([])
+    aba.append(["Memória do benefício fiscal"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
+        if not f.beneficio:
+            continue
+        aba.append([f.estabelecimento])
+        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+        for passo in f.beneficio.memoria:
+            aba.append(["", passo])
 
     aba.append([])
     aba.append(["Detalhe por carga efetiva"])

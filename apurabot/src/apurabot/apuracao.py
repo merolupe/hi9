@@ -10,6 +10,8 @@ import collections
 from dataclasses import dataclass, field
 
 from .base_tratada import BaseTratada
+from .nucleo.beneficio import ResultadoBeneficio
+from .nucleo.beneficio import calcular as calcular_beneficio
 from .nucleo.estorno import ResultadoEstorno, calcular
 from .parametros import Parametros
 
@@ -27,15 +29,20 @@ class ApuracaoFilial:
     credito_indevido: float = 0.0
     debito: float = 0.0
     linhas: int = 0
+    beneficio: ResultadoBeneficio | None = None
     por_carga: dict = field(default_factory=lambda: collections.defaultdict(
         lambda: {"credito_bruto": 0.0, "credito_mantido": 0.0, "estorno": 0.0,
                  "credito_indevido": 0.0}
     ))
 
     @property
+    def credito_presumido(self) -> float:
+        return self.beneficio.credito_presumido if self.beneficio else 0.0
+
+    @property
     def saldo(self) -> float:
         """Positivo = a recolher; negativo = credor. Sem DIFAL e sem ajustes."""
-        return self.debito - self.credito_mantido
+        return self.debito - self.credito_mantido - self.credito_presumido
 
     @property
     def confere(self) -> bool:
@@ -61,6 +68,10 @@ class Apuracao:
         return t
 
     @property
+    def credito_presumido(self) -> float:
+        return sum(f.credito_presumido for f in self.filiais.values())
+
+    @property
     def inconsistentes(self) -> list[ApuracaoFilial]:
         """Filiais em que crédito mantido + estorno ≠ crédito bruto."""
         return [f for f in self.filiais.values() if not f.confere]
@@ -72,6 +83,13 @@ def apurar(base: BaseTratada, parametros: Parametros | None = None) -> Apuracao:
         " ".join(str(f["nome"]).split()).casefold(): f["uf"]
         for f in params.filiais.get("filiais") or []
     }
+
+    beneficio_de = {
+        " ".join(str(f["nome"]).split()).casefold(): f["beneficio_fiscal"]
+        for f in params.filiais.get("filiais") or []
+        if f.get("beneficio_fiscal")
+    }
+    linhas_da_filial: dict[str, list] = collections.defaultdict(list)
 
     filiais: dict[str, ApuracaoFilial] = {}
     for tratada in base.linhas:
@@ -94,6 +112,7 @@ def apurar(base: BaseTratada, parametros: Parametros | None = None) -> Apuracao:
         filial.credito_indevido += resultado.credito_indevido
         filial.debito += resultado.debito
         filial.linhas += 1
+        linhas_da_filial[chave].append(tratada)
 
         if resultado.credito_bruto:
             carga = tratada.carga.carga if tratada.carga.carga is not None else "CIAP"
@@ -102,5 +121,14 @@ def apurar(base: BaseTratada, parametros: Parametros | None = None) -> Apuracao:
             alvo["credito_mantido"] += resultado.credito_mantido
             alvo["estorno"] += resultado.estorno
             alvo["credito_indevido"] += resultado.credito_indevido
+
+    # Camada 7 — benefício fiscal. Vem depois do estorno porque é o crédito
+    # mantido que forma o saldo devedor sobre o qual o benefício incide.
+    for chave, filial in filiais.items():
+        nome_beneficio = beneficio_de.get(chave.casefold())
+        if nome_beneficio:
+            filial.beneficio = calcular_beneficio(
+                linhas_da_filial[chave], nome_beneficio, filial.credito_mantido, params
+            )
 
     return Apuracao(filiais=filiais, base=base)

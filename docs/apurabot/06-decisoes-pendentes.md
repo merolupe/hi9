@@ -8,69 +8,50 @@
 
 ---
 
-## 1. 🔴 Rio Brilhante — critério do crédito presumido *(respondida pelo Termo, com ressalva)*
+## 1. ✅ Rio Brilhante — crédito presumido *(respondida e implementada)*
 
-**Termo de Acordo n. 1.190/2018**, firmado em 19/09/2018 entre o Estado de MS e a
-Hinove, publicado no DOE 9.755. Base: LC estadual 93/2001 e Lei 4.049/2011.
+**Termo de Acordo n. 1.190/2018**, firmado em 19/09/2018, publicado no DOE 9.755.
+Base legal: LC estadual 93/2001 e Lei 4.049/2011.
 
-### Cláusula terceira — o benefício em vigor, até 31/12/2032
+**Decisão de 21/08/2026: vale o que o Termo diz.**
 
-> **I** — benefício fiscal equivalente a **67%** do saldo devedor do ICMS,
-> aplicável **exclusivamente às operações realizadas com os produtos resultantes
-> de sua própria industrialização neste Estado**, que será deduzido do saldo
-> devedor que tenha resultado como efetiva e regularmente devido;
->
-> **II** — adicional de **13%** ao previsto no inciso anterior, aplicável
-> **exclusivamente nas operações interestaduais**, resultando num percentual de
-> **80%**.
+### A regra implementada — cláusula terceira, em vigor até 31/12/2032
 
-E o **parágrafo terceiro**: *"As matérias-primas não envolvidas no processo
-fabril não poderão gozar dos incentivos previstos neste instrumento."*
-
-Os incisos III a VI tratam de diferimento (importação de máquinas, DIFAL de
-ativo, importação de matéria-prima) e do regime especial de apuração mensal do
-DIFAL sobre ativo, uso e consumo e material de construção.
-
-### Cláusula quarta — expirou em 31/12/2022
-
-Concedia **50%** do saldo devedor nas saídas interestaduais com **mercadorias
-adquiridas em outras UFs**, e **50%** do imposto nas saídas interestaduais com
-**itens importados**. A cláusula oitava é explícita: vale *"a partir da data de
-sua assinatura e até 31 de dezembro de 2022 em relação ao disposto na cláusula
-quarta"*.
-
-**Em Julho/2026, portanto, revenda de mercadoria de terceiros não tem benefício.**
-
-### 🔴 O que isso levanta sobre Julho/2026
-
-A regra é clara — o benefício alcança **só a produção própria**. Mas a apuração
-de Julho parece tê-lo aplicado sobre **todas** as saídas:
-
-| Base do benefício | Cálculo (R$) | vs. lançado |
+| Inciso | Benefício | Alcance |
 |---|---|---|
-| Só produção própria — CFOP 5101, 6101, 5118. **O que o Termo diz** | 228.357,72 | **−55.408,84** |
-| Todas as saídas | 277.369,17 | −6.397,39 |
-| **Lançado na apuração de Julho** | **283.766,56** | — |
+| **I** | **67%** do saldo devedor do ICMS | **Exclusivamente** operações com produtos resultantes de **própria industrialização neste Estado** |
+| **II** | adicional de **13%**, totalizando **80%** | **Exclusivamente** operações **interestaduais** |
 
-Débito de saída de Rio Brilhante, separado como manda a cláusula:
+O benefício é *"deduzido do saldo devedor que tenha resultado como efetiva e
+regularmente devido"* — nunca supera o saldo devedor que o gerou, e o motor
+valida isso.
 
-| | Produção própria | Demais |
-|---|---|---|
-| **Intra** | 56.934,28 (5101, 5118) | 44.420,07 (5102, 5905, 5910) |
-| **Inter** | 355.339,89 (6101) | 49.297,17 (6102, 6934) |
+**Cláusula quarta — expirou em 31/12/2022.** Dava 50% sobre saídas
+interestaduais com mercadorias adquiridas em outras UFs. Fica registrada em
+`regimes.yaml` com `aplicavel: false`, para que apuração de competência antiga
+continue reproduzível.
 
-**Pergunta:** o benefício de Julho foi mesmo calculado sobre todas as saídas? Se
-foi, há cerca de **R$ 55 mil** apropriados sobre operações que a cláusula terceira
-não alcança — revenda de terceiros (5102/6102) e remessas (5905/6934) — e cuja
-cobertura pela cláusula quarta acabou em 2022.
+### Resultado em Julho/2026
 
-**O cálculo não foi implementado**, justamente porque a resposta muda o resultado
-em R$ 55 mil. O regime `ms_beneficio_rio_brilhante` segue `homologado: false`.
+| | Débito (R$) | Crédito rateado | Saldo devedor | % | Benefício |
+|---|---|---|---|---|---|
+| Produção própria **intra** (5101, 5118) | 56.934,28 | 16.609,65 | 40.324,63 | 67% | **27.017,50** |
+| Produção própria **inter** (6101) | 355.339,89 | 103.664,62 | 251.675,27 | 80% | **201.340,22** |
+| Fora do alcance (5102, 6102, 5905, 6934, 5910) | 93.717,24 | 27.340,47 | — | — | — |
+| | | | | | **228.357,72** |
 
-**Ainda em aberto:**
-- Como o crédito é rateado entre operações beneficiadas e não beneficiadas?
-- A contribuição ao **FADEFE** (parágrafo primeiro) é condição de fruição — qual
-  o percentual, e entra na apuração como dedução?
+**A apuração manual de Julho lançou R$ 283.766,56** — R$ 55.408,84 a mais,
+valor que só fecha considerando **todas** as saídas. A diferença é revenda de
+terceiros e remessas, alcançadas pela cláusula quarta até 2022 e hoje não.
+
+**O teste de regressão fixa o valor legal (R$ 228.357,72), não o lançado.**
+
+### Ainda em aberto
+
+- **Rateio do crédito.** O Termo não diz como dividir o crédito mantido entre
+  operações beneficiadas e não beneficiadas. Assumida a **participação do
+  débito**, parametrizado em `alcance.rateio_do_credito`.
+- **FADEFE** — ver item 17.
 
 ## 2. ✅ MS — base do estorno proporcional *(respondida)*
 
@@ -142,29 +123,33 @@ A equalização continua reconhecendo as toleradas, para que a regressão de
 Julho/2026 reproduza o resultado. Todo documento que cair numa delas recebe o
 alerta `CARGA NÃO HOMOLOGADA`, apontando para revisão do lançamento na origem.
 
-## 5. 🟡 Qual totalizador é o oficial
+## 5. ✅ Qual apuração é a oficial *(respondida)*
 
-A aba **APURAÇÃO** e o totalizador da aba **ESTORNO** trazem números diferentes
-para a mesma competência (ex.: saldo final 286.697,73 × 4.593.359,70; a aba
-ESTORNO não computa o débito de saída dos estabelecimentos paulistas).
+**Decisão de 21/08/2026: vale a apuração individualizada por estabelecimento.**
 
-**Pergunta:** confirmar que a aba **APURAÇÃO** é o resultado oficial de Julho/2026,
-para servir de referência do teste de regressão.
+A apuração consolidada de Julho/2026 foi montada toda no molde do equilíbrio
+fiscal de SP, e por isso não reflete a mecânica das outras UFs. Onde as duas
+divergem, a individualizada é a correta — foi assim que a divergência de Corumbá
+apareceu (item 2).
 
-**Padrão assumido:** APURAÇÃO é o oficial; a ferramenta gera um totalizador único.
+**Consequência para o motor:** a conferência é feita contra a apuração
+individualizada quando ela existe. A consolidada continua útil como referência
+de totais, mas não é a fonte da verdade.
 
-## 6. 🟡 Saldo credor do período anterior
+## 6. ✅ Saldo credor do período anterior *(respondida)*
 
-Hoje entra digitado (R$ 902.567,05 no total de Julho). Também aparecem duas
-empresas fora do grupo apurado — **MICROBIO** (R$ 110.078,22) e **HINOVE
-FERTILIZANTES ESPECIAIS** (R$ 172,02) — carregando apenas saldo credor.
+**Decisão de 21/08/2026:** informado uma primeira vez e, a partir daí, puxado do
+que ficou apurado na competência anterior.
 
-**Perguntas:** o saldo anterior deve ser (a) digitado pelo usuário, (b) puxado da
-competência anterior fechada na própria ferramenta, ou (c) lido da apuração do
-Sankhya? E MICROBIO e HFE entram no escopo do Apurabot ou continuam controle à parte?
+Ou seja: no primeiro fechamento pela ferramenta o saldo entra digitado; nos
+seguintes ele vem do encerramento do mês anterior, sem redigitação. Sobrescrever
+manualmente continua possível, mas passa a ser exceção registrada, não rotina.
 
-**Padrão assumido:** (b) puxado da competência anterior quando existir, com
-possibilidade de sobrescrever no primeiro mês; MICROBIO e HFE fora do escopo.
+**A implementar** junto com o encerramento de competência (Entrega 6) — é ele
+que grava o saldo que a competência seguinte vai ler.
+
+**Segue em aberto:** MICROBIO (R$ 110.078,22) e HINOVE FERTILIZANTES ESPECIAIS
+(R$ 172,02) entram no escopo do Apurabot ou continuam controle à parte?
 
 ## 7. 🟡 PR — mantém 100% ou não credita?
 
@@ -212,22 +197,17 @@ sinaliza no painel de auditoria — sem bloquear.
 
 ---
 
-## 11. 🟡 Complemento de ICMS — de onde vem a carga
+## 11. ✅ Complemento de ICMS — é regra *(respondida)*
 
-O produto `701000075` (COMPLEMENTO DE ICMS) aparece em **6 linhas** de
-Julho/2026, somando **R$ 17.490,73** de ICMS — 5 entradas e 1 saída. Todas
-chegam com **valor contábil zerado**, então `ICMS ÷ valor contábil` não existe
-e a carga não pode ser calculada.
+**Decisão de 21/08/2026: é regra, não acaso.** O complemento acompanha a
+situação da nota complementada, mesma lógica do complemento de preço (item 13).
 
-A apuração manual atribuiu **carga 4%** às seis. Não há regra escrita em
-*Pontos de Atenção* para o caso.
+Os 4% aplicados às 6 linhas de Julho/2026 (R$ 17.490,73 de ICMS) são a carga das
+notas que elas complementam. Se um complemento vier de nota com outra carga, é a
+carga dela que vale — e a referência está na coluna `Observação` do extrato.
 
-**Pergunta:** os 4% são a regra, ou foram o que coube naquele mês? Se for regra,
-ela vale para todo complemento ou depende da operação que está sendo
-complementada?
-
-**Padrão assumido:** carga 4%, parametrizada em `classificacao.yaml` com
-`homologado: false`, gerando alerta `CARGA NÃO HOMOLOGADA` sem bloquear.
+O parâmetro passou a `homologado: true` e essas linhas deixaram de gerar alerta.
+Os alertas de Julho caíram de 36 para 30, que são as 30 linhas de carga 20,5%.
 
 ## 12. ✅ NBPT BLUE 20% — produto químico *(respondida)*
 
@@ -279,24 +259,15 @@ cargas a mais de 1,5 ponto de qualquer degrau, sem bloquear o fechamento.
 pendências novas no primeiro fechamento.
 
 
-## 15. 🟡 Arredondamento da parcela não tributada — vale R$ 1,04
+## 15. ✅ Arredondamento da parcela não tributada *(respondida)*
 
-A Empresa 9 aplica os percentuais **arredondados em 4 casas** — `0,4286` e
-`0,6667` — e não as frações exatas `3/7` e `2/3`:
+**Decisão de 21/08/2026: tanto faz.** Mantidos os percentuais **arredondados em
+4 casas** (`0,4286` e `0,6667`), que são os que a apuração individualizada de
+Corumbá usa e os que reproduzem Julho/2026 exatamente.
 
-| | Exato (3/7 e 2/3) | Arredondado (0,4286 e 0,6667) |
-|---|---|---|
-| Estorno de Corumbá | 19.960,51 | **19.961,55** |
-
-Os R$ 1,04 de diferença são inteiramente arredondamento. O Apurabot usa os
-valores arredondados, porque é o que reproduz a apuração de Julho/2026, e eles
-estão explícitos em `parametros/regimes.yaml`.
-
-**Pergunta:** manter o arredondado, ou passar a usar a fração exata daqui para
-frente? Trocar muda o resultado de competências futuras — e faria a regressão de
-Julho falhar, que é o comportamento correto para uma mudança de regra.
-
-**Padrão assumido:** manter o arredondado.
+A alternativa seriam as frações exatas `3/7` e `2/3`, que dariam R$ 19.960,51 de
+estorno em vez de R$ 19.961,55 — R$ 1,04 de diferença. Os valores em uso estão
+explícitos em `parametros/regimes.yaml`, então trocar depois é editar duas linhas.
 
 ## 16. 🟡 Coluna TOP — extração definida, classificação a validar
 
@@ -346,3 +317,19 @@ produto químico e o lançamento é que deveria mudar?
 **Enquanto não há resposta, a classificação por TOP não foi implementada.** A
 coluna é lida, viaja na base tratada e está disponível para conferência.
 
+## 17. 🟡 FADEFE — condição de fruição do benefício de RB
+
+A cláusula terceira, parágrafo primeiro, do Termo de Acordo condiciona a fruição
+do benefício a uma contribuição mensal ao **Fundo de Apoio ao Desenvolvimento
+Econômico e de Equilíbrio Fiscal do Estado (FADEFE)**, *"no percentual, prazo e
+nas condições definidas em lei, sobre o benefício fiscal/financeiro efetivamente
+utilizado"*.
+
+O Termo não fixa o percentual — remete à lei. Em Julho/2026 o benefício apurado
+foi de R$ 228.357,72, então a contribuição sai desse valor.
+
+**Perguntas:** qual o percentual em vigor? A contribuição entra na apuração de
+ICMS como dedução, ou é obrigação apartada, fora da conta gráfica?
+
+**Padrão assumido:** não calculada. O parâmetro `fadefe.percentual` está `null`
+em `regimes.yaml`, e o benefício é apurado sem ela.
