@@ -75,15 +75,16 @@ Camadas 5 a 8, por regime. **Falta só** ler os ajustes manuais aprovados de
 | Barra do Garças | MT | 50.309,07 | 50.309,07 | **0,00** |
 | Londrina | PR | 0,00 | 0,00 | **0,00** |
 | Corumbá | MS | 19.961,553359 | 19.961,553359 | **0,00** |
-| Rio Brilhante | MS | 322.288,31 | 331.236,11 | −8.947,80 |
+| Rio Brilhante | MS | 331.236,11 | 331.236,11 | **0,00** |
 
 O crédito bruto bate nas sete e os débitos batem com a `Dinamica`. Corumbá é
 conferido contra a **apuração individualizada (Empresa 9)**, não contra a
 consolidada — que trazia R$ 26.503,24 de crédito mantido porque somava a ele o
 crédito indevido de transferência.
 
-A única diferença que sobra é Rio Brilhante: os R$ 9.019,01 da ICL Aditivos
-reclassificados à mão, menos R$ 71,21 de resíduo da planilha.
+**O estorno bate exato nas sete.** Rio Brilhante era a exceção enquanto o motor
+chaveava na carga efetiva; passou a fechar quando a chave virou a alíquota — a
+referência aqui é a linha 003 do Registro de Apuração, não mais a planilha.
 
 ---
 

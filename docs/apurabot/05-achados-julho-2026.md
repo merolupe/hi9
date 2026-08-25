@@ -153,13 +153,13 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 
 ## 7. Riscos que a análise reduziu ou confirmou
 
-| Risco do escopo v1.0 | Situação em 21/08/2026 |
+| Risco do escopo v1.0 | Situação em 25/08/2026 |
 |---|---|
 | Volume elevado / desempenho | **Descartado.** 6,5 mil linhas. |
 | Equalização de carga exige julgamento humano | **Resolvido.** 99,87% por algoritmo, e as 3 divergências são intervenção manual, não erro. |
 | Classificação exige julgamento humano | **Muito reduzido.** Julho fecha com zero pendências, e o extrato novo traz o TOP, que nomeia a operação. |
 | Regra tributária não mapeada | **Reduzido.** Tratado com `SEM REGRA` bloqueando o fechamento; nada pendente em Julho. |
-| Automação de MS prematura | **Parcialmente resolvido.** Corumbá reproduz exato; o benefício de RB aguarda decisão. |
+| Automação de MS prematura | **Resolvido.** Corumbá e Rio Brilhante reproduzem exato, e o benefício de RB confere com a GIA retificadora ao centavo. |
 | Mudança de layout do Sankhya | **Mitigado na prática.** O motor lê dois layouts e valida o cabeçalho, procurando-o nas 10 primeiras linhas. |
 
 ## 8. O que a implementação corrigiu na própria análise
