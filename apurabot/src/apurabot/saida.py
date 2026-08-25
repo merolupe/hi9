@@ -12,6 +12,8 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from .apuracao import Apuracao, apurar
+from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
+from .nucleo.atividade import ORDEM as ATIVIDADES_EM_ORDEM
 from .base_tratada import BaseTratada
 
 CABECALHO_BASE = [
@@ -30,6 +32,7 @@ CABECALHO_BASE = [
 TITULO = Font(bold=True, color="FFFFFF")
 FUNDO = PatternFill("solid", fgColor="1F3864")
 MOEDA = "#,##0.00"
+PERCENTUAL = "0.00%"
 
 
 def _escreve_cabecalho(aba, colunas):
@@ -199,6 +202,54 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
         for passo in f.beneficio.memoria:
             aba.append(["", passo])
+
+    aba.append([])
+    aba.append(["Contribuição ao Pró-Desenvolve / FADEFE — GUIA AVULSA"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["", "Informativo: não entra na conta gráfica da apuração."])
+    aba.append(["estabelecimento", "benefício fruído", "%", "a recolher",
+                "% adicional", "adicional a recolher"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    primeira = aba.max_row + 1
+    for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
+        if not f.beneficio or not f.beneficio.percentual_fadefe:
+            continue
+        b = f.beneficio
+        aba.append([
+            f.estabelecimento, b.credito_presumido, b.percentual_fadefe / 100,
+            b.fadefe, b.percentual_fadefe_adicional / 100, b.fadefe_adicional,
+        ])
+    for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+                               min_col=2, max_col=6):
+        for celula in linha:
+            celula.number_format = PERCENTUAL if celula.column in (3, 5) else MOEDA
+
+    aba.append([])
+    aba.append(["Segregação por atividade (exigida pela GIA de MS)"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["estabelecimento", "atividade", "linhas", "credito_bruto",
+                "estorno", "credito_mantido", "debito", "debito_intra",
+                "debito_inter", "saldo"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    primeira_atividade = aba.max_row + 1
+    for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
+        if not f.segrega_por_atividade:
+            continue
+        conhecidas = [a for a in ATIVIDADES_EM_ORDEM if a in f.por_atividade]
+        restantes = [a for a in f.por_atividade if a not in conhecidas]
+        for nome in conhecidas + sorted(restantes):
+            t_ = f.por_atividade[nome]
+            aba.append([
+                f.estabelecimento, nome, t_.linhas, t_.credito_bruto, t_.estorno,
+                t_.credito_mantido, t_.debito, t_.debito_de(INTRAESTADUAL),
+                t_.debito_de(INTERESTADUAL), t_.saldo,
+            ])
+    for linha in aba.iter_rows(min_row=primeira_atividade, max_row=aba.max_row,
+                               min_col=4, max_col=10):
+        for celula in linha:
+            celula.number_format = MOEDA
 
     aba.append([])
     aba.append(["Detalhe por carga efetiva"])

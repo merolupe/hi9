@@ -1,4 +1,4 @@
-"""Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018.
+"""Camada 7 — benefício fiscal de Rio Brilhante, Termo de Acordo n. 1.190/2018.
 
 Cláusula terceira:
 
@@ -8,25 +8,38 @@ Cláusula terceira:
          efetiva e regularmente devido;
     II — adicional de 13% nas operações interestaduais, resultando em 80%.
 
-Vigência até 31/12/2032. A cláusula quarta, que alcançava a revenda de
-mercadoria adquirida em outras UFs, expirou em 31/12/2022 — por isso revenda de
-terceiros e remessas ficam fora da base.
+O alcance esteve em aberto até 25/08/2026, quando três documentos oficiais de
+07/2026 o fecharam. A linha 012 do Registro de Apuração nomeia a dedução como
+"Industrialização própria - Incentivo TA/CDI", e a GIA - Benefício Fiscal traz
+base de saídas incentivadas de R$ 412.274,17 — exatamente os CFOP 5101, 5118 e
+6101 do mês. A leitura literal do inciso I é a que vale: o benefício é da
+atividade industrial, não de todas as saídas.
 
-Os percentuais e a lista de CFOP estão em `parametros/regimes.yaml`, nunca aqui.
+A cadeia, conferida ao centavo contra a GIA retificadora 36160E2:
+
+    crédito industrial normal ........  327.834,95
+    (−) estorno industrial ...........  245.987,17
+    (−) estorno de créditos (ajuste) .    3.865,30
+    (=) crédito da parcela incentivada   77.982,48
+    débito industrial 412.274,17 − 77.982,48 = base 334.291,69
+      intra  (56.934,28 −  10.769,23) × 67% =  30.930,58
+      inter  (355.339,89 − 67.213,25) × 80% = 230.501,31
+                                    benefício 261.431,89
+
+Vigência até 31/12/2032. A cláusula quarta, que alcançava a revenda de
+mercadoria adquirida em outras UFs, expirou em 31/12/2022.
+
+Os percentuais estão em `parametros/regimes.yaml`, nunca aqui.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
-from ..base_tratada import LinhaTratada
 from ..parametros import Parametros
+from .atividade import INTERESTADUAL, INTRAESTADUAL, TotaisAtividade
 
-
-# Critérios de alcance. Qual deles vale é decisão da Gerência Fiscal/Tributária,
-# não do motor — ver docs/apurabot/06-decisoes-pendentes.md, item 1.
-CFOP_PRODUCAO_PROPRIA = "cfop_de_producao_propria"   # leitura literal do inciso I
-TODAS_AS_SAIDAS = "todas_as_saidas"                  # o que a apuração de Julho faz
+# Critério de alcance homologado: o benefício é da atividade industrial.
+ATIVIDADE_INDUSTRIAL = "atividade_industrial"
 
 
 class BeneficioDesconhecido(Exception):
@@ -35,60 +48,96 @@ class BeneficioDesconhecido(Exception):
 
 @dataclass
 class ParcelaBeneficiada:
-    """Um dos dois grupos que o Termo separa: intraestadual e interestadual."""
+    """Um dos dois grupos que o Termo separa: intraestadual e interestadual.
 
-    debito: float = 0.0
-    credito_rateado: float = 0.0
+    Espelha uma linha do quadro "CÁLCULO BENEFÍCIO FISCAL" da GIA.
+    """
+
+    destino: str = ""
+    debito: float = 0.0              # coluna 2 — Débitos ICMS Parcela Incentivada
+    credito_rateado: float = 0.0     # coluna 3 — Créditos ICMS Parcela Incentivada
     percentual: float = 0.0
 
     @property
-    def saldo_devedor(self) -> float:
-        """Nunca negativo: onde há saldo credor, não há o que abater."""
+    def base_do_incentivo(self) -> float:
+        """Coluna 7 da GIA. Nunca negativa: sem saldo devedor não há benefício."""
         return max(self.debito - self.credito_rateado, 0.0)
 
     @property
     def credito_presumido(self) -> float:
-        return self.saldo_devedor * self.percentual / 100.0
+        """Coluna 8 — Valor ICMS Incentivado."""
+        return self.base_do_incentivo * self.percentual / 100.0
+
+    @property
+    def icms_devido(self) -> float:
+        """Coluna 9 — ICMS Devido (não incentivado)."""
+        return self.base_do_incentivo - self.credito_presumido
 
 
 @dataclass
 class ResultadoBeneficio:
     documento: str = ""
     criterio: str = ""
-    intra: ParcelaBeneficiada = field(default_factory=ParcelaBeneficiada)
-    inter: ParcelaBeneficiada = field(default_factory=ParcelaBeneficiada)
-    debito_fora_do_alcance: float = 0.0
-    credito_fora_do_alcance: float = 0.0
+    credito_industrial: float = 0.0
+    estorno_industrial: float = 0.0
+    ajuste_de_credito: float = 0.0
+    intra: ParcelaBeneficiada = field(
+        default_factory=lambda: ParcelaBeneficiada(destino=INTRAESTADUAL)
+    )
+    inter: ParcelaBeneficiada = field(
+        default_factory=lambda: ParcelaBeneficiada(destino=INTERESTADUAL)
+    )
+    percentual_fadefe: float = 0.0
+    percentual_fadefe_adicional: float = 0.0
     memoria: list[str] = field(default_factory=list)
+
+    @property
+    def credito_da_parcela_incentivada(self) -> float:
+        """O crédito industrial que sobreviveu ao estorno e aos ajustes."""
+        return self.intra.credito_rateado + self.inter.credito_rateado
 
     @property
     def debito_beneficiado(self) -> float:
         return self.intra.debito + self.inter.debito
 
     @property
+    def base_do_incentivo(self) -> float:
+        return self.intra.base_do_incentivo + self.inter.base_do_incentivo
+
+    @property
     def credito_presumido(self) -> float:
         return self.intra.credito_presumido + self.inter.credito_presumido
 
     @property
-    def saldo_devedor_beneficiado(self) -> float:
-        return self.intra.saldo_devedor + self.inter.saldo_devedor
+    def fadefe(self) -> float:
+        """Contribuição ao Pró-Desenvolve / FADEFE. GUIA AVULSA.
+
+        Sai no relatório como informação; não entra na conta gráfica.
+        """
+        return self.credito_presumido * self.percentual_fadefe / 100.0
+
+    @property
+    def fadefe_adicional(self) -> float:
+        """Adicional FADEFE Equilíbrio Fiscal. Também guia avulsa."""
+        return self.credito_presumido * self.percentual_fadefe_adicional / 100.0
 
     @property
     def confere(self) -> bool:
         """O benefício nunca supera o saldo devedor que o gerou."""
-        return self.credito_presumido <= self.saldo_devedor_beneficiado + 0.005
+        return self.credito_presumido <= self.base_do_incentivo + 0.005
 
 
 def calcular(
-    linhas: list[LinhaTratada],
+    industrial: TotaisAtividade,
     nome_beneficio: str,
-    credito_mantido: float,
     params: Parametros,
+    ajuste_de_credito: float = 0.0,
 ) -> ResultadoBeneficio:
-    """Apura o crédito presumido de um estabelecimento beneficiado.
+    """Apura o crédito presumido sobre o saldo devedor da atividade industrial.
 
-    `linhas` são as da filial; `credito_mantido` é o crédito que sobreviveu ao
-    estorno, e é ele que se abate do débito para formar o saldo devedor.
+    `ajuste_de_credito` são estornos de crédito da atividade industrial que não
+    nascem de documento no Livro Fiscal — a linha 003 do Registro de Apuração.
+    Em 07/2026 foram R$ 3.865,30. Virão de `ajustes.xlsx` na Entrega 2.
     """
     beneficios = params.regimes.get("beneficios_fiscais") or {}
     beneficio = beneficios.get(nome_beneficio)
@@ -102,85 +151,74 @@ def calcular(
             f"{beneficio.get('vigencia_fim')}"
         )
 
-    presumido = beneficio["credito_presumido"]
     alcance = beneficio["alcance"]
-    criterio = alcance.get("criterio", CFOP_PRODUCAO_PROPRIA)
-    if criterio not in (CFOP_PRODUCAO_PROPRIA, TODAS_AS_SAIDAS):
+    criterio = alcance.get("criterio")
+    if criterio != ATIVIDADE_INDUSTRIAL:
         raise BeneficioDesconhecido(
-            f"critério de alcance {criterio!r} não é reconhecido — os válidos são "
-            f"{CFOP_PRODUCAO_PROPRIA!r} e {TODAS_AS_SAIDAS!r}"
+            f"critério de alcance {criterio!r} não é reconhecido — o válido é "
+            f"{ATIVIDADE_INDUSTRIAL!r}, homologado contra a GIA de 07/2026"
         )
-    cfops = set(alcance.get("cfop") or [])
+    rateio = alcance.get("rateio_do_credito", "participacao_do_debito")
+    if rateio != "participacao_do_debito":
+        raise BeneficioDesconhecido(f"critério de rateio {rateio!r} não é reconhecido")
+
+    presumido = beneficio["credito_presumido"]
+    fadefe = beneficio.get("fadefe") or {}
 
     resultado = ResultadoBeneficio(
-        documento=beneficio.get("documento", nome_beneficio), criterio=criterio
+        documento=beneficio.get("documento", nome_beneficio),
+        criterio=criterio,
+        credito_industrial=industrial.credito_bruto,
+        estorno_industrial=industrial.estorno,
+        ajuste_de_credito=ajuste_de_credito,
+        percentual_fadefe=float(fadefe.get("percentual") or 0.0),
+        percentual_fadefe_adicional=float(fadefe.get("percentual_adicional") or 0.0),
     )
     resultado.intra.percentual = float(presumido["saida_intraestadual"])
     resultado.inter.percentual = float(presumido["saida_interestadual"])
+    resultado.intra.debito = industrial.debito_de(INTRAESTADUAL)
+    resultado.inter.debito = industrial.debito_de(INTERESTADUAL)
 
-    for tratada in linhas:
-        dados = tratada.origem.dados
-        icms = dados.get("valor_icms") or 0.0
-        if not tratada.relevante or not icms or dados.get("entrada_saida") != "Saída":
-            continue
-        if criterio == CFOP_PRODUCAO_PROPRIA and tratada.origem.cfop_int not in cfops:
-            resultado.debito_fora_do_alcance += icms
-            continue
-        alvo = resultado.intra if not tratada.origem.interestadual else resultado.inter
-        alvo.debito += icms
+    # O crédito da parcela incentivada é o crédito industrial que sobrou do
+    # estorno — não um rateio do crédito da filial inteira.
+    credito = max(industrial.credito_mantido - ajuste_de_credito, 0.0)
+    debito = resultado.debito_beneficiado
+    if debito:
+        for parcela in (resultado.intra, resultado.inter):
+            parcela.credito_rateado = credito * (parcela.debito / debito)
 
-    _ratear_credito(resultado, credito_mantido, alcance)
-    _montar_memoria(resultado, credito_mantido)
+    _montar_memoria(resultado, industrial)
     return resultado
 
 
-def _ratear_credito(
-    resultado: ResultadoBeneficio, credito_mantido: float, alcance: dict[str, Any]
-) -> None:
-    """Distribui o crédito mantido entre as parcelas, pela participação do débito.
-
-    O Termo não diz como ratear; a participação do débito é o critério assumido
-    — ver docs/apurabot/06-decisoes-pendentes.md, item 1.
-    """
-    criterio = alcance.get("rateio_do_credito", "participacao_do_debito")
-    if criterio != "participacao_do_debito":
-        raise BeneficioDesconhecido(
-            f"critério de rateio {criterio!r} não é reconhecido"
-        )
-
-    debito_total = resultado.debito_beneficiado + resultado.debito_fora_do_alcance
-    if not debito_total:
-        resultado.credito_fora_do_alcance = credito_mantido
-        return
-
-    for parcela in (resultado.intra, resultado.inter):
-        parcela.credito_rateado = credito_mantido * (parcela.debito / debito_total)
-    resultado.credito_fora_do_alcance = credito_mantido * (
-        resultado.debito_fora_do_alcance / debito_total
-    )
-
-
-def _montar_memoria(resultado: ResultadoBeneficio, credito_mantido: float) -> None:
+def _montar_memoria(resultado: ResultadoBeneficio, industrial: TotaisAtividade) -> None:
     linhas = [
         f"Termo: {resultado.documento}",
-        f"Alcance aplicado: {resultado.criterio}",
-        f"Crédito mantido rateado pela participação do débito: {credito_mantido:,.2f}",
+        f"Alcance: {resultado.criterio}",
+        f"Crédito industrial bruto: {resultado.credito_industrial:,.2f}",
+        f"(−) estorno industrial: {resultado.estorno_industrial:,.2f}",
     ]
-    escopo = (
-        "de produção própria"
-        if resultado.criterio == CFOP_PRODUCAO_PROPRIA
-        else "(todas)"
-    )
-    for nome, parcela in (("intraestadual", resultado.intra), ("interestadual", resultado.inter)):
-        linhas.append(
-            f"Saída {nome} {escopo}: débito {parcela.debito:,.2f} "
-            f"− crédito {parcela.credito_rateado:,.2f} = saldo devedor "
-            f"{parcela.saldo_devedor:,.2f} × {parcela.percentual:g}% = "
-            f"{parcela.credito_presumido:,.2f}"
-        )
+    if resultado.ajuste_de_credito:
+        linhas.append(f"(−) estorno de créditos (ajuste): {resultado.ajuste_de_credito:,.2f}")
     linhas.append(
-        f"Fora do alcance do benefício (revenda de terceiros, remessas): débito "
-        f"{resultado.debito_fora_do_alcance:,.2f}"
+        f"(=) crédito da parcela incentivada: "
+        f"{resultado.credito_da_parcela_incentivada:,.2f}"
     )
+    linhas.append(
+        f"Débito industrial {industrial.debito:,.2f} − crédito da parcela "
+        f"incentivada = base {resultado.base_do_incentivo:,.2f}"
+    )
+    for nome, parcela in (("intraestadual", resultado.intra),
+                          ("interestadual", resultado.inter)):
+        linhas.append(
+            f"Saída {nome}: débito {parcela.debito:,.2f} − crédito "
+            f"{parcela.credito_rateado:,.2f} = base {parcela.base_do_incentivo:,.2f} "
+            f"× {parcela.percentual:g}% = {parcela.credito_presumido:,.2f}"
+        )
     linhas.append(f"Crédito presumido total: {resultado.credito_presumido:,.2f}")
+    if resultado.percentual_fadefe:
+        linhas.append(
+            f"FADEFE {resultado.percentual_fadefe:g}% sobre o benefício fruído: "
+            f"{resultado.fadefe:,.2f} — guia avulsa, fora da conta gráfica"
+        )
     resultado.memoria = linhas

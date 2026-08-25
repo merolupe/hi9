@@ -16,7 +16,6 @@ from ..parametros import Parametros
 # Fórmulas reconhecidas. O nome vem do parâmetro `formula_estorno`.
 EXCEDENTE = "excedente_sobre_carga_saida"
 INTEGRAL = "integral"
-INTEGRAL_NAS_CARGAS = "integral_nas_cargas"
 PROPORCIONAL = "proporcional_parcela_nao_tributada"
 NENHUM = "nenhum"
 
@@ -133,27 +132,42 @@ def _aplicar(
     if formula == INTEGRAL:
         return icms, "diferimento — estorna 100% do crédito"
 
-    if formula == INTEGRAL_NAS_CARGAS:
-        alvos = {float(c) for c in regime.get("cargas_estornadas") or []}
-        if carga is not None and carga in alvos:
-            return icms, f"entrada beneficiada a {carga:g}% — estorna 100% do crédito"
-        return 0.0, f"carga {carga}% fora das beneficiadas — mantém o crédito"
-
     if formula == PROPORCIONAL:
-        parcelas = {float(k): float(v) for k, v in
-                    (regime.get("parcela_nao_tributada") or {}).items()}
-        if carga is None:
-            return 0.0, "carga indeterminada — nada a estornar"
-        if carga not in parcelas:
+        referencia = regime.get("carga_de_referencia")
+        if referencia is None:
             raise RegimeDesconhecido(
-                f"a carga de {carga:g}% não tem `parcela_nao_tributada` no regime "
-                f"— cadastre-a em regimes.yaml ou confirme que a operação é válida"
+                "o regime usa `proporcional_parcela_nao_tributada` mas não declara "
+                "`carga_de_referencia` em regimes.yaml"
             )
-        parcela = parcelas[carga]
+        referencia = float(referencia)
+
+        # A CHAVE É A ALÍQUOTA, NÃO A CARGA EFETIVA.
+        #
+        # A carga efetiva serve para conferir o documento; quem comanda a
+        # proporção do estorno é a alíquota da operação, porque o benefício
+        # limita o crédito à carga de referência. Uma importação a 17% com base
+        # reduzida tem carga efetiva de 4% e mesmo assim estorna 76,47%.
+        aliquota = tratada.origem.dados.get("aliquota_icms")
+        if not aliquota:
+            return 0.0, "alíquota indeterminada — nada a estornar"
+        aliquota = float(aliquota)
+        if aliquota <= referencia:
+            return (
+                0.0,
+                f"alíquota de {aliquota:g}% não excede a carga de referência "
+                f"({referencia:g}%) — mantém o crédito",
+            )
+
+        parcela = 1.0 - referencia / aliquota
+        casas = regime.get("casas_decimais_da_parcela")
+        if casas is not None:
+            parcela = round(parcela, int(casas))
         return (
             icms * parcela,
-            f"ICMS × parcela não tributada da carga de {carga:g}% "
-            f"({parcela:.4%}) = {icms:,.2f} × {parcela}",
+            f"parcela não tributada = 1 − {referencia:g}/{aliquota:g} = "
+            f"{parcela:.4f}; ICMS {icms:,.2f} × {parcela:.4f} "
+            f"(carga efetiva do documento: "
+            f"{'—' if carga is None else format(carga, 'g') + '%'})",
         )
 
     if formula == EXCEDENTE:
@@ -170,7 +184,7 @@ def _aplicar(
 
     raise RegimeDesconhecido(
         f"fórmula de estorno {formula!r} não é reconhecida — as válidas são "
-        f"{EXCEDENTE}, {INTEGRAL}, {INTEGRAL_NAS_CARGAS} e {NENHUM}"
+        f"{EXCEDENTE}, {INTEGRAL}, {PROPORCIONAL} e {NENHUM}"
     )
 
 

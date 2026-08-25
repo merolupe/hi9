@@ -180,3 +180,64 @@ conferência do Enxofre de revenda passou a bater exato com a aba ESTORNO
 E um terceiro, na apuração consolidada e não na minha análise: **Corumbá não
 usava a mecânica de SP**, e o crédito indevido de transferência estava somado ao
 crédito mantido. Ver `06-decisoes-pendentes.md`, item 2.
+
+## 9. Rio Brilhante — o que os documentos oficiais mostraram (25/08/2026)
+
+Quatro documentos da competência fecharam o que a planilha manual não explicava:
+o **Registro de Apuração do ICMS**, a **GIA - Benefício Fiscal**, a **GIA -
+Apuração Final** (protocolo 36160E2, retificadora) e o **Relatório FAI**.
+
+### 9.1. O bloco-resumo da planilha trocava Industrial por Comercial
+
+A aba `ESTORNO` classifica **linha a linha** numa coluna de atividade. Somando
+por esse rótulo dá crédito industrial de R$ 327.834,95 e comercial de
+R$ 134.672,19. O **bloco-resumo** da mesma aba trocava os dois — e era o resumo
+que alimentava o cálculo do benefício.
+
+Os R$ 7,8 milhões de ureia e ácido bórico importados, cujo CFOP 3101 se chama
+literalmente *"Compra p/ industrialização"*, caíam na conta comercial. A GIA
+retificadora corrigiu.
+
+### 9.2. A chave do estorno é a alíquota
+
+Com a chave na carga efetiva, as importações a 17% com base reduzida a 4%
+estornavam 100%. Pela alíquota estornam 76,47%. A diferença é R$ 73.843,39 de
+crédito mantido — e é o que faz o estorno total de RB cair exatamente nos
+**R$ 331.236,11** que a linha 003 do Registro declara.
+
+### 9.3. Os "valores prestacionais" da GIA não são documentos
+
+A coluna `Prestacional/Outras`, que não se achava no Livro Fiscal, são as linhas
+de **ajuste** da apuração:
+
+| Lado | Composição | Total |
+|---|---|---|
+| Crédito | ajuste art. 68 RICMS/MS (46.138,68) + estorno de débitos (33.039,71) | 79.178,39 |
+| Débito | saldo devedor do centralizador (99.412,10) + estorno de créditos (3.865,30) | 103.277,40 |
+
+Daí sai o achado da centralização em MS (decisão nº 20) e o dos créditos de
+ajuste (nº 21).
+
+### 9.4. Novos alvos de regressão
+
+A regressão de Rio Brilhante deixou de se ancorar na planilha manual e passou a
+se ancorar no documento oficial:
+
+| Campo | Valor (R$) |
+|---|---|
+| Crédito industrial | 327.834,95 |
+| Estorno industrial | 245.987,17 |
+| Crédito da parcela incentivada | 77.982,48 |
+| Base do incentivo | 334.291,69 |
+| Benefício (67% intra + 80% inter) | **261.431,90** |
+| FADEFE 2% — guia avulsa | 5.228,64 |
+
+### 9.5. O que ainda não fecha
+
+- **R$ 5.249,34** de complemento de ICMS que está no Livro e não está nos
+  créditos da GIA (decisão nº 18).
+- **R$ 3.865,30** de estorno de créditos que não nasce de documento e hoje entra
+  como parâmetro (decisões nº 15 e 21).
+- A **EFD/SPED** de 07/2026 aparentemente não foi retificada junto com a GIA
+  (decisão nº 22).
+

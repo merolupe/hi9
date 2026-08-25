@@ -1,123 +1,153 @@
-"""Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018."""
+"""Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018.
+
+O benefício incide sobre o saldo devedor da ATIVIDADE INDUSTRIAL. Isso deixou
+de ser leitura e passou a ser fato documentado em 25/08/2026: a linha 012 do
+Registro de Apuração de 07/2026 nomeia a dedução como "Industrialização
+própria - Incentivo TA/CDI", e a GIA - Benefício Fiscal traz base de saídas
+incentivadas de R$ 412.274,17, que é exatamente CFOP 5101 + 5118 + 6101.
+"""
 from __future__ import annotations
+
+import copy
 
 import pytest
 
-from apurabot.base_tratada import LinhaTratada
-from apurabot.ingestao import LinhaLivro
+from apurabot.nucleo.atividade import INDUSTRIAL, INTERESTADUAL, INTRAESTADUAL
+from apurabot.nucleo.atividade import TotaisAtividade
 from apurabot.nucleo.beneficio import BeneficioDesconhecido, calcular
-from apurabot.nucleo.carga import ResultadoCarga, Situacao
-from apurabot.nucleo.classificacao import ResultadoClassificacao
 
 CENTAVO = 0.005
 
 
-@pytest.fixture
-def parametros_literais(parametros):
-    """Parâmetros com o alcance na leitura literal do inciso I do Termo."""
-    import copy
-
-    p = copy.deepcopy(parametros)
-    p.regimes["beneficios_fiscais"]["ms_rio_brilhante"]["alcance"]["criterio"] = (
-        "cfop_de_producao_propria"
-    )
-    return p
-
-
-def saida(cfop, icms, uf_destino="MS"):
-    dados = {
-        "estabelecimento": "HINOVE (RIO BRILHANTE)",
-        "entrada_saida": "Saída",
-        "valor_icms": icms,
-        "valor_contabil": icms * 25,
-        "cfop": cfop,
-        "uf_origem": "MS",
-        "uf_destino": uf_destino,
-    }
-    return LinhaTratada(
-        origem=LinhaLivro(linha_origem=2, arquivo_origem="teste.xlsx", dados=dados),
-        carga=ResultadoCarga(Situacao.EQUALIZADA, carga=4.0),
-        classificacao=ResultadoClassificacao(categoria="materia_prima", regra="teste"),
+def industrial(debito_intra=0.0, debito_inter=0.0, credito=0.0, estorno=0.0):
+    """Monta os totais da atividade industrial de um estabelecimento."""
+    return TotaisAtividade(
+        atividade=INDUSTRIAL,
+        credito_bruto=credito,
+        credito_mantido=credito - estorno,
+        estorno=estorno,
+        debito=debito_intra + debito_inter,
+        debito_por_destino={INTRAESTADUAL: debito_intra, INTERESTADUAL: debito_inter},
     )
 
 
-def test_producao_propria_intraestadual_rende_sessenta_e_sete_por_cento(parametros):
-    r = calcular([saida(5101, 10_000.00)], "ms_rio_brilhante", 0.0, parametros)
+# -- os dois percentuais do Termo -----------------------------------------
+
+def test_saida_intraestadual_rende_sessenta_e_sete_por_cento(parametros):
+    r = calcular(industrial(debito_intra=10_000.00), "ms_rio_brilhante", parametros)
     assert r.intra.debito == 10_000.00
     assert r.credito_presumido == pytest.approx(6_700.00, abs=CENTAVO)
 
 
-def test_producao_propria_interestadual_rende_oitenta_por_cento(parametros):
+def test_saida_interestadual_rende_oitenta_por_cento(parametros):
     """67% do inciso I mais os 13% do inciso II."""
-    r = calcular([saida(6101, 10_000.00, "SP")], "ms_rio_brilhante", 0.0, parametros)
+    r = calcular(industrial(debito_inter=10_000.00), "ms_rio_brilhante", parametros)
     assert r.inter.debito == 10_000.00
     assert r.credito_presumido == pytest.approx(8_000.00, abs=CENTAVO)
 
 
-@pytest.mark.parametrize("cfop", [5102, 6102, 5905, 6934, 5910])
-def test_no_criterio_literal_revenda_e_remessa_ficam_de_fora(parametros_literais, cfop):
-    """Leitura literal do inciso I: só produtos de própria industrialização.
+# -- a cadeia do crédito da parcela incentivada ---------------------------
 
-    Não é o critério em vigor — ver a decisão pendente nº 1. O teste garante
-    que, escolhido esse critério, ele faz o que promete.
-    """
-    r = calcular([saida(cfop, 10_000.00)], "ms_rio_brilhante", 0.0, parametros_literais)
-    assert r.credito_presumido == 0.0
-    assert r.debito_fora_do_alcance == 10_000.00
-
-
-def test_no_criterio_em_vigor_todas_as_saidas_entram(parametros):
-    """O padrão reproduz a apuração: revenda também recebe o benefício."""
-    r = calcular([saida(6102, 10_000.00, "SP")], "ms_rio_brilhante", 0.0, parametros)
-    assert r.credito_presumido == pytest.approx(8_000.00, abs=CENTAVO)
-    assert r.debito_fora_do_alcance == 0.0
-
-
-def test_criterio_de_alcance_desconhecido_falha(parametros):
-    import copy
-
-    from apurabot.nucleo.beneficio import BeneficioDesconhecido as Erro
-
-    p = copy.deepcopy(parametros)
-    p.regimes["beneficios_fiscais"]["ms_rio_brilhante"]["alcance"]["criterio"] = "xyz"
-    with pytest.raises(Erro, match="não é reconhecido"):
-        calcular([saida(5101, 100.0)], "ms_rio_brilhante", 0.0, p)
-
-
-def test_o_credito_mantido_abate_o_debito_antes_do_beneficio(parametros):
-    """O benefício incide sobre o saldo devedor, não sobre o débito bruto."""
-    r = calcular([saida(6101, 10_000.00, "SP")], "ms_rio_brilhante", 2_000.00, parametros)
-    assert r.inter.saldo_devedor == pytest.approx(8_000.00, abs=CENTAVO)
+def test_o_credito_da_parcela_incentivada_e_o_industrial_que_sobrou_do_estorno(
+    parametros,
+):
+    """Não é rateio do crédito da filial: é o crédito da própria atividade."""
+    r = calcular(
+        industrial(debito_inter=10_000.00, credito=5_000.00, estorno=3_000.00),
+        "ms_rio_brilhante",
+        parametros,
+    )
+    assert r.credito_da_parcela_incentivada == pytest.approx(2_000.00, abs=CENTAVO)
+    assert r.inter.base_do_incentivo == pytest.approx(8_000.00, abs=CENTAVO)
     assert r.credito_presumido == pytest.approx(6_400.00, abs=CENTAVO)
 
 
-def test_credito_maior_que_o_debito_nao_gera_beneficio_negativo(parametros):
-    r = calcular([saida(6101, 1_000.00, "SP")], "ms_rio_brilhante", 5_000.00, parametros)
-    assert r.inter.saldo_devedor == 0.0
-    assert r.credito_presumido == 0.0
+def test_o_ajuste_de_credito_reduz_a_parcela_incentivada(parametros):
+    """Linha 003 do Registro — estorno de créditos que não vem do Livro."""
+    r = calcular(
+        industrial(debito_inter=10_000.00, credito=5_000.00, estorno=3_000.00),
+        "ms_rio_brilhante",
+        parametros,
+        ajuste_de_credito=500.00,
+    )
+    assert r.credito_da_parcela_incentivada == pytest.approx(1_500.00, abs=CENTAVO)
+    assert r.credito_presumido == pytest.approx(6_800.00, abs=CENTAVO)
 
 
-def test_o_credito_e_rateado_pela_participacao_do_debito(parametros_literais):
-    """Inclusive com o que está fora do alcance — o crédito é da filial inteira."""
-    linhas = [saida(6101, 60_000.00, "SP"), saida(6102, 40_000.00, "SP")]
-    r = calcular(linhas, "ms_rio_brilhante", 10_000.00, parametros_literais)
+def test_o_credito_e_rateado_pela_participacao_do_debito(parametros):
+    """Quadro CÁLCULO BENEFÍCIO FISCAL da GIA: uma linha por percentual."""
+    r = calcular(
+        industrial(debito_intra=40_000.00, debito_inter=60_000.00, credito=10_000.00),
+        "ms_rio_brilhante",
+        parametros,
+    )
+    assert r.intra.credito_rateado == pytest.approx(4_000.00, abs=CENTAVO)
     assert r.inter.credito_rateado == pytest.approx(6_000.00, abs=CENTAVO)
-    assert r.credito_fora_do_alcance == pytest.approx(4_000.00, abs=CENTAVO)
+
+
+def test_credito_maior_que_o_debito_nao_gera_beneficio_negativo(parametros):
+    r = calcular(
+        industrial(debito_inter=1_000.00, credito=5_000.00),
+        "ms_rio_brilhante",
+        parametros,
+    )
+    assert r.inter.base_do_incentivo == 0.0
+    assert r.credito_presumido == 0.0
 
 
 def test_beneficio_nunca_supera_o_saldo_devedor(parametros):
     """Cláusula terceira: deduzido do saldo devedor efetiva e regularmente devido."""
-    linhas = [saida(5101, 10_000.00), saida(6101, 20_000.00, "MG")]
-    r = calcular(linhas, "ms_rio_brilhante", 1_000.00, parametros)
+    r = calcular(
+        industrial(debito_intra=10_000.00, debito_inter=20_000.00, credito=1_000.00),
+        "ms_rio_brilhante",
+        parametros,
+    )
     assert r.confere
+
+
+def test_sem_debito_industrial_nao_ha_beneficio(parametros):
+    """Um mês sem produção própria não frui o Termo, por mais crédito que tenha."""
+    r = calcular(industrial(credito=50_000.00), "ms_rio_brilhante", parametros)
+    assert r.credito_presumido == 0.0
+    assert r.credito_da_parcela_incentivada == 0.0
+
+
+# -- FADEFE — guia avulsa --------------------------------------------------
+
+def test_fadefe_e_dois_por_cento_do_beneficio_fruido(parametros):
+    r = calcular(industrial(debito_inter=10_000.00), "ms_rio_brilhante", parametros)
+    assert r.credito_presumido == pytest.approx(8_000.00, abs=CENTAVO)
+    assert r.fadefe == pytest.approx(160.00, abs=CENTAVO)
+    assert r.fadefe_adicional == 0.0
+
+
+def test_o_fadefe_nao_entra_na_conta_grafica(parametros):
+    """É guia avulsa: sai no relatório, não abate nem acresce a apuração."""
+    r = calcular(industrial(debito_inter=10_000.00), "ms_rio_brilhante", parametros)
+    assert r.inter.icms_devido == pytest.approx(2_000.00, abs=CENTAVO)
+    assert r.inter.base_do_incentivo == pytest.approx(
+        r.inter.credito_presumido + r.inter.icms_devido, abs=CENTAVO
+    )
+
+
+# -- falhas ----------------------------------------------------------------
+
+def test_criterio_de_alcance_desconhecido_falha(parametros):
+    p = copy.deepcopy(parametros)
+    p.regimes["beneficios_fiscais"]["ms_rio_brilhante"]["alcance"]["criterio"] = "xyz"
+    with pytest.raises(BeneficioDesconhecido, match="não é reconhecido"):
+        calcular(industrial(debito_intra=100.0), "ms_rio_brilhante", p)
 
 
 def test_clausula_quarta_expirada_nao_pode_ser_aplicada(parametros):
     with pytest.raises(BeneficioDesconhecido, match="vigência encerrada"):
-        calcular([saida(6102, 10_000.00, "SP")],
-                 "ms_rio_brilhante_clausula_quarta", 0.0, parametros)
+        calcular(
+            industrial(debito_inter=10_000.00),
+            "ms_rio_brilhante_clausula_quarta",
+            parametros,
+        )
 
 
 def test_beneficio_inexistente_falha_com_mensagem_clara(parametros):
     with pytest.raises(BeneficioDesconhecido, match="não existe"):
-        calcular([saida(5101, 100.0)], "beneficio_que_nao_existe", 0.0, parametros)
+        calcular(industrial(debito_intra=100.0), "beneficio_que_nao_existe", parametros)

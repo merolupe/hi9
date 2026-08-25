@@ -3,15 +3,16 @@
 > Entregas incrementais. Cada uma termina com algo que o time fiscal consegue
 > abrir, conferir e opinar — nunca com "está quase pronto".
 
-**Situação em 21/08/2026:** Julho/2026 é reproduzido da ingestão até a apuração
-por estabelecimento, e **fecha sem nenhuma pendência**. 84 testes automáticos.
+**Situação em 25/08/2026:** Julho/2026 é reproduzido da ingestão ao benefício
+fiscal, **fecha sem nenhuma pendência**, e Rio Brilhante bate ao centavo com a
+GIA retificadora de 07/2026. 96 testes automáticos.
 
 | Entrega | Situação |
 |---|---|
 | 0 · Mapeamento técnico | ✅ concluída |
 | 1 · Base tratada e classificada | ✅ concluída |
 | 2 · Motor de ICMS: créditos, débitos e estornos | 🟡 falta só ajustes manuais |
-| 3 · Benefício fiscal de Rio Brilhante | 🟡 motor pronto; alcance em aberto |
+| 3 · Benefício fiscal de Rio Brilhante | ✅ concluída — confere com a GIA |
 | 4 · Centralização de São Paulo | ⬜ pode começar |
 | 5 · DIFAL | ⬜ falta o `.xlsx` de XML |
 | 6 · Interface e empacotamento | ⬜ pode começar |
@@ -86,30 +87,44 @@ reclassificados à mão, menos R$ 71,21 de resíduo da planilha.
 
 ---
 
-## Entrega 3 — Benefício fiscal de Rio Brilhante 🟡
+## Entrega 3 — Benefício fiscal de Rio Brilhante ✅
 
-**O motor está pronto**; o que falta é uma decisão tributária sobre o alcance.
+**Concluída em 25/08/2026.** O alcance, que era a maior incógnita do projeto,
+deixou de ser hipótese: três documentos oficiais de 07/2026 o fecharam.
 
 Termo de Acordo n. 1.190/2018, cláusula terceira, em vigor até 31/12/2032: 67%
-do saldo devedor, mais 13% nas interestaduais. O texto restringe às operações
-com produtos de **própria industrialização**; a apuração de Julho aplicou sobre
-**todas** as saídas.
+do saldo devedor, mais 13% nas interestaduais, **exclusivamente sobre a
+atividade industrial**. A cláusula quarta segue expirada desde 31/12/2022 — a
+revenda de R$ 93.717,23 de Julho não recebeu nada.
 
-| Critério | Benefício em Julho/2026 |
+O motor reproduz a cadeia inteira:
+
+| Etapa | Julho/2026 (R$) |
 |---|---|
-| `todas_as_saidas` — **padrão, reproduz a apuração** | R$ 277.369,17 |
-| `cfop_de_producao_propria` — leitura literal do Termo | R$ 228.357,72 |
-| Diferença | **R$ 49.011,45** |
+| Crédito industrial normal | 327.834,95 |
+| (−) estorno industrial | 245.987,17 |
+| (−) estorno de créditos (ajuste, linha 003 do Registro) | 3.865,30 |
+| (=) crédito da parcela incentivada | 77.982,48 |
+| Base do incentivo | 334.291,69 |
+| **Benefício** (67% intra + 80% inter) | **261.431,90** |
+| FADEFE 2% — guia avulsa, fora da conta gráfica | 5.228,64 |
 
-O critério é parâmetro, os dois estão implementados e testados, e **nenhum é
-asseverado como correto**. Ver `06-decisoes-pendentes.md`, item 1.
+Para chegar até aqui, três coisas mudaram no motor:
 
-Travas do motor: o benefício nunca supera o saldo devedor que o gerou, e tentar
-aplicar a cláusula quarta levanta erro com a data de expiração na mensagem. A
-memória de cálculo vai na aba `APURAÇÃO POR FILIAL`, passo a passo.
+1. **A chave do estorno passou a ser a alíquota**, não a carga efetiva. A parcela
+   virou fórmula: `1 − 4 / alíquota`. Vale R$ 73.843,39 nas importações de ureia.
+2. **A apuração passou a ser segregada por atividade** onde a UF exige. Sem isso
+   não existe "crédito da parcela incentivada".
+3. **Os ajustes que não vêm do Livro** entram por `AjustesDaApuracao`, explícitos.
 
-**Falta ainda:** a contribuição ao **FADEFE**, condição de fruição — o Termo
-remete o percentual à lei. Ver item 17.
+Travas do motor: o benefício nunca supera o saldo devedor que o gerou, atividade
+indefinida bloqueia o encerramento, e tentar aplicar a cláusula quarta levanta
+erro com a data de expiração na mensagem. A memória de cálculo vai na aba
+`APURAÇÃO POR FILIAL`, passo a passo.
+
+**O que sobrou em aberto** não é do motor, é de documento: o complemento de
+R$ 5.249,34 (decisão nº 18), a segregação de Corumbá sem GIA (nº 19), a
+centralização de MS (nº 20) e a origem dos créditos de ajuste (nº 21).
 
 ---
 
@@ -173,7 +188,7 @@ PER/DCOMP e emissão automática de NF-e de transferência.
 ```
 Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ⬜ ──► Entrega 6 ⬜ ──► Entrega 7 ⬜
                      │
-                     ├──►  Entrega 3 🟡  motor pronto, alcance em aberto
+                     ├──►  Entrega 3 ✅  concluída, confere com a GIA
                      ├──►  Entrega 5 ⬜   precisa: .xlsx de exemplo do XML
                      └──►  Entrega 8 ⬜   precisa: .xlsx da Base de Bens
 ```

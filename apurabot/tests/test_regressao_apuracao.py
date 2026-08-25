@@ -24,9 +24,6 @@ MANUAL = {
     "HINOVE (RIO BRILHANTE)": (469_903.05, 331_236.11, 138_666.94),
 }
 
-# Diferença conhecida e explicada, em reais de estorno.
-ICL_RIO_BRILHANTE = -8_947.80  # 9.019,01 da ICL reclassificada, menos 71,21 de resíduo
-
 CREDITO_INDEVIDO_CORUMBA = 14_424.02  # CFOP 2152, contraparte do 6152 de Guará
 
 
@@ -81,10 +78,18 @@ def test_credito_indevido_de_corumba_e_a_contraparte_do_debito_de_guara(apuracao
     assert debito_guara == pytest.approx(CREDITO_INDEVIDO_CORUMBA, abs=CENTAVO)
 
 
-def test_rio_brilhante_difere_apenas_pela_reclassificacao_da_icl(apuracao):
-    _, estorno, _ = MANUAL["HINOVE (RIO BRILHANTE)"]
-    diferenca = apuracao.filiais["HINOVE (RIO BRILHANTE)"].estorno - estorno
-    assert diferenca == pytest.approx(ICL_RIO_BRILHANTE, abs=CENTAVO)
+def test_rio_brilhante_bate_exatamente_com_a_gia(apuracao):
+    """O estorno de RB passou a fechar quando a chave virou a alíquota.
+
+    Com a chave na carga efetiva, as importações de ureia (CFOP 3101, alíquota
+    de 17% com base reduzida a 4%) estornavam 100%. Pela alíquota estornam
+    76,47%, e o total cai exatamente nos R$ 331.236,11 que o Registro de
+    Apuração declara na linha 003.
+    """
+    _, estorno, mantido = MANUAL["HINOVE (RIO BRILHANTE)"]
+    filial = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
+    assert filial.estorno == pytest.approx(estorno, abs=CENTAVO)
+    assert filial.credito_mantido == pytest.approx(mantido, abs=CENTAVO)
 
 
 def test_debito_de_saida_bate_com_a_dinamica(apuracao):
@@ -106,83 +111,173 @@ def test_mt_zera_o_credito_e_pr_zera_o_estorno(apuracao):
 
 
 # --------------------------------------------------------------------------
-# Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
+# Segregação por atividade e benefício fiscal de Rio Brilhante
+#
+# Os alvos desta seção NÃO vêm da planilha manual. Vêm dos três documentos
+# oficiais da competência 07/2026:
+#   - Registro de Apuração do ICMS, emitido em 07/08/2026
+#   - GIA - Benefício Fiscal, protocolo 36160E2, retificadora de 25/08/2026
+#   - GIA - Apuração Final, mesmo protocolo
+#
+# A GIA original invertia as colunas Industrial e Comercial. A retificadora
+# corrigiu, e é ela que o motor reproduz.
 # --------------------------------------------------------------------------
 
-BENEFICIO_LANCADO_EM_JULHO = 283_766.56
+from apurabot.apuracao import AjustesDaApuracao          # noqa: E402
+from apurabot.nucleo import atividade as ativ            # noqa: E402
+
+RB = "HINOVE (RIO BRILHANTE)"
+
+# Linha 003 do Registro: "Estorno de créditos para ajuste de apuração do ICMS".
+# Não nasce de documento no Livro Fiscal; na Entrega 2 virá de `ajustes.xlsx`.
+AJUSTE_ESTORNO_INDUSTRIAL = 3_865.30
+
+# GIA - Apuração Final, quadros "Débitos de ICMS" e "Créditos de ICMS".
+GIA_POR_ATIVIDADE = {
+    ativ.INDUSTRIAL: {"credito": 327_834.95, "estorno": 245_987.17, "debito": 412_274.17},
+    ativ.COMERCIAL: {"credito": 134_672.19, "estorno": 85_248.94, "debito": 93_717.23},
+}
+
+# Quadro "CÁLCULO BENEFÍCIO FISCAL" da GIA - Benefício Fiscal.
+GIA_BENEFICIO = {
+    "debito_intra": 56_934.28,
+    "debito_inter": 355_339.89,
+    "credito_intra": 10_769.23,
+    "credito_inter": 67_213.25,
+    "credito_da_parcela_incentivada": 77_982.48,
+    "base": 334_291.69,
+    "presumido_intra": 30_930.58,
+    "presumido_inter": 230_501.31,
+    "presumido": 261_431.89,
+    "fadefe": 5_228.64,
+}
+
+# Crédito de complemento de ICMS (CFOP 2906, R$ 5.249,34) que está no Livro e
+# não aparece nos créditos da GIA retificadora. Ver decisão pendente nº 18.
+COMPLEMENTO_FORA_DA_GIA = 5_249.34
 
 
-def test_beneficio_de_rio_brilhante_reproduz_o_que_a_apuracao_faz(apuracao):
-    """O alcance do benefício é decisão em aberto, e o padrão não a antecipa.
+@pytest.fixture(scope="module")
+def apuracao_com_ajustes(base_julho):
+    """A apuração como o documento oficial a declara, com a linha 003."""
+    return apurar(
+        base_julho,
+        ajustes=AjustesDaApuracao(
+            estorno_de_credito={RB: {ativ.INDUSTRIAL: AJUSTE_ESTORNO_INDUSTRIAL}}
+        ),
+    )
 
-    O parâmetro `alcance.criterio` está em `todas_as_saidas`, que é o que a
-    apuração de Julho/2026 fez. Com o crédito mantido daquela apuração
-    (R$ 138.666,94) o cálculo dá R$ 284.294,40 contra os R$ 283.766,56
-    lançados — 0,19%. Aqui o crédito é o corrigido, então o valor difere.
 
-    A leitura literal do Termo (só produção própria) daria bem menos, e está
-    medida no teste seguinte. Nenhuma das duas é asseverada como correta —
-    ver docs/apurabot/06-decisoes-pendentes.md, item 1.
+def test_so_ms_segrega_por_atividade(apuracao):
+    """SP, MT e PR apuram por estabelecimento; MS, por atividade."""
+    segregam = sorted(
+        f.uf for f in apuracao.filiais.values() if f.segrega_por_atividade
+    )
+    assert set(segregam) == {"MS"}
+
+
+def test_nenhuma_linha_fica_sem_atividade(apuracao):
+    """Atividade indefinida bloqueia o encerramento — regra 4 do projeto."""
+    assert apuracao.sem_regra_de_atividade == []
+
+
+@pytest.mark.parametrize("atividade", sorted(GIA_POR_ATIVIDADE))
+def test_a_segregacao_por_atividade_reproduz_a_gia(apuracao, atividade):
+    alvo = GIA_POR_ATIVIDADE[atividade]
+    somas = apuracao.filiais[RB].atividade(atividade)
+    assert somas.debito == pytest.approx(alvo["debito"], abs=CENTAVO)
+    assert somas.estorno == pytest.approx(alvo["estorno"], abs=CENTAVO)
+    esperado = alvo["credito"]
+    if atividade == ativ.COMERCIAL:
+        esperado += COMPLEMENTO_FORA_DA_GIA
+    assert somas.credito_bruto == pytest.approx(esperado, abs=CENTAVO)
+    assert somas.confere
+
+
+def test_o_complemento_de_icms_e_a_unica_diferenca_de_credito(apuracao):
+    """R$ 5.249,34 que o Livro tem e a GIA retificadora não. Decisão nº 18."""
+    filial = apuracao.filiais[RB]
+    da_gia = sum(a["credito"] for a in GIA_POR_ATIVIDADE.values()) + 2_146.57  # + CIAP
+    assert filial.credito_bruto - da_gia == pytest.approx(
+        COMPLEMENTO_FORA_DA_GIA, abs=CENTAVO
+    )
+
+
+def test_o_debito_industrial_e_a_base_das_saidas_incentivadas(apuracao):
+    """CFOP 5101 + 5118 + 6101, e o corte intra/inter que a GIA usa."""
+    somas = apuracao.filiais[RB].atividade(ativ.INDUSTRIAL)
+    assert somas.debito_de(ativ.INTRAESTADUAL) == pytest.approx(
+        GIA_BENEFICIO["debito_intra"], abs=CENTAVO
+    )
+    assert somas.debito_de(ativ.INTERESTADUAL) == pytest.approx(
+        GIA_BENEFICIO["debito_inter"], abs=CENTAVO
+    )
+
+
+def test_o_beneficio_reproduz_a_gia_ao_centavo(apuracao_com_ajustes):
+    """A cadeia inteira, do crédito industrial ao FADEFE."""
+    b = apuracao_com_ajustes.filiais[RB].beneficio
+    assert b is not None
+    assert b.criterio == "atividade_industrial"
+    assert b.credito_da_parcela_incentivada == pytest.approx(
+        GIA_BENEFICIO["credito_da_parcela_incentivada"], abs=0.01
+    )
+    assert b.intra.credito_rateado == pytest.approx(GIA_BENEFICIO["credito_intra"], abs=0.01)
+    assert b.inter.credito_rateado == pytest.approx(GIA_BENEFICIO["credito_inter"], abs=0.01)
+    assert b.base_do_incentivo == pytest.approx(GIA_BENEFICIO["base"], abs=0.01)
+    assert b.intra.credito_presumido == pytest.approx(
+        GIA_BENEFICIO["presumido_intra"], abs=0.01
+    )
+    assert b.inter.credito_presumido == pytest.approx(
+        GIA_BENEFICIO["presumido_inter"], abs=0.01
+    )
+    assert b.credito_presumido == pytest.approx(GIA_BENEFICIO["presumido"], abs=0.01)
+    assert b.confere
+
+
+def test_o_fadefe_de_julho_sao_dois_por_cento(apuracao_com_ajustes):
+    """Relatório FAI de 07/2026: benefício fruído 261.431,90 → 5.228,64."""
+    b = apuracao_com_ajustes.filiais[RB].beneficio
+    assert b.percentual_fadefe == 2.0
+    assert b.fadefe == pytest.approx(GIA_BENEFICIO["fadefe"], abs=0.01)
+    assert b.fadefe_adicional == 0.0
+
+
+def test_sem_o_ajuste_o_beneficio_para_no_livro(apuracao):
+    """O que o Livro Fiscal sozinho alcança, e o que falta para a GIA.
+
+    A diferença de R$ 3.022,85 é o efeito do estorno de créditos da linha 003
+    do Registro — R$ 3.865,30 a menos de crédito industrial. Enquanto
+    `ajustes.xlsx` não existir, é essa a distância entre motor e declaração.
     """
-    beneficio = apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio
-    assert beneficio is not None
-    assert beneficio.criterio == "todas_as_saidas"
-    assert beneficio.credito_presumido == pytest.approx(277_369.17, abs=0.01)
-    assert beneficio.debito_fora_do_alcance == 0.0
+    b = apuracao.filiais[RB].beneficio
+    assert b.credito_da_parcela_incentivada == pytest.approx(81_847.78, abs=0.01)
+    assert b.credito_presumido == pytest.approx(258_409.05, abs=0.01)
+    assert GIA_BENEFICIO["presumido"] - b.credito_presumido == pytest.approx(
+        3_022.85, abs=0.01
+    )
 
 
-def test_a_leitura_literal_do_termo_daria_muito_menos(apuracao, base_julho):
-    """Quanto custa a decisão: R$ 49 mil de diferença entre as duas leituras.
+def test_a_revenda_nao_entra_no_beneficio(apuracao_com_ajustes):
+    """Cláusula quarta expirada em 31/12/2022: revenda ficou fora da base.
 
-    O inciso I da cláusula terceira diz "exclusivamente às operações realizadas
-    com os produtos resultantes de sua própria industrialização neste Estado".
-    Restringindo a base aos CFOP de produção própria, o benefício cai.
+    O débito comercial de R$ 93.717,23 não recebe crédito presumido nenhum.
     """
-    import copy
-
-    from apurabot.nucleo.beneficio import calcular
-
-    params = copy.deepcopy(base_julho.parametros)
-    beneficio = params.regimes["beneficios_fiscais"]["ms_rio_brilhante"]
-    beneficio["alcance"]["criterio"] = "cfop_de_producao_propria"
-
-    filial = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
-    linhas = [
-        t for t in base_julho.linhas
-        if "RIO BRILHANTE" in str(t.origem.dados.get("estabelecimento"))
-    ]
-    literal = calcular(linhas, "ms_rio_brilhante", filial.credito_mantido, params)
-
-    assert literal.credito_presumido == pytest.approx(228_357.72, abs=0.01)
-    assert literal.debito_fora_do_alcance == pytest.approx(93_717.24, abs=CENTAVO)
-    diferenca = filial.beneficio.credito_presumido - literal.credito_presumido
-    assert diferenca == pytest.approx(49_011.45, abs=0.01)
+    filial = apuracao_com_ajustes.filiais[RB]
+    assert filial.beneficio.debito_beneficiado == pytest.approx(412_274.17, abs=CENTAVO)
+    assert filial.atividade(ativ.COMERCIAL).debito == pytest.approx(93_717.23, abs=CENTAVO)
 
 
-def test_a_apuracao_de_julho_nao_indica_prorrogacao_da_clausula_quarta(apuracao):
-    """Se a quarta valesse, a revenda interestadual teria 50%, não 67/80.
+def test_os_percentuais_sao_os_da_clausula_terceira(apuracao_com_ajustes):
+    """Se a cláusula quarta valesse, haveria 50% em algum lugar. Não há."""
+    b = apuracao_com_ajustes.filiais[RB].beneficio
+    assert {b.intra.percentual, b.inter.percentual} == {67.0, 80.0}
 
-    Débito de revenda interestadual (CFOP 6102) em Julho: R$ 47.298,29. Sob a
-    cláusula quarta o benefício dela seria metade do saldo devedor. O valor
-    lançado só fecha aplicando os percentuais da cláusula TERCEIRA sobre todas
-    as saídas — o que aponta para base ampliada, e não para a quarta prorrogada.
-    """
-    filial = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
-    beneficio = filial.beneficio
-    percentuais = {beneficio.intra.percentual, beneficio.inter.percentual}
-    assert percentuais == {67.0, 80.0}
-    assert 50.0 not in percentuais
+
 def test_so_rio_brilhante_tem_beneficio(apuracao):
     com_beneficio = [f.estabelecimento for f in apuracao.filiais.values() if f.beneficio]
-    assert com_beneficio == ["HINOVE (RIO BRILHANTE)"]
+    assert com_beneficio == [RB]
 
 
-def test_a_base_do_beneficio_cobre_todo_o_debito_de_saida(apuracao):
-    """No critério em vigor, nada fica de fora — e a soma tem que fechar."""
-    beneficio = apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio
-    total = beneficio.debito_beneficiado + beneficio.debito_fora_do_alcance
-    assert total == pytest.approx(505_991.41, abs=CENTAVO)
-
-
-def test_o_beneficio_nao_supera_o_saldo_devedor_que_o_gerou(apuracao):
-    assert apuracao.filiais["HINOVE (RIO BRILHANTE)"].beneficio.confere
+def test_o_beneficio_nao_supera_o_saldo_devedor_que_o_gerou(apuracao_com_ajustes):
+    assert apuracao_com_ajustes.filiais[RB].beneficio.confere

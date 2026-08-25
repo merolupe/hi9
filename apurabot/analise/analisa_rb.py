@@ -1,55 +1,92 @@
-"""Reproduz o crédito presumido de Rio Brilhante a partir do Livro Fiscal.
+"""Confere Rio Brilhante contra os documentos oficiais da competência.
 
-Pontos de Atenção: 67% de crédito sobre o saldo devedor nas saídas intraestaduais
-e 80% nas interestaduais. Ver docs/apurabot/06-decisoes-pendentes.md, item 1.
+Roda o motor sobre o Livro Fiscal e compara, linha a linha, com o que a GIA
+retificadora e o Registro de Apuração declaram. Serve como verificação rápida no
+fechamento mensal: se algum campo divergir, aparece aqui antes de virar problema.
+
+    python analise/analisa_rb.py <livro_fiscal.xls>
+
+Os alvos abaixo são de Julho/2026. Numa competência nova eles mudam — o que não
+muda é a mecânica, que está em docs/apurabot/04-matriz-de-regras-icms.md.
 """
-import collections
-from _comum import abrir, leitor
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from apurabot.apuracao import AjustesDaApuracao, apurar          # noqa: E402
+from apurabot.base_tratada import tratar                          # noqa: E402
+from apurabot.nucleo import atividade as ativ                     # noqa: E402
 
 FILIAL = "HINOVE (RIO BRILHANTE)"
-CREDITO_MANTIDO = 138_666.94      # aba ESTORNO, Julho/2026
-BF_LANCADO = 283_766.56           # aba ESTORNO, Julho/2026
-PCT_INTRA, PCT_INTER = 0.67, 0.80
+
+# Linha 003 do Registro de Apuração: "Estorno de créditos para ajuste de
+# apuração do ICMS". Não nasce de documento no Livro Fiscal.
+AJUSTE_ESTORNO_INDUSTRIAL = 3_865.30
+
+# GIA retificadora, protocolo 36160E2, entregue em 25/08/2026.
+GIA = [
+    ("crédito industrial",              "credito_industrial",              327_834.95),
+    ("estorno industrial",              "estorno_industrial",              245_987.17),
+    ("crédito da parcela incentivada",  "credito_da_parcela_incentivada",   77_982.48),
+    ("débito industrial",               "debito_beneficiado",              412_274.17),
+    ("base do incentivo",               "base_do_incentivo",               334_291.69),
+    ("benefício (67% + 80%)",           "credito_presumido",               261_431.90),
+    ("FADEFE 2% — guia avulsa",         "fadefe",                            5_228.64),
+]
 
 
 def main():
-    aba = abrir().sheet_by_name("Livro Fiscal")
-    v = leitor(aba)
-    debito = collections.Counter()
-    por_cfop = collections.Counter()
+    if len(sys.argv) < 2:
+        sys.exit("uso: python analise/analisa_rb.py <livro_fiscal.xls>")
 
-    for r in range(1, aba.nrows):
-        if v(r, "Nome Fantasia (Empresa)") != FILIAL:
+    base = tratar(sys.argv[1])
+    apuracao = apurar(
+        base,
+        ajustes=AjustesDaApuracao(
+            estorno_de_credito={FILIAL: {ativ.INDUSTRIAL: AJUSTE_ESTORNO_INDUSTRIAL}}
+        ),
+    )
+    filial = apuracao.filiais.get(FILIAL)
+    if filial is None:
+        sys.exit(f"{FILIAL} não aparece no Livro Fiscal informado.")
+
+    print(f"\n{FILIAL} — competência {base.competencia}\n")
+
+    print("Segregação por atividade")
+    print(f"  {'atividade':<22}{'crédito':>14}{'estorno':>14}{'débito':>14}")
+    for nome in ativ.ORDEM:
+        if nome not in filial.por_atividade:
             continue
-        if v(r, "Entrada/Saída") != "Saída":
-            continue
-        icms = v(r, "Vlr. do ICMS") or 0
-        if not icms:
-            continue
-        tipo = "INTRA" if v(r, "UF de Origem") == v(r, "UF de Destino") else "INTER"
-        debito[tipo] += icms
-        por_cfop[(int(v(r, "CFOP")), tipo, str(v(r, "Descrição da CFOP"))[:32])] += icms
+        t = filial.por_atividade[nome]
+        print(f"  {nome:<22}{t.credito_bruto:>14,.2f}{t.estorno:>14,.2f}{t.debito:>14,.2f}")
+    if filial.atividades_sem_regra:
+        t = filial.atividades_sem_regra
+        print(f"  {'SEM REGRA':<22}{t.credito_bruto:>14,.2f}{t.estorno:>14,.2f}"
+              f"{t.debito:>14,.2f}   <-- bloqueia o encerramento")
 
-    d_intra, d_inter = debito["INTRA"], debito["INTER"]
-    total = d_intra + d_inter
+    print("\nConferência contra a GIA retificadora")
+    print(f"  {'campo':<32}{'motor':>14}{'GIA':>14}{'diferença':>13}")
+    divergencias = 0
+    for rotulo, campo, alvo in GIA:
+        obtido = getattr(filial.beneficio, campo)
+        delta = obtido - alvo
+        marca = "" if abs(delta) < 0.02 else "   <-- DIVERGE"
+        if marca:
+            divergencias += 1
+        print(f"  {rotulo:<32}{obtido:>14,.2f}{alvo:>14,.2f}{delta:>+13,.2f}{marca}")
 
-    print("Débito de saída por CFOP:")
-    for (cfop, tipo, desc), val in sorted(por_cfop.items(), key=lambda kv: -kv[1]):
-        print(f"  {cfop}  {tipo:5}  {desc:34}  {val:>14,.2f}")
-    print(f"  {'TOTAL':49}  {total:>14,.2f}\n")
+    print("\nMemória do benefício")
+    for passo in filial.beneficio.memoria:
+        print(f"  {passo}")
 
-    saldo_devedor = total - CREDITO_MANTIDO
-    p_intra = d_intra / total
-    bf = saldo_devedor * (PCT_INTRA * p_intra + PCT_INTER * (1 - p_intra))
-
-    print(f"débito INTRA        {d_intra:>14,.2f}  ({p_intra * 100:.2f}%)")
-    print(f"débito INTER        {d_inter:>14,.2f}  ({(1 - p_intra) * 100:.2f}%)")
-    print(f"crédito mantido     {CREDITO_MANTIDO:>14,.2f}")
-    print(f"saldo devedor       {saldo_devedor:>14,.2f}")
-    print(f"B.F. calculado      {bf:>14,.2f}")
-    print(f"B.F. lançado        {BF_LANCADO:>14,.2f}")
-    print(f"diferença           {bf - BF_LANCADO:>+14,.2f}  ({abs(bf / BF_LANCADO - 1) * 100:.2f}%)")
+    print()
+    if divergencias:
+        print(f"{divergencias} campo(s) divergindo da declaração. Investigar antes de fechar.")
+        return 1
+    print("Todos os campos conferem com o declarado.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

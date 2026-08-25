@@ -50,29 +50,51 @@ Guará, carga 20,5% → 21.665,88 × 16,5% = 3.574,87).
 Exemplos numéricos da própria regra: carga 12% estorna 8%; carga 7% estorna 3%;
 carga 17% estorna 13%; carga 18% estorna 14%; carga 20,5% estorna 16,5%.
 
-## 3. MS — estorno proporcional e benefício de Rio Brilhante
+## 3. MS — estorno proporcional, atividade e benefício de Rio Brilhante
 
-### 3.1. A mecânica de MS não é a de SP
+### 3.1. O estorno é fórmula, e a chave é a alíquota
 
-Confirmado contra a **apuração individualizada de Corumbá (Empresa 9)**, aba
-`ENTRADAS`. Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor
-contábil:
+Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor contábil.
+O benefício limita o crédito à **carga de referência de 4%**, e o que passa dela
+se estorna:
 
 ```
-estorno = ICMS × parcela não tributada da operação
+parcela estornada = 1 − 4 / alíquota
+estorno           = ICMS × parcela estornada
 ```
 
-A parcela não tributada é a coluna *REDUÇÃO ATUAL* da tabela de operação
-interestadual, e o que sobra leva a carga exatamente a 4%:
-
-| Carga da entrada | Parcela não tributada | Crédito que resta | Confere |
+| Alíquota | Parcela estornada | Crédito que resta | Confere |
 |---|---|---|---|
-| 12% | 66,67% | 33,33% | 12% × 0,3333 = **4,00%** |
-| 7% | 42,86% | 57,14% | 7% × 0,5714 = **4,00%** |
-| 4% | — | 100% | já está em 4% |
+| 4% | 0,0000 | 100% | já está em 4% |
+| 7% | 0,4286 | 57,14% | 7% × 0,5714 = **4,00%** |
+| 12% | 0,6667 | 33,33% | 12% × 0,3333 = **4,00%** |
+| 17% | 0,7647 | 23,53% | 17% × 0,2353 = **4,00%** |
+| 18% | 0,7778 | 22,22% | 18% × 0,2222 = **4,00%** |
+| 19% | 0,7895 | 21,05% | 19% × 0,2105 = **4,00%** |
 
-Reproduz Julho/2026 na sexta casa decimal: R$ 19.961,553359 de estorno e
-R$ 12.079,216641 de crédito a apropriar.
+Fonte: aba `ESTORNO` da apuração de Rio Brilhante, tabelas *OPERAÇÃO
+INTRAESTADUAL* e *OPERAÇÃO INTERESTADUAL*, coluna *REDUÇÃO ATUAL*.
+
+> ### ⚠️ A chave é a ALÍQUOTA, não a carga efetiva
+>
+> Esse é o ponto que separou o motor da apuração real por mais tempo, e vale
+> R$ 73.843,39 numa competência só.
+>
+> As importações de ureia e ácido bórico de Julho/2026 (CFOP 3101) têm
+> **alíquota de 17% com base reduzida**: valor contábil de R$ 7.845.664,57 para
+> base de R$ 1.846.038,67, o que dá **carga efetiva de 4%**.
+>
+> Lendo a carga, a conclusão é "entrada já beneficiada, estorna tudo".
+> Lendo a alíquota, estorna 76,47% e **mantém R$ 73.843,39 de crédito**.
+> É a segunda que a apuração faz.
+>
+> A carga efetiva serve para **conferir** o documento. Quem comanda a proporção
+> do estorno é a alíquota.
+
+O arredondamento da parcela é parâmetro (`casas_decimais_da_parcela: 4`).
+Reproduz Julho/2026 na sexta casa decimal em Corumbá — R$ 19.961,553359 de
+estorno — e ao centavo em Rio Brilhante: **R$ 331.236,11**, o mesmo valor que a
+linha 003 do Registro de Apuração declara.
 
 > **Por que SP é diferente:** em SP o estorno é `valor contábil × (carga − 4%)`.
 > Onde base e valor contábil coincidem os dois caminhos quase se encontram, mas
@@ -95,16 +117,50 @@ crédito mantido + estorno + crédito indevido = crédito bruto
 > (26.503,24 = 12.079,22 + 14.424,02). A **individualizada** de Corumbá, não.
 > Vale a individualizada.
 
-### 3.3. Demais regras de MS
+### 3.3. Segregação por atividade
+
+A GIA de MS não aceita uma apuração só por estabelecimento: exige o resultado
+separado em **Industrial, Comercial, Importados e Prestacional/Outras**.
+
+Isso não é formalidade de declaração. **É a segregação que dimensiona o
+benefício**, porque o crédito presumido incide exclusivamente sobre o saldo
+devedor da atividade industrial. Sem ela, não existe "crédito da parcela
+incentivada" e o benefício não tem como ser calculado.
+
+A atividade sai do **CFOP**, com uma exceção: o CFOP do serviço de transporte
+diz quem contratou o frete, não o que o frete carrega — e é o que ele carrega
+que decide. Por isso a **descrição vence o CFOP** quando casa.
+
+| Atividade | Débito | Crédito |
+|---|---|---|
+| Industrial | 5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122 | 1101, 2101, 3101, 1151, 2151, 3151, … + frete de insumo |
+| Comercial | 5102, 6102, 5905, 6905, 5934, 6934, … | 1102, 2102, 3102, 1152, 2152, 3152, 1352, 2352, 1353, 2353, 2906, … |
+| Prestacional/Outras | 5910, 6910, 5949, 6949 | 1604, 2604 (CIAP) |
+
+Julho/2026 em Rio Brilhante, conferido contra a GIA - Apuração Final:
+
+| Atividade | Crédito | Estorno | Débito |
+|---|---|---|---|
+| Industrial | 327.834,95 | 245.987,17 | **412.274,17** |
+| Comercial | 134.672,19 | 85.248,94 | 93.717,23 |
+| Prestacional/Outras (CIAP) | 2.146,57 | — | 0,01 |
+
+O corte **intra/inter** vem do primeiro dígito do CFOP: 5 é interno, 6 é
+interestadual, 7 é exterior. No débito industrial de Julho: R$ 56.934,28 intra
+(5101 + 5118) e R$ 355.339,89 inter (6101).
+
+> **Atividade indefinida bloqueia o encerramento.** CFOP que não casa com nenhuma
+> atividade recebe `SEM REGRA`, como manda a regra 4 do projeto.
+
+### 3.4. Demais regras de MS
 
 | Item | Regra | Situação |
 |---|---|---|
-| Entrada interestadual > 4% | Crédito mantido limitado a 4% | Escopo v1.0, item 5.3 |
-| Entrada a 4% | Crédito mantido de **0,941176%** | Escopo v1.0, item 5.3 |
-| Fertilizante interno MS | Manutenção de **0,941176%** | Escopo v1.0, item 5.4 |
+| Entrada com alíquota > 4% | Crédito mantido limitado à carga de 4% | Homologado |
 | DIFAL em MS | Informa na apuração e recolhe em **guia avulsa** | Não entra em conta gráfica |
+| Centralização | RB **recebe** saldo devedor de estabelecimento centralizador | Não modelada — decisão nº 20 |
 
-### 3.4. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
+### 3.5. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
 
 Firmado em 19/09/2018 entre o Estado de MS e a Hinove, publicado no DOE 9.755.
 Base legal: LC estadual 93/2001 e Lei 4.049/2011.
@@ -123,25 +179,56 @@ Base legal: LC estadual 93/2001 e Lei 4.049/2011.
 **Parágrafo terceiro:** *"As matérias-primas não envolvidas no processo fabril
 não poderão gozar dos incentivos previstos neste instrumento."*
 
-**Parágrafo primeiro:** a fruição é condicionada à contribuição mensal ao
-**FADEFE** sobre o benefício efetivamente utilizado.
-
 **Cláusula quarta — expirou em 31/12/2022.** Dava 50% do saldo devedor nas saídas
 interestaduais com mercadorias adquiridas em outras UFs, e 50% do imposto nas
-saídas interestaduais com itens importados. A cláusula oitava fixa o prazo de
-forma expressa.
+saídas interestaduais com itens importados.
 
-> **O alcance do benefício está em aberto.** O texto da cláusula terceira
-> restringe às operações com produtos de própria industrialização, mas a apuração
-> de Julho/2026 aplicou os percentuais sobre todas as saídas — diferença de
-> R$ 49 mil. Os dois critérios estão implementados como parâmetro, e o padrão
-> reproduz a apuração. **Nenhum é asseverado como correto** até a Gerência
-> Fiscal/Tributária decidir. Ver `06-decisoes-pendentes.md`, item 1.
+#### O alcance está resolvido: é a atividade industrial
 
-O benefício movimenta ainda um **controle de crédito outorgado**
-(código de ajuste `MS090004` — apropriação de crédito outorgado para abatimento
-de débitos), com saldo anterior, créditos recebidos por transferência, créditos
-utilizados no período e saldo a transportar.
+A linha 012 do Registro de Apuração nomeia a dedução — *"Termo de acordo
+n. 1190/2018 - **Industrialização própria** - Incentivo TA/CDI"* — e a GIA -
+Benefício Fiscal traz base de saídas incentivadas de R$ 412.274,17, exatamente
+os CFOP industriais do mês. A revenda de R$ 93.717,23 não recebe nada, o que
+confirma que a cláusula quarta segue expirada.
+
+#### A cadeia de cálculo
+
+```
+    crédito industrial normal ........  327.834,95
+    (−) estorno industrial ...........  245.987,17
+    (−) estorno de créditos (ajuste) .    3.865,30   ← linha 003 do Registro
+    (=) crédito da parcela incentivada   77.982,48
+
+    débito industrial 412.274,17 − 77.982,48 = base 334.291,69
+
+      intra  (56.934,28  − 10.769,23) × 67% =  30.930,58
+      inter  (355.339,89 − 67.213,25) × 80% = 230.501,31
+                                              ──────────
+                                   BENEFÍCIO  261.431,90
+```
+
+O crédito da parcela incentivada é **rateado pela participação do débito**
+industrial em cada destino — 13,810% intra e 86,190% inter.
+
+O ajuste de R$ 3.865,30 **não nasce de documento no Livro Fiscal**. É a linha
+003 do Registro de Apuração, e entra como parâmetro explícito. Sem ele o motor
+para em R$ 258.409,05 de benefício — a distância entre o Livro e a declaração.
+
+#### FADEFE / Pró-Desenvolve — guia avulsa
+
+**2%** sobre o benefício fruído, mais um **adicional de equilíbrio fiscal hoje
+em 0%**. Em Julho/2026: R$ 261.431,90 × 2% = **R$ 5.228,64**.
+
+É condição de fruição (cláusula terceira, parágrafo primeiro), calculada na
+própria GIA e recolhida em **guia avulsa** — sai no relatório como informação e
+**não entra na conta gráfica**.
+
+#### Controle de crédito outorgado
+
+O benefício movimenta ainda um controle de crédito outorgado (código de ajuste
+`MS090004` — apropriação de crédito outorgado para abatimento de débitos), com
+saldo anterior, créditos recebidos por transferência, créditos utilizados no
+período e saldo a transportar.
 
 ## 4. Regras que valem para todas as UFs
 

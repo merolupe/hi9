@@ -8,92 +8,51 @@
 
 ---
 
-## 1. 🔴 Rio Brilhante — o alcance do benefício
+## 1. ✅ Rio Brilhante — o alcance do benefício *(respondida)*
 
 **Termo de Acordo n. 1.190/2018**, firmado em 19/09/2018, publicado no DOE 9.755.
 Base legal: LC estadual 93/2001 e Lei 4.049/2011.
 
-### O que o Termo diz
+**Resolvida em 25/08/2026 por documento oficial, não por dedução.** O benefício
+alcança a **atividade industrial**, exatamente como a leitura literal do inciso I
+da cláusula terceira indicava.
 
-**Cláusula terceira**, em vigor até 31/12/2032:
+### A prova
 
-| Inciso | Benefício | Alcance escrito |
-|---|---|---|
-| **I** | **67%** do saldo devedor do ICMS | *"aplicável **exclusivamente** às operações realizadas com os produtos resultantes de sua própria industrialização neste Estado"* |
-| **II** | adicional de **13%**, totalizando **80%** | *"aplicável **exclusivamente** nas operações interestaduais"* |
+Três documentos da competência 07/2026, entregues em 25/08/2026:
 
-O benefício é *"deduzido do saldo devedor que tenha resultado como efetiva e
-regularmente devido"*. Incisos III a VI tratam de diferimentos.
+1. **Registro de Apuração do ICMS**, linha 012 — a dedução tem nome:
+   *"BENEFÍCIOS FISCAIS - Termo de acordo n. 1190/2018 - **Industrialização
+   própria** - Incentivo TA/CDI"*.
+2. **GIA - Benefício Fiscal** (protocolo 36160E2) — base de saídas incentivadas
+   de **R$ 412.274,17**, que é exatamente CFOP 5101 + 5118 + 6101 do mês.
+3. **GIA - Apuração Final** — quatro colunas de atividade, com o benefício
+   inteiro na coluna Industrial.
 
-**Cláusula quarta**, com prazo até 31/12/2022 pela cláusula oitava: crédito
-outorgado de **50%** do saldo devedor nas saídas interestaduais com mercadorias
-**adquiridas em outras UFs**, e crédito presumido de 50% do imposto nas saídas
-interestaduais com **itens importados**.
+### O que estava errado do nosso lado
 
-### 🔴 A apuração de Julho/2026 não segue esse alcance
+A hipótese `todas_as_saidas` vinha de um ajuste que batia a 0,19% — e essa
+proximidade era coincidência. A apuração estava certa desde o começo; o modelo é
+que estava errado. Fica o registro: **número que fecha não é mecanismo provado.**
 
-Os percentuais da cláusula terceira foram aplicados sobre **todas** as saídas:
-
-| Hipótese | Benefício (R$) |
-|---|---|
-| A) Só produção própria — leitura literal do inciso I | 228.357,72 |
-| B) Cláusula terceira + quarta (50% na revenda interestadual) | 245.107,61 |
-| C) **Cláusula terceira sobre todas as saídas** | 277.369,17 |
-| C) idem, com o crédito mantido que a apuração manual usava | **284.294,40** |
-| **Lançado na apuração de Julho** | **283.766,56** |
-
-**A hipótese C fecha em 0,19%.** As outras não chegam perto.
-
-### Isso indica prorrogação da cláusula quarta?
-
-**Não.** Se a quarta estivesse em vigor, a revenda interestadual (CFOP 6102,
-R$ 47.298,29 de débito em Julho) receberia **50%**, e o total ficaria em torno de
-R$ 245 mil. O que se observa são os percentuais da **terceira** — 67% e 80% —
-aplicados a uma base maior que a que a terceira descreve.
-
-Duas possibilidades, e nenhuma delas se resolve com os documentos em mãos:
-
-1. **Existe aditivo ao Termo** que amplia o alcance da cláusula terceira ou
-   prorroga a quarta com outra redação. O arquivo recebido é o instrumento
-   original de 2018 — não há aditivo entre as sete páginas.
-2. **A base foi ampliada na prática**, sem amparo no instrumento.
-
-### O que os dados dizem sobre "produção própria"
-
-Os produtos vendidos com CFOP de revenda são **disjuntos** dos vendidos como
-produção própria — nenhum aparece nos dois grupos:
-
-| Vendidos como revenda (5102/6102) |
-|---|
-| UREIA 46-00-00 (Bag 1.000 Kg · Prill · GR SC 50 Kg · Bag 500 Kg) |
-| Sulfato de Zinco 35% Imp. SC 25 Kg |
-| HINOFIX 5 L |
-| Nitrato de Cálcio Imp. Sc 25 Kg |
-
-Ureia comprada e revendida, importados revendidos. Pelo cadastro, o CFOP separa
-bem: essas saídas não são de produtos que Rio Brilhante industrializa.
-
-### Como está no motor
-
-O alcance é **parâmetro**, com os dois critérios implementados:
+### Como ficou no motor
 
 ```yaml
 alcance:
-  criterio: todas_as_saidas       # ou: cfop_de_producao_propria
+  criterio: atividade_industrial
+  rateio_do_credito: participacao_do_debito
 ```
 
-**O padrão é `todas_as_saidas`** — reproduzir o que a apuração faz, sem impor
-leitura nova. O regime está `homologado: false`, e um teste mede quanto custa a
-decisão: **R$ 49.011,45** de diferença entre as duas leituras na competência de
-Julho.
+O regime está `homologado: true`. O rateio pela participação do débito, que era
+premissa assumida, também se confirmou: a GIA reparte o crédito da parcela
+incentivada em R$ 10.769,23 intra e R$ 67.213,25 inter, o que é exatamente a
+participação de CFOP 5101+5118 (13,810%) e 6101 (86,190%) no débito industrial.
 
-### Perguntas
+### A cláusula quarta continua expirada
 
-1. Existe **aditivo ou prorrogação** ao Termo de Acordo n. 1.190/2018 que amplie
-   o alcance da cláusula terceira ou estenda a quarta?
-2. Se não existir, o benefício deve passar a alcançar só a produção própria?
-3. Como o crédito mantido é rateado entre operações beneficiadas e não
-   beneficiadas? O Termo não diz. Assumida a **participação do débito**.
+Se ela estivesse prorrogada, haveria 50% em algum lugar da GIA. Não há: só 67% e
+80%, e só sobre produção própria. A revenda de R$ 93.717,23 não recebe crédito
+presumido nenhum.
 
 ## 2. ✅ MS — base do estorno proporcional *(respondida)*
 
@@ -308,8 +267,20 @@ pendências novas no primeiro fechamento.
 Corumbá usa e os que reproduzem Julho/2026 exatamente.
 
 A alternativa seriam as frações exatas `3/7` e `2/3`, que dariam R$ 19.960,51 de
-estorno em vez de R$ 19.961,55 — R$ 1,04 de diferença. Os valores em uso estão
-explícitos em `parametros/regimes.yaml`, então trocar depois é editar duas linhas.
+estorno em vez de R$ 19.961,55 — R$ 1,04 de diferença.
+
+**Atualização de 25/08/2026.** A parcela deixou de ser tabela e virou fórmula
+(`1 − carga_de_referencia / alíquota`), então o arredondamento passou a ser um
+parâmetro só: `casas_decimais_da_parcela: 4`. Pôr `null` usa a fração exata.
+
+Vale registrar um resíduo achado ao implementar. Na aba ESTORNO de Rio Brilhante,
+o ácido fosfórico (CFOP 2101, 7%) estorna **R$ 3.865,55** — o arredondado. A
+linha 003 do Registro de Apuração traz, **além** dos R$ 331.236,11, um *"Estorno
+de créditos para ajuste de apuração do ICMS"* de **R$ 3.865,30**, que é o mesmo
+9.019,01 × (1 − 4/7) calculado com a **fração exata**. Vinte e cinco centavos de
+diferença entre os dois. Pode ser item distinto; pode ser a mesma linha lançada
+duas vezes, uma arredondada e outra exata. Não foi decidido — o motor reproduz o
+declarado, e o ajuste entra como parâmetro explícito, não embutido.
 
 ## 16. 🟡 Coluna TOP — extração definida, classificação a validar
 
@@ -359,19 +330,120 @@ produto químico e o lançamento é que deveria mudar?
 **Enquanto não há resposta, a classificação por TOP não foi implementada.** A
 coluna é lida, viaja na base tratada e está disponível para conferência.
 
-## 17. 🟡 FADEFE — condição de fruição do benefício de RB
+## 17. ✅ FADEFE / Pró-Desenvolve — respondida
 
-A cláusula terceira, parágrafo primeiro, do Termo de Acordo condiciona a fruição
-do benefício a uma contribuição mensal ao **Fundo de Apoio ao Desenvolvimento
-Econômico e de Equilíbrio Fiscal do Estado (FADEFE)**, *"no percentual, prazo e
-nas condições definidas em lei, sobre o benefício fiscal/financeiro efetivamente
-utilizado"*.
+A cláusula terceira, parágrafo primeiro, do Termo condiciona a fruição a uma
+contribuição mensal ao **Fundo de Apoio ao Desenvolvimento Econômico e de
+Equilíbrio Fiscal do Estado (FADEFE)**, *"no percentual, prazo e nas condições
+definidas em lei, sobre o benefício fiscal/financeiro efetivamente utilizado"*.
 
-O Termo não fixa o percentual — remete à lei. Em Julho/2026 o benefício apurado
-foi de R$ 228.357,72, então a contribuição sai desse valor.
+**Respondida em 25/08/2026:**
 
-**Perguntas:** qual o percentual em vigor? A contribuição entra na apuração de
-ICMS como dedução, ou é obrigação apartada, fora da conta gráfica?
+- **Percentual: 2%** sobre o benefício fruído.
+- **Adicional Pró-Desenvolve / FADEFE Equilíbrio Fiscal: 0%** — existe como
+  campo próprio na GIA e hoje está zerado.
+- **É guia avulsa**, calculada na própria GIA. **Não entra na conta gráfica** da
+  apuração de ICMS.
 
-**Padrão assumido:** não calculada. O parâmetro `fadefe.percentual` está `null`
-em `regimes.yaml`, e o benefício é apurado sem ela.
+Em Julho/2026: benefício fruído R$ 261.431,90 → contribuição de **R$ 5.228,64**,
+conferida contra a GIA - Benefício Fiscal e o Relatório FAI.
+
+**Como ficou no motor:** os dois percentuais são parâmetro com vigência, o valor
+sai numa seção própria do relatório — *"Contribuição ao Pró-Desenvolve / FADEFE
+— GUIA AVULSA"* — e não toca o saldo apurado.
+
+---
+
+## 18. 🟡 Complemento de ICMS de RB — está no Livro e não está na GIA
+
+O complemento de ICMS de Rio Brilhante (CFOP 2906, produto 701000075) traz
+**R$ 5.249,34** de crédito no Livro Fiscal de Julho/2026, com base de
+R$ 43.744,48 — ou seja, 12%.
+
+A GIA retificadora declara créditos normais de R$ 464.653,71. O Livro tem
+R$ 469.903,05. **A diferença é exatamente esse complemento.**
+
+Duas coisas a decidir:
+
+1. O crédito de R$ 5.249,34 é apropriável ou não? Se for, a GIA o omitiu; se não
+   for, o motor precisa saber por quê.
+2. A decisão nº 13 diz que o complemento **acompanha a situação da nota
+   complementada**. A 12%, ele deveria estornar 0,6667 — R$ 3.499,73. Na planilha
+   ele foi apropriado integralmente, sem estorno.
+
+**Padrão assumido:** o motor mantém o complemento no crédito, classificado na
+atividade comercial, e **não o estorna** (a alíquota da linha é zero, então a
+fórmula não tem o que aplicar). A diferença de R$ 5.249,34 contra a GIA é
+exigida por teste, com valor exato — não passa em silêncio.
+
+---
+
+## 19. 🟡 Corumbá — a segregação por atividade não tem documento
+
+O mapa de atividades foi homologado contra os documentos de **Rio Brilhante**.
+Corumbá usa o mesmo mapa, porque a UF é a mesma e a GIA de MS é a mesma — mas
+**não há GIA de Corumbá** para conferir a segregação dela.
+
+Em Julho/2026 o motor separa Corumbá em R$ 85.506,00 de débito industrial e
+R$ 25.985,32 de comercial. Ninguém conferiu esses números contra declaração.
+
+**Pergunta:** Corumbá também declara GIA segregada por atividade? Se sim, é
+possível enviar a de Julho/2026 para fechar a homologação?
+
+**Padrão assumido:** aplicar o mesmo mapa e marcar como não conferido.
+
+---
+
+## 20. 🟡 MS tem centralização, e ela não está no motor
+
+A linha 002 do Registro de Apuração de Rio Brilhante traz **R$ 99.412,10** de
+*"Recebimento de saldo devedor - estabelecimento centralizador"*.
+
+Ou seja: **Rio Brilhante recebe saldo devedor de outro estabelecimento de MS.**
+Até aqui, o projeto tinha centralização modelada apenas em SP, com Guará.
+
+**Perguntas:** quem transfere para RB — Corumbá? A regra é a mesma de SP? Existe
+ato formal de centralização em MS?
+
+**Padrão assumido:** o valor entra como ajuste manual (linha 002), na atividade
+Prestacional/Outras, sem regra de centralização automática. A Entrega 4 trata
+centralização e vai precisar dessa resposta.
+
+---
+
+## 21. 🟡 Os créditos de ajuste de RB — origem e valor
+
+O Registro de Apuração e a GIA retificadora divergem no lado do crédito:
+
+| Linha | Registro (07/08) | GIA retificadora (25/08) |
+|---|---|---|
+| Outros créditos | 46.138,68 — *"Ajuste de créditos conforme art. 68 RICMS/MS"* | 73.722,69 — *"Transferência de crédito acumulado – Processo e-SAP 502558 – NF 244564/243285"* |
+
+Rubrica diferente, descrição diferente, R$ 27.584,01 a mais.
+
+Registra-se também, sem juízo de valor, que a soma dessa mudança com a saída do
+complemento (nº 18) dá **R$ 22.334,67**, e que a correção da inversão de colunas
+reduziu o benefício em **R$ 22.334,66** — de modo que o ICMS a recolher ficou em
+R$ 107.656,90 contra os R$ 107.656,92 originais. Um centavo de diferença entre
+dois movimentos de naturezas independentes.
+
+**Perguntas:** qual o valor homologado no processo e-SAP 502558 e a partir de
+quando o crédito ficou disponível? O ajuste do art. 68 foi substituído por ele ou
+são coisas distintas?
+
+**Padrão assumido:** ambos entram como ajuste manual, fora do Livro. O motor não
+os calcula nem os concilia.
+
+---
+
+## 22. 🟡 EFD/SPED — o livro ainda tem a composição antiga
+
+A GIA foi retificada em 25/08/2026. O **Registro de Apuração do ICMS** que consta
+é o emitido em 07/08/2026, com a composição anterior. As duas declarações da
+mesma competência divergem em todas as linhas de crédito e na dedução — só o
+total a recolher coincide, e ainda assim por dois centavos.
+
+**Pergunta:** a EFD ICMS/IPI de 07/2026 também foi retificada?
+
+**Padrão assumido:** o motor reproduz a **GIA retificadora**, que é o documento
+mais recente. A regressão de Julho está ancorada nela.
