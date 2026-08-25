@@ -9,7 +9,7 @@ testes próprios. A documentação de todas fica em `docs/`.
 
 | Projeto | Pasta | Status | Descrição |
 |---|---|---|---|
-| **Apurabot** | `apurabot/` | Em desenvolvimento | Apuração mensal de ICMS (e, em fase posterior, PIS/Cofins) a partir do Livro Fiscal. Julho/2026 já é reproduzido da ingestão à apuração por estabelecimento, sem pendências. |
+| **Apurabot** | `apurabot/` | Em desenvolvimento | Apuração mensal de ICMS (e, em fase posterior, PIS/Cofins) a partir do Livro Fiscal. Julho/2026 já é reproduzido da ingestão ao benefício fiscal, sem pendências, e a apuração de Rio Brilhante confere ao centavo com a GIA entregue. |
 | _Fiscalbot_ | — | Existente, a ser importado | Confere o lançamento de cada nota. É o fornecedor do Livro Fiscal validado que o Apurabot consome. |
 
 ## Convenções
