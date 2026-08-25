@@ -14,13 +14,23 @@
 
 equalizacao:
   # Cargas nominais homologadas — o que se espera encontrar na base.
-  cargas_nominais: [4.0, 7.0, 12.0, 17.0, 18.0, 19.0, 25.0]
+  # Decisão da Gerência Fiscal/Tributária em 21/08/2026: a régua anterior
+  # trazia 19 e 25, que não ocorrem nas operações da Hinove. Foram movidas
+  # para as toleradas.
+  cargas_nominais: [4.0, 7.0, 12.0, 17.0, 18.0]
 
-  # Cargas que a régua reconhece para não quebrar a apuração, mas que NÃO
-  # deveriam existir na base. São equalizadas normalmente e o documento recebe
-  # o alerta CARGA NÃO HOMOLOGADA. Alerta não bloqueia o encerramento: aponta
-  # para revisão do lançamento na origem.
+  # A régua reconhece estas para não quebrar a apuração, mas elas NÃO deveriam
+  # existir na base. São equalizadas normalmente e o documento recebe o alerta
+  # CARGA NÃO HOMOLOGADA. Advertência, não bloqueio: aponta para revisão do
+  # lançamento na origem.
   cargas_toleradas:
+    - carga: 19.0
+      motivo: >
+        Alíquota geral do PR. Não ocorreu em Julho/2026. Fora das cargas
+        homologadas por decisão de 21/08/2026.
+      decidido_por: Gerência Fiscal/Tributária
+      data_da_decisao: 2026-08-21
+
     - carga: 20.5
       motivo: >
         Não deveria constar na base. Apareceu em 30 CT-e de frete sobre compra
@@ -30,6 +40,13 @@ equalizacao:
       decidido_por: Gerência Fiscal/Tributária
       data_da_decisao: 2026-08-21
       competencia_observada: 2026-07
+
+    - carga: 25.0
+      motivo: >
+        Energia e comunicação. Não ocorreu em Julho/2026. Fora das cargas
+        homologadas por decisão de 21/08/2026.
+      decidido_por: Gerência Fiscal/Tributária
+      data_da_decisao: 2026-08-21
 
   # A régua efetiva do algoritmo é cargas_nominais + cargas_toleradas.
   limite_teto_aliquota: true      # a carga nominal nunca excede a alíquota

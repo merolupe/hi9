@@ -23,59 +23,74 @@ regimes:
     frete_venda_intraestadual: sem_credito # diferido/isento
     difal: conta_grafica
 
-  ms_estorno_excedente:
+  ms_estorno_proporcional:
     descricao: >
-      Estorno do que excede a carga de saída, mesma mecânica de SP. É o que a
-      apuração manual de Julho/2026 aplicou em Corumbá — sobra um resíduo de
-      R$ 1,04 não explicado. Ver decisão pendente nº 2.
+      Estorno da parcela não tributada da operação: o crédito é reduzido até a
+      carga de 4%, aplicando o percentual de redução sobre o VALOR DO ICMS.
+      Não é a mecânica de SP — lá o estorno incide sobre o valor contábil.
+      Confirmado contra a apuração individualizada de Corumbá (Empresa 9),
+      aba ENTRADAS, colunas "Parcela não tributada" e "Valor ICMS a estornar".
     vigencia_inicio: 2025-01-01
-    formula_estorno: excedente_sobre_carga_saida
-    carga_saida_referencia: 4.0
-    base_do_estorno: valor_contabil
+    formula_estorno: proporcional_parcela_nao_tributada
+    base_do_estorno: valor_icms
+
+    # A parcela não tributada NÃO é uma tabela: é uma fórmula. O benefício
+    # limita o crédito à carga de referência, e o que passa dela se estorna.
+    #
+    #     parcela estornada = 1 − carga_de_referencia / alíquota
+    #
+    # Fonte: aba ESTORNO da apuração de Rio Brilhante, tabelas "OPERAÇÃO
+    # INTRAESTADUAL" e "OPERAÇÃO INTERESTADUAL", coluna "REDUÇÃO ATUAL".
+    # Confere em todas as alíquotas que aparecem:
+    #     4% → 0,0000   ·   7% → 0,4286   ·  12% → 0,6667
+    #    17% → 0,7647   ·  18% → 0,7778   ·  19% → 0,7895
+    #
+    # A CHAVE É A ALÍQUOTA, NÃO A CARGA EFETIVA. Uma importação a 17% com base
+    # reduzida tem carga efetiva de 4%, e mesmo assim estorna 76,47% — foi
+    # exatamente esse ponto que separou o motor da apuração real de Julho/2026.
+    carga_de_referencia: 4.0
+
+    # Casas decimais da parcela. 4 reproduz a apuração (0,4286 e 0,6667);
+    # `null` usa a fração exata (3/7 e 2/3). A escolha vale R$ 1,04 em Corumbá
+    # e R$ 0,26 no ácido fosfórico de Rio Brilhante — ver decisão nº 15.
+    casas_decimais_da_parcela: 4
+
+    # Créditos que não podem ser apropriados. Não são estorno: são crédito que
+    # nunca existiu, e por isso ficam em coluna própria na apuração.
+    creditos_indevidos:
+      - cfop: [2152]
+        motivo: >
+          Transferência interestadual recebida. A apuração de Corumbá marca o
+          crédito como indevido — em Julho/2026 foram R$ 14.424,02, a contraparte
+          exata do débito de CFOP 6152 de Guará. A apuração consolidada somou
+          esse valor ao crédito mantido; a individualizada, não.
+        homologado: false
+
     isentos_de_estorno:
-      - materia_prima
-      - produto_acabado
-      - revenda
-      - retorno_industrializacao
       - ciap
       - complemento_icms
-      - devolucao_venda
     difal: guia_avulsa
 
   ms_beneficio_rio_brilhante:
     descricao: >
-      Estabelecimento com benefício fiscal por Termo de Acordo. As entradas
-      beneficiadas têm o crédito estornado integralmente, e o crédito presumido
-      entra depois sobre o saldo devedor.
-      NÃO HOMOLOGADO — é o que os números de Julho/2026 mostram (estorno de
-      R$ 331.236,11 contra R$ 331.307,32 de ICMS nas entradas a 4%, resíduo de
-      R$ 71,21), não uma regra escrita. Ver decisões pendentes nº 1 e nº 2.
+      Estabelecimento com benefício fiscal por Termo de Acordo. O estorno é o
+      MESMO de Corumbá — parcela não tributada sobre o valor do ICMS, pela
+      alíquota da operação. O benefício vem depois, sobre o saldo devedor da
+      atividade industrial, e está em `beneficios_fiscais.ms_rio_brilhante`.
+      HOMOLOGADO contra o Registro de Apuração de 07/2026 e a GIA retificadora
+      (protocolo 36160E2, entregue em 25/08/2026): estorno de R$ 331.236,11,
+      sendo R$ 245.987,17 na atividade industrial e R$ 85.248,94 na comercial.
     vigencia_inicio: 2025-01-01
-    homologado: false
-    formula_estorno: integral_nas_cargas
-    cargas_estornadas: [4.0]
-    # O complemento de ICMS NÃO entra aqui: em Julho/2026 a linha de
-    # complemento de RB (R$ 5.249,34) foi estornada junto com as demais
-    # entradas a 4%. Só o CIAP fica de fora.
+    homologado: true
+    formula_estorno: proporcional_parcela_nao_tributada
+    base_do_estorno: valor_icms
+    carga_de_referencia: 4.0
+    casas_decimais_da_parcela: 4
+    # Só o CIAP fica fora do estorno. O complemento de ICMS de Julho/2026
+    # (R$ 5.249,34) não aparece nos créditos da GIA retificadora — ver decisão
+    # pendente nº 18.
     isentos_de_estorno:
       - ciap
-    difal: guia_avulsa
-
-  ms_estorno_proporcional_legado:
-    descricao: >
-      Mantido só para não perder os parâmetros do escopo v1.0 enquanto a
-      decisão nº 3 não vem. Nenhuma filial aponta para cá.
-    vigencia_inicio: 2025-01-01
-    credito_mantido_maximo: 4.0
-    # Escopo v1.0, itens 5.3 e 5.4. NÃO APLICADO: busca célula a célula nas 7
-    # abas da apuração de Julho/2026 não achou o percentual em uso. O fator que
-    # o gera está lá (Pontos de Atenção!F72 = 4/17 = 0,235294, e 4% × 4/17 =
-    # 0,941176%), mas a aplicação não. Decisão de 21/08/2026: seguir sem
-    # aplicar, com o teste de regressão como árbitro. Ver pendência nº 3.
-    credito_mantido_entrada_4pct:
-      valor: 0.941176
-      aplicado: false
-      fator_de_origem: 0.23529411764705882   # 4/17
     difal: guia_avulsa
 
   mt_diferimento:
@@ -95,16 +110,127 @@ beneficios_fiscais:
 
   ms_rio_brilhante:
     descricao: >
-      Crédito presumido sobre o saldo devedor, por Termo de Acordo com o estado
-      de MS. Estrutura confirmada contra Julho/2026 com 0,19% de diferença.
-      Ver decisão pendente nº 1.
-    vigencia_inicio: 2025-01-01
-    homologado: false                      # <- não usar em produção sem resposta
+      Termo de Acordo n. 1.190/2018, firmado em 19/09/2018 entre o Estado de MS
+      e a Hinove, publicado no DOE 9.755. Base legal: LC estadual 93/2001 e
+      Lei 4.049/2011.
+    documento: Termo de Acordo n. 1.190/2018
+    vigencia_inicio: 2018-09-19
+    vigencia_fim: 2032-12-31          # cláusula terceira, caput
+    homologado: true
+    # Homologado em 25/08/2026 contra três documentos oficiais da competência
+    # 07/2026: o Registro de Apuração do ICMS, a GIA - Benefício Fiscal e a
+    # GIA - Apuração Final (protocolo 36160E2, retificadora).
+
+    # Cláusula terceira, incisos I e II. O benefício é deduzido do saldo devedor
+    # "que tenha resultado como efetiva e regularmente devido", ou seja, nunca
+    # supera o próprio saldo devedor.
     credito_presumido:
-      saida_intraestadual: 67.0
-      saida_interestadual: 80.0
-      base: saldo_devedor
-      rateio_do_credito_mantido: participacao_do_debito   # a confirmar
+      saida_intraestadual: 67.0       # inciso I
+      saida_interestadual: 80.0       # inciso I + adicional de 13% do inciso II
+      base: saldo_devedor_da_atividade_industrial
+      limitado_ao_saldo_devedor: true
+
+    # ALCANCE DO BENEFÍCIO — RESOLVIDO. Era a decisão pendente nº 1.
+    #
+    # A linha 012 do Registro de Apuração nomeia a dedução:
+    #   "BENEFÍCIOS FISCAIS - Termo de acordo n. 1190/2018 -
+    #    Industrialização própria - Incentivo TA/CDI"
+    # e a GIA - Benefício Fiscal traz base de saídas incentivadas de
+    # R$ 412.274,17, que é exatamente CFOP 5101 + 5118 + 6101 de Julho/2026.
+    # Ou seja: a leitura literal do inciso I estava certa, e o alcance é a
+    # atividade industrial — não todas as saídas.
+    alcance:
+      criterio: atividade_industrial
+      rateio_do_credito: participacao_do_debito
+
+    # Contribuições sobre o benefício fruído. São GUIA AVULSA, calculadas na
+    # própria GIA: saem no relatório como informação e NÃO entram na conta
+    # gráfica da apuração.
+    #
+    # Confirmado na GIA - Benefício Fiscal e no Relatório FAI de 07/2026:
+    # benefício fruído R$ 261.431,90 → 2% = R$ 5.228,64; adicional 0%.
+    fadefe:
+      condicao_de_fruicao: true       # cláusula terceira, parágrafo primeiro
+      lancamento: guia_avulsa
+      percentual: 2.0                 # Pró-Desenvolve / FADEFE Desenv. / FAI
+      percentual_adicional: 0.0       # Adicional FADEFE Equilíbrio Fiscal
+
     controle_credito_outorgado:
       codigo_ajuste: MS090004
       descricao: Apropriação de crédito outorgado para abatimento de débitos
+
+  # Cláusula quarta do mesmo Termo. EXPIRADA — a cláusula oitava, inciso I, fixa
+  # a vigência "a partir da data de sua assinatura e até 31 de dezembro de 2022".
+  # Fica registrada para que uma apuração de competência antiga continue
+  # reproduzível, como manda a regra de vigência do projeto.
+  ms_rio_brilhante_clausula_quarta:
+    descricao: >
+      Crédito outorgado de 50% do saldo devedor nas saídas interestaduais com
+      mercadorias adquiridas em outras UFs, e crédito presumido de 50% do
+      imposto nas saídas interestaduais com itens importados.
+    documento: Termo de Acordo n. 1.190/2018, cláusula quarta
+    vigencia_inicio: 2018-09-19
+    vigencia_fim: 2022-12-31
+    aplicavel: false
+
+# ---------------------------------------------------------------------------
+# Segregação por atividade
+# ---------------------------------------------------------------------------
+# A GIA de Mato Grosso do Sul não aceita uma apuração só por estabelecimento:
+# exige o resultado separado por atividade. E isso não é formalidade de
+# declaração — é a segregação que dimensiona o benefício, porque o crédito
+# presumido do Termo de Acordo incide exclusivamente sobre o saldo devedor da
+# atividade industrial.
+#
+# Ordem de avaliação: descrição primeiro, CFOP depois. O que não casar recebe
+# SEM REGRA e bloqueia o encerramento, como manda a regra 4 do projeto.
+atividades:
+
+  ms:
+    descricao: >
+      Colunas da GIA de MS: Industrial, Comercial, Importados e
+      Prestacional/Outras.
+    vigencia_inicio: 2025-01-01
+    homologado: true
+    fonte: >
+      Registro de Apuração do ICMS de 07/2026 e GIA retificadora 36160E2, de
+      RIO BRILHANTE. Confere ao centavo: débito industrial 412.274,17 e
+      comercial 93.717,23; crédito industrial 327.834,95, comercial 134.672,19
+      e CIAP 2.146,57.
+    # ATENÇÃO: a homologação é de Rio Brilhante. Corumbá usa o mesmo mapa
+    # porque a UF é a mesma, mas não há GIA de Corumbá para conferir a
+    # segregação dela. Ver decisão pendente nº 19.
+
+    # O prefixo do CFOP é a definição do próprio sistema de CFOP, não uma regra
+    # com vigência. Fica aqui só para não haver número fiscal dentro do .py.
+    destino_por_prefixo_cfop:
+      5: intraestadual
+      6: interestadual
+      7: exterior
+
+    # O CFOP do serviço de transporte diz quem contratou o frete, não o que o
+    # frete carrega — e é o que ele carrega que define a atividade. Por isso a
+    # descrição vence o CFOP quando casa. Em Julho/2026 isso separa
+    # R$ 4.989,37 de frete de insumo do resto dos R$ 94.620,43 do CFOP 2352.
+    por_descricao:
+      - contem: Fretes sobre Compra de Insumos
+        atividade: industrial
+        cfop: [1352, 2352, 1353, 2353]
+
+    # Os pares intra/inter andam juntos: se 5118 é industrial, 6118 também é.
+    # Nada aqui é inferido do comportamento da apuração — cada CFOP está na
+    # atividade que a sua própria descrição na tabela de CFOP indica.
+    por_cfop:
+      industrial:
+        debito: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122]
+        credito: [1101, 2101, 3101, 1111, 2111, 1116, 2116, 1122, 2122,
+                  1151, 2151, 3151]          # transferência p/ industrialização
+      comercial:
+        debito: [5102, 6102, 5103, 6103, 5104, 6104, 5115, 6115, 5117, 6117,
+                 5119, 6119, 5120, 6120, 5905, 6905, 5906, 6906, 5934, 6934]
+        credito: [1102, 2102, 3102, 1113, 2113, 1118, 2118, 1121, 2121,
+                  1152, 2152, 3152,          # transferência p/ comercialização
+                  1352, 2352, 1353, 2353, 1906, 2906, 1907, 2907]
+      prestacional_outras:
+        debito: [5910, 6910, 5911, 6911, 5949, 6949]
+        credito: [1604, 2604, 1949, 2949]

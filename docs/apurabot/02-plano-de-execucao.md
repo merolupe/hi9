@@ -3,131 +3,134 @@
 > Entregas incrementais. Cada uma termina com algo que o time fiscal consegue
 > abrir, conferir e opinar — nunca com "está quase pronto".
 
+**Situação em 25/08/2026:** Julho/2026 é reproduzido da ingestão ao benefício
+fiscal, **fecha sem nenhuma pendência**, e Rio Brilhante bate ao centavo com a
+GIA retificadora de 07/2026. 96 testes automáticos.
+
+| Entrega | Situação |
+|---|---|
+| 0 · Mapeamento técnico | ✅ concluída |
+| 1 · Base tratada e classificada | ✅ concluída |
+| 2 · Motor de ICMS: créditos, débitos e estornos | 🟡 falta só ajustes manuais |
+| 3 · Benefício fiscal de Rio Brilhante | ✅ concluída — confere com a GIA |
+| 4 · Centralização de São Paulo | ⬜ pode começar |
+| 5 · DIFAL | ⬜ falta o `.xlsx` de XML |
+| 6 · Interface e empacotamento | ⬜ pode começar |
+| 7 · Homologação | ⬜ depende de 4 e 6 |
+| 8 · CIAP | ⬜ falta a Base de Bens |
+
 ---
 
 ## Princípio
 
-**Fechar Julho/2026 pela ferramenta, e comparar com o Excel de Julho/2026 feito à
-mão.** Toda entrega é medida por quanto do resultado real ela já reproduz.
-Julho é a competência de referência porque foi a analisada em detalhe; Junho
-entra depois como teste de regressão independente (exigência do escopo).
+**Fechar Julho/2026 pela ferramenta e comparar com o que foi feito à mão.** Toda
+entrega é medida por quanto do resultado real ela reproduz. Onde há diferença,
+ela é exigida com valor exato no teste — nunca tolerada em silêncio.
 
 ---
 
-## Entrega 0 — Mapeamento técnico ✅ concluída
+## Entrega 0 — Mapeamento técnico ✅
 
-O que já está neste repositório:
+Arquitetura, dicionário de dados, matriz de regras, achados de Julho/2026 e o
+registro de decisões pendentes. Tudo em `docs/apurabot/`.
 
-- Arquitetura em camadas e decisão de tecnologia — `01-arquitetura.md`
-- Dicionário das 52 colunas do Livro Fiscal — `03-dicionario-livro-fiscal.md`
-- Matriz de regras de ICMS por UF e categoria — `04-matriz-de-regras-icms.md`
-- Achados da análise de Julho/2026 — `05-achados-julho-2026.md`
-- 10 decisões pendentes com o time fiscal — `06-decisoes-pendentes.md`
-
-**Resultado principal:** a equalização de carga efetiva, que era o maior risco
-técnico, foi resolvida com **99,87% de aderência** ao trabalho manual.
+**Resultado principal:** a equalização de carga efetiva, maior risco técnico do
+projeto, resolvida com **99,87%** de aderência ao trabalho manual.
 
 ---
 
-## Entrega 1 — Base tratada e classificada ✅ concluída
+## Entrega 1 — Base tratada e classificada ✅
 
-**Escopo:** camadas 1 a 4 (ingestão, normalização, equalização de carga,
-classificação).
-
-**Resultado medido contra Julho/2026:**
+Camadas 1 a 4: ingestão, normalização, equalização de carga e classificação.
 
 | Verificação | Resultado |
 |---|---|
 | Linhas lidas do Livro Fiscal | 6.504 |
-| Linhas relevantes para ICMS | 2.345 — igual à aba `ICMS` da planilha manual |
-| Carga efetiva × classificação manual | 2.342 de 2.345 (99,87%) |
+| Linhas relevantes para ICMS | **2.345** — igual à aba `ICMS` da planilha manual |
+| Carga efetiva × classificação manual | **2.342 de 2.345 (99,87%)** |
 | Totais por estabelecimento × entrada/saída × carga | idênticos à aba `Dinamica` |
-| Pendências | 22 linhas (`COMPLEMENTO DE PREÇO`, R$ 2.181,70) |
-| Testes | 24, dos quais 9 de regressão |
+| Pendências | **0** |
+| Alertas (não bloqueiam) | 36 |
 
 As 3 divergências de carga são as notas da ICL Aditivos, reclassificadas à mão
-para aplicar a regra de MS. O teste de regressão **exige** que a diferença seja
-exatamente essa e de R$ 9.019,01 — qualquer outra falha o teste.
+para aplicar a regra de MS. O teste **exige** que a diferença seja essa e de
+R$ 9.019,01 — qualquer outra o quebra.
 
-- Leitura do Livro Fiscal `.xlsx` com validação de cabeçalho — falha clara se o
-  layout do Sankhya mudar
-- Congelamento da base bruta + hash do arquivo de entrada
-- Equalização de carga efetiva
-- Classificação da operação (frete compra/venda/transferência, MP, embalagem,
-  produto químico, revenda, retorno de industrialização, CIAP, quebra,
-  devolução), com `SEM REGRA` para o que não se encaixar
-- Cadastro inicial dos 829 produtos com categoria tributária
-
-**Entregável:** `.xlsx` com a base tratada, uma linha por linha do Livro, todas as
-colunas de rastreabilidade e uma aba de pendências.
-
-**Critério de aceite:** a base tratada reproduz a aba `ICMS` de Julho/2026
-(2.345 linhas) e a classificação bate com a aba `Dinamica` por
-estabelecimento × entrada/saída × carga.
+**Dois layouts suportados.** O extrato `Movimento Livros Fiscais`, padrão a partir
+de 08/2026, e a extração antiga da apuração. Um teste prova que os dois produzem
+apuração idêntica.
 
 ---
 
-## Entrega 2 — Motor de ICMS: créditos, débitos e estornos ✅ parcial
+## Entrega 2 — Motor de ICMS 🟡
 
-**Escopo:** camadas 5 a 8, por regime.
+Camadas 5 a 8, por regime. **Falta só** ler os ajustes manuais aprovados de
+`ajustes.xlsx`.
 
-**Resultado medido contra Julho/2026 — crédito bruto, estorno e crédito mantido
-por estabelecimento:**
-
-| Estabelecimento | UF | Estorno calculado | Estorno manual | Diferença |
+| Estabelecimento | UF | Estorno calculado | Referência | Diferença |
 |---|---|---|---|---|
 | Registro | SP | 50.481,97 | 50.481,97 | **0,00** |
 | Guará | SP | 426.771,68 | 426.771,68 | **0,00** |
 | Matriz | SP | 0,00 | 0,00 | **0,00** |
 | Barra do Garças | MT | 50.309,07 | 50.309,07 | **0,00** |
 | Londrina | PR | 0,00 | 0,00 | **0,00** |
-| Corumbá | MS | 19.960,51 | 19.961,55 | −1,04 |
+| Corumbá | MS | 19.961,553359 | 19.961,553359 | **0,00** |
 | Rio Brilhante | MS | 322.288,31 | 331.236,11 | −8.947,80 |
 
-O **crédito bruto bate em todas as sete**, e os débitos de saída batem com a aba
-`Dinamica`. As duas diferenças são conhecidas e o teste exige o valor exato de
-cada uma:
+O crédito bruto bate nas sete e os débitos batem com a `Dinamica`. Corumbá é
+conferido contra a **apuração individualizada (Empresa 9)**, não contra a
+consolidada — que trazia R$ 26.503,24 de crédito mantido porque somava a ele o
+crédito indevido de transferência.
 
-- **Corumbá, R$ 1,04** — resíduo da planilha manual, decisão pendente nº 2.
-- **Rio Brilhante, R$ 8.947,80** — os R$ 9.019,01 da ICL Aditivos reclassificados
-  à mão, menos o resíduo de R$ 71,21 da planilha.
-
-**Falta nesta entrega:** ajustes manuais aprovados lidos de `ajustes.xlsx`, e o
-benefício fiscal de Rio Brilhante, que é a Entrega 3 e depende do Termo de Acordo.
-
-- SP — equilíbrio fiscal (estorno do excedente sobre 4%)
-- MS — estorno proporcional (Corumbá e Rio Brilhante)
-- MT — estorno integral sobre saídas diferidas
-- PR — manutenção integral sobre saídas diferidas
-- Regras transversais: quebra (CFOP 5927), devolução, CIAP, retorno de
-  industrialização, revenda
-- Ajustes manuais aprovados, lidos de `ajustes.xlsx`
-- Apuração e saldo individual por estabelecimento
-
-**Entregável:** Painel 1 (apuração por unidade) + Painel 4 (resumo e memória de
-cálculo) em `.xlsx`.
-
-**Critério de aceite:** estorno e crédito mantido de Julho/2026 reproduzidos por
-estabelecimento e por carga, com divergências explicadas linha a linha.
+A única diferença que sobra é Rio Brilhante: os R$ 9.019,01 da ICL Aditivos
+reclassificados à mão, menos R$ 71,21 de resíduo da planilha.
 
 ---
 
-## Entrega 3 — Benefício fiscal de Rio Brilhante
+## Entrega 3 — Benefício fiscal de Rio Brilhante ✅
 
-Separada da Entrega 2 porque **depende de resposta do time fiscal**
-(`06-decisoes-pendentes.md`, itens 1 e 2) e do texto do Termo de Acordo.
+**Concluída em 25/08/2026.** O alcance, que era a maior incógnita do projeto,
+deixou de ser hipótese: três documentos oficiais de 07/2026 o fecharam.
 
-- Crédito presumido: 67% intra / 80% inter sobre o saldo devedor
-- Controle de crédito outorgado (código de ajuste `MS090004`): saldo anterior,
-  créditos recebidos por transferência, utilizados no período, saldo a transportar
-- Recolhimento mínimo e deduções, se aplicável
+Termo de Acordo n. 1.190/2018, cláusula terceira, em vigor até 31/12/2032: 67%
+do saldo devedor, mais 13% nas interestaduais, **exclusivamente sobre a
+atividade industrial**. A cláusula quarta segue expirada desde 31/12/2022 — a
+revenda de R$ 93.717,23 de Julho não recebeu nada.
 
-**Critério de aceite:** reproduzir o B.F. de Julho/2026 (R$ 283.766,56) dentro da
-tolerância acordada, com a memória de cálculo aberta.
+O motor reproduz a cadeia inteira:
+
+| Etapa | Julho/2026 (R$) |
+|---|---|
+| Crédito industrial normal | 327.834,95 |
+| (−) estorno industrial | 245.987,17 |
+| (−) estorno de créditos (ajuste, linha 003 do Registro) | 3.865,30 |
+| (=) crédito da parcela incentivada | 77.982,48 |
+| Base do incentivo | 334.291,69 |
+| **Benefício** (67% intra + 80% inter) | **261.431,90** |
+| FADEFE 2% — guia avulsa, fora da conta gráfica | 5.228,64 |
+
+Para chegar até aqui, três coisas mudaram no motor:
+
+1. **A chave do estorno passou a ser a alíquota**, não a carga efetiva. A parcela
+   virou fórmula: `1 − 4 / alíquota`. Vale R$ 73.843,39 nas importações de ureia.
+2. **A apuração passou a ser segregada por atividade** onde a UF exige. Sem isso
+   não existe "crédito da parcela incentivada".
+3. **Os ajustes que não vêm do Livro** entram por `AjustesDaApuracao`, explícitos.
+
+Travas do motor: o benefício nunca supera o saldo devedor que o gerou, atividade
+indefinida bloqueia o encerramento, e tentar aplicar a cláusula quarta levanta
+erro com a data de expiração na mensagem. A memória de cálculo vai na aba
+`APURAÇÃO POR FILIAL`, passo a passo.
+
+**O que sobrou em aberto** não é do motor, é de documento: o complemento de
+R$ 5.249,34 (decisão nº 18), a segregação de Corumbá sem GIA (nº 19), a
+centralização de MS (nº 20) e a origem dos créditos de ajuste (nº 21).
 
 ---
 
-## Entrega 4 — Centralização de São Paulo
+## Entrega 4 — Centralização de São Paulo ⬜
+
+Não depende de nada em aberto.
 
 - Saldo individual antes da centralização, por estabelecimento paulista
 - Classificação credor/devedor e valor transferível
@@ -136,45 +139,39 @@ tolerância acordada, com a memória de cálculo aberta.
 - Travas: `saldo individual = transferido + residual` e
   `recebido em Guará = soma das NF-e emitidas`
 
-**Critério de aceite:** reproduzir a centralização de Julho/2026 e apontar as
-mesmas NF-e a emitir.
-
 ---
 
-## Entrega 5 — DIFAL
+## Entrega 5 — DIFAL ⬜
 
-Depende do arquivo de XML das entradas (`06-decisoes-pendentes.md`, item 9).
+Falta o `.xlsx` de exemplo do XML das entradas. O extrato novo já traz
+`Vlr. DIFAL UF Remet.` e `Vlr. DIFAL UF Destino`, que ajudam na conciliação.
 
 - Cruzamento Livro Fiscal × XML pela chave da NF-e
-- Recálculo do DIFAL com o ICMS do XML nas compras fora do processo produtivo
+- Recálculo com o ICMS do XML nas compras fora do processo produtivo
 - Valor sem arredondamento, arredondado por documento e total consolidado
 - SP em conta gráfica · MS em guia avulsa
-
-**Entregável:** Painel 2 — auditoria das alterações no Livro para o DIFAL.
-
----
-
-## Entrega 6 — Interface e empacotamento
-
-- Janela local com os 4 comandos, seleção de competência e arrastar-e-soltar
-- Painel de pendências com bloqueio do encerramento
-- Empacotamento para duplo clique (sem instalar Python, sem linha de comando)
-- Manual do usuário e documentação de manutenção
+- **Painel 2** — auditoria das alterações no Livro para o DIFAL
 
 ---
 
-## Entrega 7 — Homologação
+## Entrega 6 — Interface e empacotamento ⬜
 
-- Regressão de Junho/2026 (segunda competência, exigência do escopo)
-- Treinamento do time
-- Aceite formal e fechamento da Fase 1
+Janela local com os 4 comandos, seleção de competência, arrastar-e-soltar,
+painel de pendências com bloqueio do encerramento, empacotamento para duplo
+clique e manual do usuário.
 
 ---
 
-## Entrega 8 — CIAP
+## Entrega 7 — Homologação ⬜
 
-Depende da Base de Bens. Índice = saídas tributadas ÷ total de saídas;
-crédito apropriável = parcela mensal × índice. **Painel 3.**
+Regressão de uma segunda competência, treinamento do time e aceite formal.
+
+---
+
+## Entrega 8 — CIAP ⬜
+
+Falta a Base de Bens. Índice = saídas tributadas ÷ total de saídas; crédito
+apropriável = parcela mensal × índice. **Painel 3.**
 
 ---
 
@@ -189,12 +186,12 @@ PER/DCOMP e emissão automática de NF-e de transferência.
 ## O que destrava o quê
 
 ```
-Entrega 1  ──►  Entrega 2  ──►  Entrega 4  ──►  Entrega 6  ──►  Entrega 7
-                    │
-                    ├──►  Entrega 3   (precisa: respostas 1 e 2 + Termo de Acordo)
-                    ├──►  Entrega 5   (precisa: .xlsx de exemplo do XML)
-                    └──►  Entrega 8   (precisa: .xlsx da Base de Bens)
+Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ⬜ ──► Entrega 6 ⬜ ──► Entrega 7 ⬜
+                     │
+                     ├──►  Entrega 3 ✅  concluída, confere com a GIA
+                     ├──►  Entrega 5 ⬜   precisa: .xlsx de exemplo do XML
+                     └──►  Entrega 8 ⬜   precisa: .xlsx da Base de Bens
 ```
 
-As entregas 3, 5 e 8 estão bloqueadas por insumos externos. As entregas 1, 2, 4,
-6 e 7 podem começar imediatamente.
+As entregas **4 e 6 podem começar imediatamente**, e fechar a 2 depende só de
+definir o formato do `ajustes.xlsx`. Nenhuma delas espera resposta do fiscal.

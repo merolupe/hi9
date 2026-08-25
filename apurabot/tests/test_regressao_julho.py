@@ -78,7 +78,15 @@ def dinamica(arquivo_julho):
 def test_le_o_livro_inteiro(base_julho):
     assert len(base_julho.livro) == 6504
     assert base_julho.competencia == "2026-07"
-    assert base_julho.livro.colunas_ausentes == []
+
+    # A extração da apuração é anterior ao extrato "Movimento Livros Fiscais" e
+    # não traz as colunas dele. Nenhuma é essencial — a apuração roda sem elas,
+    # como as demais asserções deste arquivo comprovam.
+    assert set(base_julho.livro.colunas_ausentes) == {
+        "Tipo Operação", "Descrição (Tipo de Operação)", "Observação",
+        "Vlr. DIFAL UF Remet.", "Vlr. DIFAL UF Destino",
+        "Nro. único pedido", "Origem",
+    }
 
 
 def test_reproduz_a_quantidade_de_linhas_relevantes(base_julho, aba_icms):
@@ -209,9 +217,29 @@ def test_retorno_de_industrializacao_bate_com_a_aba_estorno(base_julho):
     assert abs(total - 6_967.37) < CENTAVO
 
 
-def test_pendencias_bloqueiam_o_encerramento(base_julho):
-    """Em Julho/2026 sobram as 22 linhas de COMPLEMENTO DE PREÇO sem regra."""
-    assert not base_julho.pode_encerrar
-    pendentes = base_julho.com_pendencia
-    assert len(pendentes) == 22
-    assert {t.origem.produto_codigo for t in pendentes} == {"401002106"}
+def test_julho_fecha_sem_pendencia(base_julho):
+    """Com o COMPLEMENTO DE PREÇO classificado, não sobra nada bloqueando.
+
+    Era a última pendência da competência: 22 linhas, R$ 2.181,70 de ICMS.
+    A decisão de 21/08/2026 é que o complemento acompanha a nota complementada.
+    """
+    assert base_julho.com_pendencia == []
+    assert base_julho.pode_encerrar
+
+
+def test_cargas_toleradas_alertam_sem_bloquear(base_julho):
+    """Só as 30 linhas de 20,5% avisam — e avisar não é travar.
+
+    O complemento de ICMS deixou de alertar quando a regra dos 4% foi
+    homologada, em 21/08/2026.
+    """
+    alertas = base_julho.com_alerta
+    assert len(alertas) == 30
+    assert {t.carga.carga for t in alertas} == {20.5}
+    assert all(not t.pendencias for t in alertas)
+
+
+def test_regua_homologada_nao_tem_dezenove_nem_vinte_e_cinco(parametros):
+    """Decisão de 21/08/2026: 19 e 25 saem das homologadas e viram toleradas."""
+    assert parametros.cargas_nominais == [4.0, 7.0, 12.0, 17.0, 18.0]
+    assert set(parametros.cargas_toleradas) == {19.0, 20.5, 25.0}

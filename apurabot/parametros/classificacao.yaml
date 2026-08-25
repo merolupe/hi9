@@ -29,11 +29,12 @@ lancamentos_sem_contabil:
     categoria: complemento_icms
     carga_efetiva: 4.0
     descricao: Complemento de ICMS
-    # ATENÇÃO: os 4,0% são o que a apuração manual de Julho/2026 atribuiu às
-    # 6 linhas de complemento do mês (R$ 17.490,73 de ICMS). Não há regra
-    # escrita em "Pontos de Atenção" para esse caso.
-    # Pendente de confirmação — ver docs/apurabot/06-decisoes-pendentes.md nº 11.
-    homologado: false
+    homologado: true
+    # Regra, não acaso — confirmado em 21/08/2026. O complemento acompanha a
+    # situação da nota complementada, como o complemento de preço. Os 4,0% são
+    # a carga das notas complementadas nas 6 linhas de Julho/2026
+    # (R$ 17.490,73 de ICMS). Se um complemento vier de nota com outra carga,
+    # é a carga dela que vale, e a referência está na coluna Observação.
 
 # ---------------------------------------------------------------------------
 # 3. Exceções por CFOP — têm precedência sobre tudo

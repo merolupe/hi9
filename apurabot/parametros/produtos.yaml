@@ -48,11 +48,13 @@ produtos:
   132010008:
     categoria: produto_quimico
     descricao: NBPT BLUE 20%
-    homologado: false
     observacao: >
-      Entra com CFOP 2102 (compra para comercialização), o que sugeriria
-      revenda e crédito integral. Classificado como químico por ser aditivo.
-      Muda R$ 30.660,00 de ICMS — ver decisão pendente nº 12.
+      Confirmado em 21/08/2026 conferindo onde o produto entrou na apuração de
+      Julho/2026. Em Corumbá, a Empresa 9 estorna a linha de CFOP 2102 pelos
+      42,86% da carga de 7% (R$ 2.520,17 de estorno sobre R$ 5.880,00 de ICMS),
+      ou seja, trata como crédito comum sujeito ao estorno — não como revenda
+      com crédito integral. Em Guará, a mesma compra entra no grupo de 12% que
+      estornou 8%. Os dois tratamentos batem com produto_quimico.
 
   # --- insumo energético ---
   401052046:
@@ -78,10 +80,15 @@ produtos:
   # --- ativo imobilizado / CIAP ---
   606000001: { categoria: ativo_imobilizado, descricao: MAQUINAS E EQUIPAMENTOS }
 
-  # --- pendente de definição ---
+  # --- complemento de preço ---
   401002106:
-    categoria: SEM REGRA
+    categoria: complemento_preco
     descricao: COMPLEMENTO DE PREÇO
     observacao: >
-      22 linhas de saída com CFOP 6102 e R$ 2.181,70 de ICMS em Julho/2026.
-      Sem regra escrita. Ver decisão pendente nº 13.
+      Acompanha a situação da nota complementada — decisão de 21/08/2026.
+      Na prática o documento já sai com a base reduzida da operação original,
+      então a carga calculada é a da nota complementada: em Julho/2026 as 22
+      linhas saíram com alíquota de 7% sobre base reduzida, dando carga efetiva
+      de 4%, que é a carga de uma saída de matéria-prima. A observação do
+      documento traz a referência ("COMPLEMENTO DE PREÇO REFERENTE A NF <nº>"),
+      e é por ela que a memória de cálculo liga o complemento à nota original.

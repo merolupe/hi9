@@ -109,12 +109,13 @@ def test_ciap_nao_divide_por_zero(parametros):
 
 
 def test_complemento_de_icms_recebe_carga_do_parametro(parametros):
+    """Regra homologada em 21/08/2026 — calcula e não alerta."""
     r = equalizar(
         linha(valor_icms=1210.50, valor_contabil=0.0, cfop=2906, produto=701000075),
         parametros,
     )
     assert r.carga == 4.0
-    assert r.alerta == ALERTA_NAO_HOMOLOGADA     # regra ainda não homologada
+    assert r.alerta is None
 
 
 def test_icms_sem_contabil_e_sem_regra_vira_pendencia(parametros):

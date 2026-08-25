@@ -12,6 +12,8 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from .apuracao import Apuracao, apurar
+from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
+from .nucleo.atividade import ORDEM as ATIVIDADES_EM_ORDEM
 from .base_tratada import BaseTratada
 
 CABECALHO_BASE = [
@@ -30,6 +32,7 @@ CABECALHO_BASE = [
 TITULO = Font(bold=True, color="FFFFFF")
 FUNDO = PatternFill("solid", fgColor="1F3864")
 MOEDA = "#,##0.00"
+PERCENTUAL = "0.00%"
 
 
 def _escreve_cabecalho(aba, colunas):
@@ -165,41 +168,103 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
     aba = wb.create_sheet("APURAÇÃO POR FILIAL", 1)
     colunas = [
         ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
-        ("credito_bruto", 16), ("estorno", 16), ("credito_mantido", 17),
-        ("debito", 16), ("saldo", 16), ("confere", 10),
+        ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
+        ("credito_mantido", 17), ("debito", 16), ("credito_presumido", 18),
+        ("saldo", 16), ("confere", 10),
     ]
     _escreve_cabecalho(aba, colunas)
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         aba.append([
             f.estabelecimento, f.uf, f.regime, f.linhas, f.credito_bruto,
-            f.estorno, f.credito_mantido, f.debito, f.saldo,
-            "OK" if f.confere else "DIVERGE",
+            f.estorno, f.credito_indevido, f.credito_mantido, f.debito,
+            f.credito_presumido, f.saldo, "OK" if f.confere else "DIVERGE",
         ])
     total = apuracao.total
     aba.append([
         "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
-        total.credito_mantido, total.debito, total.saldo,
+        total.credito_indevido, total.credito_mantido, total.debito,
+        apuracao.credito_presumido, total.saldo,
         "OK" if total.confere else "DIVERGE",
     ])
     for celula in aba[aba.max_row]:
         celula.font = Font(bold=True)
-    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=9):
+    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=11):
+        for celula in linha:
+            celula.number_format = MOEDA
+
+    aba.append([])
+    aba.append(["Memória do benefício fiscal"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
+        if not f.beneficio:
+            continue
+        aba.append([f.estabelecimento])
+        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+        for passo in f.beneficio.memoria:
+            aba.append(["", passo])
+
+    aba.append([])
+    aba.append(["Contribuição ao Pró-Desenvolve / FADEFE — GUIA AVULSA"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["", "Informativo: não entra na conta gráfica da apuração."])
+    aba.append(["estabelecimento", "benefício fruído", "%", "a recolher",
+                "% adicional", "adicional a recolher"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    primeira = aba.max_row + 1
+    for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
+        if not f.beneficio or not f.beneficio.percentual_fadefe:
+            continue
+        b = f.beneficio
+        aba.append([
+            f.estabelecimento, b.credito_presumido, b.percentual_fadefe / 100,
+            b.fadefe, b.percentual_fadefe_adicional / 100, b.fadefe_adicional,
+        ])
+    for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+                               min_col=2, max_col=6):
+        for celula in linha:
+            celula.number_format = PERCENTUAL if celula.column in (3, 5) else MOEDA
+
+    aba.append([])
+    aba.append(["Segregação por atividade (exigida pela GIA de MS)"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["estabelecimento", "atividade", "linhas", "credito_bruto",
+                "estorno", "credito_mantido", "debito", "debito_intra",
+                "debito_inter", "saldo"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    primeira_atividade = aba.max_row + 1
+    for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
+        if not f.segrega_por_atividade:
+            continue
+        conhecidas = [a for a in ATIVIDADES_EM_ORDEM if a in f.por_atividade]
+        restantes = [a for a in f.por_atividade if a not in conhecidas]
+        for nome in conhecidas + sorted(restantes):
+            t_ = f.por_atividade[nome]
+            aba.append([
+                f.estabelecimento, nome, t_.linhas, t_.credito_bruto, t_.estorno,
+                t_.credito_mantido, t_.debito, t_.debito_de(INTRAESTADUAL),
+                t_.debito_de(INTERESTADUAL), t_.saldo,
+            ])
+    for linha in aba.iter_rows(min_row=primeira_atividade, max_row=aba.max_row,
+                               min_col=4, max_col=10):
         for celula in linha:
             celula.number_format = MOEDA
 
     aba.append([])
     aba.append(["Detalhe por carga efetiva"])
     aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-    aba.append(["estabelecimento", "carga", "credito_bruto", "estorno", "credito_mantido"])
+    aba.append(["estabelecimento", "carga", "credito_bruto", "estorno",
+                "credito_indevido", "credito_mantido"])
     for celula in aba[aba.max_row]:
         celula.font, celula.fill = TITULO, FUNDO
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         for carga, v in sorted(f.por_carga.items(), key=lambda kv: str(kv[0])):
             aba.append([
                 f.estabelecimento, carga, v["credito_bruto"], v["estorno"],
-                v["credito_mantido"],
+                v["credito_indevido"], v["credito_mantido"],
             ])
-            for coluna in (3, 4, 5):
+            for coluna in (3, 4, 5, 6):
                 aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
 
 

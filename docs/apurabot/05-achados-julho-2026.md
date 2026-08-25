@@ -153,11 +153,91 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 
 ## 7. Riscos que a análise reduziu ou confirmou
 
-| Risco do escopo v1.0 | Situação após a análise |
+| Risco do escopo v1.0 | Situação em 21/08/2026 |
 |---|---|
 | Volume elevado / desempenho | **Descartado.** 6,5 mil linhas. |
-| Equalização de carga exige julgamento humano | **Muito reduzido.** 99,87% por algoritmo. |
-| Classificação exige julgamento humano | **Reduzido.** Sinais existem na base; resta o cadastro de 829 produtos. |
-| Regra tributária não mapeada | **Ativo.** Tratado com status `SEM REGRA` bloqueando o fechamento. |
-| Automação de MS prematura | **Ativo e agora em fase 1.** Ver decisões pendentes. |
-| Mudança de layout do Sankhya | **Ativo.** Mitigado por validação de cabeçalho na ingestão. |
+| Equalização de carga exige julgamento humano | **Resolvido.** 99,87% por algoritmo, e as 3 divergências são intervenção manual, não erro. |
+| Classificação exige julgamento humano | **Muito reduzido.** Julho fecha com zero pendências, e o extrato novo traz o TOP, que nomeia a operação. |
+| Regra tributária não mapeada | **Reduzido.** Tratado com `SEM REGRA` bloqueando o fechamento; nada pendente em Julho. |
+| Automação de MS prematura | **Parcialmente resolvido.** Corumbá reproduz exato; o benefício de RB aguarda decisão. |
+| Mudança de layout do Sankhya | **Mitigado na prática.** O motor lê dois layouts e valida o cabeçalho, procurando-o nas 10 primeiras linhas. |
+
+## 8. O que a implementação corrigiu na própria análise
+
+Dois números desta análise estavam errados e só apareceram ao escrever o motor:
+
+**O denominador do 99,87%.** O script de análise pulava em silêncio 6 linhas de
+`COMPLEMENTO DE ICMS` (R$ 17.490,73) que chegam com valor contábil zero. Com o
+denominador completo o índice inicial era 99,62%; tratadas por parâmetro, voltou
+a 99,87% — desta vez sobre as 2.345 linhas.
+
+**A ordem da classificação.** O CFOP de compra vencia a categoria do produto, e
+embalagem comprada com CFOP 1101 virava matéria-prima. O CFOP diz *para que* a
+mercadoria foi comprada; a regra de estorno pergunta *o que ela é*. Invertido, a
+conferência do Enxofre de revenda passou a bater exato com a aba ESTORNO
+(R$ 474.416,28).
+
+E um terceiro, na apuração consolidada e não na minha análise: **Corumbá não
+usava a mecânica de SP**, e o crédito indevido de transferência estava somado ao
+crédito mantido. Ver `06-decisoes-pendentes.md`, item 2.
+
+## 9. Rio Brilhante — o que os documentos oficiais mostraram (25/08/2026)
+
+Quatro documentos da competência fecharam o que a planilha manual não explicava:
+o **Registro de Apuração do ICMS**, a **GIA - Benefício Fiscal**, a **GIA -
+Apuração Final** (protocolo 36160E2, retificadora) e o **Relatório FAI**.
+
+### 9.1. O bloco-resumo da planilha trocava Industrial por Comercial
+
+A aba `ESTORNO` classifica **linha a linha** numa coluna de atividade. Somando
+por esse rótulo dá crédito industrial de R$ 327.834,95 e comercial de
+R$ 134.672,19. O **bloco-resumo** da mesma aba trocava os dois — e era o resumo
+que alimentava o cálculo do benefício.
+
+Os R$ 7,8 milhões de ureia e ácido bórico importados, cujo CFOP 3101 se chama
+literalmente *"Compra p/ industrialização"*, caíam na conta comercial. A GIA
+retificadora corrigiu.
+
+### 9.2. A chave do estorno é a alíquota
+
+Com a chave na carga efetiva, as importações a 17% com base reduzida a 4%
+estornavam 100%. Pela alíquota estornam 76,47%. A diferença é R$ 73.843,39 de
+crédito mantido — e é o que faz o estorno total de RB cair exatamente nos
+**R$ 331.236,11** que a linha 003 do Registro declara.
+
+### 9.3. Os "valores prestacionais" da GIA não são documentos
+
+A coluna `Prestacional/Outras`, que não se achava no Livro Fiscal, são as linhas
+de **ajuste** da apuração:
+
+| Lado | Composição | Total |
+|---|---|---|
+| Crédito | ajuste art. 68 RICMS/MS (46.138,68) + estorno de débitos (33.039,71) | 79.178,39 |
+| Débito | saldo devedor do centralizador (99.412,10) + estorno de créditos (3.865,30) | 103.277,40 |
+
+Daí sai o achado da centralização em MS (decisão nº 20) e o dos créditos de
+ajuste (nº 21).
+
+### 9.4. Novos alvos de regressão
+
+A regressão de Rio Brilhante deixou de se ancorar na planilha manual e passou a
+se ancorar no documento oficial:
+
+| Campo | Valor (R$) |
+|---|---|
+| Crédito industrial | 327.834,95 |
+| Estorno industrial | 245.987,17 |
+| Crédito da parcela incentivada | 77.982,48 |
+| Base do incentivo | 334.291,69 |
+| Benefício (67% intra + 80% inter) | **261.431,90** |
+| FADEFE 2% — guia avulsa | 5.228,64 |
+
+### 9.5. O que ainda não fecha
+
+- **R$ 5.249,34** de complemento de ICMS que está no Livro e não está nos
+  créditos da GIA (decisão nº 18).
+- **R$ 3.865,30** de estorno de créditos que não nasce de documento e hoje entra
+  como parâmetro (decisões nº 15 e 21).
+- A **EFD/SPED** de 07/2026 aparentemente não foi retificada junto com a GIA
+  (decisão nº 22).
+
