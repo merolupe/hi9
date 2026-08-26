@@ -149,7 +149,7 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 > A aba ESTORNO traz um totalizador paralelo com números diferentes destes.
 > Como o arquivo era um relatório manual e essa divergência não muda o resultado
 > final, ela **não será replicada**: a ferramenta produz um totalizador único.
-> Ver `06-decisoes-pendentes.md`, item 5.
+> Onde existe apuração individualizada por estabelecimento, é ela que vale.
 
 ## 7. Riscos que a análise reduziu ou confirmou
 
@@ -179,7 +179,7 @@ conferência do Enxofre de revenda passou a bater exato com a aba ESTORNO
 
 E um terceiro, na apuração consolidada e não na minha análise: **Corumbá não
 usava a mecânica de SP**, e o crédito indevido de transferência estava somado ao
-crédito mantido. Ver `06-decisoes-pendentes.md`, item 2.
+crédito mantido. Ver `04-matriz-de-regras-icms.md`, item 4.2.
 
 ## 9. Rio Brilhante — o que os documentos oficiais mostraram (25/08/2026)
 
@@ -215,8 +215,8 @@ de **ajuste** da apuração:
 | Crédito | ajuste art. 68 RICMS/MS (46.138,68) + estorno de débitos (33.039,71) | 79.178,39 |
 | Débito | saldo devedor do centralizador (99.412,10) + estorno de créditos (3.865,30) | 103.277,40 |
 
-Daí sai o achado da centralização em MS (decisão nº 20) e o dos créditos de
-ajuste (nº 21).
+Daí sai o achado da **centralização em MS** — Rio Brilhante recebe saldo devedor
+de outro estabelecimento do estado. Ver decisão pendente nº 7.
 
 ### 9.4. Novos alvos de regressão
 
@@ -232,12 +232,67 @@ se ancorar no documento oficial:
 | Benefício (67% intra + 80% inter) | **261.431,90** |
 | FADEFE 2% — guia avulsa | 5.228,64 |
 
-### 9.5. O que ainda não fecha
+### 9.5. O estorno de créditos por ajuste
 
-- **R$ 5.249,34** de complemento de ICMS que está no Livro e não está nos
-  créditos da GIA (decisão nº 18).
-- **R$ 3.865,30** de estorno de créditos que não nasce de documento e hoje entra
-  como parâmetro (decisões nº 15 e 21).
-- A **EFD/SPED** de 07/2026 aparentemente não foi retificada junto com a GIA
-  (decisão nº 22).
+R$ 3.865,30 de estorno de crédito da atividade industrial que **não nasce de
+documento no Livro Fiscal** — é a linha 003 do Registro de Apuração. Entra no
+motor como lançamento explícito, e passará a vir de `ajustes.xlsx` na Entrega 2.
+
+Sem ele o motor para em R$ 258.409,05 de benefício, contra os R$ 261.431,90
+declarados. A diferença de R$ 3.022,85 está medida em teste.
+
+---
+
+## 10. Conferência do estorno por estabelecimento
+
+| Estabelecimento | UF | Estorno calculado | Referência | Diferença |
+|---|---|---|---|---|
+| Registro | SP | 50.481,97 | 50.481,97 | **0,00** |
+| Guará | SP | 426.771,68 | 426.771,68 | **0,00** |
+| Matriz | SP | 0,00 | 0,00 | **0,00** |
+| Barra do Garças | MT | 50.309,07 | 50.309,07 | **0,00** |
+| Londrina | PR | 0,00 | 0,00 | **0,00** |
+| Corumbá | MS | 19.961,553359 | 19.961,553359 | **0,00** |
+| Rio Brilhante | MS | 331.236,11 | 331.236,11 | **0,00** |
+
+O crédito bruto bate nas sete e os débitos batem com a aba `Dinamica`. Corumbá é
+conferido contra a **apuração individualizada (Empresa 9)**, não contra a
+consolidada — que trazia R$ 26.503,24 de crédito mantido porque somava a ele o
+crédito indevido de transferência.
+
+Rio Brilhante era a exceção enquanto o motor chaveava na carga efetiva; passou a
+fechar quando a chave virou a alíquota, e a referência aqui é a linha 003 do
+Registro de Apuração.
+
+## 11. Volume da competência
+
+| Verificação | Resultado |
+|---|---|
+| Linhas lidas do Livro Fiscal | 6.555 |
+| Linhas relevantes para ICMS | **2.345** — igual à aba `ICMS` da planilha manual |
+| Carga efetiva × classificação manual | **2.342 de 2.345 (99,87%)** |
+| Totais por estabelecimento × entrada/saída × carga | idênticos à aba `Dinamica` |
+| Pendências | **0** |
+| Alertas (não bloqueiam) | 30 |
+
+As 3 divergências de carga são as notas da ICL Aditivos, reclassificadas à mão.
+O teste **exige** que a diferença seja essa e de R$ 9.019,01 — qualquer outra o
+quebra.
+
+## 12. Os 0,941176% não existem
+
+O escopo funcional v1.0 previa, para MS, crédito mantido de **0,941176%** nas
+entradas a 4% e manutenção do mesmo percentual em fertilizante interno. O número
+foi procurado em três lugares e não está em nenhum:
+
+1. **Apuração consolidada** — varredura célula a célula nas sete abas. Só aparece
+   o fator que geraria o número (`4/17 = 0,235294`), nunca o percentual aplicado.
+2. **Apuração individualizada de Corumbá** — a mecânica é outra: estorno da
+   parcela não tributada sobre o ICMS.
+3. **Termo de Acordo n. 1.190/2018** — as sete páginas não mencionam o percentual
+   nem nada equivalente.
+
+O parâmetro não existe em `regimes.yaml`, e não fica como "não aplicado": não há
+regra a aplicar. Fica o registro para que ninguém o reintroduza a partir do
+escopo v1.0.
 

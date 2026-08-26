@@ -3,9 +3,9 @@
 Apuração mensal de ICMS da **Hinove Agrociência S.A.** a partir do Livro Fiscal
 extraído do Sankhya e validado pelo Fiscalbot.
 
-> **Situação em 25/08/2026:** Julho/2026 é reproduzido da ingestão ao benefício
-> fiscal, **fecha sem nenhuma pendência**, e Rio Brilhante bate ao centavo com a
-> GIA retificadora de 07/2026. 96 testes automáticos.
+> **Situação:** a competência de referência é reproduzida da ingestão ao
+> benefício fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante
+> bate ao centavo com a GIA entregue. 96 testes automáticos.
 > Ver o [plano de execução](../docs/apurabot/02-plano-de-execucao.md).
 
 ## O que já faz
@@ -54,7 +54,7 @@ src/apurabot/
   saida.py             escreve o .xlsx
   cli.py               linha de comando
 
-tests/          96 testes: unidade + regressão contra Julho/2026
+tests/          96 testes: unidade + regressão contra a competência de referência
 analise/        Scripts exploratórios que reproduzem os números documentados
 ```
 

@@ -32,8 +32,8 @@ lancamentos_sem_contabil:
     homologado: true
     # Regra, não acaso — confirmado em 21/08/2026. O complemento acompanha a
     # situação da nota complementada, como o complemento de preço. Os 4,0% são
-    # a carga das notas complementadas nas 6 linhas de Julho/2026
-    # (R$ 17.490,73 de ICMS). Se um complemento vier de nota com outra carga,
+    # a carga das notas que o complemento complementa. Se um complemento vier
+    # de nota com outra carga,
     # é a carga dela que vale, e a referência está na coluna Observação.
 
 # ---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ cfop_industrializacao: [1101, 2101, 3101]
 
 # ---------------------------------------------------------------------------
 # 6. DIFAL — itens fora do processo produtivo usam o ICMS do XML
-#    Ver decisão pendente nº 8.
+#    Ver decisão pendente nº 2.
 # ---------------------------------------------------------------------------
 difal:
   cfop_uso_consumo: [1556, 2556]

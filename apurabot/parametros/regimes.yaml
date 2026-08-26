@@ -46,13 +46,11 @@ regimes:
     #    17% → 0,7647   ·  18% → 0,7778   ·  19% → 0,7895
     #
     # A CHAVE É A ALÍQUOTA, NÃO A CARGA EFETIVA. Uma importação a 17% com base
-    # reduzida tem carga efetiva de 4%, e mesmo assim estorna 76,47% — foi
-    # exatamente esse ponto que separou o motor da apuração real de Julho/2026.
+    # reduzida tem carga efetiva de 4%, e mesmo assim estorna 76,47%.
     carga_de_referencia: 4.0
 
     # Casas decimais da parcela. 4 reproduz a apuração (0,4286 e 0,6667);
-    # `null` usa a fração exata (3/7 e 2/3). A escolha vale R$ 1,04 em Corumbá
-    # e R$ 0,26 no ácido fosfórico de Rio Brilhante — ver decisão nº 15.
+    # `null` usa a fração exata (3/7 e 2/3).
     casas_decimais_da_parcela: 4
 
     # Créditos que não podem ser apropriados. Não são estorno: são crédito que
@@ -61,9 +59,9 @@ regimes:
       - cfop: [2152]
         motivo: >
           Transferência interestadual recebida. A apuração de Corumbá marca o
-          crédito como indevido — em Julho/2026 foram R$ 14.424,02, a contraparte
-          exata do débito de CFOP 6152 de Guará. A apuração consolidada somou
-          esse valor ao crédito mantido; a individualizada, não.
+          crédito como indevido, e o valor é a contraparte exata do débito de
+          CFOP 6152 de Guará. A apuração consolidada somava esse valor ao
+          crédito mantido; a individualizada, não.
         homologado: false
 
     isentos_de_estorno:
@@ -77,18 +75,16 @@ regimes:
       MESMO de Corumbá — parcela não tributada sobre o valor do ICMS, pela
       alíquota da operação. O benefício vem depois, sobre o saldo devedor da
       atividade industrial, e está em `beneficios_fiscais.ms_rio_brilhante`.
-      HOMOLOGADO contra o Registro de Apuração de 07/2026 e a GIA retificadora
-      (protocolo 36160E2, entregue em 25/08/2026): estorno de R$ 331.236,11,
-      sendo R$ 245.987,17 na atividade industrial e R$ 85.248,94 na comercial.
+      Homologado contra o Registro de Apuração e a GIA de uma competência
+      fechada — ver docs/apurabot/05-achados-julho-2026.md.
     vigencia_inicio: 2025-01-01
     homologado: true
     formula_estorno: proporcional_parcela_nao_tributada
     base_do_estorno: valor_icms
     carga_de_referencia: 4.0
     casas_decimais_da_parcela: 4
-    # Só o CIAP fica fora do estorno. O complemento de ICMS de Julho/2026
-    # (R$ 5.249,34) não aparece nos créditos da GIA retificadora — ver decisão
-    # pendente nº 18.
+    # Só o CIAP fica fora do estorno. O complemento de ICMS é crédito
+    # apropriável e acompanha a situação da nota complementada.
     isentos_de_estorno:
       - ciap
     difal: guia_avulsa
@@ -102,7 +98,7 @@ regimes:
   pr_diferimento:
     descricao: >
       Saídas diferidas — mantém 100% do crédito de entrada, que se acumula
-      como saldo credor. Ver decisão pendente nº 7.
+      como saldo credor. Ver decisão pendente nº 1.
     vigencia_inicio: 2025-01-01
     formula_estorno: nenhum
 
@@ -117,9 +113,6 @@ beneficios_fiscais:
     vigencia_inicio: 2018-09-19
     vigencia_fim: 2032-12-31          # cláusula terceira, caput
     homologado: true
-    # Homologado em 25/08/2026 contra três documentos oficiais da competência
-    # 07/2026: o Registro de Apuração do ICMS, a GIA - Benefício Fiscal e a
-    # GIA - Apuração Final (protocolo 36160E2, retificadora).
 
     # Cláusula terceira, incisos I e II. O benefício é deduzido do saldo devedor
     # "que tenha resultado como efetiva e regularmente devido", ou seja, nunca
@@ -130,15 +123,14 @@ beneficios_fiscais:
       base: saldo_devedor_da_atividade_industrial
       limitado_ao_saldo_devedor: true
 
-    # ALCANCE DO BENEFÍCIO — RESOLVIDO. Era a decisão pendente nº 1.
+    # ALCANCE DO BENEFÍCIO
     #
     # A linha 012 do Registro de Apuração nomeia a dedução:
     #   "BENEFÍCIOS FISCAIS - Termo de acordo n. 1190/2018 -
     #    Industrialização própria - Incentivo TA/CDI"
-    # e a GIA - Benefício Fiscal traz base de saídas incentivadas de
-    # R$ 412.274,17, que é exatamente CFOP 5101 + 5118 + 6101 de Julho/2026.
-    # Ou seja: a leitura literal do inciso I estava certa, e o alcance é a
-    # atividade industrial — não todas as saídas.
+    # e a base de saídas incentivadas da GIA - Benefício Fiscal é a dos CFOP de
+    # produção própria. A leitura literal do inciso I é a que vale: o alcance é
+    # a atividade industrial, não todas as saídas.
     alcance:
       criterio: atividade_industrial
       rateio_do_credito: participacao_do_debito
@@ -147,8 +139,6 @@ beneficios_fiscais:
     # própria GIA: saem no relatório como informação e NÃO entram na conta
     # gráfica da apuração.
     #
-    # Confirmado na GIA - Benefício Fiscal e no Relatório FAI de 07/2026:
-    # benefício fruído R$ 261.431,90 → 2% = R$ 5.228,64; adicional 0%.
     fadefe:
       condicao_de_fruicao: true       # cláusula terceira, parágrafo primeiro
       lancamento: guia_avulsa
@@ -193,13 +183,12 @@ atividades:
     vigencia_inicio: 2025-01-01
     homologado: true
     fonte: >
-      Registro de Apuração do ICMS de 07/2026 e GIA retificadora 36160E2, de
-      RIO BRILHANTE. Confere ao centavo: débito industrial 412.274,17 e
-      comercial 93.717,23; crédito industrial 327.834,95, comercial 134.672,19
-      e CIAP 2.146,57.
+      Registro de Apuração do ICMS e GIA de RIO BRILHANTE. Confere ao centavo em
+      débito e crédito nas três atividades — ver
+      docs/apurabot/05-achados-julho-2026.md.
     # ATENÇÃO: a homologação é de Rio Brilhante. Corumbá usa o mesmo mapa
     # porque a UF é a mesma, mas não há GIA de Corumbá para conferir a
-    # segregação dela. Ver decisão pendente nº 19.
+    # segregação dela. Ver decisão pendente nº 6.
 
     # O prefixo do CFOP é a definição do próprio sistema de CFOP, não uma regra
     # com vigência. Fica aqui só para não haver número fiscal dentro do .py.
@@ -210,8 +199,8 @@ atividades:
 
     # O CFOP do serviço de transporte diz quem contratou o frete, não o que o
     # frete carrega — e é o que ele carrega que define a atividade. Por isso a
-    # descrição vence o CFOP quando casa. Em Julho/2026 isso separa
-    # R$ 4.989,37 de frete de insumo do resto dos R$ 94.620,43 do CFOP 2352.
+    # descrição vence o CFOP quando casa: frete de insumo é industrial e frete
+    # de venda é comercial, dentro do mesmo CFOP de serviço de transporte.
     por_descricao:
       - contem: Fretes sobre Compra de Insumos
         atividade: industrial
