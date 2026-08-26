@@ -5,7 +5,7 @@
 
 **Situação:** a competência de referência é reproduzida da ingestão ao benefício
 fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante bate ao
-centavo com a GIA entregue. 96 testes automáticos.
+centavo com a GIA entregue. 111 testes automáticos.
 
 | Entrega | Situação |
 |---|---|
@@ -13,11 +13,11 @@ centavo com a GIA entregue. 96 testes automáticos.
 | 1 · Base tratada e classificada | ✅ concluída |
 | 2 · Motor de ICMS: créditos, débitos e estornos | 🟡 falta só ajustes manuais |
 | 3 · Benefício fiscal de Rio Brilhante | ✅ concluída — confere com a GIA |
-| 4 · Centralização de São Paulo | ⬜ pode começar |
-| 5 · DIFAL | ⬜ falta o `.xlsx` de XML |
-| 6 · Interface e empacotamento | ⬜ pode começar |
+| 4 · Centralização e transferência de saldo | ✅ concluída — regra a homologar |
+| 5 · DIFAL | ⏸ pausado |
+| 6 · Interface e empacotamento | 🟡 CLI e instalação entregues; interface gráfica pendente |
 | 7 · Homologação | ⬜ depende de 4 e 6 |
-| 8 · CIAP | ⬜ falta a Base de Bens |
+| 8 · CIAP | ⏸ pausado |
 
 ---
 
@@ -108,20 +108,29 @@ confirme (decisão nº 6) e a centralização de MS não está modelada (nº 7).
 
 ---
 
-## Entrega 4 — Centralização de São Paulo ⬜
+## Entrega 4 — Centralização e transferência de saldo ✅
 
-Não depende de nada em aberto.
+Camada 9. Consolida os saldos individuais no estabelecimento centralizador e
+cobra a NF-e que documenta cada transferência.
 
-- Saldo individual antes da centralização, por estabelecimento paulista
-- Classificação credor/devedor e valor transferível
-- Controle das NF-e de transferência (8 validações do escopo, item 7.1)
-- Consolidação em Guará e resultado da centralizadora
-- Travas: `saldo individual = transferido + residual` e
-  `recebido em Guará = soma das NF-e emitidas`
+O que a entrega cobre:
+
+- **saldo individual** de cada estabelecimento, antes da centralização;
+- **valor transferível** conforme a regra da UF — saldo integral, só devedor ou
+  só credor, parametrizado;
+- **consolidação** na centralizadora, com o saldo final do grupo;
+- **travas da NF-e** — saldo a transferir sem documento escriturado, ou
+  documento de valor diferente do saldo, viram pendência e bloqueiam o
+  encerramento.
+
+A regra está em [04 — Matriz de regras](04-matriz-de-regras-icms.md), item 6.
+
+**Depende de resposta do fiscal:** a regra de transferência de SP não está
+homologada (decisão nº 11), e a de MS não está modelada (nº 7).
 
 ---
 
-## Entrega 5 — DIFAL ⬜
+## Entrega 5 — DIFAL ⏸ *(pausado)*
 
 Falta o `.xlsx` de exemplo do XML das entradas. O extrato novo já traz
 `Vlr. DIFAL UF Remet.` e `Vlr. DIFAL UF Destino`, que ajudam na conciliação.
@@ -134,11 +143,21 @@ Falta o `.xlsx` de exemplo do XML das entradas. O extrato novo já traz
 
 ---
 
-## Entrega 6 — Interface e empacotamento ⬜
+## Entrega 6 — Interface e empacotamento 🟡
 
-Janela local com os 4 comandos, seleção de competência, arrastar-e-soltar,
-painel de pendências com bloqueio do encerramento, empacotamento para duplo
-clique e manual do usuário.
+**Entregue:** instalação com um comando e a linha de comando completa.
+
+```
+pip install -e apurabot
+apurabot apurar <livro_fiscal> --saida <pasta>
+```
+
+A execução mostra a apuração por estabelecimento, a segregação por atividade, a
+memória do benefício, a centralização e as pendências — e grava o caderno em
+`.xlsx`. O passo a passo está em [07 — Como rodar](07-como-rodar.md).
+
+**Falta:** a janela para quem não usa terminal, e o encerramento de competência
+que grava o saldo credor para o mês seguinte.
 
 ---
 
@@ -148,7 +167,7 @@ Regressão de uma segunda competência, treinamento do time e aceite formal.
 
 ---
 
-## Entrega 8 — CIAP ⬜
+## Entrega 8 — CIAP ⏸ *(pausado)*
 
 Falta a Base de Bens. Índice = saídas tributadas ÷ total de saídas; crédito
 apropriável = parcela mensal × índice. **Painel 3.**
@@ -166,12 +185,14 @@ PER/DCOMP e emissão automática de NF-e de transferência.
 ## O que destrava o quê
 
 ```
-Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ⬜ ──► Entrega 6 ⬜ ──► Entrega 7 ⬜
+Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ✅ ──► Entrega 6 🟡 ──► Entrega 7 ⬜
                      │
-                     ├──►  Entrega 3 ✅  concluída, confere com a GIA
-                     ├──►  Entrega 5 ⬜   precisa: .xlsx de exemplo do XML
-                     └──►  Entrega 8 ⬜   precisa: .xlsx da Base de Bens
+                     ├──►  Entrega 3 ✅  benefício fiscal de MS
+                     ├──►  Entrega 5 ⏸  DIFAL — pausado
+                     └──►  Entrega 8 ⏸  CIAP — pausado
 ```
 
-As entregas **4 e 6 podem começar imediatamente**, e fechar a 2 depende só de
-definir o formato do `ajustes.xlsx`. Nenhuma delas espera resposta do fiscal.
+A ferramenta já roda de ponta a ponta na máquina do time — ver
+[07 — Como rodar](07-como-rodar.md). O que falta para a Fase 1 fechar é a
+interface gráfica (Entrega 6) e a leitura do relatório de ajustes (Entrega 2).
+DIFAL e CIAP estão pausados por decisão de escopo.

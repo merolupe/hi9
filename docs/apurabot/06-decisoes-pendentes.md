@@ -126,3 +126,23 @@ Os dois carregam saldo credor próprio.
 **Pergunta:** entram no escopo do Apurabot ou continuam controle à parte?
 
 **Padrão assumido:** fora do escopo — não estão em `filiais.yaml`.
+
+## 11. 🟡 SP — o que o centralizado transfere para Guará?
+
+A centralização está calculada, mas a regra de transferência vem do escopo
+funcional v1.0 e não foi confirmada.
+
+**Perguntas:**
+
+1. O estabelecimento centralizado transfere o **saldo integral** (devedor e
+   credor), só o **saldo devedor**, ou só o **saldo credor**?
+2. Qual CFOP a NF-e de transferência usa? O parâmetro hoje procura 5601, 5602 e
+   5605.
+
+A segunda pergunta tem consequência prática: é por esse CFOP que a ferramenta
+cobra o documento. Com o CFOP errado no parâmetro, toda transferência aparece
+como "sem NF-e escriturada".
+
+**Padrão assumido:** `saldo_integral`, com a regra marcada `homologado: false` em
+`filiais.yaml`. O relatório avisa que o resultado é rascunho.
+

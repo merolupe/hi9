@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 
 from .base_tratada import BaseTratada
 from .nucleo import atividade as ativ
+from .nucleo import centralizacao as centr
 from .nucleo.beneficio import ResultadoBeneficio
 from .nucleo.beneficio import calcular as calcular_beneficio
 from .nucleo.estorno import ResultadoEstorno, calcular
@@ -96,6 +97,7 @@ class ApuracaoFilial:
 class Apuracao:
     filiais: dict[str, ApuracaoFilial]
     base: BaseTratada
+    centralizacao: list[centr.ResultadoCentralizacao] = field(default_factory=list)
 
     @property
     def total(self) -> ApuracaoFilial:
@@ -121,6 +123,15 @@ class Apuracao:
     def inconsistentes(self) -> list[ApuracaoFilial]:
         """Filiais em que crédito mantido + estorno ≠ crédito bruto."""
         return [f for f in self.filiais.values() if not f.confere]
+
+    @property
+    def saldos(self) -> dict[str, float]:
+        """Saldo individual de cada estabelecimento, antes da centralização."""
+        return {f.estabelecimento: f.saldo for f in self.filiais.values()}
+
+    @property
+    def pendencias_de_centralizacao(self) -> list[str]:
+        return [m for c in self.centralizacao for m in c.pendencias]
 
     @property
     def sem_regra_de_atividade(self) -> list[ApuracaoFilial]:
@@ -195,7 +206,12 @@ def apurar(
             ),
         )
 
-    return Apuracao(filiais=filiais, base=base)
+    apuracao = Apuracao(filiais=filiais, base=base)
+
+    # Camada 9 — centralização. Vem por último porque opera sobre o saldo já
+    # apurado de cada estabelecimento.
+    apuracao.centralizacao = centr.calcular(apuracao.saldos, base.livro, params)
+    return apuracao
 
 
 def _somar_na_atividade(

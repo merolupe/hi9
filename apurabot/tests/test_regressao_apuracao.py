@@ -275,3 +275,50 @@ def test_so_rio_brilhante_tem_beneficio(apuracao):
 
 def test_o_beneficio_nao_supera_o_saldo_devedor_que_o_gerou(apuracao_com_ajustes):
     assert apuracao_com_ajustes.filiais[RB].beneficio.confere
+
+
+# --------------------------------------------------------------------------
+# Centralização
+# --------------------------------------------------------------------------
+
+def test_o_saldo_de_corumba_e_o_que_rio_brilhante_recebe_do_centralizador(apuracao):
+    """A centralização de MS aparece nos dois lados, e os dois batem.
+
+    O Registro de Apuração de Rio Brilhante traz, em Outros Débitos,
+    R$ 99.412,10 de "Recebimento de saldo devedor - estabelecimento
+    centralizador". Esse é exatamente o saldo devedor que Corumbá apura.
+
+    A regra de centralização de MS ainda não está modelada — ver decisão
+    pendente nº 7. Este teste é a evidência de que ela existe.
+    """
+    corumba = apuracao.filiais["HINOVE (CORUMBÁ- MS)"]
+    assert corumba.saldo == pytest.approx(99_412.10, abs=CENTAVO)
+
+
+def test_sp_centraliza_em_guara(apuracao):
+    grupos = apuracao.centralizacao
+    assert [c.uf for c in grupos] == ["SP"]
+    assert grupos[0].centralizadora == "HINOVE (FILIAL GUARÁ)"
+
+
+def test_registro_transfere_o_saldo_devedor_para_guara(apuracao):
+    """Identidade da camada, sobre os saldos reais da competência."""
+    grupo = apuracao.centralizacao[0]
+    registro = next(t for t in grupo.transferencias if t.origem == "HINOVE (REGISTRO)")
+    assert registro.saldo_individual == pytest.approx(287_113.66, abs=CENTAVO)
+    assert registro.saldo_individual == pytest.approx(
+        registro.valor_transferido + registro.saldo_residual, abs=CENTAVO
+    )
+    assert grupo.confere
+
+
+def test_a_transferencia_de_julho_nao_tem_nfe_escriturada(apuracao):
+    """O Livro Fiscal da competência não traz NF-e de transferência de saldo.
+
+    A trava existe justamente para isso: saldo a transferir sem documento é
+    pendência, não silêncio.
+    """
+    grupo = apuracao.centralizacao[0]
+    assert grupo.pendencias
+    assert all("sem NF-e escriturada" in m for m in grupo.pendencias)
+
