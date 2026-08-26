@@ -4,55 +4,146 @@ Guia de instalação e uso. Do zero até a apuração do mês em `.xlsx`.
 
 ---
 
-## 1. O que você precisa
+## 1. Abrir o terminal
 
-**Python 3.10 ou mais novo.** Para conferir, abra o terminal e digite:
+Quase tudo aqui é digitado numa janela preta chamada **terminal** (ou *prompt de
+comando*). Se você nunca abriu uma:
+
+**Windows** — segure a tecla `Windows` e aperte `R`, digite `cmd` e dê Enter.
+
+**Mac** — aperte `Command` + `barra de espaço`, digite `Terminal` e dê Enter.
+
+Você digita um comando, aperta Enter, e espera ele terminar. É isso.
+
+---
+
+## 2. Instalar o Python
+
+O Apurabot é escrito em Python, então o Python precisa estar na máquina.
+
+No terminal, digite:
 
 ```
 python --version
 ```
 
-Se aparecer `Python 3.10` ou maior, está pronto. Se der erro ou aparecer versão
-menor, baixe em [python.org/downloads](https://www.python.org/downloads/).
+**Apareceu `Python 3.10` ou maior?** Pode pular para o passo 3.
 
-> **No Windows**, marque a caixa **"Add Python to PATH"** na primeira tela do
-> instalador. Sem isso o comando não é reconhecido depois.
+**Deu erro, ou apareceu uma versão menor?** Baixe em
+[python.org/downloads](https://www.python.org/downloads/) e instale.
+
+> ### No Windows, marque "Add Python to PATH"
+>
+> É uma caixinha na **primeira tela** do instalador, embaixo. Sem ela o Windows
+> não encontra o Python depois, e todos os comandos deste guia falham.
+>
+> Se você já instalou sem marcar, rode o instalador de novo, escolha
+> **Modify** e marque a opção.
+
+> **Abriu a Microsoft Store em vez de responder?** É o atalho falso que o
+> Windows instala de fábrica. Instale o Python pelo site mesmo, e o problema
+> some.
+
+Feche e abra o terminal de novo, e confira outra vez com `python --version`.
 
 ---
 
-## 2. Instalar
+## 3. Baixar o Apurabot
 
-Baixe o repositório e, na pasta dele, rode:
+O código está no GitHub, em **`merolupe/hi9`**. Há dois jeitos.
+
+### Jeito A — baixar o `.zip` (não precisa instalar nada)
+
+1. Abra <https://github.com/merolupe/hi9> no navegador, logado na sua conta.
+2. Clique no botão verde **`Code`** e depois em **`Download ZIP`**.
+3. O arquivo cai em Downloads. Clique com o botão direito nele e escolha
+   **Extrair tudo**.
+4. Escolha uma pasta fácil de achar. A sugestão é a raiz do disco:
+   `C:\hi9` no Windows, ou a sua pasta pessoal no Mac.
+
+Você vai terminar com uma pasta chamada `hi9-main` (ou `hi9`), e dentro dela
+outras pastas: `apurabot`, `docs`, e alguns arquivos soltos.
+
+> **Deixe essa pasta onde está.** A instalação aponta para ela; se você mover ou
+> apagar depois, o comando para de funcionar.
+
+### Jeito B — `git clone` (se você já usa Git)
+
+```
+git clone https://github.com/merolupe/hi9.git
+```
+
+---
+
+## 4. Instalar o Apurabot
+
+Agora o terminal precisa estar **dentro** da pasta que você acabou de baixar.
+
+### No Windows, o jeito mais fácil
+
+1. Abra a pasta no Explorador de Arquivos.
+2. Clique na **barra de endereço** lá em cima (onde aparece o caminho).
+3. Apague o que está escrito, digite `cmd` e dê Enter.
+
+Abre um terminal **já dentro da pasta certa**.
+
+### No Mac, ou se preferir digitar
+
+Digite `cd`, um espaço, e **arraste a pasta** para dentro da janela do terminal —
+ele preenche o caminho sozinho. Depois dê Enter.
+
+### Confirme que está no lugar certo
+
+```
+dir          (Windows)
+ls           (Mac e Linux)
+```
+
+Tem que aparecer uma pasta chamada **`apurabot`** na lista. Se não aparecer,
+você está na pasta errada.
+
+### Instale
 
 ```
 pip install -e apurabot
 ```
 
-Isso instala o Apurabot e as três bibliotecas de que ele depende. Terminou sem
-erro vermelho? Confira:
+Vai imprimir várias linhas. Terminou com `Successfully installed` e sem erro em
+vermelho? Está instalado.
+
+> Se aparecer um aviso amarelo falando em `virtual environment`, pode ignorar —
+> é recomendação, não erro.
+
+### Confira
 
 ```
 apurabot --help
 ```
 
-Deve aparecer a lista de comandos.
+Deve aparecer a lista de comandos: `apurar` e `base-tratada`.
 
-> **Se `apurabot` não for reconhecido**, use `python -m apurabot.cli` no lugar de
-> `apurabot` em todos os comandos deste guia. Funciona igual.
+> **Se disser que `apurabot` não é reconhecido**, use `python -m apurabot.cli` no
+> lugar da palavra `apurabot` em todos os comandos deste guia. Funciona igual.
 
 ---
 
-## 3. Onde colocar o Livro Fiscal
+## 5. Onde colocar o Livro Fiscal
 
-Em qualquer pasta. A recomendação é organizar por competência:
+Em qualquer pasta. A recomendação é criar uma pasta `competencias` **dentro da
+pasta do Apurabot**, organizada por mês:
 
 ```
-competencias/
-  2026-07/
-    entrada/
-      Movimento Livros Fiscais.xls
-    saida/
+hi9/
+  apurabot/
+  docs/
+  competencias/
+    2026-07/
+      entrada/     ← o Livro Fiscal que saiu do Sankhya vai aqui
+      saida/       ← a apuração vai aparecer aqui
 ```
+
+Crie as pastas normalmente pelo Explorador de Arquivos, e copie o Livro Fiscal
+para dentro de `entrada`.
 
 > **A pasta `competencias/` não vai para o Git.** Ela contém dado fiscal real, e
 > o `.gitignore` do projeto a exclui de propósito. Isso é regra do projeto, não
@@ -64,13 +155,31 @@ Ele reconhece qual é sozinho.
 
 ---
 
-## 4. Rodar
+## 6. Rodar
+
+Com o terminal na pasta do Apurabot (passo 4), o comando é:
 
 ```
 apurabot apurar "competencias/2026-07/entrada/Movimento Livros Fiscais.xls" --saida "competencias/2026-07/saida"
 ```
 
-Aspas nos caminhos que tiverem espaço.
+Troque `2026-07` pelo mês que você está apurando, e o nome do arquivo pelo nome
+real dele.
+
+> ### As aspas não são enfeite
+>
+> Caminho com espaço no meio **precisa** de aspas. Sem elas o terminal entende
+> `Movimento`, `Livros` e `Fiscais.xls` como três coisas separadas e dá erro.
+> Na dúvida, use aspas sempre.
+
+> ### Não quer digitar o caminho? Copie
+>
+> **Windows:** segure `Shift`, clique com o botão direito no arquivo e escolha
+> **"Copiar como caminho"**. Ele copia já com as aspas — é só colar no terminal
+> com `Ctrl` + `V`.
+>
+> **Mac:** clique com o botão direito no arquivo, segure a tecla `Option`, e a
+> opção vira **"Copiar ... como nome do caminho"**.
 
 O que aparece na tela:
 
@@ -111,7 +220,7 @@ Livro está limpo antes de fechar o mês.
 
 ---
 
-## 5. O que sai
+## 7. O que sai
 
 Um `.xlsx` com cinco abas:
 
@@ -129,7 +238,7 @@ aplicada, em texto.
 
 ---
 
-## 6. Pendências e alertas
+## 8. Pendências e alertas
 
 Não são a mesma coisa.
 
@@ -151,7 +260,7 @@ efetiva fora das homologadas, por exemplo. Aparece na aba RESUMO.
 
 ---
 
-## 7. Mudar uma regra tributária
+## 9. Mudar uma regra tributária
 
 Toda regra vive em `apurabot/parametros/`, em arquivos de texto. **Nenhum número
 tributário está dentro do código.**
@@ -171,7 +280,7 @@ reproduzível depois de mudança na legislação.
 
 ---
 
-## 8. O que ainda não está pronto
+## 10. O que ainda não está pronto
 
 | | Situação |
 |---|---|
@@ -183,7 +292,7 @@ reproduzível depois de mudança na legislação.
 
 ---
 
-## 9. Rodar os testes
+## 11. Rodar os testes
 
 Se quiser conferir que a instalação está sã:
 
@@ -192,6 +301,9 @@ pip install pytest
 cd apurabot
 python -m pytest
 ```
+
+Terminou? Volte para a pasta de cima com `cd ..`, senão os comandos do passo 6
+não vão achar a pasta `competencias`.
 
 Os testes de unidade rodam sozinhos. Os de regressão precisam de um Livro Fiscal
 real e são **pulados com explicação** quando não o encontram — dado fiscal não
