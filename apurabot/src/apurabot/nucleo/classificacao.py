@@ -119,13 +119,9 @@ def _mercadoria(linha, params) -> ResultadoClassificacao | None:
         return None
 
     # 1. Cadastro de produtos — a exceção manda sobre o padrão do prefixo.
-    cadastro = (params.produtos.get("produtos") or {})
-    item = cadastro.get(int(codigo)) if codigo.isdigit() else None
-    if item:
-        return ResultadoClassificacao(
-            categoria=item["categoria"],
-            regra=f"produto {codigo} no cadastro — {item.get('descricao', '')}",
-        )
+    do_cadastro = _cadastro(linha, params, codigo)
+    if do_cadastro is not None:
+        return do_cadastro
 
     # 2. Padrão pelo prefixo do código do produto.
     #
@@ -152,3 +148,57 @@ def _mercadoria(linha, params) -> ResultadoClassificacao | None:
         )
 
     return None
+
+
+def _cadastro(linha, params, codigo) -> ResultadoClassificacao | None:
+    """Procura o produto no cadastro, considerando o fornecedor quando ele importa.
+
+    A entrada do cadastro pode ser um mapa (a categoria vale para o produto,
+    venha de quem vier) ou uma lista de alternativas. Na lista, a alternativa com
+    `fornecedor` só casa com aquele fornecedor, e a sem `fornecedor` é o padrão
+    do produto — as específicas são avaliadas primeiro.
+
+    Isso existe porque o enquadramento é do par produto + fornecedor: a mesma
+    matéria-prima pode ser `materia_prima` de um fabricante de fertilizante e
+    `produto_quimico` de uma indústria química sem registro no MAPA para
+    vendê-la enquadrada. Ver docs/apurabot/04-matriz-de-regras-icms.md, item 2.1.
+    """
+    if not codigo.isdigit():
+        return None
+    entrada = (params.produtos.get("produtos") or {}).get(int(codigo))
+    if not entrada:
+        return None
+
+    alternativas = entrada if isinstance(entrada, list) else [entrada]
+    fornecedor = _texto(linha.dados.get("parceiro"))
+    especificas = [a for a in alternativas if a.get("fornecedor")]
+    padroes = [a for a in alternativas if not a.get("fornecedor")]
+
+    for item in especificas:
+        if _texto(item["fornecedor"]) in fornecedor:
+            return ResultadoClassificacao(
+                categoria=item["categoria"],
+                regra=(
+                    f"produto {codigo} no cadastro, fornecedor "
+                    f"{item['fornecedor']!r} — {item.get('descricao', '')}"
+                ),
+            )
+    for item in padroes:
+        return ResultadoClassificacao(
+            categoria=item["categoria"],
+            regra=f"produto {codigo} no cadastro — {item.get('descricao', '')}",
+        )
+
+    # Produto cadastrado só com regras por fornecedor, e nenhuma casou. Não se
+    # adivinha: a linha vira pendência.
+    return ResultadoClassificacao(
+        categoria=SEM_REGRA,
+        regra=(
+            f"produto {codigo} tem cadastro por fornecedor, e o fornecedor "
+            f"{linha.dados.get('parceiro')!r} não está entre eles"
+        ),
+    )
+
+
+def _texto(valor) -> str:
+    return " ".join(str(valor or "").split()).casefold()

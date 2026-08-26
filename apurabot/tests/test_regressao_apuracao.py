@@ -133,9 +133,12 @@ RB = "HINOVE (RIO BRILHANTE)"
 AJUSTE_ESTORNO_INDUSTRIAL = 3_865.30
 
 # GIA - Apuração Final, quadros "Débitos de ICMS" e "Créditos de ICMS".
+#
+# O crédito comercial inclui o complemento de ICMS (CFOP 2906), que é crédito
+# apropriável e integra a atividade comercial.
 GIA_POR_ATIVIDADE = {
     ativ.INDUSTRIAL: {"credito": 327_834.95, "estorno": 245_987.17, "debito": 412_274.17},
-    ativ.COMERCIAL: {"credito": 134_672.19, "estorno": 85_248.94, "debito": 93_717.23},
+    ativ.COMERCIAL: {"credito": 139_921.53, "estorno": 85_248.94, "debito": 93_717.23},
 }
 
 # Quadro "CÁLCULO BENEFÍCIO FISCAL" da GIA - Benefício Fiscal.
@@ -151,10 +154,6 @@ GIA_BENEFICIO = {
     "presumido": 261_431.89,
     "fadefe": 5_228.64,
 }
-
-# Crédito de complemento de ICMS (CFOP 2906, R$ 5.249,34) que está no Livro e
-# não aparece nos créditos da GIA retificadora. Ver decisão pendente nº 18.
-COMPLEMENTO_FORA_DA_GIA = 5_249.34
 
 
 @pytest.fixture(scope="module")
@@ -187,20 +186,15 @@ def test_a_segregacao_por_atividade_reproduz_a_gia(apuracao, atividade):
     somas = apuracao.filiais[RB].atividade(atividade)
     assert somas.debito == pytest.approx(alvo["debito"], abs=CENTAVO)
     assert somas.estorno == pytest.approx(alvo["estorno"], abs=CENTAVO)
-    esperado = alvo["credito"]
-    if atividade == ativ.COMERCIAL:
-        esperado += COMPLEMENTO_FORA_DA_GIA
-    assert somas.credito_bruto == pytest.approx(esperado, abs=CENTAVO)
+    assert somas.credito_bruto == pytest.approx(alvo["credito"], abs=CENTAVO)
     assert somas.confere
 
 
-def test_o_complemento_de_icms_e_a_unica_diferenca_de_credito(apuracao):
-    """R$ 5.249,34 que o Livro tem e a GIA retificadora não. Decisão nº 18."""
+def test_o_credito_bruto_e_a_soma_das_atividades(apuracao):
+    """Nada de crédito fica fora da segregação."""
     filial = apuracao.filiais[RB]
-    da_gia = sum(a["credito"] for a in GIA_POR_ATIVIDADE.values()) + 2_146.57  # + CIAP
-    assert filial.credito_bruto - da_gia == pytest.approx(
-        COMPLEMENTO_FORA_DA_GIA, abs=CENTAVO
-    )
+    das_atividades = sum(t.credito_bruto for t in filial.por_atividade.values())
+    assert das_atividades == pytest.approx(filial.credito_bruto, abs=CENTAVO)
 
 
 def test_o_debito_industrial_e_a_base_das_saidas_incentivadas(apuracao):

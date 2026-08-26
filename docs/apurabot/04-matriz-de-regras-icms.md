@@ -1,10 +1,12 @@
 # Apurabot — Matriz de regras de ICMS
 
-> Fonte: aba **Pontos de Atenção** e aba **ESTORNO** da apuração de Julho/2026,
-> cruzadas com o item 5 do escopo funcional v1.0.
 > **Status: rascunho a homologar pela Gerência Fiscal/Tributária.**
-> Cada linha desta matriz vira um parâmetro em `apurabot/parametros/` e um teste
-> automático em `apurabot/tests/unidade/`.
+>
+> Este documento descreve **a regra**, não uma competência. Cada linha daqui vira
+> um parâmetro em `apurabot/parametros/` e um teste automático em
+> `apurabot/tests/`. Os números que comprovam cada regra contra uma apuração real
+> estão em [05 — Achados de Julho/2026](05-achados-julho-2026.md); aqui ficam só
+> o conceito e o desenho do motor.
 
 ---
 
@@ -13,7 +15,7 @@
 | UF | Estabelecimentos | Regime | Regra em uma linha |
 |---|---|---|---|
 | **SP** | Matriz, Guará, Registro | Equilíbrio fiscal | Mantém crédito até a carga de saída (4%); estorna o excedente. Saldos centralizados em **Guará**. |
-| **MS** | Corumbá, Rio Brilhante | Estorno proporcional + crédito presumido | Estorno conforme alíquota de entrada vigente (apuração individualizada). Rio Brilhante tem benefício fiscal por Termo de Acordo. |
+| **MS** | Corumbá, Rio Brilhante | Estorno proporcional | Estorno da parcela não tributada, pela alíquota da operação. Rio Brilhante tem ainda benefício fiscal por Termo de Acordo. |
 | **MT** | Barra do Garças | Diferimento | Saídas diferidas → **estorna 100%** do crédito de entrada. |
 | **PR** | Londrina | Diferimento | Saídas diferidas → **mantém 100%** do crédito de entrada. |
 
@@ -21,45 +23,117 @@
 > Atenção*, item 4 — "Créditos PR mantêm 100% s/ saídas diferidas; créditos MT
 > estornam 100% s/ saídas diferidas".
 
-## 2. SP — equilíbrio fiscal (carga de saída 4%)
+---
 
-**Fórmula confirmada contra a apuração de Julho/2026:**
+## 2. Categorias da operação
+
+A categoria da entrada é o que decide se o crédito estorna. Ela vem, nesta ordem:
+cadastro de produto → prefixo do código do produto → CFOP. O que não casar com
+nenhuma regra recebe `SEM REGRA` e bloqueia o encerramento da competência.
+
+### 2.1. Matéria-prima × produto químico
+
+Esta é a distinção que mais move valor, e ela **não é sobre o que o produto é
+quimicamente**. Um produto químico também é matéria-prima; o que separa os dois
+é o **enquadramento fiscal**:
+
+| Categoria | Definição | Tratamento em SP |
+|---|---|---|
+| `materia_prima` | Matéria-prima **enquadrada** no artigo de equalização da carga a 4% (benefício de fertilizante) | **Não estorna** |
+| `produto_quimico` | Matéria-prima que **não se enquadra** nesse artigo | **Estorna** o excedente sobre 4% |
+
+Uma matéria-prima deixa de se enquadrar por dois motivos:
+
+1. **O produto está fora do escopo do artigo** de fertilizante.
+2. **O fornecedor não tem registro no MAPA** para vender aquele produto como
+   enquadrado — tipicamente quando é indústria química, e não fabricante de
+   fertilizante.
+
+> ### O enquadramento é do par produto + fornecedor
+>
+> O segundo motivo tem uma consequência de desenho: **o mesmo produto pode ser
+> matéria-prima de um fornecedor e produto químico de outro**, e um mesmo
+> fornecedor pode vender itens dos dois tipos. Classificar só pelo código do
+> produto, ou só pelo fornecedor, não expressa a regra.
+>
+> Por isso o cadastro em `parametros/produtos.yaml` aceita a chave por produto e,
+> quando o enquadramento depender de quem vendeu, por **produto + fornecedor**.
+>
+> O fato que decide — o enquadramento e o registro no MAPA — **não está no Livro
+> Fiscal**. É informação cadastral que o time fiscal detém, e é por isso que ela
+> vive num parâmetro e não numa heurística.
+
+### 2.2. Demais categorias
+
+| Categoria | O que é | Como o motor a reconhece |
+|---|---|---|
+| `embalagem` | Big bags, sacos, lapelas, lacres | Prefixo `2…` do código do produto, ou cadastro |
+| `revenda` | Mercadoria adquirida para revenda | Cadastro, ou CFOP de compra para comercialização |
+| `frete_compra` · `frete_venda` · `frete_transferencia` | Serviço de transporte, pela **finalidade** | Descrição do CT-e; o CFOP só decide quando a descrição não resolve |
+| `ciap` | Bem do ativo imobilizado | Prefixo `6…`, ou CFOP de lançamento de crédito de ativo |
+| `complemento_icms` | Complemento de imposto | Cadastro — lançamento sem valor contábil |
+| `complemento_preco` | Complemento de preço | Cadastro — acompanha a situação da nota complementada |
+| `quebra` | Baixa por perda, roubo ou deterioração | CFOP de baixa de estoque |
+| `insumo_energetico` | Insumo de queima | Cadastro |
+| `industrializacao_terceiros` | Serviço de industrialização | Cadastro |
+
+> **O CFOP não vence a natureza do produto.** O CFOP de compra diz *para que* a
+> mercadoria foi adquirida; a regra de estorno pergunta *o que ela é*. Uma
+> embalagem comprada com CFOP de compra para industrialização continua sendo
+> embalagem e continua estornando. Por isso o cadastro e o prefixo são avaliados
+> antes do CFOP.
+
+### 2.3. A coluna TOP
+
+O extrato traz a **TOP** (Tipo de Operação), que nomeia a operação como ela foi
+lançada no Sankhya. Ela é lida, viaja na base tratada e serve para conferência,
+mas **não classifica**: onde a TOP e a categoria do produto divergem, vale a
+categoria.
+
+A divergência não é contradição. Uma entrada lançada como "Compra de MP" pode ser
+`produto_quimico` porque, no sentido do item 2.1, aquela matéria-prima não se
+enquadra. Uma importação lançada como compra pode ser `revenda` porque a
+finalidade da importação era revender. A TOP descreve o lançamento; a categoria
+descreve o enquadramento.
+
+---
+
+## 3. SP — equilíbrio fiscal (carga de saída 4%)
 
 ```
-estorno        = valor_contábil × (carga_efetiva_entrada − carga_saída_referência)
-crédito_mantido = ICMS_destacado − estorno
-carga_saída_referência = 4%
+estorno         = valor contábil × (carga efetiva da entrada − carga de saída)
+crédito mantido = ICMS destacado − estorno
+carga de saída  = 4%
 ```
 
-A base do estorno é o **valor contábil**, não a base de ICMS. Verificado linha a
-linha na aba ESTORNO (ex.: Registro, carga 7% → 448.750,00 × 3% = 13.462,50;
-Guará, carga 20,5% → 21.665,88 × 16,5% = 3.574,87).
+A base do estorno é o **valor contábil**, não a base de ICMS.
 
 | Categoria da entrada | Dentro do estado | Fora do estado |
 |---|---|---|
 | **Matéria-prima / produto acabado** | Não estorna | Não estorna |
+| **Produto químico** | Estorna o excedente sobre 4% | Estorna o excedente sobre 4% |
 | **Embalagens** | Estorna o excedente sobre 4% | Estorna o excedente sobre 4% |
-| **Produtos químicos** | Estorna o excedente sobre 4% | Estorna o excedente sobre 4% |
 | **Frete sobre compras** | Estorna o excedente sobre 4% | Estorna o excedente sobre 4% |
 | **Frete sobre vendas** | Sem crédito (diferido/isento) | Estorna o excedente sobre 4% |
 | **Frete sobre transferência / remessa / retorno** | Mesma regra do frete de compra | Mesma regra do frete de compra |
-| **Revenda** (ex.: enxofre) | Não estorna | Não estorna |
+| **Revenda** | Não estorna | Não estorna |
 | **Retorno de industrialização** | Não estorna | Não estorna |
 | **CIAP** | Mantém 100% conforme saídas tributadas | idem |
 
-Exemplos numéricos da própria regra: carga 12% estorna 8%; carga 7% estorna 3%;
-carga 17% estorna 13%; carga 18% estorna 14%; carga 20,5% estorna 16,5%.
+Pela fórmula: carga 7% estorna 3 pontos; 12% estorna 8; 17% estorna 13; 18%
+estorna 14.
 
-## 3. MS — estorno proporcional, atividade e benefício de Rio Brilhante
+---
 
-### 3.1. O estorno é fórmula, e a chave é a alíquota
+## 4. MS — estorno proporcional, atividade e benefício de Rio Brilhante
 
-Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor contábil.
-O benefício limita o crédito à **carga de referência de 4%**, e o que passa dela
-se estorna:
+### 4.1. O estorno é fórmula, e a chave é a alíquota
+
+Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor contábil. O
+crédito é limitado à **carga de referência de 4%**, e o que passa dela se estorna:
 
 ```
-parcela estornada = 1 − 4 / alíquota
+parcela estornada = 1 − carga de referência / alíquota
 estorno           = ICMS × parcela estornada
 ```
 
@@ -72,95 +146,73 @@ estorno           = ICMS × parcela estornada
 | 18% | 0,7778 | 22,22% | 18% × 0,2222 = **4,00%** |
 | 19% | 0,7895 | 21,05% | 19% × 0,2105 = **4,00%** |
 
-Fonte: aba `ESTORNO` da apuração de Rio Brilhante, tabelas *OPERAÇÃO
-INTRAESTADUAL* e *OPERAÇÃO INTERESTADUAL*, coluna *REDUÇÃO ATUAL*.
-
-> ### ⚠️ A chave é a ALÍQUOTA, não a carga efetiva
+> ### A chave é a ALÍQUOTA, não a carga efetiva
 >
-> Esse é o ponto que separou o motor da apuração real por mais tempo, e vale
-> R$ 73.843,39 numa competência só.
+> Numa entrada com **base reduzida** as duas leituras se separam. A carga efetiva
+> do documento já vem em 4% — porque a redução da base é justamente o que a leva
+> até lá —, mas a operação continua sendo de alíquota cheia, e é sobre ela que a
+> parcela se calcula.
 >
-> As importações de ureia e ácido bórico de Julho/2026 (CFOP 3101) têm
-> **alíquota de 17% com base reduzida**: valor contábil de R$ 7.845.664,57 para
-> base de R$ 1.846.038,67, o que dá **carga efetiva de 4%**.
->
-> Lendo a carga, a conclusão é "entrada já beneficiada, estorna tudo".
-> Lendo a alíquota, estorna 76,47% e **mantém R$ 73.843,39 de crédito**.
-> É a segunda que a apuração faz.
+> Lendo a carga, a conclusão seria "entrada já beneficiada, estorna tudo".
+> Lendo a alíquota, estorna a parcela e **mantém o crédito equivalente a 4%**.
+> É a segunda que a legislação e a apuração fazem.
 >
 > A carga efetiva serve para **conferir** o documento. Quem comanda a proporção
 > do estorno é a alíquota.
 
-O arredondamento da parcela é parâmetro (`casas_decimais_da_parcela: 4`).
-Reproduz Julho/2026 na sexta casa decimal em Corumbá — R$ 19.961,553359 de
-estorno — e ao centavo em Rio Brilhante: **R$ 331.236,11**, o mesmo valor que a
-linha 003 do Registro de Apuração declara.
+O arredondamento da parcela é parâmetro (`casas_decimais_da_parcela`): quatro
+casas reproduzem o percentual tabelado, `null` usa a fração exata.
 
 > **Por que SP é diferente:** em SP o estorno é `valor contábil × (carga − 4%)`.
 > Onde base e valor contábil coincidem os dois caminhos quase se encontram, mas
 > não são o mesmo cálculo — a diferença aparece assim que a base é reduzida.
 
-### 3.2. Crédito indevido de transferência
+### 4.2. Crédito indevido de transferência
 
 O crédito de **CFOP 2152** (transferência interestadual recebida) **não é
-apropriado**. Em Julho/2026 foram R$ 14.424,02 em Corumbá, a contraparte exata
-do débito de CFOP 6152 de Guará.
-
-Não é estorno: é crédito que não podia ter sido tomado, e por isso fica em
-parcela própria na apuração. A identidade que a auditoria valida passa a ser:
+apropriado**. Não é estorno: é crédito que não podia ter sido tomado, e por isso
+fica em parcela própria na apuração. A identidade que a auditoria valida passa a
+ser:
 
 ```
 crédito mantido + estorno + crédito indevido = crédito bruto
 ```
 
-> A apuração **consolidada** de Julho somava esse valor ao crédito mantido
-> (26.503,24 = 12.079,22 + 14.424,02). A **individualizada** de Corumbá, não.
-> Vale a individualizada.
-
-### 3.3. Segregação por atividade
+### 4.3. Segregação por atividade
 
 A GIA de MS não aceita uma apuração só por estabelecimento: exige o resultado
 separado em **Industrial, Comercial, Importados e Prestacional/Outras**.
 
 Isso não é formalidade de declaração. **É a segregação que dimensiona o
 benefício**, porque o crédito presumido incide exclusivamente sobre o saldo
-devedor da atividade industrial. Sem ela, não existe "crédito da parcela
+devedor da atividade industrial. Sem ela não existe "crédito da parcela
 incentivada" e o benefício não tem como ser calculado.
 
-A atividade sai do **CFOP**, com uma exceção: o CFOP do serviço de transporte
-diz quem contratou o frete, não o que o frete carrega — e é o que ele carrega
-que decide. Por isso a **descrição vence o CFOP** quando casa.
+A atividade sai do **CFOP**, com uma exceção: o CFOP do serviço de transporte diz
+quem contratou o frete, não o que o frete carrega — e é o que ele carrega que
+decide. Por isso a **descrição vence o CFOP** quando casa.
 
 | Atividade | Débito | Crédito |
 |---|---|---|
-| Industrial | 5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122 | 1101, 2101, 3101, 1151, 2151, 3151, … + frete de insumo |
-| Comercial | 5102, 6102, 5905, 6905, 5934, 6934, … | 1102, 2102, 3102, 1152, 2152, 3152, 1352, 2352, 1353, 2353, 2906, … |
-| Prestacional/Outras | 5910, 6910, 5949, 6949 | 1604, 2604 (CIAP) |
-
-Julho/2026 em Rio Brilhante, conferido contra a GIA - Apuração Final:
-
-| Atividade | Crédito | Estorno | Débito |
-|---|---|---|---|
-| Industrial | 327.834,95 | 245.987,17 | **412.274,17** |
-| Comercial | 134.672,19 | 85.248,94 | 93.717,23 |
-| Prestacional/Outras (CIAP) | 2.146,57 | — | 0,01 |
+| Industrial | CFOP de venda de produção do estabelecimento (5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122) | CFOP de compra para industrialização (1101, 2101, 3101, …), transferência para industrialização (1151, 2151, 3151) e frete de insumo |
+| Comercial | CFOP de venda de mercadoria de terceiros, remessa e retorno (5102, 6102, 5905, 6905, 5934, 6934, …) | CFOP de compra para comercialização (1102, 2102, 3102, …), transferência para comercialização (1152, 2152, 3152), fretes de venda e transferência |
+| Prestacional/Outras | Bonificação, doação, brinde e outras saídas (5910, 6910, 5949, 6949) | CIAP (1604, 2604) |
 
 O corte **intra/inter** vem do primeiro dígito do CFOP: 5 é interno, 6 é
-interestadual, 7 é exterior. No débito industrial de Julho: R$ 56.934,28 intra
-(5101 + 5118) e R$ 355.339,89 inter (6101).
+interestadual, 7 é exterior.
 
 > **Atividade indefinida bloqueia o encerramento.** CFOP que não casa com nenhuma
 > atividade recebe `SEM REGRA`, como manda a regra 4 do projeto.
 
-### 3.4. Demais regras de MS
+### 4.4. Demais regras de MS
 
-| Item | Regra | Situação |
-|---|---|---|
-| Entrada com alíquota > 4% | Crédito mantido limitado à carga de 4% | Homologado |
-| DIFAL em MS | Informa na apuração e recolhe em **guia avulsa** | Não entra em conta gráfica |
-| Centralização | RB **recebe** saldo devedor de estabelecimento centralizador | Não modelada — decisão nº 20 |
+| Item | Regra |
+|---|---|
+| Entrada com alíquota acima de 4% | Crédito mantido limitado à carga de referência |
+| DIFAL em MS | Informa na apuração e recolhe em **guia avulsa** — não entra em conta gráfica |
+| Centralização | Rio Brilhante **recebe** saldo devedor de estabelecimento centralizador; a regra de MS ainda não está modelada |
 
-### 3.5. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
+### 4.5. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
 
 Firmado em 19/09/2018 entre o Estado de MS e a Hinove, publicado no DOE 9.755.
 Base legal: LC estadual 93/2001 e Lei 4.049/2011.
@@ -181,47 +233,48 @@ não poderão gozar dos incentivos previstos neste instrumento."*
 
 **Cláusula quarta — expirou em 31/12/2022.** Dava 50% do saldo devedor nas saídas
 interestaduais com mercadorias adquiridas em outras UFs, e 50% do imposto nas
-saídas interestaduais com itens importados.
+saídas interestaduais com itens importados. Revenda, portanto, está fora da base.
 
-#### O alcance está resolvido: é a atividade industrial
+#### O alcance é a atividade industrial
 
-A linha 012 do Registro de Apuração nomeia a dedução — *"Termo de acordo
-n. 1190/2018 - **Industrialização própria** - Incentivo TA/CDI"* — e a GIA -
-Benefício Fiscal traz base de saídas incentivadas de R$ 412.274,17, exatamente
-os CFOP industriais do mês. A revenda de R$ 93.717,23 não recebe nada, o que
-confirma que a cláusula quarta segue expirada.
+O inciso I restringe às operações com produtos de própria industrialização, e é
+assim que o benefício é declarado: a dedução no Registro de Apuração se chama
+*"Industrialização própria - Incentivo TA/CDI"*, e a base de saídas incentivadas
+da GIA - Benefício Fiscal é a dos CFOP de produção própria.
 
 #### A cadeia de cálculo
 
 ```
-    crédito industrial normal ........  327.834,95
-    (−) estorno industrial ...........  245.987,17
-    (−) estorno de créditos (ajuste) .    3.865,30   ← linha 003 do Registro
-    (=) crédito da parcela incentivada   77.982,48
+crédito da parcela incentivada = crédito industrial normal
+                                 − estornos de crédito da atividade industrial
 
-    débito industrial 412.274,17 − 77.982,48 = base 334.291,69
+base do incentivo              = débito industrial
+                                 − crédito da parcela incentivada
 
-      intra  (56.934,28  − 10.769,23) × 67% =  30.930,58
-      inter  (355.339,89 − 67.213,25) × 80% = 230.501,31
-                                              ──────────
-                                   BENEFÍCIO  261.431,90
+benefício = base intraestadual × 67%  +  base interestadual × 80%
 ```
 
-O crédito da parcela incentivada é **rateado pela participação do débito**
-industrial em cada destino — 13,810% intra e 86,190% inter.
+A base é repartida entre intra e inter pela **participação de cada destino no
+débito industrial** — o mesmo rateio que a GIA aplica ao crédito da parcela
+incentivada.
 
-O ajuste de R$ 3.865,30 **não nasce de documento no Livro Fiscal**. É a linha
-003 do Registro de Apuração, e entra como parâmetro explícito. Sem ele o motor
-para em R$ 258.409,05 de benefício — a distância entre o Livro e a declaração.
+Nem todo estorno de crédito industrial nasce de documento no Livro Fiscal: a
+apuração admite estornos por ajuste, que entram como lançamento explícito.
+
+**Travas do motor:** o benefício nunca supera o saldo devedor que o gerou;
+atividade indefinida bloqueia o encerramento; e aplicar a cláusula quarta levanta
+erro com a data de expiração na mensagem.
 
 #### FADEFE / Pró-Desenvolve — guia avulsa
 
-**2%** sobre o benefício fruído, mais um **adicional de equilíbrio fiscal hoje
-em 0%**. Em Julho/2026: R$ 261.431,90 × 2% = **R$ 5.228,64**.
+A cláusula terceira, parágrafo primeiro, condiciona a fruição a uma contribuição
+mensal ao **Fundo de Apoio ao Desenvolvimento Econômico e de Equilíbrio Fiscal do
+Estado**, sobre o benefício efetivamente utilizado. São dois percentuais
+parametrizados com vigência: a contribuição ao Pró-Desenvolve / FADEFE
+Desenvolvimento Econômico / FAI, e um adicional de equilíbrio fiscal.
 
-É condição de fruição (cláusula terceira, parágrafo primeiro), calculada na
-própria GIA e recolhida em **guia avulsa** — sai no relatório como informação e
-**não entra na conta gráfica**.
+É calculada na própria GIA e recolhida em **guia avulsa**: sai no relatório como
+informação e **não entra na conta gráfica**.
 
 #### Controle de crédito outorgado
 
@@ -230,23 +283,24 @@ O benefício movimenta ainda um controle de crédito outorgado (código de ajust
 saldo anterior, créditos recebidos por transferência, créditos utilizados no
 período e saldo a transportar.
 
-## 4. Regras que valem para todas as UFs
+---
+
+## 5. Regras que valem para todas as UFs
 
 | Situação | Tratamento | Sinal no Livro Fiscal |
 |---|---|---|
 | **Devolução de compra** | Estorna o crédito da compra referida | CFOP de devolução de entrada |
 | **Devolução de venda** | Mantém 100% do crédito (consultas tributárias) | CFOP de devolução de venda |
 | **Quebra / perda de estoque** | Estorna **100%** do crédito da entrada | **CFOP 5927** |
+| **Complemento de ICMS** | Crédito apropriável | Lançamento sem valor contábil |
+| **Complemento de preço** | Acompanha a situação da nota complementada | Referência na coluna Observação |
 | **CIAP** | Mantém 100% conforme saídas tributadas | Produto do grupo de ativo (prefixo `6…`) |
 | **DIFAL SP** | Apurado em conta gráfica | — |
 | **DIFAL MS** | Informado na apuração, recolhido em guia avulsa | — |
 
-> A regra de quebra já é aplicada hoje: em Julho/2026 as baixas com CFOP 5927 de
-> Guará e Registro somaram R$ 5.152,57 de estorno de crédito, lançadas na aba
-> *Controle Ajustes Docs*. Com a regra parametrizada isso deixa de ser ajuste
-> manual e passa a ser cálculo.
+---
 
-## 5. Centralização de SP em Guará
+## 6. Centralização de SP em Guará
 
 ```
 1. saldo individual de cada estabelecimento paulista (antes da centralização)
@@ -268,13 +322,15 @@ cancelada → bloqueio · CFOP incompatível → revisão · valor divergente �
 diferença evidenciada · emissão fora da competência → revisão · não escriturada
 → pendência · duplicidade → bloqueio · resíduo sem justificativa → revisão.
 
-## 6. Tabelas de carga efetiva (adubos e fertilizantes)
+---
 
-Extraídas de *Pontos de Atenção*. Entram em `parametros/cargas.yaml` com vigência.
+## 7. Tabelas de carga efetiva (adubos e fertilizantes)
+
+Entram em `parametros/cargas.yaml` com vigência.
 
 **Operação intraestadual**
 
-| Origem | Alíquota geral | Redução atual | Carga efetiva | CST |
+| Origem | Alíquota geral | Redução | Carga efetiva | CST |
 |---|---|---|---|---|
 | SP | 18% | 77,78% | 4% | 20 |
 | MG | 18% | 77,78% | 4% | 20 |
@@ -286,7 +342,7 @@ Extraídas de *Pontos de Atenção*. Entram em `parametros/cargas.yaml` com vig�
 **Operação interestadual** (adubos/fertilizantes e também ácido nítrico,
 sulfúrico, fosfórico, fosfato natural bruto e enxofre)
 
-| Alíquota geral | Redução atual | Carga efetiva | CST |
+| Alíquota geral | Redução | Carga efetiva | CST |
 |---|---|---|---|
 | 4% | — | 4% | 00 |
 | 7% | 42,86% | 4% | 20 |

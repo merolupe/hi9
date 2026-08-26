@@ -1,17 +1,45 @@
 # Cadastro de produtos → categoria tributária.
 #
-# 829 produtos distintos em Julho/2026. Este arquivo guarda o que o padrão por
-# prefixo (classificacao.yaml) não resolve. Produto novo sem categoria e sem
-# prefixo conhecido vira pendência SEM REGRA — nunca classificação por
-# adivinhação.
+# Guarda o que o padrão por prefixo (classificacao.yaml) não resolve. Produto sem
+# categoria e sem prefixo conhecido vira pendência SEM REGRA — nunca
+# classificação por adivinhação.
 #
-# `homologado: false` marca a categoria que eu inferi da apuração de Julho/2026
-# e que ainda não foi confirmada pela Gerência Fiscal/Tributária.
+# `homologado: false` marca a categoria inferida do comportamento de uma apuração
+# e ainda não confirmada pela Gerência Fiscal/Tributária.
 #
-# PRIORIDADE DE CADASTRO: os 14 produtos abaixo são os únicos que aparecem em
-# ENTRADAS com carga acima de 4% na competência 07/2026 — ou seja, os únicos em
-# que a categoria muda o valor do estorno. Os demais 815 produtos entram a 4% ou
-# em saídas, onde a categoria não altera o resultado.
+# Só precisa de cadastro o produto que entra com carga acima de 4%: é nele que a
+# categoria muda o valor do estorno. Entrada a 4% e saída não dependem dela.
+#
+# ---------------------------------------------------------------------------
+# MATÉRIA-PRIMA × PRODUTO QUÍMICO
+# ---------------------------------------------------------------------------
+# A distinção não é sobre o que o produto é quimicamente — produto químico
+# também é matéria-prima. O que separa os dois é o ENQUADRAMENTO FISCAL:
+#
+#   materia_prima    matéria-prima enquadrada no artigo de equalização da carga
+#                    a 4% (benefício de fertilizante). NÃO estorna.
+#   produto_quimico  matéria-prima que NÃO se enquadra nesse artigo.
+#                    Estorna o excedente sobre 4%.
+#
+# Uma matéria-prima deixa de se enquadrar por dois motivos:
+#   1. o produto está fora do escopo do artigo de fertilizante; ou
+#   2. o fornecedor não tem registro no MAPA para vendê-lo como enquadrado —
+#      tipicamente indústria química, e não fabricante de fertilizante.
+#
+# O motivo 2 é a razão de o cadastro aceitar chave por PRODUTO + FORNECEDOR: o
+# mesmo produto pode ser matéria-prima de um fornecedor e produto químico de
+# outro. A forma é uma lista, com as alternativas específicas antes do padrão:
+#
+#   130030002:
+#     - fornecedor: NOME DA INDUSTRIA QUIMICA
+#       categoria: produto_quimico
+#     - categoria: materia_prima        # sem `fornecedor` = padrão do produto
+#
+# Um produto cadastrado SÓ com regras por fornecedor, quando nenhuma casa, vira
+# pendência — não cai num padrão silencioso.
+#
+# O fato que decide (enquadramento e registro no MAPA) não está no Livro Fiscal.
+# É informação cadastral do time fiscal, e por isso vive aqui.
 
 produtos:
 
@@ -33,28 +61,41 @@ produtos:
     categoria: revenda
     descricao: Enxofre em Flocos Brimfert Granel
     observacao: >
-      Confirmado pela apuração manual de Julho/2026 — a aba ESTORNO traz
-      "Enxofre - Revenda" com estorno zero sobre R$ 474.416,28 de ICMS a 18%.
+      Importação com finalidade de revenda. A TOP da entrada nomeia a operação
+      pela moeda ("Compra com Moeda Importação"), o que descreve o lançamento e
+      não o enquadramento — quem decide é a finalidade, e ela é revenda.
+      Categoria confirmada pela Gerência Fiscal/Tributária.
 
-  # --- produtos químicos: estornam o excedente sobre 4% ---
+  # --- produtos químicos: matéria-prima não enquadrada, estorna sobre 4% ---
+  #
+  # Categoria confirmada pela Gerência Fiscal/Tributária: onde a TOP da entrada
+  # diz "Compra de MP" e o cadastro diz produto químico, vale o cadastro. Não é
+  # contradição — é matéria-prima que não se enquadra no artigo.
+  #
+  # FALTA CONFIRMAR, por item: se o não enquadramento vem do produto (motivo 1)
+  # ou do fornecedor (motivo 2). Enquanto não se sabe, o cadastro é por produto.
+  # Se for do fornecedor, basta passar a entrada para a forma de lista.
   130030002:
     categoria: produto_quimico
     descricao: ÁCIDO FOSFÓRICO RAFINADO
-    homologado: false
+    fornecedor_observado: ICL ADITIVOS E INGREDIENTES LTDA
+    observacao: >
+      O mesmo fornecedor também vende item classificado como matéria-prima
+      (HiPhós 21 TQ Granel), então o não enquadramento deste produto não pode
+      ser atribuído ao fornecedor sem confirmação.
   132010068:
     categoria: produto_quimico
     descricao: MAX OIL MT - Aditivo Recobrimento Granel
-    homologado: false
+    fornecedor_observado: ADFERT (INDORAMA)
   132010008:
     categoria: produto_quimico
     descricao: NBPT BLUE 20%
+    fornecedor_observado: NAQ GLOBAL QUIMICA FERTILIZANTES
     observacao: >
-      Confirmado em 21/08/2026 conferindo onde o produto entrou na apuração de
-      Julho/2026. Em Corumbá, a Empresa 9 estorna a linha de CFOP 2102 pelos
-      42,86% da carga de 7% (R$ 2.520,17 de estorno sobre R$ 5.880,00 de ICMS),
-      ou seja, trata como crédito comum sujeito ao estorno — não como revenda
-      com crédito integral. Em Guará, a mesma compra entra no grupo de 12% que
-      estornou 8%. Os dois tratamentos batem com produto_quimico.
+      Tratado como crédito comum sujeito ao estorno, e não como revenda com
+      crédito integral, tanto em Corumbá (estorno pela parcela da alíquota de
+      7%) quanto em Guará (grupo de 12%). Os dois tratamentos batem com
+      produto_quimico.
 
   # --- insumo energético ---
   401052046:
@@ -62,8 +103,8 @@ produtos:
     descricao: CAVACO DE MADEIRA
     homologado: false
     observacao: >
-      A aba ESTORNO lista "Cavaco" entre os itens do grupo de 12% de Guará que
-      estornou, então o tratamento observado é o mesmo de produto químico.
+      Tratamento observado igual ao de produto químico: estorna o excedente
+      sobre a carga de referência.
 
   # --- embalagens: estornam o excedente sobre 4% ---
   # Todas com prefixo 2, já cobertas pelo padrão. Ficam explícitas porque
@@ -85,10 +126,8 @@ produtos:
     categoria: complemento_preco
     descricao: COMPLEMENTO DE PREÇO
     observacao: >
-      Acompanha a situação da nota complementada — decisão de 21/08/2026.
-      Na prática o documento já sai com a base reduzida da operação original,
-      então a carga calculada é a da nota complementada: em Julho/2026 as 22
-      linhas saíram com alíquota de 7% sobre base reduzida, dando carga efetiva
-      de 4%, que é a carga de uma saída de matéria-prima. A observação do
-      documento traz a referência ("COMPLEMENTO DE PREÇO REFERENTE A NF <nº>"),
-      e é por ela que a memória de cálculo liga o complemento à nota original.
+      Acompanha a situação da nota complementada. Na prática o documento já sai
+      com a base reduzida da operação original, então a carga calculada é a da
+      nota complementada. A observação do documento traz a referência
+      ("COMPLEMENTO DE PREÇO REFERENTE A NF <nº>"), e é por ela que a memória de
+      cálculo liga o complemento à nota original.

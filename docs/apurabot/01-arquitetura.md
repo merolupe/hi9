@@ -1,8 +1,8 @@
 # Apurabot — Arquitetura
 
 > Documento técnico. Público: analista desenvolvedor + Gerência Fiscal/Tributária.
-> Base: escopo funcional v1.0 (31/07/2026), fluxograma Apurabot GRC e apuração
-> real de Julho/2026.
+> Base: escopo funcional v1.0, fluxograma Apurabot GRC e a conferência contra
+> uma apuração real — ver [05 — Achados](05-achados-julho-2026.md).
 
 ---
 
@@ -96,9 +96,9 @@ crédito mantido + estorno + crédito indevido = crédito bruto
 ```
 
 O **crédito indevido** fica em parcela própria porque não é estorno: é crédito
-que não podia ter sido tomado. Somá-lo ao mantido — como a apuração consolidada
-de Julho/2026 fez com a transferência recebida em Corumbá — esconde o problema
-dentro do resultado.
+que não podia ter sido tomado. Somá-lo ao crédito mantido esconde o problema
+dentro do resultado, e foi assim que ele passou despercebido numa apuração
+consolidada feita à mão.
 
 ### 3.1. Rastreabilidade obrigatória
 
@@ -201,10 +201,10 @@ por atalho, com 4 botões — os mesmos quatro do fluxograma:
 │                                                     │
 │  ─────────────────────────────────────────────      │
 │  ⚠ 3 pendências críticas — encerramento bloqueado   │
-│     · 2 produtos sem regra (R$ 41.070,51)           │
+│     · 2 produtos sem regra                          │
 │     · 1 NF-e de transferência não emitida (Registro)│
 │                                                     │
-│  [ Abrir Apuracao_2026-07.xlsx ]                    │
+│  [ Abrir Apuracao_AAAA-MM.xlsx ]                    │
 └─────────────────────────────────────────────────────┘
 ```
 
