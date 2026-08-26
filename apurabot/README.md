@@ -11,9 +11,13 @@ extraído do Sankhya e validado pelo Fiscalbot.
 ## O que já faz
 
 ```bash
-pip install -e apurabot
-apurabot apurar <livro_fiscal.xlsx> --saida <pasta>
+pip install --user openpyxl "xlrd==2.0.1" PyYAML
+python rodar.py apurar <livro_fiscal.xlsx> --saida <pasta>
 ```
+
+Roda direto da pasta, **sem instalar**: em máquina corporativa, instalar programa
+esbarra em permissão de administrador e em política de executável. Quem instala
+pode usar `pip install -e apurabot` e o comando `apurabot`.
 
 Passo a passo completo em [07 — Como rodar](../docs/apurabot/07-como-rodar.md).
 

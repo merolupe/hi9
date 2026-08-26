@@ -75,11 +75,16 @@ git clone https://github.com/merolupe/hi9.git
 
 ---
 
-## 4. Instalar o Apurabot
+## 4. Preparar para rodar
 
-Agora o terminal precisa estar **dentro** da pasta que você acabou de baixar.
+O Apurabot **não precisa ser instalado**. Ele roda direto da pasta que você
+baixou, pelo Python que já está na máquina. Isso é de propósito: em máquina
+corporativa, instalar programa costuma esbarrar em permissão de administrador ou
+na política de segurança.
 
-### No Windows, o jeito mais fácil
+### 4.1. Levar o terminal até a pasta
+
+**No Windows, o jeito mais fácil:**
 
 1. Abra a pasta no Explorador de Arquivos.
 2. Clique na **barra de endereço** lá em cima (onde aparece o caminho).
@@ -87,43 +92,39 @@ Agora o terminal precisa estar **dentro** da pasta que você acabou de baixar.
 
 Abre um terminal **já dentro da pasta certa**.
 
-### No Mac, ou se preferir digitar
+**No Mac, ou se preferir digitar:** digite `cd`, um espaço, e **arraste a pasta**
+para dentro da janela do terminal — ele preenche o caminho sozinho. Dê Enter.
 
-Digite `cd`, um espaço, e **arraste a pasta** para dentro da janela do terminal —
-ele preenche o caminho sozinho. Depois dê Enter.
-
-### Confirme que está no lugar certo
+**Confirme que chegou:**
 
 ```
 dir          (Windows)
 ls           (Mac e Linux)
 ```
 
-Tem que aparecer uma pasta chamada **`apurabot`** na lista. Se não aparecer,
-você está na pasta errada.
+Tem que aparecer uma pasta chamada **`apurabot`** e um arquivo **`rodar.py`** na
+lista. Se não aparecerem, você está na pasta errada.
 
-### Instale
+### 4.2. Instalar as três bibliotecas
 
-```
-pip install -e apurabot
-```
-
-Vai imprimir várias linhas. Terminou com `Successfully installed` e sem erro em
-vermelho? Está instalado.
-
-> Se aparecer um aviso amarelo falando em `virtual environment`, pode ignorar —
-> é recomendação, não erro.
-
-### Confira
+O Apurabot usa três bibliotecas de terceiros para ler e escrever planilhas.
+O `--user` instala na sua conta, **sem precisar de administrador**:
 
 ```
-apurabot --help
+pip install --user openpyxl "xlrd==2.0.1" PyYAML
 ```
 
-Deve aparecer a lista de comandos: `apurar` e `base-tratada`.
+> Se o `pip` não for reconhecido, use `python -m pip` no lugar dele:
+> `python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML`
 
-> **Se disser que `apurabot` não é reconhecido**, use `python -m apurabot.cli` no
-> lugar da palavra `apurabot` em todos os comandos deste guia. Funciona igual.
+### 4.3. Conferir
+
+```
+python rodar.py --help
+```
+
+Deve aparecer a lista de comandos: `apurar` e `base-tratada`. Se apareceu, está
+pronto — pule para o passo 5.
 
 ---
 
@@ -160,7 +161,7 @@ Ele reconhece qual é sozinho.
 Com o terminal na pasta do Apurabot (passo 4), o comando é:
 
 ```
-apurabot apurar "competencias/2026-07/entrada/Movimento Livros Fiscais.xls" --saida "competencias/2026-07/saida"
+python rodar.py apurar "competencias/2026-07/entrada/Movimento Livros Fiscais.xls" --saida "competencias/2026-07/saida"
 ```
 
 Troque `2026-07` pelo mês que você está apurando, e o nome do arquivo pelo nome
@@ -212,7 +213,7 @@ Gerado: competencias/2026-07/saida/Apuracao_2026-07.xlsx
 ### O outro comando
 
 ```
-apurabot base-tratada <arquivo> --saida <pasta>
+python rodar.py base-tratada <arquivo> --saida <pasta>
 ```
 
 Para no tratamento e na classificação, sem apurar. Serve para conferir se o
@@ -297,7 +298,7 @@ reproduzível depois de mudança na legislação.
 Se quiser conferir que a instalação está sã:
 
 ```
-pip install pytest
+pip install --user pytest
 cd apurabot
 python -m pytest
 ```
@@ -313,3 +314,75 @@ vai para o repositório. Para rodá-los, aponte o arquivo:
 set APURABOT_FIXTURE_JULHO=C:\caminho\para\o\livro.xls        (Windows)
 export APURABOT_FIXTURE_JULHO=/caminho/para/o/livro.xls        (Linux e Mac)
 ```
+
+---
+
+## 12. Quando dá erro
+
+### "Acesso negado."
+
+Aparece ao rodar `apurabot`, depois de um `pip install -e apurabot`.
+
+**O que é:** o Windows *achou* o programa e se recusou a executá-lo. É diferente
+de *"não é reconhecido"*, que significa não encontrado. A instalação cria um
+executável novo (`apurabot.exe`) numa pasta da sua conta, e em máquina
+corporativa isso costuma ser barrado — pela política de segurança, que não
+permite executável em pasta de usuário, ou pelo antivírus, que bloqueia binário
+recém-criado e sem assinatura.
+
+**O que fazer:** não use o executável. Use o `rodar.py`, como está no passo 4:
+
+```
+python rodar.py apurar "caminho\do\livro.xls" --saida "pasta\de\saida"
+```
+
+Aqui quem roda é o `python.exe`, que já está aprovado na máquina. Nenhum
+executável novo é criado, e não há nada para a política bloquear. É por isso que
+o guia não pede instalação.
+
+> Se quiser limpar o que ficou pela metade: `pip uninstall apurabot`. Não é
+> obrigatório — o `rodar.py` funciona de qualquer jeito.
+
+### "pip não é reconhecido"
+
+Use `python -m pip` no lugar de `pip`, em qualquer comando:
+
+```
+python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+```
+
+### "Acesso negado" ou "Permission denied" no próprio `pip`
+
+Falta o `--user`. Sem ele o pip tenta escrever na pasta do Python do sistema, que
+exige administrador:
+
+```
+pip install --user openpyxl "xlrd==2.0.1" PyYAML
+```
+
+### "Falta a biblioteca ..."
+
+O `rodar.py` avisa qual falta e repete o comando de instalação. É o passo 4.2 que
+não rodou, ou rodou num Python diferente do que você está usando agora.
+
+### "python não é reconhecido"
+
+O Python não está instalado, ou foi instalado sem marcar **"Add Python to PATH"**
+— ver passo 2. No Windows, tente também `py` no lugar de `python`:
+
+```
+py rodar.py --help
+```
+
+### "não é possível criar a pasta" ao gravar a saída
+
+A pasta de `--saida` não existe, ou você não tem permissão de escrever nela.
+Crie a pasta antes pelo Explorador de Arquivos, e prefira uma pasta dentro de
+**Documentos** a uma na raiz do disco.
+
+### O comando roda, mas termina com "Encerramento BLOQUEADO"
+
+**Não é erro de instalação — é a ferramenta funcionando.** Alguma linha do Livro
+não casou com regra, ou falta uma NF-e de transferência. A tela lista o motivo, e
+a aba PENDÊNCIAS do arquivo gerado traz o detalhe. Ver o passo 8.
+
