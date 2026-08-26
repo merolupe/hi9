@@ -83,7 +83,7 @@ Uma matéria-prima deixa de se enquadrar por dois motivos:
 > embalagem e continua estornando. Por isso o cadastro e o prefixo são avaliados
 > antes do CFOP.
 
-### 2.3. A coluna TOP
+### 2.3. A TOP
 
 O extrato traz a **TOP** (Tipo de Operação), que nomeia a operação como ela foi
 lançada no Sankhya. Ela é lida, viaja na base tratada e serve para conferência,
@@ -153,9 +153,7 @@ estorno           = ICMS × parcela estornada
 > até lá —, mas a operação continua sendo de alíquota cheia, e é sobre ela que a
 > parcela se calcula.
 >
-> Lendo a carga, a conclusão seria "entrada já beneficiada, estorna tudo".
-> Lendo a alíquota, estorna a parcela e **mantém o crédito equivalente a 4%**.
-> É a segunda que a legislação e a apuração fazem.
+> O estorno é a parcela da alíquota, e o que resta é o crédito equivalente a 4%.
 >
 > A carga efetiva serve para **conferir** o documento. Quem comanda a proporção
 > do estorno é a alíquota.
@@ -297,6 +295,10 @@ período e saldo a transportar.
 | **CIAP** | Mantém 100% conforme saídas tributadas | Produto do grupo de ativo (prefixo `6…`) |
 | **DIFAL SP** | Apurado em conta gráfica | — |
 | **DIFAL MS** | Informado na apuração, recolhido em guia avulsa | — |
+| **Saldo credor do período anterior** | Informado na primeira competência; nas seguintes vem do encerramento anterior | — |
+
+Sobrescrever o saldo credor à mão continua possível, mas é exceção registrada, não
+rotina.
 
 ---
 
@@ -324,7 +326,22 @@ diferença evidenciada · emissão fora da competência → revisão · não esc
 
 ---
 
-## 7. Tabelas de carga efetiva (adubos e fertilizantes)
+## 7. Carga efetiva
+
+### 7.1. Régua de valores nominais
+
+A equalização encaixa a carga bruta de cada documento num valor nominal da régua.
+
+| | Cargas |
+|---|---|
+| **Homologadas** | 4 · 7 · 12 · 17 · 18 |
+| **Toleradas** — advertência, sem bloquear | 19 · 20,5 · 25 |
+
+As toleradas continuam reconhecidas para que uma competência antiga siga
+reproduzível, mas todo documento que cair numa delas recebe o alerta
+`CARGA NÃO HOMOLOGADA`, apontando para revisão do lançamento na origem.
+
+### 7.2. Tabelas de carga (adubos e fertilizantes)
 
 Entram em `parametros/cargas.yaml` com vigência.
 

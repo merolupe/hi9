@@ -89,7 +89,7 @@ def test_tolerancia_alcanca_o_vao_entre_degraus(parametros):
     O maior vão da régua é de 5 pontos (7→12 e 12→17) e a tolerância é de 2,5,
     exatamente metade. Na prática a rede só pega valores abaixo de ~1,5% ou
     acima de ~27,5%. Este teste fixa esse comportamento para que uma mudança
-    de régua ou de tolerância apareça — ver decisão pendente nº 14.
+    de régua ou de tolerância apareça — ver decisão pendente nº 5.
     """
     r = equalizar(
         linha(valor_icms=96.0, valor_contabil=1000.0, aliquota_icms=25.0), parametros

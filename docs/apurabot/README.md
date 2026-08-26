@@ -29,14 +29,13 @@ Os números de cada verificação estão em
 | [03 — Dicionário do Livro Fiscal](03-dicionario-livro-fiscal.md) | Desenvolvedor | Os dois layouts, coluna a coluna |
 | [04 — Matriz de regras de ICMS](04-matriz-de-regras-icms.md) | **Fiscal/Tributário** | Toda a regra tributária, para homologação |
 | [05 — Achados de Julho/2026](05-achados-julho-2026.md) | Todos | O que a análise da apuração real revelou |
-| [06 — Decisões](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 20 registradas: 12 respondidas, 8 em aberto |
+| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 10 perguntas em aberto, cada uma com o padrão assumido |
 
 ## Fases
 
-- **Fase 1 — ICMS:** Entregas 0, 1 e 3 concluídas; a 2 fecha quando os ajustes
-  manuais deixarem de ser parâmetro e passarem a vir de `ajustes.xlsx`. Faltam
-  centralização de SP, DIFAL, CIAP e a interface.
+- **Fase 1 — ICMS:** Entregas 0, 1 e 3 concluídas. A 2 fecha quando os ajustes
+  manuais vierem de `ajustes.xlsx`. Faltam centralização de SP, DIFAL, CIAP e a
+  interface.
 - **Fase 2 — PIS/Cofins:** não iniciada.
-- **Benefício fiscal de MS:** concluído. O alcance, que era a maior incógnita do
-  projeto, está fixado pela declaração — é a **atividade industrial**, e o motor
-  reproduz a cadeia inteira, do crédito industrial ao FADEFE.
+- **Benefício fiscal de MS:** concluído. Alcança a **atividade industrial**, e o
+  motor cobre a cadeia inteira, do crédito industrial ao FADEFE.

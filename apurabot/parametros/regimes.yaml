@@ -50,7 +50,7 @@ regimes:
     carga_de_referencia: 4.0
 
     # Casas decimais da parcela. 4 reproduz a apuração (0,4286 e 0,6667);
-    # `null` usa a fração exata (3/7 e 2/3). Ver decisão nº 15.
+    # `null` usa a fração exata (3/7 e 2/3).
     casas_decimais_da_parcela: 4
 
     # Créditos que não podem ser apropriados. Não são estorno: são crédito que
@@ -84,7 +84,7 @@ regimes:
     carga_de_referencia: 4.0
     casas_decimais_da_parcela: 4
     # Só o CIAP fica fora do estorno. O complemento de ICMS é crédito
-    # apropriável e acompanha a situação da nota complementada (decisão nº 11).
+    # apropriável e acompanha a situação da nota complementada.
     isentos_de_estorno:
       - ciap
     difal: guia_avulsa
@@ -98,7 +98,7 @@ regimes:
   pr_diferimento:
     descricao: >
       Saídas diferidas — mantém 100% do crédito de entrada, que se acumula
-      como saldo credor. Ver decisão pendente nº 7.
+      como saldo credor. Ver decisão pendente nº 1.
     vigencia_inicio: 2025-01-01
     formula_estorno: nenhum
 
@@ -123,7 +123,7 @@ beneficios_fiscais:
       base: saldo_devedor_da_atividade_industrial
       limitado_ao_saldo_devedor: true
 
-    # ALCANCE DO BENEFÍCIO — RESOLVIDO. Era a decisão pendente nº 1.
+    # ALCANCE DO BENEFÍCIO
     #
     # A linha 012 do Registro de Apuração nomeia a dedução:
     #   "BENEFÍCIOS FISCAIS - Termo de acordo n. 1190/2018 -
@@ -188,7 +188,7 @@ atividades:
       docs/apurabot/05-achados-julho-2026.md.
     # ATENÇÃO: a homologação é de Rio Brilhante. Corumbá usa o mesmo mapa
     # porque a UF é a mesma, mas não há GIA de Corumbá para conferir a
-    # segregação dela. Ver decisão pendente nº 18.
+    # segregação dela. Ver decisão pendente nº 6.
 
     # O prefixo do CFOP é a definição do próprio sistema de CFOP, não uma regra
     # com vigência. Fica aqui só para não haver número fiscal dentro do .py.

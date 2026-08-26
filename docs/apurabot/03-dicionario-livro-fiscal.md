@@ -116,4 +116,4 @@ motor deduz por CFOP, produto e descrição:
 
 **A TOP não classifica.** Ela é lida, viaja na base tratada e serve para
 conferência. Onde ela e a categoria do produto divergem, vale a categoria — o
-que não é contradição, e está explicado em `06-decisoes-pendentes.md`, item 16.
+que não é contradição, e está explicado em `04-matriz-de-regras-icms.md`, item 2.3.

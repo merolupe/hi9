@@ -51,7 +51,7 @@ filiais:
     centralizacao: { participa: false }
 
 # Fora do escopo do Apurabot — carregam apenas saldo credor.
-# Ver decisão pendente nº 6.
+# Ver decisão pendente nº 10.
 fora_de_escopo:
   - { nome: MICROBIO, uf: MS }
   - { nome: HINOVE FERTILIZANTES ESPECIAIS, uf: SP }

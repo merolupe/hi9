@@ -26,6 +26,10 @@ centavo com a GIA entregue. 96 testes automáticos.
 **Toda entrega é medida por quanto de uma apuração real ela reproduz.** Onde há
 diferença, ela é exigida com valor exato no teste — nunca tolerada em silêncio.
 
+A conferência é feita contra a **apuração individualizada por estabelecimento**
+sempre que ela existir; a consolidada serve de referência de totais, não de fonte
+da verdade. Onde houver declaração retificadora, é ela que vale.
+
 A competência de referência e os números que cada entrega reproduz estão em
 [05 — Achados de Julho/2026](05-achados-julho-2026.md). Aqui fica o que cada
 entrega faz e em que pé ela está.
@@ -37,8 +41,8 @@ entrega faz e em que pé ela está.
 Arquitetura, dicionário de dados, matriz de regras, achados da competência de
 referência e o registro de decisões. Tudo em `docs/apurabot/`.
 
-**Resultado principal:** a equalização de carga efetiva, maior risco técnico do
-projeto, resolvida por algoritmo.
+**Resultado principal:** a equalização de carga efetiva é feita por algoritmo,
+com cada divergência contra a classificação manual exigida por teste.
 
 ---
 
@@ -78,33 +82,29 @@ Os números da conferência estão em
 
 ## Entrega 3 — Benefício fiscal de Rio Brilhante ✅
 
-**Concluída.** O alcance, que era a maior incógnita do projeto, deixou de ser
-hipótese: está fixado pela declaração — ver decisão nº 1.
+Crédito presumido do Termo de Acordo n. 1.190/2018 sobre o saldo devedor da
+atividade industrial, e a contribuição ao FADEFE que condiciona a fruição.
 
-Termo de Acordo n. 1.190/2018, cláusula terceira, em vigor até 31/12/2032: 67%
-do saldo devedor, mais 13% nas interestaduais, **exclusivamente sobre a
-atividade industrial**. A cláusula quarta expirou em 31/12/2022, então revenda
-fica fora da base.
+O que a entrega cobre:
 
-O motor reproduz a cadeia inteira — do crédito industrial ao FADEFE —, conferida
-ao centavo contra a GIA. A regra está em
-[04 — Matriz de regras](04-matriz-de-regras-icms.md), item 4.5.
+- **segregação por atividade** — Industrial, Comercial, Importados e
+  Prestacional/Outras, exigida pela GIA de MS e sem a qual não existe crédito da
+  parcela incentivada;
+- **cadeia do benefício** — do crédito industrial à base do incentivo, com o
+  rateio intra/inter pela participação do débito, conferida ao centavo contra a
+  GIA;
+- **ajustes que não vêm do Livro Fiscal**, por `AjustesDaApuracao`;
+- **FADEFE** como saída informativa, em guia avulsa, fora da conta gráfica.
 
-Para chegar até aqui, três coisas mudaram no motor:
+A regra está em [04 — Matriz de regras](04-matriz-de-regras-icms.md), item 4.5.
 
-1. **A chave do estorno passou a ser a alíquota**, não a carga efetiva. A parcela
-   virou fórmula: `1 − carga de referência / alíquota`.
-2. **A apuração passou a ser segregada por atividade** onde a UF exige. Sem isso
-   não existe "crédito da parcela incentivada".
-3. **Os ajustes que não vêm do Livro** entram por `AjustesDaApuracao`, explícitos.
-
-Travas do motor: o benefício nunca supera o saldo devedor que o gerou, atividade
-indefinida bloqueia o encerramento, e tentar aplicar a cláusula quarta levanta
-erro com a data de expiração na mensagem. A memória de cálculo vai na aba
+**Travas:** o benefício nunca supera o saldo devedor que o gerou; atividade
+indefinida bloqueia o encerramento; aplicar a cláusula quarta, expirada, levanta
+erro com a data na mensagem. A memória de cálculo vai na aba
 `APURAÇÃO POR FILIAL`, passo a passo.
 
-**O que sobrou em aberto** não é do motor, é de documento: a segregação de
-Corumbá sem GIA que a confirme (decisão nº 18) e a centralização de MS (nº 19).
+**Depende de resposta do fiscal:** a segregação de Corumbá não tem GIA que a
+confirme (decisão nº 6) e a centralização de MS não está modelada (nº 7).
 
 ---
 

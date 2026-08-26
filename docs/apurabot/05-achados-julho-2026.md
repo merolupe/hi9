@@ -149,7 +149,7 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 > A aba ESTORNO traz um totalizador paralelo com números diferentes destes.
 > Como o arquivo era um relatório manual e essa divergência não muda o resultado
 > final, ela **não será replicada**: a ferramenta produz um totalizador único.
-> Ver `06-decisoes-pendentes.md`, item 5.
+> Onde existe apuração individualizada por estabelecimento, é ela que vale.
 
 ## 7. Riscos que a análise reduziu ou confirmou
 
@@ -179,7 +179,7 @@ conferência do Enxofre de revenda passou a bater exato com a aba ESTORNO
 
 E um terceiro, na apuração consolidada e não na minha análise: **Corumbá não
 usava a mecânica de SP**, e o crédito indevido de transferência estava somado ao
-crédito mantido. Ver `06-decisoes-pendentes.md`, item 2.
+crédito mantido. Ver `04-matriz-de-regras-icms.md`, item 4.2.
 
 ## 9. Rio Brilhante — o que os documentos oficiais mostraram (25/08/2026)
 
@@ -216,7 +216,7 @@ de **ajuste** da apuração:
 | Débito | saldo devedor do centralizador (99.412,10) + estorno de créditos (3.865,30) | 103.277,40 |
 
 Daí sai o achado da **centralização em MS** — Rio Brilhante recebe saldo devedor
-de outro estabelecimento do estado. Ver decisão nº 19.
+de outro estabelecimento do estado. Ver decisão pendente nº 7.
 
 ### 9.4. Novos alvos de regressão
 
@@ -278,4 +278,21 @@ Registro de Apuração.
 As 3 divergências de carga são as notas da ICL Aditivos, reclassificadas à mão.
 O teste **exige** que a diferença seja essa e de R$ 9.019,01 — qualquer outra o
 quebra.
+
+## 12. Os 0,941176% não existem
+
+O escopo funcional v1.0 previa, para MS, crédito mantido de **0,941176%** nas
+entradas a 4% e manutenção do mesmo percentual em fertilizante interno. O número
+foi procurado em três lugares e não está em nenhum:
+
+1. **Apuração consolidada** — varredura célula a célula nas sete abas. Só aparece
+   o fator que geraria o número (`4/17 = 0,235294`), nunca o percentual aplicado.
+2. **Apuração individualizada de Corumbá** — a mecânica é outra: estorno da
+   parcela não tributada sobre o ICMS.
+3. **Termo de Acordo n. 1.190/2018** — as sete páginas não mencionam o percentual
+   nem nada equivalente.
+
+O parâmetro não existe em `regimes.yaml`, e não fica como "não aplicado": não há
+regra a aplicar. Fica o registro para que ninguém o reintroduza a partir do
+escopo v1.0.
 

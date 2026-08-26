@@ -96,9 +96,8 @@ crédito mantido + estorno + crédito indevido = crédito bruto
 ```
 
 O **crédito indevido** fica em parcela própria porque não é estorno: é crédito
-que não podia ter sido tomado. Somá-lo ao crédito mantido esconde o problema
-dentro do resultado, e foi assim que ele passou despercebido numa apuração
-consolidada feita à mão.
+que não podia ter sido tomado. Somá-lo ao crédito mantido esconderia o problema
+dentro do resultado.
 
 ### 3.1. Rastreabilidade obrigatória
 
