@@ -50,6 +50,32 @@ filiais:
     regime: pr_diferimento
     centralizacao: { participa: false }
 
+# ---------------------------------------------------------------------------
+# Regras de centralização
+# ---------------------------------------------------------------------------
+# Onde a UF admite apuração centralizada, cada estabelecimento apura o seu saldo
+# e o transfere para a centralizadora, que consolida o resultado do grupo. Quem
+# é centralizadora e quem é centralizado está no bloco `filiais`, acima.
+#
+# `transfere` diz o que o centralizado passa adiante:
+#   saldo_integral   devedor e credor
+#   saldo_devedor    só quando deve
+#   saldo_credor     só quando tem crédito
+#
+# `cfop_transferencia` são os CFOP da NF-e que documenta a transferência. É por
+# eles que a ferramenta cobra o documento: saldo a transferir sem NF-e
+# escriturada, ou NF-e de valor diferente do saldo, viram pendência.
+regras_de_centralizacao:
+
+  sp:
+    uf: SP
+    transfere: saldo_integral
+    cfop_transferencia: [5601, 5602, 5605]
+    homologado: false
+    # NÃO HOMOLOGADA. O desenho vem do escopo funcional v1.0; falta a Gerência
+    # Fiscal/Tributária confirmar o que se transfere e por qual CFOP.
+    # Ver decisão pendente nº 11.
+
 # Fora do escopo do Apurabot — carregam apenas saldo credor.
 # Ver decisão pendente nº 10.
 fora_de_escopo:

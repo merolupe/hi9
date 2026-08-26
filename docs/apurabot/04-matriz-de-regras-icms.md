@@ -302,29 +302,57 @@ rotina.
 
 ---
 
-## 6. Centralização de SP em Guará
+## 6. Centralização e transferência de saldo
+
+Onde a UF admite apuração centralizada, cada estabelecimento apura o seu saldo e
+o transfere para a **centralizadora**, que consolida e apura o resultado do
+grupo. A transferência é documentada por NF-e.
+
+Quem centraliza, quem é centralizado, o que se transfere e por qual CFOP estão
+em `parametros/filiais.yaml`.
+
+### 6.1. O que se transfere
+
+| Regra | O centralizado passa adiante |
+|---|---|
+| `saldo_integral` | o saldo, devedor ou credor |
+| `saldo_devedor` | só quando deve; o crédito fica no estabelecimento |
+| `saldo_credor` | só quando tem crédito; o débito fica no estabelecimento |
+
+### 6.2. Identidades que a ferramenta valida
 
 ```
-1. saldo individual de cada estabelecimento paulista (antes da centralização)
-2. classifica credor ou devedor
-3. determina o valor transferível
-4. indica se precisa emitir NF-e
-5. registra a NF-e emitida
-6. compara valor esperado × valor emitido
-7. consolida os recebimentos em Guará
-8. apura o resultado final da centralizadora
+saldo individual = valor transferido + saldo residual
+recebido pela centralizadora = soma do transferido pelos demais
+saldo final do grupo = saldo próprio da centralizadora + total recebido
 ```
 
-**Identidades que a ferramenta valida:**
-- `saldo individual = valor transferido + saldo residual`
-- `transferências recebidas em Guará = soma das NF-e emitidas pelos demais`
+### 6.3. Travas da NF-e de transferência
 
-**Travas da NF-e de transferência:** não emitida → pendência crítica ·
-cancelada → bloqueio · CFOP incompatível → revisão · valor divergente →
-diferença evidenciada · emissão fora da competência → revisão · não escriturada
-→ pendência · duplicidade → bloqueio · resíduo sem justificativa → revisão.
+| Situação | Tratamento | Situação no motor |
+|---|---|---|
+| Saldo a transferir sem NF-e escriturada | Pendência — bloqueia o encerramento | ✅ ativa |
+| NF-e de valor diferente do saldo | Pendência, com a diferença evidenciada | ✅ ativa |
+| NF-e cancelada | Bloqueio | ⬜ a implementar |
+| CFOP incompatível | Revisão | ⬜ a implementar |
+| Emissão fora da competência | Revisão | ⬜ a implementar |
+| Duplicidade | Bloqueio | ⬜ a implementar |
+| Resíduo sem justificativa | Revisão | ⬜ a implementar |
 
----
+### 6.4. SP
+
+São Paulo centraliza em **Guará**; Matriz e Registro são centralizados.
+
+**A regra de transferência de SP ainda não está homologada.** O desenho vem do
+escopo funcional v1.0, e falta a Gerência Fiscal/Tributária confirmar o que se
+transfere e por qual CFOP — ver decisão pendente nº 11. Enquanto isso, o
+relatório marca o resultado como rascunho.
+
+### 6.5. MS
+
+Mato Grosso do Sul **também centraliza**: Rio Brilhante recebe saldo devedor de
+outro estabelecimento do estado. A regra ainda não está modelada — ver decisão
+pendente nº 7.
 
 ## 7. Carga efetiva
 

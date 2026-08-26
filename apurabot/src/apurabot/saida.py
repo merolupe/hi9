@@ -69,7 +69,7 @@ def _aba_base(wb, base: BaseTratada) -> None:
     aba.auto_filter.ref = aba.dimensions
 
 
-def _aba_pendencias(wb, base: BaseTratada) -> None:
+def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao | None = None) -> None:
     aba = wb.create_sheet("PENDÊNCIAS")
     colunas = [
         ("linha_origem", 12), ("estabelecimento", 30), ("nro_unico", 12),
@@ -84,6 +84,8 @@ def _aba_pendencias(wb, base: BaseTratada) -> None:
             t.origem.cfop_int, t.origem.produto_codigo, d.get("produto_descricao"),
             d.get("valor_icms"), " | ".join(t.pendencias),
         ])
+    for motivo in (apuracao.pendencias_de_centralizacao if apuracao else []):
+        aba.append(["", "", "", "", "", "", None, f"CENTRALIZAÇÃO: {motivo}"])
     for linha in aba.iter_rows(min_row=2, min_col=7, max_col=7):
         for celula in linha:
             celula.number_format = MOEDA
@@ -204,6 +206,15 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
             aba.append(["", passo])
 
     aba.append([])
+    aba.append(["Centralização e transferência de saldo"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    for c in apuracao.centralizacao:
+        for passo in c.memoria:
+            aba.append(["", passo])
+        for motivo in c.pendencias:
+            aba.append(["", f"PENDÊNCIA: {motivo}"])
+
+    aba.append([])
     aba.append(["Contribuição ao Pró-Desenvolve / FADEFE — GUIA AVULSA"])
     aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
     aba.append(["", "Informativo: não entra na conta gráfica da apuração."])
@@ -268,17 +279,20 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
                 aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
 
 
-def escrever(base: BaseTratada, destino: Path | str) -> Path:
-    """Grava a base tratada em .xlsx e devolve o caminho."""
+def escrever(
+    base: BaseTratada, destino: Path | str, apuracao: Apuracao | None = None
+) -> Path:
+    """Grava a base tratada e a apuração em .xlsx e devolve o caminho."""
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
+    apuracao = apuracao if apuracao is not None else apurar(base)
 
     wb = Workbook()
     wb.remove(wb.active)
     _aba_base(wb, base)
-    _aba_pendencias(wb, base)
+    _aba_pendencias(wb, base, apuracao)
     _aba_por_carga(wb, base)
-    _aba_apuracao(wb, apurar(base))
+    _aba_apuracao(wb, apuracao)
     _aba_resumo(wb, base)          # criada em posição 0, fica como primeira aba
     wb.save(destino)
     return destino

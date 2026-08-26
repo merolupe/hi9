@@ -5,14 +5,21 @@ extraído do Sankhya e validado pelo Fiscalbot.
 
 > **Situação:** a competência de referência é reproduzida da ingestão ao
 > benefício fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante
-> bate ao centavo com a GIA entregue. 96 testes automáticos.
+> bate ao centavo com a GIA entregue. 111 testes automáticos.
 > Ver o [plano de execução](../docs/apurabot/02-plano-de-execucao.md).
 
 ## O que já faz
 
 ```bash
-apurabot base-tratada <livro_fiscal.xlsx> --saida <pasta>
+pip install --user openpyxl "xlrd==2.0.1" PyYAML
+python rodar.py apurar <livro_fiscal.xlsx> --saida <pasta>
 ```
+
+Roda direto da pasta, **sem instalar**: em máquina corporativa, instalar programa
+esbarra em permissão de administrador e em política de executável. Quem instala
+pode usar `pip install -e apurabot` e o comando `apurabot`.
+
+Passo a passo completo em [07 — Como rodar](../docs/apurabot/07-como-rodar.md).
 
 Lê o Livro Fiscal, equaliza a carga efetiva de cada linha, classifica a operação,
 aplica a regra tributária de cada UF, segrega por atividade onde a UF exige e
@@ -26,10 +33,13 @@ entrega a apuração em `.xlsx`, com a memória de cálculo linha a linha.
 | PENDÊNCIAS | O que bloqueia o encerramento da competência |
 | POR ESTABELECIMENTO E CARGA | O recorte que confere com a tabela dinâmica da apuração manual |
 
+O comando `apurabot base-tratada` para no tratamento e na classificação, sem
+apurar — serve para conferir o Livro antes de fechar o mês.
+
 ## O que falta
 
-Ajustes manuais vindos de `ajustes.xlsx` (fecha a Entrega 2), centralização de
-SP, DIFAL, CIAP e a interface para o time fiscal.
+O relatório de ajustes manuais (fecha a Entrega 2) e a interface gráfica.
+**DIFAL e CIAP estão pausados** por decisão de escopo.
 
 ## Estrutura
 
@@ -49,12 +59,13 @@ src/apurabot/
   nucleo/estorno.py    regra tributária por regime
   nucleo/atividade.py  segregação por atividade (GIA de MS)
   nucleo/beneficio.py  crédito presumido do Termo de Acordo e FADEFE
+  nucleo/centralizacao.py  transferência de saldo e travas da NF-e
   base_tratada.py      orquestra as camadas 1 a 4
   apuracao.py          consolida por estabelecimento e por atividade
   saida.py             escreve o .xlsx
   cli.py               linha de comando
 
-tests/          96 testes: unidade + regressão contra a competência de referência
+tests/          111 testes: unidade + regressão contra a competência de referência
 analise/        Scripts exploratórios que reproduzem os números documentados
 ```
 
