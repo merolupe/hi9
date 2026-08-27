@@ -77,18 +77,33 @@ antes de fechar o mês.
 
 ## 5. O que sai
 
-Um `.xlsx` com cinco abas:
+Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
 
 | Aba | Conteúdo |
 |---|---|
 | **RESUMO** | Procedência do arquivo, volume, equalização e categorias |
-| **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício, FADEFE e centralização |
-| **BASE TRATADA** | Uma linha por linha do Livro, com a regra aplicada em cada uma |
+| **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
+| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → alíquota → produto, com a operação, a parcela não tributada e o CHECK |
+| **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
+| **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |
 | **PENDÊNCIAS** | O que bloqueia o encerramento |
-| **POR ESTABELECIMENTO E CARGA** | O recorte que confere com a tabela dinâmica da apuração manual |
+| **POR ESTABELECIMENTO E CARGA** | O recorte por carga efetiva |
+| **BASE TRATADA** | Uma linha por linha do Livro, com a regra aplicada em cada uma |
 
-A **BASE TRATADA** é a que responde "por que este número deu isso": cada linha
-carrega carga efetiva, categoria, regime e a regra aplicada, em texto.
+Três delas respondem a perguntas diferentes sobre o mesmo mês:
+
+**REGISTRO** — *quanto deu?* É o espelho do livro, conferível contra o PDF que o
+ERP emite. Diferente do PDF, sai num arquivo só e com totalizador do grupo.
+Linhas do resumo marcadas `AGUARDA AJUSTE` dependem de lançamento aprovado que
+não nasce do Livro Fiscal.
+
+**APURAÇÃO EFETIVA** — *por que deu isso?* Cada crédito com a sua alíquota, a
+parcela não tributada e a conta feita à vista. A coluna **CHECK** é
+`a estornar + a apropriar − ICMS creditado`: qualquer valor diferente de zero,
+em vermelho, é erro do motor.
+
+**BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
+efetiva, categoria, regime e a regra aplicada, em texto.
 
 ---
 
@@ -100,7 +115,6 @@ carrega carga efetiva, categoria, regime e a regra aplicada, em texto.
 |---|---|
 | `SEM REGRA` | Cadastrar o produto em `apurabot/parametros/produtos.yaml` |
 | Atividade indefinida | Cadastrar o CFOP em `regimes.yaml`, bloco `atividades` |
-| Transferência sem NF-e | Emitir e escriturar, ou conferir o CFOP no parâmetro |
 
 **Alerta não bloqueia** — lançamento que passou mas merece olhada, como carga
 efetiva fora das homologadas. Sai no RESUMO.

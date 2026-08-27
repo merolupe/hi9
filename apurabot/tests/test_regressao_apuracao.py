@@ -295,15 +295,27 @@ def test_o_saldo_de_corumba_e_o_que_rio_brilhante_recebe_do_centralizador(apurac
     assert corumba.saldo == pytest.approx(99_412.10, abs=CENTAVO)
 
 
+def _grupo(apuracao, uf):
+    return next(c for c in apuracao.centralizacao if c.uf == uf)
+
+
 def test_sp_centraliza_em_guara(apuracao):
-    grupos = apuracao.centralizacao
-    assert [c.uf for c in grupos] == ["SP"]
-    assert grupos[0].centralizadora == "HINOVE (FILIAL GUARÁ)"
+    assert _grupo(apuracao, "SP").centralizadora == "HINOVE (FILIAL GUARÁ)"
+
+
+def test_ms_centraliza_em_rio_brilhante(apuracao):
+    """Corumbá transfere o saldo devedor; Rio Brilhante o recebe na linha 002."""
+    grupo = _grupo(apuracao, "MS")
+    assert grupo.centralizadora == "HINOVE (RIO BRILHANTE)"
+    assert grupo.total_recebido == pytest.approx(99_412.10, abs=CENTAVO)
+    assert apuracao.recebido_por_centralizacao(RB) == pytest.approx(
+        99_412.10, abs=CENTAVO
+    )
 
 
 def test_registro_transfere_o_saldo_devedor_para_guara(apuracao):
     """Identidade da camada, sobre os saldos reais da competência."""
-    grupo = apuracao.centralizacao[0]
+    grupo = _grupo(apuracao, "SP")
     registro = next(t for t in grupo.transferencias if t.origem == "HINOVE (REGISTRO)")
     assert registro.saldo_individual == pytest.approx(287_113.66, abs=CENTAVO)
     assert registro.saldo_individual == pytest.approx(
@@ -312,13 +324,15 @@ def test_registro_transfere_o_saldo_devedor_para_guara(apuracao):
     assert grupo.confere
 
 
-def test_a_transferencia_de_julho_nao_tem_nfe_escriturada(apuracao):
-    """O Livro Fiscal da competência não traz NF-e de transferência de saldo.
+def test_a_transferencia_e_instrucao_e_nao_bloqueia_o_encerramento(apuracao):
+    """A nota de transferência é emitida depois que a competência fecha.
 
-    A trava existe justamente para isso: saldo a transferir sem documento é
-    pendência, não silêncio.
+    O documento nasce do resultado da apuração e vai escriturado no mês
+    seguinte — cobrá-lo dentro do livro apurado seria pedir que o efeito
+    precedesse a causa. O que a ferramenta entrega é a instrução do que emitir.
     """
-    grupo = apuracao.centralizacao[0]
-    assert grupo.pendencias
-    assert all("sem NF-e escriturada" in m for m in grupo.pendencias)
+    grupo = _grupo(apuracao, "SP")
+    assert grupo.instrucoes
+    assert any("HINOVE (REGISTRO)" in i for i in grupo.instrucoes)
+    assert all("NF-e" in i for i in grupo.instrucoes)
 

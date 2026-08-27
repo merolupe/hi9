@@ -2,15 +2,28 @@
 
 Onde a UF admite apuração centralizada, cada estabelecimento apura o seu saldo
 e o transfere para a centralizadora, que consolida e apura o resultado do grupo.
-A transferência é documentada por NF-e, e é essa NF-e que esta camada cobra.
+
+**A transferência é consequência da apuração, não insumo dela.** O documento que
+a formaliza — NF-e ou lançamento de ajuste — só pode ser emitido depois que a
+competência fechou, e vai escriturado na competência seguinte. Por isso esta
+camada não cobra documento dentro do livro que está sendo apurado: ela **emite a
+instrução** do que precisa ser transferido, com valor, sentido e mecanismo.
 
 O que a camada garante:
 
     saldo individual = valor transferido + saldo residual
     recebido pela centralizadora = soma do transferido pelos demais
 
-Quem centraliza, quem é centralizado e o que se transfere estão em
-`parametros/filiais.yaml`, nunca aqui.
+O mecanismo muda com a UF:
+
+    nfe                   a transferência é documentada por NF-e emitida pelo
+                          estabelecimento centralizado
+    ajuste_de_apuracao    a transferência é lançamento no Registro de Apuração —
+                          débito na centralizadora, crédito no centralizado —
+                          sem documento fiscal próprio
+
+Quem centraliza, quem é centralizado, o que se transfere e por qual mecanismo
+estão em `parametros/filiais.yaml`, nunca aqui.
 """
 from __future__ import annotations
 
@@ -24,19 +37,18 @@ SALDO_INTEGRAL = "saldo_integral"        # devedor e credor
 SALDO_DEVEDOR = "saldo_devedor"          # só quando deve
 SALDO_CREDOR = "saldo_credor"            # só quando tem crédito
 
+# Como a transferência se formaliza.
+NFE = "nfe"
+AJUSTE_DE_APURACAO = "ajuste_de_apuracao"
+
+MECANISMOS = {
+    NFE: "NF-e de transferência de saldo emitida pelo estabelecimento",
+    AJUSTE_DE_APURACAO: "lançamento de ajuste no Registro de Apuração",
+}
+
 
 class CentralizacaoDesconhecida(Exception):
     """A regra de centralização não existe ou não é reconhecida."""
-
-
-@dataclass
-class DocumentoDeTransferencia:
-    """A NF-e que documenta a transferência de saldo."""
-
-    numero: str
-    emitente: str
-    cfop: int | None
-    valor: float
 
 
 @dataclass
@@ -47,15 +59,12 @@ class Transferencia:
     destino: str
     saldo_individual: float = 0.0
     valor_transferido: float = 0.0
-    documentos: list[DocumentoDeTransferencia] = field(default_factory=list)
+    mecanismo: str = NFE
+    cfop_sugerido: list[int] = field(default_factory=list)
 
     @property
     def saldo_residual(self) -> float:
         return self.saldo_individual - self.valor_transferido
-
-    @property
-    def valor_documentado(self) -> float:
-        return sum(d.valor for d in self.documentos)
 
     @property
     def confere(self) -> bool:
@@ -64,24 +73,24 @@ class Transferencia:
         return abs(soma - self.saldo_individual) < 0.005
 
     @property
-    def pendencias(self) -> list[str]:
-        """O que trava o encerramento da competência."""
-        motivos: list[str] = []
+    def instrucao(self) -> str:
+        """O que o time fiscal precisa emitir depois de fechar a competência."""
         if not self.valor_transferido:
-            return motivos
-        if not self.documentos:
-            motivos.append(
-                f"{self.origem}: transferência de {self.valor_transferido:,.2f} "
-                f"para {self.destino} sem NF-e escriturada"
+            return (
+                f"{self.origem}: saldo {self.saldo_individual:,.2f} — "
+                "nada a transferir nesta competência"
             )
-        elif abs(self.valor_documentado - self.valor_transferido) >= 0.005:
-            motivos.append(
-                f"{self.origem}: NF-e de transferência soma "
-                f"{self.valor_documentado:,.2f}, e o saldo a transferir é "
-                f"{self.valor_transferido:,.2f} — diferença de "
-                f"{self.valor_documentado - self.valor_transferido:,.2f}"
-            )
-        return motivos
+        sentido = "devedor" if self.valor_transferido > 0 else "credor"
+        como = (
+            f"NF-e de transferência de saldo, CFOP "
+            f"{' ou '.join(str(c) for c in self.cfop_sugerido)}"
+            if self.mecanismo == NFE and self.cfop_sugerido
+            else MECANISMOS.get(self.mecanismo, self.mecanismo)
+        )
+        return (
+            f"{self.origem} → {self.destino}: transferir saldo {sentido} de "
+            f"{abs(self.valor_transferido):,.2f} por {como}"
+        )
 
 
 @dataclass
@@ -89,6 +98,7 @@ class ResultadoCentralizacao:
     uf: str
     centralizadora: str
     regra: str = ""
+    mecanismo: str = NFE
     homologado: bool = False
     saldo_proprio: float = 0.0
     transferencias: list[Transferencia] = field(default_factory=list)
@@ -107,14 +117,16 @@ class ResultadoCentralizacao:
         return all(t.confere for t in self.transferencias)
 
     @property
-    def pendencias(self) -> list[str]:
-        return [m for t in self.transferencias for m in t.pendencias]
+    def instrucoes(self) -> list[str]:
+        """As transferências a emitir depois do encerramento da competência."""
+        return [t.instrucao for t in self.transferencias if t.valor_transferido]
 
     @property
     def memoria(self) -> list[str]:
         linhas = [
             f"Centralização de {self.uf} em {self.centralizadora}",
-            f"Regra de transferência: {self.regra}"
+            f"Regra de transferência: {self.regra} por "
+            + MECANISMOS.get(self.mecanismo, self.mecanismo)
             + ("" if self.homologado else "  (NÃO HOMOLOGADA)"),
             f"Saldo próprio da centralizadora: {self.saldo_proprio:,.2f}",
         ]
@@ -122,11 +134,6 @@ class ResultadoCentralizacao:
             linhas.append(
                 f"{t.origem}: saldo {t.saldo_individual:,.2f} → transfere "
                 f"{t.valor_transferido:,.2f}, residual {t.saldo_residual:,.2f}"
-                + (
-                    f", NF-e {', '.join(d.numero for d in t.documentos)}"
-                    if t.documentos
-                    else ", SEM NF-e"
-                )
             )
         linhas.append(f"Recebido pela centralizadora: {self.total_recebido:,.2f}")
         linhas.append(f"Saldo final do grupo: {self.saldo_final:,.2f}")
@@ -137,15 +144,27 @@ def regras(params: Parametros) -> dict[str, dict[str, Any]]:
     return params.filiais.get("regras_de_centralizacao") or {}
 
 
-def calcular(
-    saldos: dict[str, float],
-    livro,
-    params: Parametros,
-) -> list[ResultadoCentralizacao]:
+def recebido_por(
+    resultados: list[ResultadoCentralizacao], estabelecimento: str
+) -> float:
+    """Saldo que um estabelecimento recebe por ser centralizador.
+
+    É a linha 002 do Registro de Apuração da centralizadora — "recebimento de
+    saldo devedor do estabelecimento centralizador" — quando o mecanismo da UF
+    é o ajuste de apuração.
+    """
+    return sum(
+        r.total_recebido
+        for r in resultados
+        if r.centralizadora == estabelecimento
+        and r.mecanismo == AJUSTE_DE_APURACAO
+    )
+
+
+def calcular(saldos: dict[str, float], params: Parametros) -> list[ResultadoCentralizacao]:
     """Consolida os saldos por grupo de centralização.
 
-    `saldos` é {estabelecimento: saldo individual}, e `livro` serve para achar a
-    NF-e que documenta cada transferência.
+    `saldos` é {estabelecimento: saldo individual}, já apurado.
     """
     cadastro = {
         " ".join(str(f["nome"]).split()): f
@@ -161,6 +180,12 @@ def calcular(
                 f"regra {nome_regra!r}: `transfere` {transfere!r} não é reconhecido "
                 f"— os válidos são {SALDO_INTEGRAL}, {SALDO_DEVEDOR} e {SALDO_CREDOR}"
             )
+        mecanismo = regra.get("mecanismo", NFE)
+        if mecanismo not in MECANISMOS:
+            raise CentralizacaoDesconhecida(
+                f"regra {nome_regra!r}: `mecanismo` {mecanismo!r} não é reconhecido "
+                f"— os válidos são {NFE} e {AJUSTE_DE_APURACAO}"
+            )
 
         centralizadora = _papel(cadastro, uf, "centralizadora")
         if centralizadora is None:
@@ -173,18 +198,25 @@ def calcular(
             uf=uf,
             centralizadora=centralizadora,
             regra=transfere,
+            mecanismo=mecanismo,
             homologado=bool(regra.get("homologado", False)),
             saldo_proprio=saldos.get(centralizadora, 0.0),
         )
-        cfops = set(regra.get("cfop_transferencia") or [])
+        cfops = [int(c) for c in (regra.get("cfop_transferencia") or [])]
         for nome in _centralizados(cadastro, uf):
             saldo = saldos.get(nome)
             if saldo is None:
                 continue
-            t = Transferencia(origem=nome, destino=centralizadora, saldo_individual=saldo)
-            t.valor_transferido = _transferivel(saldo, transfere)
-            t.documentos = _documentos(livro, nome, cfops)
-            resultado.transferencias.append(t)
+            resultado.transferencias.append(
+                Transferencia(
+                    origem=nome,
+                    destino=centralizadora,
+                    saldo_individual=saldo,
+                    valor_transferido=_transferivel(saldo, transfere),
+                    mecanismo=mecanismo,
+                    cfop_sugerido=cfops,
+                )
+            )
         resultados.append(resultado)
 
     return resultados
@@ -214,25 +246,3 @@ def _transferivel(saldo: float, transfere: str) -> float:
     if transfere == SALDO_DEVEDOR:
         return saldo if saldo > 0 else 0.0
     return saldo if saldo < 0 else 0.0
-
-
-def _documentos(livro, emitente: str, cfops: set[int]) -> list[DocumentoDeTransferencia]:
-    """NF-e de transferência de saldo emitidas pelo estabelecimento."""
-    if livro is None or not cfops:
-        return []
-    achados = []
-    for linha in livro:
-        dados = linha.dados
-        if " ".join(str(dados.get("estabelecimento") or "").split()) != emitente:
-            continue
-        if linha.cfop_int not in cfops:
-            continue
-        achados.append(
-            DocumentoDeTransferencia(
-                numero=str(dados.get("numero_nota") or dados.get("nota") or "?"),
-                emitente=emitente,
-                cfop=linha.cfop_int,
-                valor=dados.get("valor_contabil") or 0.0,
-            )
-        )
-    return achados

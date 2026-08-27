@@ -296,3 +296,46 @@ O parâmetro não existe em `regimes.yaml`, e não fica como "não aplicado": n�
 regra a aplicar. Fica o registro para que ninguém o reintroduza a partir do
 escopo v1.0.
 
+## 13. O Registro de Apuração de Rio Brilhante reproduz ao centavo
+
+O ERP emitiu o Registro de Apuração de RIO BRILHANTE em 07/08/2026. As duas
+folhas de entradas e saídas são soma pura do Livro Fiscal, e o motor as
+reproduz **nas cinco colunas e nos três grupos de procedência**, sem usar
+nenhum parâmetro tributário:
+
+| | Valores contábeis | Base de cálculo | Imposto | Isentas/N.Trib. | Outras |
+|---|---|---|---|---|---|
+| Entradas — do Estado | 5.302.366,31 | 0,00 | 2.146,57 | 2.456.680,40 | 2.845.685,91 |
+| Entradas — de outros Estados | 5.667.570,01 | 1.479.555,26 | 153.929,91 | 3.880.746,19 | 351.013,04 |
+| Entradas — do Exterior | 13.510.547,87 | 1.846.038,67 | 313.826,57 | 5.999.625,90 | 5.664.883,30 |
+| **Entradas — total** | **24.480.484,19** | **3.325.593,93** | **469.903,05** | **12.337.052,49** | **8.861.582,25** |
+| Saídas — para o Estado | 7.289.225,52 | 596.202,18 | 101.354,35 | 4.008.653,75 | 2.684.369,59 |
+| Saídas — para outros Estados | 12.970.887,39 | 3.371.976,03 | 404.637,06 | 9.227.165,58 | 371.745,78 |
+| **Saídas — total** | **20.260.112,91** | **3.968.178,21** | **505.991,41** | **13.235.819,33** | **3.056.115,37** |
+
+O resumo da folha 3 também fecha, com os ajustes declarados:
+
+| Linha | Documento | Motor | Origem do valor no motor |
+|---|---|---|---|
+| 001 por Saídas com Débito | 505.991,41 | 505.991,41 | Livro Fiscal |
+| 002 Outros Débitos | 99.412,10 | 99.412,10 | **calculado** — saldo devedor de Corumbá |
+| 003 Estornos de Créditos | 335.101,41 | 335.101,41 | 331.236,11 da regra + 3.865,30 de ajuste |
+| 004 Sub Total | 940.504,92 | 940.504,92 | |
+| 005 por Entradas com Crédito | 469.903,05 | 469.903,05 | Livro Fiscal |
+| 006 + 007 | 79.178,39 | 79.178,39 | ajuste declarado |
+| 008 Sub Total | 549.081,44 | 549.081,44 | |
+| 011 SALDO DEVEDOR | 391.423,48 | 391.423,48 | |
+
+Dois pontos merecem registro.
+
+**A linha 002 não é ajuste declarado.** O valor é o saldo devedor apurado de
+Corumbá, que a camada de centralização calcula e leva ao registro do
+centralizador. Os dois lados fecham sem que nenhum deles tenha sido informado.
+
+**A linha 012 diverge, e o motor é que está certo.** O documento traz
+283.766,56 de dedução e 107.656,92 a recolher; o motor calcula 261.431,90 e
+129.991,58. A diferença de 22.334,66 é exatamente a inversão entre Industrial e
+Comercial que a GIA retificadora de 25/08/2026 corrigiu — o Registro emitido em
+07/08 é anterior à retificação. Sobre a GIA retificadora, o benefício bate ao
+centavo.
+

@@ -5,7 +5,8 @@
 
 **Situação:** a competência de referência é reproduzida da ingestão ao benefício
 fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante bate ao
-centavo com a GIA entregue. 111 testes automáticos.
+centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 154
+testes automáticos.
 
 | Entrega | Situação |
 |---|---|
@@ -13,11 +14,12 @@ centavo com a GIA entregue. 111 testes automáticos.
 | 1 · Base tratada e classificada | ✅ concluída |
 | 2 · Motor de ICMS: créditos, débitos e estornos | 🟡 falta só ajustes manuais |
 | 3 · Benefício fiscal de Rio Brilhante | ✅ concluída — confere com a GIA |
-| 4 · Centralização e transferência de saldo | ✅ concluída — regra a homologar |
+| 4 · Centralização e transferência de saldo | ✅ concluída — regra de SP a homologar |
 | 5 · DIFAL | ⏸ pausado |
 | 6 · Interface e empacotamento | 🟡 CLI e instalação entregues; interface gráfica pendente |
 | 7 · Homologação | ⬜ depende de 4 e 6 |
 | 8 · CIAP | ⏸ pausado |
+| 9 · Registro de Apuração e conferência | ✅ concluída |
 
 ---
 
@@ -67,8 +69,48 @@ idêntica.
 
 ## Entrega 2 — Motor de ICMS 🟡
 
-Camadas 5 a 8, por regime. **Falta só** ler os ajustes manuais aprovados de
+Camadas 5 a 8, por regime. **Falta só** ler os ajustes aprovados de
 `ajustes.xlsx`.
+
+### O que são esses ajustes
+
+São os lançamentos do Registro de Apuração que **não nascem de documento no
+Livro Fiscal**. Não é possível deduzi-los do movimento: são decisões da
+apuração, tomadas e aprovadas pelo time fiscal.
+
+| Linha do registro | O que costuma entrar |
+|---|---|
+| 002 Outros Débitos | débito que não veio de saída escriturada |
+| 003 Estornos de Créditos | estorno decidido na apuração, além do que a regra calcula sobre o Livro |
+| 006 Outros Créditos | crédito autorizado por dispositivo do RICMS, sem documento de entrada |
+| 007 Estornos de Débitos | débito escriturado que a apuração devolve |
+| 009 Saldo Credor do Período Anterior | o crédito transportado do mês anterior |
+
+O motor já sabe o lugar de cada um: enquanto não vierem, o `REGISTRO` sai com
+essas linhas zeradas e marcadas **AGUARDA AJUSTE**. Ele não inventa o número e
+não esconde a falta.
+
+Uma exceção que já saiu da lista: onde a UF centraliza por lançamento — MS —, o
+recebimento de saldo devedor da linha 002 é **calculado** pela camada 9 a partir
+do saldo do estabelecimento centralizado. Não é ajuste declarado.
+
+### Como isso entra no fechamento do mês
+
+```
+1. exportar o Livro Fiscal do Sankhya
+2. rodar a ferramenta                     → REGISTRO com AGUARDA AJUSTE
+3. preencher ajustes.xlsx com o que foi aprovado
+4. rodar de novo, com --ajustes           → REGISTRO fechado, linha 013 final
+5. esse número vai para a GIA e para o EFD
+```
+
+O passo 3 é o único trabalho humano, e ele é pequeno: são poucos lançamentos por
+competência. O que a ferramenta acrescenta é que **nenhum deles passa
+despercebido** — sem a declaração, o registro não fecha.
+
+Cada linha de `ajustes.xlsx` traz estabelecimento, atividade, linha do registro,
+valor, descrição, responsável e aprovador — a exigência de rastreabilidade do
+escopo, e o que a decisão nº 4 disciplina.
 
 O estorno é conferido estabelecimento a estabelecimento contra a apuração
 individualizada, **com valor exato em todos os sete**. Onde existe apuração
@@ -111,22 +153,29 @@ confirme (decisão nº 6) e a centralização de MS não está modelada (nº 7).
 ## Entrega 4 — Centralização e transferência de saldo ✅
 
 Camada 9. Consolida os saldos individuais no estabelecimento centralizador e
-cobra a NF-e que documenta cada transferência.
+**emite a instrução** do que precisa ser transferido.
 
 O que a entrega cobre:
 
 - **saldo individual** de cada estabelecimento, antes da centralização;
 - **valor transferível** conforme a regra da UF — saldo integral, só devedor ou
   só credor, parametrizado;
+- **mecanismo por UF** — NF-e em SP, ajuste de apuração em MS;
 - **consolidação** na centralizadora, com o saldo final do grupo;
-- **travas da NF-e** — saldo a transferir sem documento escriturado, ou
-  documento de valor diferente do saldo, viram pendência e bloqueiam o
-  encerramento.
+- **instrução de transferência**, na aba `TRANSFERÊNCIAS`: origem, destino,
+  valor, mecanismo e CFOP sugerido.
+
+A transferência não é cobrada dentro da competência apurada, e isso é
+deliberado: o documento nasce do resultado da apuração e só pode ser emitido
+depois do encerramento. Cobrá-lo no livro que está sendo apurado seria pedir
+que o efeito precedesse a causa. A conferência do documento é da competência
+seguinte — ver item 6.6 da matriz de regras.
 
 A regra está em [04 — Matriz de regras](04-matriz-de-regras-icms.md), item 6.
 
 **Depende de resposta do fiscal:** a regra de transferência de SP não está
-homologada (decisão nº 11), e a de MS não está modelada (nº 7).
+homologada (decisão nº 11), e o caso do saldo credor em MS segue em aberto
+(nº 7).
 
 ---
 
@@ -185,6 +234,36 @@ PER/DCOMP e emissão automática de NF-e de transferência.
 ## O que destrava o quê
 
 ```
+
+---
+
+## Entrega 9 — Registro de Apuração e conferência ✅
+
+Camada 11. Três relatórios que respondem a perguntas diferentes sobre o mesmo
+mês, no mesmo arquivo.
+
+**`REGISTRO`** — espelho do Registro de Apuração do ICMS: entradas e saídas por
+CFOP com os cinco valores fiscais, subtotais por procedência e destino, e o
+resumo em quatorze linhas. Um bloco por estabelecimento e um **totalizador do
+grupo** — que é justamente o que o PDF do ERP, emitido filial a filial, não
+mostra.
+
+O bloco de entradas e saídas é soma pura do Livro Fiscal, e é conferido contra
+o registro emitido pelo ERP **ao centavo, nas cinco colunas e nos três grupos de
+procedência**. O resumo é apuração, e traz marcado o que depende de ajuste.
+
+**`APURAÇÃO EFETIVA`** — a conferência que o time fiscal montava à mão: CFOP →
+alíquota → produto, com a operação, a alíquota de entrada, a parcela não
+tributada, o ICMS a estornar, o ICMS a apropriar e a coluna **CHECK**. O CHECK é
+`a estornar + a apropriar − ICMS creditado`, e o teste exige que feche em todas
+as linhas de todos os estabelecimentos.
+
+**`TRANSFERÊNCIAS`** — o que emitir depois de fechar a competência.
+
+**Trava entre os dois primeiros:** o imposto creditado somado por CFOP no
+registro tem que ser o crédito bruto da apuração. Se divergir, um dos dois leu o
+Livro errado.
+
 Entrega 1 ✅ ──► Entrega 2 🟡 ──► Entrega 4 ✅ ──► Entrega 6 🟡 ──► Entrega 7 ⬜
                      │
                      ├──►  Entrega 3 ✅  benefício fiscal de MS

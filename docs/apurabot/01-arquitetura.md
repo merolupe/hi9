@@ -75,16 +75,16 @@ exigência central do documento de escopo.
                           8. APURAÇÃO      saldo individual por estabelecimento
                              POR FILIAL
 
-                          9. CENTRALIZAÇÃO Guará recebe saldos das filiais SP;
-                             SP            controla NF-e de transferência
+                          9. CENTRALIZAÇÃO consolida o saldo do grupo por UF e
+                                           emite a instrução de transferência
 
                          10. CONCILIAÇÃO   travas de integridade e coerência
                              E AUDITORIA   tributária → pendências
                                                                     ┌──────────────┐
-                         11. PAINÉIS       Painel 1 Apuração/unidade │ Apuracao     │
-                                           Painel 2 Audit DIFAL      │ AAAA-MM.xlsx │
-                                           Painel 3 CIAP             │              │
-                                           Painel 4 Resumo+memória   └──────────────┘
+                         11. RELATÓRIOS    Registro de Apuração      │ Apuracao     │
+                                           Apuração efetiva          │ AAAA-MM.xlsx │
+                                           Transferências a emitir   │              │
+                                           Resumo + memória          └──────────────┘
 ```
 
 ### 3.0. A trava que a auditoria valida

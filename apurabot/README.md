@@ -5,7 +5,8 @@ extraído do Sankhya e validado pelo Fiscalbot.
 
 > **Situação:** a competência de referência é reproduzida da ingestão ao
 > benefício fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante
-> bate ao centavo com a GIA entregue. 111 testes automáticos.
+> bate ao centavo com a GIA entregue e com o Registro de Apuração do ERP.
+> 154 testes automáticos.
 > Ver o [plano de execução](../docs/apurabot/02-plano-de-execucao.md).
 
 ## O que já faz
@@ -28,17 +29,22 @@ entrega a apuração em `.xlsx`, com a memória de cálculo linha a linha.
 | Aba da saída | Conteúdo |
 |---|---|
 | RESUMO | Procedência, volume, situação da equalização e categorias |
+| REGISTRO | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por filial e o totalizador do grupo |
+| APURAÇÃO EFETIVA | CFOP → alíquota → produto, com operação, parcela não tributada, ICMS a estornar, a apropriar e o CHECK |
 | APURAÇÃO POR FILIAL | Crédito bruto, estorno, crédito indevido, mantido, débito e saldo — mais a memória do benefício, o FADEFE e a segregação por atividade |
-| BASE TRATADA | Uma linha por linha do Livro, com toda a rastreabilidade |
+| TRANSFERÊNCIAS | O que transferir para a centralizadora depois de fechar a competência |
 | PENDÊNCIAS | O que bloqueia o encerramento da competência |
-| POR ESTABELECIMENTO E CARGA | O recorte que confere com a tabela dinâmica da apuração manual |
+| POR ESTABELECIMENTO E CARGA | O recorte por carga efetiva |
+| BASE TRATADA | Uma linha por linha do Livro, com toda a rastreabilidade |
 
 O comando `apurabot base-tratada` para no tratamento e na classificação, sem
 apurar — serve para conferir o Livro antes de fechar o mês.
 
 ## O que falta
 
-O relatório de ajustes manuais (fecha a Entrega 2) e a interface gráfica.
+A leitura de `ajustes.xlsx` (fecha a Entrega 2) e a interface gráfica. Sem os
+ajustes declarados, as linhas 003 por ajuste, 006, 007 e 009 do registro saem
+marcadas **AGUARDA AJUSTE** — zeradas, nunca inventadas.
 **DIFAL e CIAP estão pausados** por decisão de escopo.
 
 ## Estrutura
@@ -59,13 +65,15 @@ src/apurabot/
   nucleo/estorno.py    regra tributária por regime
   nucleo/atividade.py  segregação por atividade (GIA de MS)
   nucleo/beneficio.py  crédito presumido do Termo de Acordo e FADEFE
-  nucleo/centralizacao.py  transferência de saldo e travas da NF-e
+  nucleo/centralizacao.py  transferência de saldo entre estabelecimentos
+  nucleo/registro.py   Registro de Apuração — livro por CFOP e resumo de 14 linhas
   base_tratada.py      orquestra as camadas 1 a 4
   apuracao.py          consolida por estabelecimento e por atividade
+  conferencia.py       registro, apuração efetiva e transferências
   saida.py             escreve o .xlsx
   cli.py               linha de comando
 
-tests/          111 testes: unidade + regressão contra a competência de referência
+tests/          154 testes: unidade + regressão contra a competência de referência
 analise/        Scripts exploratórios que reproduzem os números documentados
 ```
 

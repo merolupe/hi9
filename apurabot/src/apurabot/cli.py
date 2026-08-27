@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .apuracao import Apuracao, apurar
 from .base_tratada import BaseTratada, tratar
+from .conferencia import ROTULO_DA_ATIVIDADE
 from .ingestao import LayoutInvalido
 from .nucleo import atividade as ativ
 from .saida import escrever
@@ -59,9 +60,8 @@ def _cabecalho(base: BaseTratada) -> dict:
 
 def _pendencias(base: BaseTratada, apuracao: Apuracao | None) -> int:
     da_base = base.com_pendencia
-    da_centralizacao = apuracao.pendencias_de_centralizacao if apuracao else []
     sem_atividade = apuracao.sem_regra_de_atividade if apuracao else []
-    total = len(da_base) + len(da_centralizacao) + len(sem_atividade)
+    total = len(da_base) + len(sem_atividade)
 
     if not total:
         _titulo("Encerramento liberado")
@@ -76,8 +76,6 @@ def _pendencias(base: BaseTratada, apuracao: Apuracao | None) -> int:
     for f in sem_atividade:
         somas = f.atividades_sem_regra
         print(f"  {f.estabelecimento}: {somas.linhas} linha(s) sem atividade definida")
-    for motivo in da_centralizacao:
-        print(f"  {motivo}")
     return total
 
 
@@ -99,8 +97,9 @@ def _apuracao(apuracao: Apuracao) -> None:
                 if nome not in f.por_atividade:
                     continue
                 t = f.por_atividade[nome]
+                rotulo = ROTULO_DA_ATIVIDADE.get(nome, nome)
                 print(
-                    f"    {nome:<22}crédito {t.credito_bruto:>13,.2f}   "
+                    f"    {rotulo:<22}crédito {t.credito_bruto:>13,.2f}   "
                     f"estorno {t.estorno:>13,.2f}   débito {t.debito:>13,.2f}"
                 )
 
@@ -111,10 +110,18 @@ def _apuracao(apuracao: Apuracao) -> None:
         for passo in f.beneficio.memoria:
             print(f"  {passo}")
 
-    for c in apuracao.centralizacao:
+    if apuracao.centralizacao:
         _titulo("Centralização")
-        for passo in c.memoria:
-            print(f"  {passo}")
+        for c in apuracao.centralizacao:
+            for passo in c.memoria:
+                print(f"  {passo}")
+            print()
+
+    instrucoes = apuracao.instrucoes_de_centralizacao
+    if instrucoes:
+        _titulo("Transferências a emitir após o encerramento")
+        for instrucao in instrucoes:
+            print(f"  {instrucao}")
 
 
 def _comando_apurar(args: argparse.Namespace) -> int:
