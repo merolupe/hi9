@@ -82,19 +82,56 @@ def _vazio(aba) -> None:
 # --------------------------------------------------------------------------
 # APURAÇÃO EFETIVA
 # --------------------------------------------------------------------------
+#
+# A conferência que o time fiscal montava à mão. Duas decisões a governam:
+#
+# **Agrega no nível do produto.** A apuração manual é uma tabela dinâmica, e
+# tabela dinâmica soma: "ÁCIDO FOSFÓRICO RAFINADO" aparece uma vez com o total
+# do mês, não uma vez por nota. Listar linha a linha aqui não acrescenta nada
+# que a BASE TRATADA já não dê, e enterra a conferência em milhares de linhas.
+#
+# **Agrupa pela chave da regra do regime, não sempre pela alíquota.** Em MS o
+# estorno é uma fração da alíquota; em SP é o excedente da carga efetiva sobre
+# a carga de saída. Agrupar pela grandeza errada esconde justamente o que se
+# quer conferir.
 
 COLUNAS_EFETIVA = [
-    "CFOP", "Descrição", "Alíquota", "Produto",
+    "CFOP", "Descrição", "{chave}", "Produto",
     "Vlr. contábil", "BC ICMS", "Vlr. ICMS",
-    "Operação", "Parcela não tributada", "ICMS a estornar", "ICMS a apropriar",
+    "Operação", "% do crédito estornado", "ICMS a estornar", "ICMS a apropriar",
     "CHECK",
 ]
 
+#: Fórmulas de estorno, como aparecem em `regimes.yaml`.
+PROPORCIONAL = "proporcional_parcela_nao_tributada"
+EXCEDENTE = "excedente_sobre_carga_saida"
 
-def _parcela(apurada: LinhaApurada) -> float | None:
-    """Fração do crédito que a regra manda estornar."""
-    bruto = apurada.resultado.credito_bruto
-    return (apurada.credito_a_estornar / bruto) if bruto else None
+#: O que comanda o estorno em cada fórmula — é por isso que a conferência
+#: agrupa, porque é a chave da regra. Onde a fórmula não é conhecida, a carga
+#: efetiva serve: ela é o que o documento traz.
+CHAVE_DA_REGRA = {
+    PROPORCIONAL: ("aliquota_icms", "Alíquota"),
+    EXCEDENTE: ("carga", "Carga efetiva"),
+}
+CHAVE_PADRAO = ("carga", "Carga efetiva")
+
+
+def _chave_do_regime(filial, params) -> tuple[str, str]:
+    regime = (params.regimes.get("regimes") or {}).get(filial.regime) or {}
+    return CHAVE_DA_REGRA.get(regime.get("formula_estorno"), CHAVE_PADRAO)
+
+
+def _valor_da_chave(apurada: LinhaApurada, chave: str) -> float | None:
+    """Zero é um valor — o CIAP e o complemento entram com alíquota 0."""
+    if chave == "carga":
+        return apurada.tratada.carga.carga
+    bruto = apurada.tratada.origem.dados.get(chave)
+    if bruto in (None, ""):
+        return None
+    try:
+        return float(bruto)
+    except (TypeError, ValueError):
+        return None
 
 
 def _rotulo_atividade(apurada: LinhaApurada) -> str:
@@ -105,27 +142,66 @@ def _rotulo_atividade(apurada: LinhaApurada) -> str:
     return ROTULO_DA_ATIVIDADE.get(apurada.atividade, apurada.atividade)
 
 
-def aba_apuracao_efetiva(wb, apuracao: Apuracao) -> None:
-    """Conferência do crédito, do estorno e da apropriação, linha a linha."""
+class Somas:
+    """Acumulador de um grupo da conferência."""
+
+    __slots__ = ("contabil", "base", "icms", "estornar", "apropriar", "documentos")
+
+    def __init__(self) -> None:
+        self.contabil = self.base = self.icms = 0.0
+        self.estornar = self.apropriar = 0.0
+        self.documentos = 0
+
+    def somar(self, apurada: LinhaApurada) -> None:
+        dados = apurada.tratada.origem.dados
+        self.contabil += _numero(dados.get("valor_contabil"))
+        self.base += _numero(dados.get("base_icms"))
+        self.icms += apurada.resultado.credito_bruto
+        self.estornar += apurada.credito_a_estornar
+        self.apropriar += apurada.credito_a_apropriar
+        self.documentos += 1
+
+    @property
+    def percentual(self) -> float | None:
+        """Quanto do crédito a regra mandou estornar."""
+        return (self.estornar / self.icms) if self.icms else None
+
+    @property
+    def check(self) -> float:
+        return round(self.estornar + self.apropriar - self.icms, 2) + 0.0
+
+
+def _numero(valor) -> float:
+    try:
+        return float(valor or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
+    """Conferência do crédito, do estorno e da apropriação, por CFOP e produto."""
     aba = wb.create_sheet("APURAÇÃO EFETIVA")
-    _larguras(aba, [10, 32, 10, 44, 16, 16, 15, 14, 12, 16, 16, 11])
+    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 16, 12, 16, 16, 11])
 
     aba.append(["APURAÇÃO EFETIVA — crédito, estorno e apropriação por CFOP e produto"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
     aba.append([
-        "Um bloco por estabelecimento. CHECK = a estornar + a apropriar − ICMS "
-        "creditado; qualquer valor diferente de zero é erro de motor."
+        "Um bloco por estabelecimento, agregado como na apuração manual: uma "
+        "linha por produto, não por documento. CHECK = a estornar + a apropriar "
+        "− ICMS creditado; valor diferente de zero é erro de motor."
     ])
 
     for filial in sorted(
         apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
     ):
-        _bloco_efetiva(aba, filial)
+        _bloco_efetiva(aba, filial, params)
 
     aba.freeze_panes = "A3"
 
 
-def _bloco_efetiva(aba, filial) -> None:
+def _bloco_efetiva(aba, filial, params) -> None:
+    chave, rotulo = _chave_do_regime(filial, params)
+
     _vazio(aba)
     _titulo(
         aba,
@@ -138,79 +214,80 @@ def _bloco_efetiva(aba, filial) -> None:
         _blocos_de_fechamento(aba, filial)
         return
 
-    _cabecalho(aba, COLUNAS_EFETIVA)
+    _cabecalho(aba, [c.format(chave=rotulo) for c in COLUNAS_EFETIVA])
 
-    for cfop, do_cfop in _por_cfop(entradas):
-        _linha_agrupadora(aba, do_cfop, nivel=0, chave=cfop or "(sem CFOP)",
-                          descricao=_descricao_cfop(do_cfop))
-        for aliquota, do_grupo in _por_aliquota(do_cfop):
-            _linha_agrupadora(aba, do_grupo, nivel=1, aliquota=aliquota)
-            for apurada in sorted(do_grupo, key=_nome_do_produto):
-                _linha_de_produto(aba, apurada, aliquota)
+    # CFOP → chave da regra → produto × operação, somando em cada nível.
+    arvore: dict = {}
+    for apurada in entradas:
+        cfop = apurada.tratada.origem.cfop_int
+        valor = _valor_da_chave(apurada, chave)
+        produto = (_nome_do_produto(apurada), _rotulo_atividade(apurada))
+        por_cfop = arvore.setdefault(cfop, {"descricao": "", "chaves": {}})
+        por_cfop["descricao"] = por_cfop["descricao"] or _descricao_cfop(apurada)
+        por_chave = por_cfop["chaves"].setdefault(valor, {})
+        por_chave.setdefault(produto, Somas()).somar(apurada)
 
-    _linha_agrupadora(aba, entradas, nivel=0, chave="TOTAL", negrito=True)
+    geral = Somas()
+    for cfop in sorted(arvore, key=lambda c: (c is None, c or 0)):
+        ramo = arvore[cfop]
+        do_cfop = _agregar(ramo["chaves"].values())
+        _linha_de_grupo(aba, do_cfop, nivel=0,
+                        chave=cfop if cfop is not None else "(sem CFOP)",
+                        descricao=ramo["descricao"])
+        for valor in sorted(ramo["chaves"], key=lambda v: (v is None, v or 0)):
+            produtos = ramo["chaves"][valor]
+            _linha_de_grupo(aba, _agregar([produtos]), nivel=1,
+                            valor_da_chave=valor)
+            for (produto, operacao) in sorted(
+                produtos, key=lambda p: (p[0].casefold(), p[1])
+            ):
+                _linha_de_produto(aba, produtos[(produto, operacao)],
+                                  valor, produto, operacao)
+        geral = _agregar([{"": do_cfop}], inicial=geral)
+
+    _linha_de_grupo(aba, geral, nivel=0, chave="TOTAL", negrito=True)
     _blocos_de_fechamento(aba, filial)
+
+
+def _agregar(grupos, inicial: Somas | None = None) -> Somas:
+    total = inicial or Somas()
+    for grupo in grupos:
+        for parcial in grupo.values():
+            total.contabil += parcial.contabil
+            total.base += parcial.base
+            total.icms += parcial.icms
+            total.estornar += parcial.estornar
+            total.apropriar += parcial.apropriar
+            total.documentos += parcial.documentos
+    return total
 
 
 def _nome_do_produto(apurada: LinhaApurada) -> str:
     return str(apurada.tratada.origem.dados.get("produto_descricao") or "")
 
 
-def _descricao_cfop(apuradas: list[LinhaApurada]) -> str:
-    return str(apuradas[0].tratada.origem.dados.get("cfop_descricao") or "").strip()
+def _descricao_cfop(apurada: LinhaApurada) -> str:
+    return str(apurada.tratada.origem.dados.get("cfop_descricao") or "").strip()
 
 
-def _por_cfop(apuradas: list[LinhaApurada]):
-    grupos: dict = {}
-    for a in apuradas:
-        grupos.setdefault(a.tratada.origem.cfop_int, []).append(a)
-    return sorted(grupos.items(), key=lambda kv: (kv[0] is None, kv[0] or 0))
+def _percentual(valor: float | None) -> str:
+    return "" if valor is None else f"{valor:g}%"
 
 
-def _por_aliquota(apuradas: list[LinhaApurada]):
-    grupos: dict = {}
-    for a in apuradas:
-        try:
-            aliquota = float(a.tratada.origem.dados.get("aliquota_icms") or 0.0)
-        except (TypeError, ValueError):
-            aliquota = 0.0
-        grupos.setdefault(aliquota, []).append(a)
-    return sorted(grupos.items())
-
-
-def _somas(apuradas: list[LinhaApurada]) -> tuple[float, float, float, float, float]:
-    contabil = base = icms = estornar = apropriar = 0.0
-    for a in apuradas:
-        dados = a.tratada.origem.dados
-        contabil += _numero(dados.get("valor_contabil"))
-        base += _numero(dados.get("base_icms"))
-        icms += a.resultado.credito_bruto
-        estornar += a.credito_a_estornar
-        apropriar += a.credito_a_apropriar
-    return contabil, base, icms, estornar, apropriar
-
-
-def _numero(valor) -> float:
-    try:
-        return float(valor or 0.0)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def _linha_agrupadora(
-    aba, apuradas, *, nivel: int, chave=None, descricao: str = "",
-    aliquota: float | None = None, negrito: bool = False,
+def _linha_de_grupo(
+    aba, somas: Somas, *, nivel: int, chave=None, descricao: str = "",
+    valor_da_chave: float | None = None, negrito: bool = False,
 ) -> None:
-    contabil, base, icms, estornar, apropriar = _somas(apuradas)
     aba.append([
         chave if nivel == 0 else "", descricao,
-        f"{aliquota:g}%" if aliquota is not None else "", "",
-        contabil, base, icms, "", None, estornar, apropriar,
-        round(estornar + apropriar - icms, 2) + 0.0,
+        _percentual(valor_da_chave) if nivel else "", "",
+        somas.contabil, somas.base, somas.icms, "", somas.percentual,
+        somas.estornar, somas.apropriar, somas.check,
     ])
     linha = aba.max_row
     _moeda(aba, linha, range(5, 8))
     _moeda(aba, linha, range(10, 13))
+    aba.cell(row=linha, column=9).number_format = PERCENTUAL
     for celula in aba[linha]:
         celula.font = Font(bold=True)
         if nivel == 0 and not negrito:
@@ -219,23 +296,20 @@ def _linha_agrupadora(
         aba.row_dimensions[linha].outlineLevel = 1
 
 
-def _linha_de_produto(aba, apurada: LinhaApurada, aliquota: float) -> None:
-    dados = apurada.tratada.origem.dados
-    parcela = _parcela(apurada)
-    icms = apurada.resultado.credito_bruto
+def _linha_de_produto(
+    aba, somas: Somas, valor_da_chave: float | None, produto: str, operacao: str
+) -> None:
     aba.append([
-        "", "", f"{aliquota:g}%", _nome_do_produto(apurada),
-        _numero(dados.get("valor_contabil")), _numero(dados.get("base_icms")), icms,
-        _rotulo_atividade(apurada), parcela,
-        apurada.credito_a_estornar, apurada.credito_a_apropriar,
-        round(apurada.credito_a_estornar + apurada.credito_a_apropriar - icms, 2) + 0.0,
+        "", "", _percentual(valor_da_chave), produto,
+        somas.contabil, somas.base, somas.icms, operacao, somas.percentual,
+        somas.estornar, somas.apropriar, somas.check,
     ])
     linha = aba.max_row
     _moeda(aba, linha, range(5, 8))
     _moeda(aba, linha, range(10, 13))
     aba.cell(row=linha, column=9).number_format = PERCENTUAL
     aba.row_dimensions[linha].outlineLevel = 2
-    if not apurada.confere:
+    if abs(somas.check) >= 0.005:
         aba.cell(row=linha, column=12).font = VERMELHO
 
 

@@ -5,7 +5,7 @@
 
 **Situação:** a competência de referência é reproduzida da ingestão ao benefício
 fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante bate ao
-centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 168
+centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 171
 testes automáticos.
 
 | Entrega | Situação |

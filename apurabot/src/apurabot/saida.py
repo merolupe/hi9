@@ -306,7 +306,7 @@ def escrever(
     _aba_pendencias(wb, base)
     _aba_por_carga(wb, base)
     _aba_apuracao(wb, apuracao)
-    aba_apuracao_efetiva(wb, apuracao)
+    aba_apuracao_efetiva(wb, apuracao, base.parametros)
     aba_registro(wb, apuracao, base.parametros, ajustes)
     aba_transferencias(wb, apuracao)
     _aba_resumo(wb, base)

@@ -5,7 +5,14 @@ import openpyxl
 import pytest
 
 from apurabot.apuracao import apurar
-from apurabot.conferencia import ROTULO_DA_ATIVIDADE, _parcela, _rotulo_atividade
+from apurabot.conferencia import (
+    CHAVE_DA_REGRA,
+    EXCEDENTE,
+    PROPORCIONAL,
+    ROTULO_DA_ATIVIDADE,
+    _chave_do_regime,
+    _rotulo_atividade,
+)
 from apurabot.nucleo import atividade as ativ
 from apurabot.saida import ORDEM_DAS_ABAS, escrever
 
@@ -51,18 +58,61 @@ def test_a_soma_das_linhas_apuradas_e_o_total_da_filial(apuracao):
         )
 
 
-def test_a_parcela_nao_tributada_e_a_fracao_estornada(apuracao):
-    """A coluna é a conta, não um número solto: parcela × crédito = estorno."""
-    for filial in apuracao.filiais.values():
-        for a in filial.apuradas:
-            parcela = _parcela(a)
-            if parcela is None:
-                assert not a.resultado.credito_bruto
-                continue
-            assert 0.0 <= parcela <= 1.0
-            assert a.resultado.credito_bruto * parcela == pytest.approx(
-                a.credito_a_estornar, abs=CENTAVO
-            )
+def test_a_conferencia_agrupa_pela_chave_da_regra_de_cada_regime(apuracao, parametros):
+    """Agrupar pela grandeza errada esconde o que se quer conferir.
+
+    Em MS o estorno é fração da alíquota; em SP é o excedente da carga efetiva
+    sobre a carga de saída. A coluna de agrupamento tem que seguir a regra.
+    """
+    rb = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
+    assert _chave_do_regime(rb, parametros) == CHAVE_DA_REGRA[PROPORCIONAL]
+    assert _chave_do_regime(rb, parametros)[1] == "Alíquota"
+
+    guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
+    assert _chave_do_regime(guara, parametros) == CHAVE_DA_REGRA[EXCEDENTE]
+    assert _chave_do_regime(guara, parametros)[1] == "Carga efetiva"
+
+
+def test_a_parcela_de_ms_e_a_formula_da_regra(apuracao):
+    """Em MS, estorno ÷ crédito é exatamente 1 − 4/alíquota.
+
+    É a única UF em que o percentual da conferência coincide com um parâmetro
+    da regra — por isso o rótulo da coluna é descritivo, e não normativo.
+    """
+    rb = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
+    conferidas = 0
+    for a in rb.apuradas:
+        if not a.resultado.credito_bruto or not a.credito_a_estornar:
+            continue
+        aliquota = float(a.tratada.origem.dados.get("aliquota_icms") or 0)
+        if aliquota <= 4:
+            continue
+        assert a.credito_a_estornar / a.resultado.credito_bruto == pytest.approx(
+            round(1 - 4 / aliquota, 4), abs=1e-6
+        )
+        conferidas += 1
+    assert conferidas, "nenhuma linha de RB com estorno proporcional"
+
+
+def test_em_sp_o_percentual_nao_e_parametro_da_regra(apuracao):
+    """Em SP o estorno incide sobre o valor contábil, não sobre o ICMS.
+
+    A razão estorno ÷ crédito varia dentro de uma mesma carga, porque a carga
+    do documento foi equalizada para a régua nominal. Chamar isso de "parcela
+    não tributada" — que é vocabulário de MS — ensinaria a regra errada.
+    """
+    guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
+    razoes = {}
+    for a in guara.apuradas:
+        if not a.resultado.credito_bruto or not a.credito_a_estornar:
+            continue
+        carga = a.tratada.carga.carga
+        razoes.setdefault(carga, set()).add(
+            round(a.credito_a_estornar / a.resultado.credito_bruto, 4)
+        )
+    assert any(len(v) > 1 for v in razoes.values()), (
+        "esperava razões diferentes dentro de uma mesma carga em SP"
+    )
 
 
 # -- rótulos ----------------------------------------------------------------

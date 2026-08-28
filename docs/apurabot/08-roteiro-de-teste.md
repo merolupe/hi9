@@ -228,8 +228,14 @@ valor diferente de zero é erro de motor, não de escrituração. Se achar, anot
 linha inteira.
 
 **Compare com a sua planilha manual.** A `APURAÇÃO EFETIVA` foi montada no
-formato que vocês usam: CFOP → alíquota → produto, com a operação, a parcela não
-tributada e a conta à vista. É onde a conferência é mais rápida.
+formato que vocês usam — **uma linha por produto, não por documento**, como a
+tabela dinâmica. Em Julho/2026, Rio Brilhante sai com os mesmos onze produtos da
+planilha manual e o mesmo Total Geral: 9.341.752,63 de contábil, 3.325.593,93 de
+BC, 469.903,05 de ICMS, 331.236,11 de estorno e 138.666,94 a apropriar.
+
+**Repare que a terceira coluna muda de nome** entre os blocos: **Alíquota** nos
+de MS, **Carga efetiva** nos de SP. Não é inconsistência — é a chave da regra de
+cada regime, e agrupar pela grandeza errada esconderia o que se quer conferir.
 
 ---
 
