@@ -22,7 +22,9 @@ navegador, e o servidor sobe em `127.0.0.1` pelo Python que já está na máquin
 O dado fiscal não sai dali.
 
 O passo a passo, incluindo a linha de comando, está em
-[`docs/apurabot/07-como-rodar.md`](docs/apurabot/07-como-rodar.md).
+[`docs/apurabot/07-como-rodar.md`](docs/apurabot/07-como-rodar.md). Para testar
+pela primeira vez, siga o
+[roteiro de teste](docs/apurabot/08-roteiro-de-teste.md).
 
 ## Convenções
 

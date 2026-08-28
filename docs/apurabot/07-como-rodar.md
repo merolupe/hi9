@@ -2,6 +2,10 @@
 
 Windows, máquina corporativa, sem elevação de administrador.
 
+> Vai **testar** a ferramenta pela primeira vez? Siga o
+> [08 — Roteiro de teste](08-roteiro-de-teste.md): são nove testes com o
+> resultado esperado de cada um.
+
 ---
 
 ## 1. Requisitos

@@ -20,7 +20,9 @@ Roda direto da pasta, **sem instalar**: em máquina corporativa, instalar progra
 esbarra em permissão de administrador e em política de executável. Quem instala
 pode usar `pip install -e apurabot` e o comando `apurabot`.
 
-Passo a passo completo em [07 — Como rodar](../docs/apurabot/07-como-rodar.md).
+Passo a passo completo em [07 — Como rodar](../docs/apurabot/07-como-rodar.md),
+e o [08 — Roteiro de teste](../docs/apurabot/08-roteiro-de-teste.md) para a
+primeira validação na máquina.
 
 Lê o Livro Fiscal, equaliza a carga efetiva de cada linha, classifica a operação,
 aplica a regra tributária de cada UF, segrega por atividade onde a UF exige e
