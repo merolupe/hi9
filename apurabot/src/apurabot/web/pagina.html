@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apurabot — apuração de ICMS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f3864'/%3E%3Ctext x='16' y='23' font-size='20' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --fundo:#f4f6fa; --painel:#ffffff; --texto:#16202e; --suave:#5b6b80;
+  --borda:#dde3ec; --marca:#1f3864; --marca-clara:#e8eef8;
+  --ok:#1e7b34; --ok-fundo:#e7f5ea; --erro:#b00020; --erro-fundo:#fdecef;
+  --atencao:#9a6b00; --atencao-fundo:#fff6e0;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --fundo:#11151c; --painel:#182029; --texto:#e8edf4; --suave:#9aabc0;
+    --borda:#2a3542; --marca:#7ea6e8; --marca-clara:#1d2836;
+    --ok:#6ede8a; --ok-fundo:#16301d; --erro:#ff8095; --erro-fundo:#341219;
+    --atencao:#ffce6a; --atencao-fundo:#33280d;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--fundo); color:var(--texto);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+.envelope{max-width:1100px; margin:0 auto; padding:28px 20px 80px}
+header{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
+h1{font-size:26px; margin:0; letter-spacing:-.3px}
+h1 span{color:var(--marca)}
+.subtitulo{color:var(--suave); font-size:14.5px; margin:0 0 26px}
+
+/* ---------- área de largar o arquivo ---------- */
+#largar{
+  background:var(--painel); border:2px dashed var(--borda); border-radius:14px;
+  padding:56px 28px; text-align:center; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+#largar:hover,#largar.sobre{border-color:var(--marca); background:var(--marca-clara)}
+#largar .icone{font-size:44px; line-height:1; margin-bottom:14px}
+#largar .principal{font-size:19px; font-weight:600; margin-bottom:6px}
+#largar .apoio{color:var(--suave); font-size:14.5px}
+#arquivo{display:none}
+
+/* ---------- estados ---------- */
+.oculto{display:none !important}
+#processando{
+  background:var(--painel); border:1px solid var(--borda); border-radius:14px;
+  padding:44px 28px; text-align:center;
+}
+.girando{
+  width:34px; height:34px; margin:0 auto 16px; border-radius:50%;
+  border:3px solid var(--borda); border-top-color:var(--marca);
+  animation:girar .8s linear infinite;
+}
+@keyframes girar{to{transform:rotate(360deg)}}
+
+/* ---------- blocos ---------- */
+.faixa{
+  border-radius:12px; padding:16px 20px; margin-bottom:20px;
+  display:flex; align-items:center; gap:12px; font-weight:600;
+}
+.faixa.ok{background:var(--ok-fundo); color:var(--ok)}
+.faixa.erro{background:var(--erro-fundo); color:var(--erro)}
+.faixa .marca{font-size:22px}
+
+section{
+  background:var(--painel); border:1px solid var(--borda); border-radius:12px;
+  padding:20px 22px; margin-bottom:18px;
+}
+section > h2{
+  font-size:13px; text-transform:uppercase; letter-spacing:.7px;
+  color:var(--suave); margin:0 0 14px; font-weight:700;
+}
+.fichas{display:flex; flex-wrap:wrap; gap:26px}
+.ficha .rotulo{font-size:12.5px; color:var(--suave); text-transform:uppercase; letter-spacing:.5px}
+.ficha .valor{font-size:19px; font-weight:600; font-variant-numeric:tabular-nums}
+
+.rolagem{overflow-x:auto; margin:0 -4px}
+table{border-collapse:collapse; width:100%; font-size:14.5px}
+th,td{padding:8px 10px; text-align:right; white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{
+  font-size:12px; text-transform:uppercase; letter-spacing:.4px;
+  color:var(--suave); border-bottom:2px solid var(--borda); font-weight:700;
+}
+td{border-bottom:1px solid var(--borda); font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+tr.total td{font-weight:700; border-top:2px solid var(--borda)}
+.negativo{color:var(--ok)}
+.devedor{color:var(--erro)}
+
+details{border-top:1px solid var(--borda)}
+details:first-of-type{border-top:none}
+summary{
+  cursor:pointer; padding:11px 2px; font-weight:600; font-size:15px;
+  display:flex; justify-content:space-between; gap:14px; align-items:center;
+}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸"; color:var(--suave); margin-right:8px; transition:transform .15s}
+details[open] summary:before{transform:rotate(90deg)}
+summary .direita{margin-left:auto; font-weight:500; font-size:13.5px; color:var(--suave)}
+.corpo{padding:4px 0 18px 20px}
+
+.etiqueta{
+  display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.4px;
+  padding:2px 8px; border-radius:20px; background:var(--atencao-fundo); color:var(--atencao);
+}
+.discriminacao td:first-child{padding-left:26px; color:var(--suave); font-weight:400}
+ul.lista{margin:0; padding-left:20px}
+ul.lista li{margin-bottom:7px}
+.memoria{font-size:13.5px; color:var(--suave); margin:0; padding-left:20px}
+.memoria li{margin-bottom:3px}
+
+button{
+  font:inherit; font-weight:600; cursor:pointer; border-radius:9px;
+  border:1px solid transparent; padding:11px 20px;
+}
+.principal-btn{background:var(--marca); color:#fff}
+.principal-btn:hover{filter:brightness(1.12)}
+.secundario-btn{background:transparent; color:var(--suave); border-color:var(--borda)}
+.secundario-btn:hover{color:var(--texto); border-color:var(--suave)}
+.acoes{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:22px}
+.rodape{color:var(--suave); font-size:13px; margin-top:34px; text-align:center}
+code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
+</style>
+</head>
+<body>
+<div class="envelope">
+
+  <header><h1>Apura<span>bot</span></h1></header>
+  <p class="subtitulo">Apuração de ICMS — Hinove Agrociência S.A.</p>
+
+  <!-- ================= largar o arquivo ================= -->
+  <div id="largar">
+    <div class="icone">📂</div>
+    <div class="principal">Arraste aqui o Livro Fiscal</div>
+    <div class="apoio">ou clique para escolher — <code>.xls</code>, <code>.xlsx</code> ou <code>.xlsm</code>, de qualquer pasta</div>
+    <input type="file" id="arquivo" accept=".xls,.xlsx,.xlsm">
+  </div>
+
+  <!-- ================= processando ================= -->
+  <div id="processando" class="oculto">
+    <div class="girando"></div>
+    <div><strong>Apurando…</strong></div>
+    <div class="apoio" style="color:var(--suave)">Ler o livro, equalizar a carga, aplicar as regras e montar o registro.</div>
+  </div>
+
+  <!-- ================= erro ================= -->
+  <div id="erro" class="oculto">
+    <div class="faixa erro"><span class="marca">✕</span><span id="erro-titulo">Não deu para apurar</span></div>
+    <section><pre id="erro-texto" style="white-space:pre-wrap; margin:0; font-size:14px"></pre></section>
+    <div class="acoes"><button class="secundario-btn" onclick="reiniciar()">Escolher outro arquivo</button></div>
+  </div>
+
+  <!-- ================= resultado ================= -->
+  <div id="resultado" class="oculto"></div>
+
+  <p class="rodape">
+    Roda na sua máquina. Nada é enviado para fora.
+    <button class="secundario-btn" style="padding:4px 12px; font-size:13px; margin-left:8px"
+            onclick="encerrar()">Encerrar</button>
+  </p>
+</div>
+
+<script>
+const CHAVE = new URLSearchParams(location.search).get("chave") || "";
+const n = new Intl.NumberFormat("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+const inteiro = new Intl.NumberFormat("pt-BR");
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function moeda(v, colorir){
+  if (v === null || v === undefined) return "";
+  const texto = n.format(v);
+  if (!colorir || !v) return texto;
+  return `<span class="${v > 0 ? "devedor" : "negativo"}">${texto}</span>`;
+}
+
+/* ---------------- largar o arquivo ---------------- */
+const alvo = $("largar"), campo = $("arquivo");
+alvo.addEventListener("click", () => campo.click());
+campo.addEventListener("change", () => campo.files[0] && enviar(campo.files[0]));
+["dragenter","dragover"].forEach(e => alvo.addEventListener(e, (ev) => {
+  ev.preventDefault(); alvo.classList.add("sobre");
+}));
+["dragleave","drop"].forEach(e => alvo.addEventListener(e, (ev) => {
+  ev.preventDefault(); alvo.classList.remove("sobre");
+}));
+alvo.addEventListener("drop", (ev) => {
+  const arquivo = ev.dataTransfer.files[0];
+  if (arquivo) enviar(arquivo);
+});
+document.addEventListener("dragover", (e) => e.preventDefault());
+document.addEventListener("drop", (e) => e.preventDefault());
+
+function mostrar(qual){
+  for (const id of ["largar","processando","erro","resultado"])
+    $(id).classList.toggle("oculto", id !== qual);
+}
+function reiniciar(){ campo.value = ""; mostrar("largar"); }
+
+async function enviar(arquivo){
+  mostrar("processando");
+  try{
+    const resposta = await fetch(
+      `/apurar?chave=${encodeURIComponent(CHAVE)}&nome=${encodeURIComponent(arquivo.name)}`,
+      {method:"POST", headers:{"Content-Type":"application/octet-stream"}, body:arquivo}
+    );
+    const dados = await resposta.json();
+    if (!resposta.ok){ falhar(dados.erro || "Erro desconhecido."); return; }
+    desenhar(dados);
+    mostrar("resultado");
+  }catch(e){
+    falhar("A janela perdeu contato com o Apurabot. Ele ainda está aberto?\n\n" + e);
+  }
+}
+function falhar(texto){ $("erro-texto").textContent = texto; mostrar("erro"); }
+
+async function encerrar(){
+  try{ await fetch(`/encerrar?chave=${encodeURIComponent(CHAVE)}`); }catch(e){}
+  document.body.innerHTML =
+    '<div class="envelope"><section><h2>Encerrado</h2>' +
+    '<p style="margin:0">O Apurabot foi fechado e a pasta temporária apagada. ' +
+    'Pode fechar esta aba.</p></section></div>';
+}
+
+/* ---------------- desenhar o resultado ---------------- */
+function desenhar(d){
+  const partes = [];
+
+  partes.push(d.pode_encerrar
+    ? `<div class="faixa ok"><span class="marca">✓</span>
+         Encerramento liberado — nenhuma pendência.</div>`
+    : `<div class="faixa erro"><span class="marca">!</span>
+         Encerramento bloqueado — ${d.pendencias.length} pendência(s).</div>`);
+
+  partes.push(`<div class="acoes">
+    <button class="principal-btn"
+      onclick="location.href='/baixar?chave=${encodeURIComponent(CHAVE)}'">
+      ⬇  Baixar a planilha
+    </button>
+    <button class="secundario-btn" onclick="reiniciar()">Apurar outro livro</button>
+  </div>`);
+
+  partes.push(`<section><h2>O que foi lido</h2><div class="fichas">
+    ${ficha("Competência", esc(d.competencia))}
+    ${ficha("Arquivo", esc(d.arquivo))}
+    ${ficha("Linhas no livro", inteiro.format(d.linhas_no_livro))}
+    ${ficha("Relevantes para ICMS", inteiro.format(d.linhas_relevantes))}
+    ${ficha("Alertas", inteiro.format(d.alertas))}
+  </div></section>`);
+
+  if (d.pendencias.length) partes.push(pendencias(d.pendencias));
+  partes.push(porFilial(d.filiais));
+  partes.push(registros(d.registros));
+  if (d.transferencias.length) partes.push(transferencias(d.transferencias));
+  if (d.beneficios.length) partes.push(beneficios(d.beneficios));
+
+  partes.push(`<section><h2>Procedência</h2>
+    <div style="font-size:13.5px; color:var(--suave)">
+      SHA-256 do arquivo lido: <code>${esc(d.sha256)}</code><br>
+      Gerado em ${esc(d.gerado_em)}
+    </div></section>`);
+
+  $("resultado").innerHTML = partes.join("");
+}
+
+const ficha = (rotulo, valor) =>
+  `<div class="ficha"><div class="rotulo">${rotulo}</div><div class="valor">${valor}</div></div>`;
+
+function pendencias(itens){
+  const linhas = itens.map(p => `<tr>
+      <td>${esc(p.estabelecimento)}</td>
+      <td style="text-align:left">${esc(p.onde)}</td>
+      <td style="text-align:left; white-space:normal">${esc(p.detalhe)}</td>
+    </tr>`).join("");
+  return `<section><h2>Pendências — bloqueiam o encerramento</h2>
+    <div class="rolagem"><table>
+      <thead><tr><th>Estabelecimento</th><th style="text-align:left">Onde</th>
+        <th style="text-align:left">O que resolver</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div></section>`;
+}
+
+function porFilial(filiais){
+  const soma = {credito_bruto:0, estorno:0, credito_mantido:0, debito:0, beneficio:0, saldo:0};
+  const linhas = filiais.map(f => {
+    for (const k in soma) soma[k] += f[k];
+    return `<tr>
+      <td>${esc(f.estabelecimento)}</td><td style="text-align:left">${esc(f.uf)}</td>
+      <td>${moeda(f.credito_bruto)}</td><td>${moeda(f.estorno)}</td>
+      <td>${moeda(f.credito_mantido)}</td><td>${moeda(f.debito)}</td>
+      <td>${moeda(f.beneficio)}</td><td>${moeda(f.saldo, true)}</td>
+    </tr>`;
+  }).join("");
+  return `<section><h2>Apuração por estabelecimento</h2>
+    <div class="rolagem"><table>
+      <thead><tr><th>Estabelecimento</th><th style="text-align:left">UF</th>
+        <th>Crédito bruto</th><th>Estorno</th><th>Crédito mantido</th>
+        <th>Débito</th><th>Benefício</th><th>Saldo</th></tr></thead>
+      <tbody>${linhas}
+        <tr class="total"><td>TOTAL</td><td></td>
+          <td>${moeda(soma.credito_bruto)}</td><td>${moeda(soma.estorno)}</td>
+          <td>${moeda(soma.credito_mantido)}</td><td>${moeda(soma.debito)}</td>
+          <td>${moeda(soma.beneficio)}</td><td>${moeda(soma.saldo, true)}</td></tr>
+      </tbody></table></div>
+    <p style="font-size:13px; color:var(--suave); margin:12px 0 0">
+      Saldo positivo é devedor; negativo é credor a transportar. Ainda sem os
+      ajustes aprovados — veja o registro abaixo.</p></section>`;
+}
+
+const LINHAS_DE_SOMA = new Set(["004","008","010","011","013","014"]);
+
+function registros(lista){
+  const blocos = lista.map(r => {
+    const resumo = r.resumo.map(item => {
+      const forte = LINHAS_DE_SOMA.has(item.codigo);
+      const marca = item.aguarda_ajuste
+        ? ` <span class="etiqueta">aguarda ajuste</span>` : "";
+      const filhos = item.discriminacao.map(disc => `<tr class="discriminacao">
+          <td>${esc(disc.descricao)}</td><td>${moeda(disc.valor)}</td></tr>`).join("");
+      return `<tr${forte ? ' class="total"' : ""}>
+          <td><strong>${item.codigo}</strong> ${esc(item.rotulo)}${marca}</td>
+          <td>${moeda(item.valor)}</td></tr>${filhos}`;
+    }).join("");
+
+    const aviso = r.gerencial
+      ? `<p style="font-size:13px; color:var(--suave); margin:0 0 12px">
+           Soma dos estabelecimentos. Não é documento fiscal: as linhas 011 a 014
+           são a soma do resultado de cada filial, porque crédito de uma UF não
+           abate débito de outra.</p>` : "";
+
+    return `<details${r.gerencial ? " open" : ""}>
+      <summary>${esc(r.estabelecimento)}
+        <span class="direita">${esc(r.uf)}${
+          r.aguarda_ajustes ? " · aguarda ajuste" : ""}</span></summary>
+      <div class="corpo">${aviso}
+        ${lado(r.entradas, "Imposto creditado")}
+        ${lado(r.saidas, "Imposto debitado")}
+        <div class="rolagem"><table>
+          <thead><tr><th style="text-align:left">Resumo da apuração</th><th>Valor</th></tr></thead>
+          <tbody>${resumo}</tbody></table></div>
+      </div></details>`;
+  }).join("");
+  return `<section><h2>Registro de Apuração</h2>${blocos}</section>`;
+}
+
+function lado(bloco, verbo){
+  const linhas = bloco.subtotais.map(s => `<tr>
+      <td>${esc(s.grupo)}</td>${s.valores.map(v => `<td>${moeda(v)}</td>`).join("")}
+    </tr>`).join("");
+  return `<div class="rolagem" style="margin-bottom:16px"><table>
+    <thead><tr><th style="text-align:left">${esc(bloco.lado)}</th>
+      <th>Valores contábeis</th><th>Base de cálculo</th><th>${verbo}</th>
+      <th>Isentas / N. Trib.</th><th>Outras</th></tr></thead>
+    <tbody>${linhas}
+      <tr class="total"><td>Total</td>
+        ${bloco.total.map(v => `<td>${moeda(v)}</td>`).join("")}</tr>
+    </tbody></table></div>`;
+}
+
+function transferencias(grupos){
+  const blocos = grupos.map(g => {
+    const itens = g.instrucoes.length
+      ? `<ul class="lista">${g.instrucoes.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`
+      : `<p style="margin:0; color:var(--suave)">Nada a transferir nesta competência.</p>`;
+    const rascunho = g.homologado ? "" :
+      `<p style="margin:0 0 10px"><span class="etiqueta">regra não homologada</span></p>`;
+    return `<div style="margin-bottom:18px">
+      <div style="font-weight:600; margin-bottom:8px">
+        ${esc(g.uf)} — centraliza em ${esc(g.centralizadora)}</div>
+      ${rascunho}${itens}
+      <p style="font-size:13.5px; color:var(--suave); margin:8px 0 0">
+        Saldo próprio ${n.format(g.saldo_proprio)} · recebido
+        ${n.format(g.total_recebido)} · saldo do grupo
+        ${n.format(g.saldo_final)}</p></div>`;
+  }).join("");
+  return `<section><h2>Transferências a emitir depois do encerramento</h2>
+    <p style="font-size:13.5px; color:var(--suave); margin:0 0 16px">
+      O documento nasce do resultado da apuração: só pode ser emitido depois que
+      a competência fecha, e vai escriturado na competência seguinte.</p>
+    ${blocos}</section>`;
+}
+
+function beneficios(lista){
+  const blocos = lista.map(b => `<details>
+    <summary>${esc(b.estabelecimento)}
+      <span class="direita">crédito presumido ${n.format(b.credito_presumido)}
+        · FADEFE ${n.format(b.fadefe)}</span></summary>
+    <div class="corpo"><ul class="memoria">
+      ${b.memoria.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div></details>`).join("");
+  return `<section><h2>Benefício fiscal — memória de cálculo</h2>${blocos}
+    <p style="font-size:13px; color:var(--suave); margin:12px 0 0">
+      O FADEFE é guia avulsa: informativo, fora da conta gráfica.</p></section>`;
+}
+</script>
+</body>
+</html>

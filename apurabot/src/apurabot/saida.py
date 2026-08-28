@@ -12,6 +12,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from .apuracao import Apuracao, apurar
+from .conferencia import aba_apuracao_efetiva, aba_registro, aba_transferencias
 from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
 from .nucleo.atividade import ORDEM as ATIVIDADES_EM_ORDEM
 from .base_tratada import BaseTratada
@@ -69,7 +70,7 @@ def _aba_base(wb, base: BaseTratada) -> None:
     aba.auto_filter.ref = aba.dimensions
 
 
-def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao | None = None) -> None:
+def _aba_pendencias(wb, base: BaseTratada) -> None:
     aba = wb.create_sheet("PENDÊNCIAS")
     colunas = [
         ("linha_origem", 12), ("estabelecimento", 30), ("nro_unico", 12),
@@ -84,8 +85,6 @@ def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao | None = None) -> 
             t.origem.cfop_int, t.origem.produto_codigo, d.get("produto_descricao"),
             d.get("valor_icms"), " | ".join(t.pendencias),
         ])
-    for motivo in (apuracao.pendencias_de_centralizacao if apuracao else []):
-        aba.append(["", "", "", "", "", "", None, f"CENTRALIZAÇÃO: {motivo}"])
     for linha in aba.iter_rows(min_row=2, min_col=7, max_col=7):
         for celula in linha:
             celula.number_format = MOEDA
@@ -93,7 +92,7 @@ def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao | None = None) -> 
 
 
 def _aba_resumo(wb, base: BaseTratada) -> None:
-    aba = wb.create_sheet("RESUMO", 0)
+    aba = wb.create_sheet("RESUMO")
     resumo = base.resumo()
     aba.column_dimensions["A"].width = 34
     aba.column_dimensions["B"].width = 30
@@ -167,7 +166,7 @@ def _aba_por_carga(wb, base: BaseTratada) -> None:
 
 
 def _aba_apuracao(wb, apuracao: Apuracao) -> None:
-    aba = wb.create_sheet("APURAÇÃO POR FILIAL", 1)
+    aba = wb.create_sheet("APURAÇÃO POR FILIAL")
     colunas = [
         ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
         ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
@@ -211,8 +210,7 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
     for c in apuracao.centralizacao:
         for passo in c.memoria:
             aba.append(["", passo])
-        for motivo in c.pendencias:
-            aba.append(["", f"PENDÊNCIA: {motivo}"])
+    aba.append(["", "As transferências a emitir estão na aba TRANSFERÊNCIAS."])
 
     aba.append([])
     aba.append(["Contribuição ao Pró-Desenvolve / FADEFE — GUIA AVULSA"])
@@ -279,10 +277,25 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
                 aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
 
 
+#: Ordem de leitura das abas — da conclusão para o detalhe.
+ORDEM_DAS_ABAS = [
+    "RESUMO", "REGISTRO", "APURAÇÃO EFETIVA", "APURAÇÃO POR FILIAL",
+    "TRANSFERÊNCIAS", "PENDÊNCIAS", "POR ESTABELECIMENTO E CARGA", "BASE TRATADA",
+]
+
+
+def _ordenar_abas(wb) -> None:
+    posicao = {nome: i for i, nome in enumerate(ORDEM_DAS_ABAS)}
+    wb._sheets.sort(key=lambda aba: posicao.get(aba.title, len(posicao)))
+
+
 def escrever(
-    base: BaseTratada, destino: Path | str, apuracao: Apuracao | None = None
+    base: BaseTratada,
+    destino: Path | str,
+    apuracao: Apuracao | None = None,
+    ajustes=None,
 ) -> Path:
-    """Grava a base tratada e a apuração em .xlsx e devolve o caminho."""
+    """Grava a base tratada, a apuração e as conferências em .xlsx."""
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
     apuracao = apuracao if apuracao is not None else apurar(base)
@@ -290,9 +303,13 @@ def escrever(
     wb = Workbook()
     wb.remove(wb.active)
     _aba_base(wb, base)
-    _aba_pendencias(wb, base, apuracao)
+    _aba_pendencias(wb, base)
     _aba_por_carga(wb, base)
     _aba_apuracao(wb, apuracao)
-    _aba_resumo(wb, base)          # criada em posição 0, fica como primeira aba
+    aba_apuracao_efetiva(wb, apuracao)
+    aba_registro(wb, apuracao, base.parametros, ajustes)
+    aba_transferencias(wb, apuracao)
+    _aba_resumo(wb, base)
+    _ordenar_abas(wb)
     wb.save(destino)
     return destino

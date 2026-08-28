@@ -8,6 +8,10 @@ o sintoma é "Acesso negado" ao rodar o comando.
 Este arquivo contorna as duas coisas: não instala nada e não cria executável.
 É o próprio Python, que já está aprovado na máquina, rodando o código da pasta.
 
+**Quem não usa terminal não precisa deste arquivo:** dê dois cliques em
+`Apurabot.bat`, na mesma pasta. Ele abre a janela do Apurabot no navegador.
+
+    python rodar.py                    abre a janela no navegador
     python rodar.py apurar "caminho\\do\\livro.xls" --saida "pasta\\de\\saida"
     python rodar.py --help
 

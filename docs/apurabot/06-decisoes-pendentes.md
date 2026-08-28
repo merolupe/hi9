@@ -75,19 +75,21 @@ possível enviar uma para fechar a conferência?
 
 **Padrão assumido:** aplicar o mesmo mapa e marcar como não conferido.
 
-## 7. 🟡 A centralização de MS não está no motor
+## 7. 🟡 MS — o que acontece quando o centralizado tem saldo credor?
 
-O Registro de Apuração de Rio Brilhante traz, em Outros Débitos, o *"Recebimento
-de saldo devedor - estabelecimento centralizador"*: **Rio Brilhante recebe saldo
-devedor de outro estabelecimento de MS.** O projeto tem centralização modelada
-apenas em SP, com Guará.
+Corumbá transfere o **saldo devedor** para Rio Brilhante, por lançamento de
+ajuste no Registro de Apuração — é o que o motor faz hoje, e o valor fecha com
+a linha 002 da centralizadora.
 
-**Perguntas:** quem transfere para RB — Corumbá? A regra é a mesma de SP? Existe
-ato formal de centralização em MS?
+O que não está evidenciado é o caminho inverso: nenhuma competência observada
+teve Corumbá com saldo credor.
 
-**Padrão assumido:** o valor entra como ajuste manual, na atividade
-Prestacional/Outras, sem regra de centralização automática. A Entrega 4 trata
-centralização e vai precisar dessa resposta.
+**Perguntas:** o crédito também vai para Rio Brilhante, ou fica em Corumbá e é
+transportado para o período seguinte? Existe ato formal de centralização em MS
+que discipline isso?
+
+**Padrão assumido:** só o saldo devedor se transfere; o crédito fica no
+estabelecimento (`transfere: saldo_devedor` em `filiais.yaml`).
 
 ## 8. 🟡 Enquadramento: é do produto ou do fornecedor?
 
@@ -136,13 +138,30 @@ funcional v1.0 e não foi confirmada.
 
 1. O estabelecimento centralizado transfere o **saldo integral** (devedor e
    credor), só o **saldo devedor**, ou só o **saldo credor**?
-2. Qual CFOP a NF-e de transferência usa? O parâmetro hoje procura 5601, 5602 e
+2. Qual CFOP a NF-e de transferência usa? O parâmetro hoje sugere 5601, 5602 e
    5605.
 
-A segunda pergunta tem consequência prática: é por esse CFOP que a ferramenta
-cobra o documento. Com o CFOP errado no parâmetro, toda transferência aparece
-como "sem NF-e escriturada".
+A segunda pergunta tem consequência prática: é esse CFOP que a aba
+TRANSFERÊNCIAS instrui a emitir, e é por ele que a conferência da competência
+seguinte vai reencontrar a nota.
 
 **Padrão assumido:** `saldo_integral`, com a regra marcada `homologado: false` em
 `filiais.yaml`. O relatório avisa que o resultado é rascunho.
 
+## 12. 🟡 Local de expedição — qual relatório e como cruzar?
+
+Produção e revenda não se distinguem só pelo produto e pelo CFOP: quando a
+mercadoria **sai de armazém geral industrializador**, e não da fábrica de MS, a
+operação é revenda — não houve produção na fábrica.
+
+Essa informação não está no Livro Fiscal. Vem de relatório à parte, cruzado com
+o movimento, e hoje o motor não a consome: ele decide a atividade por descrição
+e CFOP (ver `04-matriz-de-regras-icms.md`, item 4.3).
+
+**Perguntas:** qual é o relatório, qual a sua chave de cruzamento com o Livro
+(nota, item, pedido?) e ele cobre todas as saídas ou só as expedidas por
+terceiro?
+
+**Padrão assumido:** nenhum — o cruzamento não está implementado. Enquanto não
+estiver, uma saída de armazém geral industrializador é classificada pela
+descrição e pelo CFOP, e pode ficar como produção quando é revenda.

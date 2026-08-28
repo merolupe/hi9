@@ -35,6 +35,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ..formato import reais
 from ..parametros import Parametros
 from .atividade import INTERESTADUAL, INTRAESTADUAL, TotaisAtividade
 
@@ -195,30 +196,30 @@ def _montar_memoria(resultado: ResultadoBeneficio, industrial: TotaisAtividade) 
     linhas = [
         f"Termo: {resultado.documento}",
         f"Alcance: {resultado.criterio}",
-        f"Crédito industrial bruto: {resultado.credito_industrial:,.2f}",
-        f"(−) estorno industrial: {resultado.estorno_industrial:,.2f}",
+        f"Crédito industrial bruto: {reais(resultado.credito_industrial)}",
+        f"(−) estorno industrial: {reais(resultado.estorno_industrial)}",
     ]
     if resultado.ajuste_de_credito:
-        linhas.append(f"(−) estorno de créditos (ajuste): {resultado.ajuste_de_credito:,.2f}")
+        linhas.append(f"(−) estorno de créditos (ajuste): {reais(resultado.ajuste_de_credito)}")
     linhas.append(
         f"(=) crédito da parcela incentivada: "
-        f"{resultado.credito_da_parcela_incentivada:,.2f}"
+        f"{reais(resultado.credito_da_parcela_incentivada)}"
     )
     linhas.append(
-        f"Débito industrial {industrial.debito:,.2f} − crédito da parcela "
-        f"incentivada = base {resultado.base_do_incentivo:,.2f}"
+        f"Débito industrial {reais(industrial.debito)} − crédito da parcela "
+        f"incentivada = base {reais(resultado.base_do_incentivo)}"
     )
     for nome, parcela in (("intraestadual", resultado.intra),
                           ("interestadual", resultado.inter)):
         linhas.append(
-            f"Saída {nome}: débito {parcela.debito:,.2f} − crédito "
-            f"{parcela.credito_rateado:,.2f} = base {parcela.base_do_incentivo:,.2f} "
-            f"× {parcela.percentual:g}% = {parcela.credito_presumido:,.2f}"
+            f"Saída {nome}: débito {reais(parcela.debito)} − crédito "
+            f"{reais(parcela.credito_rateado)} = base {reais(parcela.base_do_incentivo)} "
+            f"× {parcela.percentual:g}% = {reais(parcela.credito_presumido)}"
         )
-    linhas.append(f"Crédito presumido total: {resultado.credito_presumido:,.2f}")
+    linhas.append(f"Crédito presumido total: {reais(resultado.credito_presumido)}")
     if resultado.percentual_fadefe:
         linhas.append(
             f"FADEFE {resultado.percentual_fadefe:g}% sobre o benefício fruído: "
-            f"{resultado.fadefe:,.2f} — guia avulsa, fora da conta gráfica"
+            f"{reais(resultado.fadefe)} — guia avulsa, fora da conta gráfica"
         )
     resultado.memoria = linhas

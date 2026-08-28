@@ -306,10 +306,16 @@ rotina.
 
 Onde a UF admite apuração centralizada, cada estabelecimento apura o seu saldo e
 o transfere para a **centralizadora**, que consolida e apura o resultado do
-grupo. A transferência é documentada por NF-e.
+grupo.
 
-Quem centraliza, quem é centralizado, o que se transfere e por qual CFOP estão
-em `parametros/filiais.yaml`.
+A transferência é **consequência da apuração, não insumo dela**. O documento que
+a formaliza só pode ser emitido depois que a competência fechou, e vai
+escriturado na competência seguinte — não existe, nem pode existir, dentro do
+livro que está sendo apurado. Por isso a ferramenta não cobra esse documento na
+competência: ela **emite a instrução** do que precisa ser transferido.
+
+Quem centraliza, quem é centralizado, o que se transfere e por qual mecanismo
+estão em `parametros/filiais.yaml`.
 
 ### 6.1. O que se transfere
 
@@ -327,21 +333,22 @@ recebido pela centralizadora = soma do transferido pelos demais
 saldo final do grupo = saldo próprio da centralizadora + total recebido
 ```
 
-### 6.3. Travas da NF-e de transferência
+### 6.3. Como a transferência se formaliza
 
-| Situação | Tratamento | Situação no motor |
+| Mecanismo | Como se documenta | Onde aparece |
 |---|---|---|
-| Saldo a transferir sem NF-e escriturada | Pendência — bloqueia o encerramento | ✅ ativa |
-| NF-e de valor diferente do saldo | Pendência, com a diferença evidenciada | ✅ ativa |
-| NF-e cancelada | Bloqueio | ⬜ a implementar |
-| CFOP incompatível | Revisão | ⬜ a implementar |
-| Emissão fora da competência | Revisão | ⬜ a implementar |
-| Duplicidade | Bloqueio | ⬜ a implementar |
-| Resíduo sem justificativa | Revisão | ⬜ a implementar |
+| `nfe` | NF-e de transferência de saldo emitida pelo centralizado | escrituração da competência seguinte |
+| `ajuste_de_apuracao` | lançamento no Registro de Apuração, sem documento próprio | linha 002 da centralizadora, no mesmo período |
+
+A diferença é substantiva. Onde a transferência tem NF-e, ela entra na conta
+gráfica da centralizadora **pela escrituração da nota** — e por isso não é
+ajuste. Onde é lançamento, ela **é** o ajuste: a ferramenta calcula o valor a
+partir do saldo apurado do centralizado e o leva à linha 002 da centralizadora.
 
 ### 6.4. SP
 
-São Paulo centraliza em **Guará**; Matriz e Registro são centralizados.
+São Paulo centraliza em **Guará**; Matriz e Registro são centralizados. O
+mecanismo é a NF-e.
 
 **A regra de transferência de SP ainda não está homologada.** O desenho vem do
 escopo funcional v1.0, e falta a Gerência Fiscal/Tributária confirmar o que se
@@ -350,9 +357,29 @@ relatório marca o resultado como rascunho.
 
 ### 6.5. MS
 
-Mato Grosso do Sul **também centraliza**: Rio Brilhante recebe saldo devedor de
-outro estabelecimento do estado. A regra ainda não está modelada — ver decisão
-pendente nº 7.
+Mato Grosso do Sul centraliza em **Rio Brilhante**; Corumbá é centralizado. O
+centralizado transfere o **saldo devedor**, e o mecanismo é o ajuste de
+apuração: o valor aparece no Registro da centralizadora como *"Recebimento de
+saldo devedor - estabelecimento centralizador"*, na linha 002.
+
+O que segue em aberto é o caso do saldo credor no centralizado — não há
+competência observada em que isso tenha ocorrido. Ver decisão pendente nº 7.
+
+### 6.6. Controles da NF-e de transferência
+
+Valem para o mecanismo `nfe`, e são conferência **da competência seguinte**:
+a nota emitida sobre a apuração de um mês é escriturada no mês posterior, e é
+lá que ela se confere contra o plano de transferência que aquela apuração
+emitiu.
+
+| Situação | Tratamento | Situação no motor |
+|---|---|---|
+| NF-e de valor diferente do saldo transferido | Revisão, com a diferença evidenciada | ⬜ a implementar |
+| NF-e cancelada | Bloqueio | ⬜ a implementar |
+| CFOP incompatível | Revisão | ⬜ a implementar |
+| Emissão fora da competência | Revisão | ⬜ a implementar |
+| Duplicidade | Bloqueio | ⬜ a implementar |
+| Resíduo sem justificativa | Revisão | ⬜ a implementar |
 
 ## 7. Carga efetiva
 

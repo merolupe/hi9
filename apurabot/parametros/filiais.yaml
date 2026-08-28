@@ -2,6 +2,10 @@
 # O casamento é feito pelo CODIGO da empresa (coluna G do Livro Fiscal),
 # nunca pelo nome — os nomes têm espaçamento irregular na origem.
 #
+# `cnpj` e `inscricao_estadual` aparecem no cabeçalho do Registro de Apuração.
+# Onde estiverem em branco, o registro sai com o campo marcado como não
+# cadastrado — preencha com o que consta no cadastro da filial.
+#
 # Revisão: Gerência Fiscal/Tributária | Vigência: a partir de 2026-01-01
 
 filiais:
@@ -14,9 +18,11 @@ filiais:
   - codigo: 2
     nome: HINOVE (RIO BRILHANTE)
     uf: MS
+    cnpj: "14031191000244"
+    inscricao_estadual: "284280330"
     regime: ms_beneficio_rio_brilhante
     beneficio_fiscal: ms_rio_brilhante        # Termo de Acordo
-    centralizacao: { participa: false }
+    centralizacao: { participa: true, papel: centralizadora }
 
   # ATENÇÃO: códigos abaixo a confirmar na extração do Sankhya.
   # Julho/2026 só expôs os códigos 1 e 2 nas linhas amostradas.
@@ -36,7 +42,7 @@ filiais:
     nome: HINOVE (CORUMBÁ- MS)
     uf: MS
     regime: ms_estorno_proporcional
-    centralizacao: { participa: false }
+    centralizacao: { participa: true, papel: centralizado }
 
   - codigo: null
     nome: HINOVE (BARRA DO GARÇAS - MT)
@@ -62,19 +68,39 @@ filiais:
 #   saldo_devedor    só quando deve
 #   saldo_credor     só quando tem crédito
 #
-# `cfop_transferencia` são os CFOP da NF-e que documenta a transferência. É por
-# eles que a ferramenta cobra o documento: saldo a transferir sem NF-e
-# escriturada, ou NF-e de valor diferente do saldo, viram pendência.
+# `mecanismo` diz como a transferência se formaliza:
+#   nfe                 NF-e emitida pelo estabelecimento centralizado
+#   ajuste_de_apuracao  lançamento no Registro de Apuração, sem documento próprio
+#
+# `cfop_transferencia` são os CFOP sugeridos para a NF-e, quando o mecanismo é
+# `nfe`. A ferramenta não cobra esse documento dentro da competência apurada: a
+# nota nasce do resultado da apuração e só existe depois do encerramento. O que
+# a ferramenta emite é a instrução do que transferir.
 regras_de_centralizacao:
 
   sp:
     uf: SP
     transfere: saldo_integral
+    mecanismo: nfe
     cfop_transferencia: [5601, 5602, 5605]
     homologado: false
     # NÃO HOMOLOGADA. O desenho vem do escopo funcional v1.0; falta a Gerência
     # Fiscal/Tributária confirmar o que se transfere e por qual CFOP.
     # Ver decisão pendente nº 11.
+
+  ms:
+    uf: MS
+    transfere: saldo_devedor
+    mecanismo: ajuste_de_apuracao
+    homologado: true
+    # Em MS a transferência não tem documento fiscal próprio: entra como
+    # "Recebimento de saldo devedor - estabelecimento centralizador" na linha
+    # 002 do Registro de Apuração da centralizadora.
+    #
+    # ATENÇÃO: só o saldo devedor está evidenciado. Não há competência
+    # observada em que o estabelecimento centralizado tenha apurado saldo
+    # credor, então o que se faz nesse caso segue em aberto — ver decisão
+    # pendente nº 7.
 
 # Fora do escopo do Apurabot — carregam apenas saldo credor.
 # Ver decisão pendente nº 10.

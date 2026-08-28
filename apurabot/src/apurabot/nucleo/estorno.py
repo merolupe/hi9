@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..base_tratada import LinhaTratada
+from ..formato import reais
 from ..parametros import Parametros
 
 # Fórmulas reconhecidas. O nome vem do parâmetro `formula_estorno`.
@@ -165,7 +166,7 @@ def _aplicar(
         return (
             icms * parcela,
             f"parcela não tributada = 1 − {referencia:g}/{aliquota:g} = "
-            f"{parcela:.4f}; ICMS {icms:,.2f} × {parcela:.4f} "
+            f"{parcela:.4f}; ICMS {reais(icms)} × {parcela:.4f} "
             f"(carga efetiva do documento: "
             f"{'—' if carga is None else format(carga, 'g') + '%'})",
         )
@@ -179,7 +180,7 @@ def _aplicar(
         return (
             contabil * excedente,
             f"valor contábil × ({carga:g}% − {referencia:g}%) = "
-            f"{contabil:,.2f} × {excedente:.4f}",
+            f"{reais(contabil)} × {excedente:.4f}",
         )
 
     raise RegimeDesconhecido(

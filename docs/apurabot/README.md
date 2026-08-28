@@ -6,7 +6,7 @@ Apuração mensal de ICMS da Hinove Agrociência S.A. a partir do Livro Fiscal.
 
 **A competência de referência é reproduzida da ingestão ao benefício fiscal,
 fecha sem nenhuma pendência, e a apuração de Rio Brilhante bate ao centavo com a
-GIA entregue.** 111 testes automáticos.
+GIA entregue e com o Registro de Apuração do ERP.** 168 testes automáticos.
 
 | | |
 |---|---|
@@ -29,8 +29,9 @@ Os números de cada verificação estão em
 | [03 — Dicionário do Livro Fiscal](03-dicionario-livro-fiscal.md) | Desenvolvedor | Os dois layouts, coluna a coluna |
 | [04 — Matriz de regras de ICMS](04-matriz-de-regras-icms.md) | **Fiscal/Tributário** | Toda a regra tributária, para homologação |
 | [05 — Achados de Julho/2026](05-achados-julho-2026.md) | Todos | O que a análise da apuração real revelou |
-| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 11 perguntas em aberto, cada uma com o padrão assumido |
+| [06 — Decisões pendentes](06-decisoes-pendentes.md) | **Fiscal/Tributário** | 12 perguntas em aberto, cada uma com o padrão assumido |
 | [07 — Como rodar](07-como-rodar.md) | **Quem vai usar** | Instalar, rodar e ler o resultado, do zero |
+| [08 — Roteiro de teste](08-roteiro-de-teste.md) | **Quem vai testar** | Nove testes com o resultado esperado de cada um |
 
 ## Fases
 
