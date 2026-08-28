@@ -6,7 +6,7 @@ extraído do Sankhya e validado pelo Fiscalbot.
 > **Situação:** a competência de referência é reproduzida da ingestão ao
 > benefício fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante
 > bate ao centavo com a GIA entregue e com o Registro de Apuração do ERP.
-> 168 testes automáticos.
+> 171 testes automáticos.
 > Ver o [plano de execução](../docs/apurabot/02-plano-de-execucao.md).
 
 ## O que já faz
@@ -90,7 +90,7 @@ src/apurabot/
   web/painel.py        o que a janela mostra
   web/pagina.html      a interface
 
-tests/          168 testes: unidade + regressão contra a competência de referência
+tests/          171 testes: unidade + regressão contra a competência de referência
 analise/        Scripts exploratórios que reproduzem os números documentados
 ```
 

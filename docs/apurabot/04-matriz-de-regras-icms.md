@@ -123,6 +123,32 @@ A base do estorno é o **valor contábil**, não a base de ICMS.
 Pela fórmula: carga 7% estorna 3 pontos; 12% estorna 8; 17% estorna 13; 18%
 estorna 14.
 
+### 3.1. Por que SP e MS não se comparam em percentual
+
+As duas UFs partem da mesma carga de referência de 4%, e por isso é tentador
+ler uma pela outra. São mecânicas diferentes:
+
+| | SP | MS |
+|---|---|---|
+| Base do estorno | valor contábil | ICMS destacado |
+| Chave da regra | carga efetiva da entrada | **alíquota** da operação |
+| Resultado | pontos percentuais de carga | fração do crédito |
+
+**"Parcela não tributada" é vocabulário de MS e só faz sentido lá**, onde a
+regra devolve literalmente uma fração do crédito: `1 − 4/alíquota`.
+
+Em SP não existe fração de regra. Se dividirmos o estorno pelo crédito para
+efeito de conferência, o resultado **varia dentro de uma mesma carga** — porque
+a carga do documento foi equalizada para a régua nominal, e o estorno usa a
+nominal enquanto o crédito é o do documento. Uma entrada equalizada em 7% cuja
+carga real é 6,77% estorna 3 pontos sobre o contábil, o que dá 44,3% do
+crédito, e não os 42,9% que `1 − 4/7` sugeriria.
+
+Por isso a conferência agrupa **pela chave da regra de cada regime** — alíquota
+em MS, carga efetiva em SP — e nomeia a coluna de percentual de forma
+descritiva, "% do crédito estornado", nunca como parâmetro de uma regra que só
+existe em uma das UFs.
+
 ---
 
 ## 4. MS — estorno proporcional, atividade e benefício de Rio Brilhante

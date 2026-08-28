@@ -121,7 +121,7 @@ Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
 |---|---|
 | **RESUMO** | Procedência do arquivo, volume, equalização e categorias |
 | **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
-| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → alíquota → produto, com a operação, a parcela não tributada e o CHECK |
+| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → chave da regra → produto, com a operação, o % estornado e o CHECK |
 | **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
 | **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |
 | **PENDÊNCIAS** | O que bloqueia o encerramento |
@@ -135,10 +135,15 @@ ERP emite. Diferente do PDF, sai num arquivo só e com totalizador do grupo.
 Linhas do resumo marcadas `AGUARDA AJUSTE` dependem de lançamento aprovado que
 não nasce do Livro Fiscal.
 
-**APURAÇÃO EFETIVA** — *por que deu isso?* Cada crédito com a sua alíquota, a
-parcela não tributada e a conta feita à vista. A coluna **CHECK** é
+**APURAÇÃO EFETIVA** — *por que deu isso?* Uma linha por produto, como na
+apuração manual: não é o Livro repetido, é o Livro somado. A coluna **CHECK** é
 `a estornar + a apropriar − ICMS creditado`: qualquer valor diferente de zero,
 em vermelho, é erro do motor.
+
+A terceira coluna muda de nome conforme o regime, porque cada um tem a sua
+chave: **Alíquota** em MS, onde o estorno é `1 − 4/alíquota`; **Carga efetiva**
+em SP, onde é o excedente sobre a carga de saída. Ver
+[04 — Matriz de regras](04-matriz-de-regras-icms.md), item 3.1.
 
 **BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
 efetiva, categoria, regime e a regra aplicada, em texto.
