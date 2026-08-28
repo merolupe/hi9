@@ -27,48 +27,72 @@ Quem usa Git: `git clone https://github.com/merolupe/hi9.git`
 
 ---
 
-## 3. Preparar
+## 3. Preparar — uma vez só
 
 Terminal na pasta que você extraiu. O jeito rápido: abra a pasta no Explorador,
 clique na barra de endereço, digite `cmd` e Enter.
 
-Deve haver ali um `rodar.py` e uma pasta `apurabot`.
-
 ```
 pip install --user openpyxl "xlrd==2.0.1" PyYAML
-python rodar.py --help
 ```
 
-O `--user` instala na sua conta, sem administrador.
+O `--user` instala na sua conta, sem administrador. É a única vez que você
+precisa do terminal.
 
-**Não instale o pacote.** O `rodar.py` roda direto da pasta pelo `python.exe`,
-que já está aprovado na máquina. `pip install -e apurabot` criaria um
-`apurabot.exe` novo, e a política corporativa costuma barrá-lo — o sintoma é
-*"Acesso negado"*.
+**Não instale o pacote.** O Apurabot roda direto da pasta pelo `python.exe`, que
+já está aprovado na máquina. `pip install -e apurabot` criaria um `apurabot.exe`
+novo, e a política corporativa costuma barrá-lo — o sintoma é *"Acesso negado"*.
 
 ---
 
-## 4. Rodar
+## 4. Usar
 
-```
-python rodar.py apurar "competencias\2026-07\entrada\Movimento Livros Fiscais.xls" --saida "competencias\2026-07\saida"
-```
+**Dois cliques em `Apurabot.bat`.**
 
-Aspas são obrigatórias em caminho com espaço. `Shift` + botão direito no arquivo
-→ **"Copiar como caminho"** copia já com elas.
+Abre uma janela preta — deixe-a aberta, é o Apurabot rodando — e o navegador
+abre sozinho na página da ferramenta.
 
-A pasta de `--saida` precisa existir.
+Na página:
+
+1. **arraste o Livro Fiscal** para a área tracejada, ou clique para escolher.
+   Qualquer arquivo, de qualquer pasta: não existe nome nem estrutura de pasta
+   obrigatória;
+2. espere alguns segundos;
+3. o resultado aparece na tela — apuração por estabelecimento, Registro de
+   Apuração, transferências a emitir, memória do benefício e as pendências, se
+   houver;
+4. **Baixar a planilha** salva o `.xlsx` completo em Downloads.
+
+Para fechar: o botão **Encerrar** no rodapé da página, ou feche a janela preta.
 
 O Apurabot lê os dois formatos de extração do Sankhya — o **Movimento Livros
 Fiscais**, que é o padrão, e a extração antiga da apuração — e reconhece qual é
 sozinho.
 
+### O que a janela garante
+
+| | |
+|---|---|
+| **nada é instalado** | `Apurabot.bat` é arquivo de texto, não programa; nenhum binário novo é criado |
+| **o dado não sai da máquina** | o servidor só aceita conexão de `127.0.0.1`; o arquivo que você arrasta vive em pasta temporária e some no encerramento |
+| **funciona sem internet** | a página não busca nada fora da máquina |
+| **outra sessão não alcança** | cada janela nasce com uma chave própria no endereço |
+
+### Pelo terminal, se preferir
+
+O caminho antigo continua valendo, e é o que serve para automatizar:
+
 ```
-python rodar.py base-tratada <arquivo> --saida <pasta>
+python rodar.py apurar "caminho\do\livro.xls" --saida "pasta\de\saida"
+python rodar.py base-tratada "caminho\do\livro.xls" --saida "pasta\de\saida"
 ```
 
-Para no tratamento e na classificação, sem apurar. Serve para conferir o Livro
-antes de fechar o mês.
+Aspas são obrigatórias em caminho com espaço. `Shift` + botão direito no arquivo
+→ **"Copiar como caminho"** copia já com elas. A pasta de `--saida` precisa
+existir.
+
+`base-tratada` para no tratamento e na classificação, sem apurar — serve para
+conferir o Livro antes de fechar o mês.
 
 > Os arquivos da competência não vão para o Git. O `.gitignore` exclui
 > `competencias/` de propósito: nenhum dado fiscal da empresa é versionado.
@@ -145,7 +169,10 @@ Alterou, é só rodar de novo.
 
 | Mensagem | Causa e solução |
 |---|---|
-| **`Acesso negado`** ao rodar `apurabot` | A política barrou o executável criado pelo `pip install`. Use `python rodar.py` — passo 3. |
+| **`Acesso negado`** ao rodar `apurabot` | A política barrou o executável criado pelo `pip install`. Use o `Apurabot.bat` — ele não cria programa nenhum. |
+| **O navegador não abriu sozinho** | Copie o endereço `http://127.0.0.1:…` que aparece na janela preta e cole no navegador. |
+| **A janela preta fecha na hora** | O Python não foi encontrado, ou faltou o passo 3. Rode `python rodar.py janela` no terminal para ler a mensagem. |
+| **A página diz que perdeu contato** | A janela preta foi fechada. Abra o `Apurabot.bat` de novo. |
 | **`Acesso negado`** no `pip` | Faltou `--user`. |
 | **`pip não é reconhecido`** | Use `python -m pip`. |
 | **`python não é reconhecido`** | Falta o "Add Python to PATH" do passo 1. Tente `py` no lugar de `python`. |
@@ -162,7 +189,6 @@ Alterou, é só rodar de novo.
 | **CIAP** e **DIFAL** | Pausados |
 | Relatório de ajustes | Ainda não é lido pela ferramenta |
 | Regra de transferência de SP | Calculada, **não homologada** — o relatório avisa |
-| Interface gráfica | Por enquanto só linha de comando |
 
 ---
 

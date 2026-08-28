@@ -19,5 +19,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# A janela do navegador é um arquivo estático dentro do pacote.
+[tool.setuptools.package-data]
+"apurabot.web" = ["*.html"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

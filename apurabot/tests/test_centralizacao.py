@@ -116,7 +116,7 @@ def test_a_transferencia_vira_instrucao_e_nao_pendencia(parametros):
     r = grupo_de({GUARA: -100.00, REGISTRO: 287_113.66}, parametros)
     assert not hasattr(r, "pendencias")
     assert len(r.instrucoes) == 1
-    assert "287,113.66" in r.instrucoes[0]
+    assert "287.113,66" in r.instrucoes[0]   # milhar e decimal como no Brasil
     assert REGISTRO in r.instrucoes[0] and GUARA in r.instrucoes[0]
 
 

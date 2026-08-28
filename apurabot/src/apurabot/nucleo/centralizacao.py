@@ -30,6 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..formato import reais
 from ..parametros import Parametros
 
 # O que o estabelecimento centralizado passa para a centralizadora.
@@ -77,7 +78,7 @@ class Transferencia:
         """O que o time fiscal precisa emitir depois de fechar a competência."""
         if not self.valor_transferido:
             return (
-                f"{self.origem}: saldo {self.saldo_individual:,.2f} — "
+                f"{self.origem}: saldo {reais(self.saldo_individual)} — "
                 "nada a transferir nesta competência"
             )
         sentido = "devedor" if self.valor_transferido > 0 else "credor"
@@ -89,7 +90,7 @@ class Transferencia:
         )
         return (
             f"{self.origem} → {self.destino}: transferir saldo {sentido} de "
-            f"{abs(self.valor_transferido):,.2f} por {como}"
+            f"{reais(abs(self.valor_transferido))} por {como}"
         )
 
 
@@ -128,15 +129,15 @@ class ResultadoCentralizacao:
             f"Regra de transferência: {self.regra} por "
             + MECANISMOS.get(self.mecanismo, self.mecanismo)
             + ("" if self.homologado else "  (NÃO HOMOLOGADA)"),
-            f"Saldo próprio da centralizadora: {self.saldo_proprio:,.2f}",
+            f"Saldo próprio da centralizadora: {reais(self.saldo_proprio)}",
         ]
         for t in self.transferencias:
             linhas.append(
-                f"{t.origem}: saldo {t.saldo_individual:,.2f} → transfere "
-                f"{t.valor_transferido:,.2f}, residual {t.saldo_residual:,.2f}"
+                f"{t.origem}: saldo {reais(t.saldo_individual)} → transfere "
+                f"{reais(t.valor_transferido)}, residual {reais(t.saldo_residual)}"
             )
-        linhas.append(f"Recebido pela centralizadora: {self.total_recebido:,.2f}")
-        linhas.append(f"Saldo final do grupo: {self.saldo_final:,.2f}")
+        linhas.append(f"Recebido pela centralizadora: {reais(self.total_recebido)}")
+        linhas.append(f"Saldo final do grupo: {reais(self.saldo_final)}")
         return linhas
 
 

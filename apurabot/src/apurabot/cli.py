@@ -16,6 +16,7 @@ from pathlib import Path
 from .apuracao import Apuracao, apurar
 from .base_tratada import BaseTratada, tratar
 from .conferencia import ROTULO_DA_ATIVIDADE
+from .formato import reais
 from .ingestao import LayoutInvalido
 from .nucleo import atividade as ativ
 from .saida import escrever
@@ -84,8 +85,8 @@ def _apuracao(apuracao: Apuracao) -> None:
     print(f"  {'estabelecimento':<32}{'UF':<4}{'crédito':>14}{'débito':>14}{'saldo':>14}")
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         print(
-            f"  {f.estabelecimento:<32}{f.uf:<4}{f.credito_mantido:>14,.2f}"
-            f"{f.debito:>14,.2f}{f.saldo:>14,.2f}"
+            f"  {f.estabelecimento:<32}{f.uf:<4}{reais(f.credito_mantido):>14}"
+            f"{reais(f.debito):>14}{reais(f.saldo):>14}"
         )
 
     por_atividade = [f for f in apuracao.filiais.values() if f.segrega_por_atividade]
@@ -99,8 +100,8 @@ def _apuracao(apuracao: Apuracao) -> None:
                 t = f.por_atividade[nome]
                 rotulo = ROTULO_DA_ATIVIDADE.get(nome, nome)
                 print(
-                    f"    {rotulo:<22}crédito {t.credito_bruto:>13,.2f}   "
-                    f"estorno {t.estorno:>13,.2f}   débito {t.debito:>13,.2f}"
+                    f"    {rotulo:<22}crédito {reais(t.credito_bruto):>13}   "
+                    f"estorno {reais(t.estorno):>13}   débito {reais(t.debito):>13}"
                 )
 
     for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
@@ -154,12 +155,20 @@ def _comando_base_tratada(args: argparse.Namespace) -> int:
     return 0 if not pendentes else 1
 
 
+def _comando_janela(args: argparse.Namespace) -> int:
+    from .web import abrir
+
+    return abrir(porta=args.porta, navegador=not args.sem_navegador)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="apurabot",
         description="Apuração mensal de ICMS da Hinove Agrociência.",
     )
-    sub = parser.add_subparsers(dest="comando", required=True)
+    # Sem subcomando, abre a janela: é o caminho de quem não usa terminal.
+    sub = parser.add_subparsers(dest="comando")
+    parser.set_defaults(func=_comando_janela, porta=0, sem_navegador=False)
 
     def comum(p):
         p.add_argument("livro", help="Livro Fiscal do mês (.xlsx ou .xls)")
@@ -174,6 +183,16 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("base-tratada", help="Só trata e classifica, sem apurar.")
     comum(p)
     p.set_defaults(func=_comando_base_tratada)
+
+    p = sub.add_parser(
+        "janela",
+        help="Abre o Apurabot no navegador — é o padrão quando não se passa comando.",
+    )
+    p.add_argument("--porta", type=int, default=0,
+                   help="porta fixa; por padrão o sistema escolhe uma livre")
+    p.add_argument("--sem-navegador", action="store_true",
+                   help="não abre o navegador sozinho; só mostra o endereço")
+    p.set_defaults(func=_comando_janela)
 
     args = parser.parse_args(argv)
     return args.func(args)

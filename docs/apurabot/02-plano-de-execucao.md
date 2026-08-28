@@ -5,7 +5,7 @@
 
 **Situação:** a competência de referência é reproduzida da ingestão ao benefício
 fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante bate ao
-centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 154
+centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 168
 testes automáticos.
 
 | Entrega | Situação |
@@ -16,7 +16,7 @@ testes automáticos.
 | 3 · Benefício fiscal de Rio Brilhante | ✅ concluída — confere com a GIA |
 | 4 · Centralização e transferência de saldo | ✅ concluída — regra de SP a homologar |
 | 5 · DIFAL | ⏸ pausado |
-| 6 · Interface e empacotamento | 🟡 CLI e instalação entregues; interface gráfica pendente |
+| 6 · Interface e empacotamento | 🟡 janela no navegador e CLI entregues; falta o encerramento de competência |
 | 7 · Homologação | ⬜ depende de 4 e 6 |
 | 8 · CIAP | ⏸ pausado |
 | 9 · Registro de Apuração e conferência | ✅ concluída |
@@ -194,19 +194,41 @@ Falta o `.xlsx` de exemplo do XML das entradas. O extrato novo já traz
 
 ## Entrega 6 — Interface e empacotamento 🟡
 
-**Entregue:** instalação com um comando e a linha de comando completa.
+**Entregue:** a janela do navegador e a linha de comando.
 
-```
-pip install -e apurabot
-apurabot apurar <livro_fiscal> --saida <pasta>
-```
+Dois cliques em `Apurabot.bat` abrem a ferramenta no navegador: arrasta-se o
+Livro Fiscal, vê-se o resultado na tela — apuração por estabelecimento, Registro
+de Apuração, transferências a emitir, memória do benefício e pendências — e
+baixa-se a planilha. Sem caminho para digitar, sem pasta com nome fixo.
 
-A execução mostra a apuração por estabelecimento, a segregação por atividade, a
-memória do benefício, a centralização e as pendências — e grava o caderno em
-`.xlsx`. O passo a passo está em [07 — Como rodar](07-como-rodar.md).
+### Por que o navegador, e não um executável
 
-**Falta:** a janela para quem não usa terminal, e o encerramento de competência
-que grava o saldo credor para o mês seguinte.
+A máquina do time fiscal é corporativa e **sem elevação de administrador**. O
+executável que o `pip` cria é barrado pela política de segurança — o sintoma é
+*"Acesso negado"*. Um `.exe` empacotado teria o mesmo destino: é binário novo e
+sem assinatura.
+
+O navegador e o Python, ao contrário, já são programas aprovados. Então a
+interface passa a ser a página, e o Python sobe um servidor em `127.0.0.1` numa
+porta que o sistema escolhe. `Apurabot.bat` é arquivo de texto: o duplo clique
+não cria nada na máquina.
+
+| | |
+|---|---|
+| **nada é instalado** | nenhum binário novo, nenhum privilégio pedido |
+| **o dado não sai da máquina** | conexão só de `127.0.0.1`; o arquivo enviado vive em pasta temporária e é apagado no encerramento |
+| **a página não busca nada fora** | zero CDN, zero fonte externa — funciona desconectado, e há teste que verifica |
+| **outra sessão não alcança** | cada janela nasce com uma chave aleatória na URL |
+
+**Uma solução hospedada foi descartada:** Livro Fiscal, XML e base de bens são
+dado fiscal real, e subi-los para fora da máquina contraria a primeira regra do
+repositório.
+
+A linha de comando continua inteira, para automatizar. O passo a passo está em
+[07 — Como rodar](07-como-rodar.md).
+
+**Falta:** o encerramento de competência, que grava o saldo credor para o mês
+seguinte.
 
 ---
 

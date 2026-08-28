@@ -182,34 +182,51 @@ O time fiscal revisa o YAML (ou uma exportação dele em Excel, se preferir), e 
 
 ## 6. Interface para quem opera o fechamento
 
-Uso mensal, por pessoa não técnica. A interface é uma **janela local**, aberta
-por atalho, com 4 botões — os mesmos quatro do fluxograma:
+Uso mensal, por pessoa não técnica. A interface é uma **janela no navegador,
+servida pela própria máquina**: dois cliques em `Apurabot.bat`, e a página abre
+em `127.0.0.1`.
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Apurabot — Apuração de ICMS                        │
 │                                                     │
-│  Competência:  [ Julho / 2026    ▾ ]                │
+│         ┌───────────────────────────────┐           │
+│         │   Arraste aqui o Livro Fiscal │           │
+│         │   ou clique para escolher     │           │
+│         └───────────────────────────────┘           │
 │                                                     │
-│  Livro Fiscal      [ livro_fiscal.xlsx    ] ✓       │
-│  XML das entradas  [ arraste o arquivo…   ]         │
-│  Base de Bens      [ arraste o arquivo…   ]         │
+│  ✓ Encerramento liberado — nenhuma pendência        │
 │                                                     │
-│  [ Rodar Apuração ] [ Rodar DIFAL ]                 │
-│  [ Rodar CIAP ]     [ Atualizar Ajustes ]           │
+│  [ Baixar a planilha ]  [ Apurar outro livro ]      │
 │                                                     │
-│  ─────────────────────────────────────────────      │
-│  ⚠ 3 pendências críticas — encerramento bloqueado   │
-│     · 2 produtos sem regra                          │
-│     · 1 NF-e de transferência não emitida (Registro)│
-│                                                     │
-│  [ Abrir Apuracao_AAAA-MM.xlsx ]                    │
+│  Apuração por estabelecimento · Registro de         │
+│  Apuração · Transferências a emitir · Benefício     │
 └─────────────────────────────────────────────────────┘
 ```
 
-Tecnicamente é uma aplicação local (Streamlit ou similar) empacotada para
-iniciar com duplo clique: sem instalar Python, sem linha de comando, sem
-caminho fixo de usuário.
+### 6.1. Por que o navegador, e não um programa instalado
+
+A máquina do time fiscal é corporativa e **sem elevação de administrador**. Um
+executável novo e sem assinatura é barrado pela política de segurança. Já o
+Python e o navegador são programas aprovados, e rodam.
+
+Então a interface não vem de um programa novo: o Python abre um servidor em
+`127.0.0.1`, numa porta escolhida pelo sistema, e manda o navegador abrir a
+página. `Apurabot.bat` é um arquivo de texto, não um binário — o duplo clique
+não cria nada na máquina.
+
+O que o desenho garante:
+
+| | |
+|---|---|
+| **nada é instalado** | nenhum binário novo, nenhum privilégio pedido |
+| **o dado não sai da máquina** | o servidor só aceita conexão de `127.0.0.1`; o arquivo enviado vive em pasta temporária e é apagado no encerramento |
+| **a página não busca nada fora** | zero CDN, zero fonte externa — funciona com a máquina desconectada; há teste que verifica isso |
+| **outra sessão não alcança** | cada janela nasce com uma chave aleatória na URL, e requisição sem ela é recusada |
+
+**Uma solução hospedada foi descartada.** Livro Fiscal, XML e base de bens são
+dado fiscal real da empresa; subi-los para servidor fora da máquina contraria a
+primeira regra do repositório e o princípio de que o dado não sai dali.
 
 ## 7. Como a ferramenta prova que está certa
 

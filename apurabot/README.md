@@ -6,7 +6,7 @@ extraído do Sankhya e validado pelo Fiscalbot.
 > **Situação:** a competência de referência é reproduzida da ingestão ao
 > benefício fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante
 > bate ao centavo com a GIA entregue e com o Registro de Apuração do ERP.
-> 154 testes automáticos.
+> 168 testes automáticos.
 > Ver o [plano de execução](../docs/apurabot/02-plano-de-execucao.md).
 
 ## O que já faz
@@ -40,9 +40,21 @@ entrega a apuração em `.xlsx`, com a memória de cálculo linha a linha.
 O comando `apurabot base-tratada` para no tratamento e na classificação, sem
 apurar — serve para conferir o Livro antes de fechar o mês.
 
+## Como se usa
+
+Dois cliques em `Apurabot.bat`, na raiz do repositório: abre a janela do
+Apurabot no navegador, onde se arrasta o Livro Fiscal e se baixa a planilha.
+
+Nada é instalado e nenhum privilégio é pedido — a interface é o navegador, e o
+servidor sobe em `127.0.0.1` pelo Python que já está na máquina. O dado não sai
+dali. Ver `web/servidor.py` para o desenho.
+
+Pelo terminal, `python rodar.py apurar <livro> --saida <pasta>` continua
+valendo.
+
 ## O que falta
 
-A leitura de `ajustes.xlsx` (fecha a Entrega 2) e a interface gráfica. Sem os
+A leitura de `ajustes.xlsx` (fecha a Entrega 2). Sem os
 ajustes declarados, as linhas 003 por ajuste, 006, 007 e 009 do registro saem
 marcadas **AGUARDA AJUSTE** — zeradas, nunca inventadas.
 **DIFAL e CIAP estão pausados** por decisão de escopo.
@@ -72,8 +84,11 @@ src/apurabot/
   conferencia.py       registro, apuração efetiva e transferências
   saida.py             escreve o .xlsx
   cli.py               linha de comando
+  web/servidor.py      a janela: servidor local e navegador
+  web/painel.py        o que a janela mostra
+  web/pagina.html      a interface
 
-tests/          154 testes: unidade + regressão contra a competência de referência
+tests/          168 testes: unidade + regressão contra a competência de referência
 analise/        Scripts exploratórios que reproduzem os números documentados
 ```
 
