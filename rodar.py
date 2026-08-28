@@ -28,15 +28,16 @@ RAIZ = Path(__file__).resolve().parent
 sys.path.insert(0, str(RAIZ / "apurabot" / "src"))
 
 FALTANDO = """
-Falta a biblioteca {nome!r}.
+Falta a biblioteca {nome!r} — neste Python:
 
-Instale as três de que o Apurabot depende, sem precisar de administrador:
+    {executavel}
 
-    pip install --user openpyxl "xlrd==2.0.1" PyYAML
+A máquina costuma ter mais de um Python instalado, e um `pip install`
+sozinho pode instalar em outro. Instale neste, que é o que está rodando:
 
-Se o `pip` também der "Acesso negado", tente:
+    "{executavel}" -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
 
-    python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+O `--user` instala na sua conta, sem precisar de administrador.
 """
 
 try:
@@ -45,7 +46,7 @@ except ModuleNotFoundError as erro:  # dependência ausente
     nome = getattr(erro, "name", "?")
     if nome and nome.startswith("apurabot"):
         raise
-    print(FALTANDO.format(nome=nome), file=sys.stderr)
+    print(FALTANDO.format(nome=nome, executavel=sys.executable), file=sys.stderr)
     raise SystemExit(2) from None
 
 if __name__ == "__main__":

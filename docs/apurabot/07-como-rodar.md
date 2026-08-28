@@ -37,11 +37,21 @@ Terminal na pasta que você extraiu. O jeito rápido: abra a pasta no Explorador
 clique na barra de endereço, digite `cmd` e Enter.
 
 ```
-pip install --user openpyxl "xlrd==2.0.1" PyYAML
+python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+py -3 -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
 ```
 
 O `--user` instala na sua conta, sem administrador. É a única vez que você
 precisa do terminal.
+
+**Rode as duas linhas.** Uma máquina costuma ter mais de um Python instalado, e
+as bibliotecas ficam só naquele em que você instalou. Se uma das linhas
+responder que o comando não existe, tudo bem — é sinal de que aquele Python não
+está aqui.
+
+> `pip install` sozinho, sem o `python -m` ou o `py -3 -m` na frente, instala
+> em **um** Python — e pode não ser o que o Apurabot vai usar. O sintoma é
+> instalar com sucesso e mesmo assim receber *"Falta a biblioteca 'yaml'"*.
 
 **Não instale o pacote.** O Apurabot roda direto da pasta pelo `python.exe`, que
 já está aprovado na máquina. `pip install -e apurabot` criaria um `apurabot.exe`
@@ -180,7 +190,7 @@ Alterou, é só rodar de novo.
 | **`Acesso negado`** no `pip` | Faltou `--user`. |
 | **`pip não é reconhecido`** | Use `python -m pip`. |
 | **`python não é reconhecido`** | Falta o "Add Python to PATH" do passo 1. Tente `py` no lugar de `python`. |
-| **`Falta a biblioteca ...`** | O passo 3 não rodou, ou rodou noutro Python. |
+| **`Falta a biblioteca ...`** | Instalou num Python e o Apurabot abriu em outro. A mensagem diz o caminho do Python que está rodando — rode o `-m pip install --user` com **esse** caminho. |
 | **`invalid choice: 'apurar'`** | Código desatualizado. Baixe o ZIP de novo. |
 | **`Encerramento BLOQUEADO`** | Não é erro de instalação — é a ferramenta cobrando pendência. Ver passo 6. |
 

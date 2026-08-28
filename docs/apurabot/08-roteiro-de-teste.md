@@ -32,14 +32,19 @@ Abra a pasta que você extraiu no Explorador, clique na barra de endereço, digi
 `cmd` e Enter. Na janela preta:
 
 ```
-pip install --user openpyxl "xlrd==2.0.1" PyYAML
+python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+py -3 -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
 ```
 
-**Tem que acontecer:** termina com `Successfully installed` ou
-`Requirement already satisfied`.
+**Rode as duas linhas.** A máquina costuma ter mais de um Python instalado, e as
+bibliotecas ficam só naquele em que você instalou — se o Apurabot abrir no
+outro, ele reclama que falta biblioteca mesmo você tendo instalado.
 
-**Se der `Acesso negado`:** faltou o `--user`. Se der
-`pip não é reconhecido`, use `python -m pip install --user ...`.
+**Tem que acontecer:** cada linha termina com `Successfully installed` ou
+`Requirement already satisfied`. Uma delas pode responder que o comando não
+existe: tudo bem, é sinal de que aquele Python não está na máquina.
+
+**Se der `Acesso negado`:** faltou o `--user`.
 
 Depois disso, feche a janela preta. Você não vai precisar dela de novo.
 
