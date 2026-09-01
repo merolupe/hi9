@@ -36,6 +36,22 @@ lancamentos_sem_contabil:
     # de nota com outra carga,
     # é a carga dela que vale, e a referência está na coluna Observação.
 
+  - sem_valor_contabil: true
+    categoria: complemento_icms
+    carga_efetiva: 4.0
+    descricao: Complemento de ICMS lançado contra o código do produto
+    homologado: true
+    # Confirmado pela Gerência Fiscal em 01/09/2026.
+    #
+    # Nem todo complemento vem no código de produto próprio (701000075): há
+    # complemento lançado contra o código da mercadoria complementada. O que
+    # não muda é a FORMA — sem valor contábil, só com base e valor de ICMS —,
+    # e é por ela que este item reconhece.
+    #
+    # A forma só alcança o que sem ela seria pendência `SEM BASE`: um
+    # lançamento com valor contábil nunca casa aqui. Por isso a regra não pode
+    # alargar nada — só deixa de barrar o que já se sabe o que é.
+
 # ---------------------------------------------------------------------------
 # 3. Exceções por CFOP — têm precedência sobre tudo
 # ---------------------------------------------------------------------------

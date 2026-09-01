@@ -165,3 +165,32 @@ terceiro?
 **Padrão assumido:** nenhum — o cruzamento não está implementado. Enquanto não
 estiver, uma saída de armazém geral industrializador é classificada pela
 descrição e pelo CFOP, e pode ficar como produção quando é revenda.
+
+## 13. 🟡 CFOP 2923 — a transmissão de propriedade em armazém é produção ou revenda?
+
+O CFOP 1923/2923 é a entrada de mercadoria recebida do vendedor remetente em
+venda à ordem. Na prática da empresa, ele documenta **transmissão de
+propriedade de mercadoria depositada em armazém**, em referência a notas de
+transferência entre unidades.
+
+E é aí que fica indefinido. A transferência entre unidades já tem par no mapa —
+1151/2151 para industrialização, 1152/2152 para comercialização —, mas o 2923
+não distingue: o mesmo código serve para as duas.
+
+**A pergunta não é dispensável.** A segregação por atividade é o que dimensiona
+o benefício de Rio Brilhante, que incide só sobre o saldo devedor industrial.
+Toda linha de crédito precisa cair em um dos baldes, e a escolha move dinheiro:
+
+| Se o 2923 for… | Benefício de Rio Brilhante |
+|---|---|
+| Comercial | inalterado |
+| Industrial | menor, porque o crédito industrial sobe e abate a base do incentivo |
+
+**Perguntas:** o destino da mercadoria transferida define a atividade, como no
+par 2151/2152? Se sim, dá para saber pelo produto, ou só pela nota de
+transferência referenciada?
+
+**Padrão assumido:** nenhum — o CFOP não está no mapa, e as linhas caem em
+`SEM REGRA`, bloqueando o encerramento. É de propósito: adivinhar aqui aumenta
+ou diminui o benefício sem que ninguém tenha decidido.
+

@@ -228,7 +228,17 @@ interestadual, 7 é exterior.
 > **Atividade indefinida bloqueia o encerramento.** CFOP que não casa com nenhuma
 > atividade recebe `SEM REGRA`, como manda a regra 4 do projeto.
 
-### 4.4. Demais regras de MS
+### 4.4. Devolução de venda segue a venda que desfaz
+
+A devolução entra pela atividade da operação que ela cancela, porque é isso que
+ela é: o desfazimento de uma venda já apurada.
+
+| CFOP | | Atividade |
+|---|---|---|
+| 1201 / 2201 / 3201 | Devolução de venda de produção do estabelecimento | Industrial |
+| 1202 / 2202 / 3202 | Devolução de venda de mercadoria de terceiros | Comercial |
+
+### 4.5. Demais regras de MS
 
 | Item | Regra |
 |---|---|
@@ -236,7 +246,7 @@ interestadual, 7 é exterior.
 | DIFAL em MS | Informa na apuração e recolhe em **guia avulsa** — não entra em conta gráfica |
 | Centralização | Rio Brilhante **recebe** saldo devedor de estabelecimento centralizador; a regra de MS ainda não está modelada |
 
-### 4.5. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
+### 4.6. Benefício fiscal de Rio Brilhante — Termo de Acordo n. 1.190/2018
 
 Firmado em 19/09/2018 entre o Estado de MS e a Hinove, publicado no DOE 9.755.
 Base legal: LC estadual 93/2001 e Lei 4.049/2011.
