@@ -178,3 +178,45 @@ def test_o_registro_tem_um_bloco_por_filial_e_o_totalizador(planilha, apuracao):
     assert any(
         str(v or "").startswith("TOTALIZADOR") for v in primeira
     ), "falta o totalizador que o PDF por filial não tem"
+
+
+# -- o que a rodada de um pré-livro exigiu ----------------------------------
+
+def test_a_planilha_mostra_a_pendencia_de_atividade(base_julho, parametros, tmp_path):
+    """Atividade indefinida não tem linha de origem — e por isso ficou de fora.
+
+    Quem trabalha pela planilha não pode deixar de ver um bloqueio que a tela
+    mostra: os dois têm que listar as mesmas pendências.
+    """
+    import copy
+
+    import openpyxl
+
+    from apurabot.apuracao import apurar
+    from apurabot.saida import escrever
+
+    # Tira um CFOP do mapa de MS para que uma linha real fique sem atividade.
+    p = copy.deepcopy(parametros)
+    industriais = p.regimes["atividades"]["ms"]["por_cfop"]["industrial"]
+    industriais["credito"] = [c for c in industriais["credito"] if c != 3101]
+
+    apuracao = apurar(base_julho, p)
+    assert apuracao.sem_regra_de_atividade, "o cenário não produziu a pendência"
+
+    destino = tmp_path / "com_pendencia.xlsx"
+    escrever(base_julho, destino, apuracao)
+    texto = "\n".join(
+        str(c.value)
+        for linha in openpyxl.load_workbook(destino)["PENDÊNCIAS"].iter_rows()
+        for c in linha
+        if c.value
+    )
+    assert "ATIVIDADE INDEFINIDA" in texto
+    assert "HINOVE (RIO BRILHANTE)" in texto
+    assert "regimes.yaml" in texto
+
+
+def test_o_resumo_diz_o_periodo_que_o_livro_cobre(base_julho):
+    """Livro fechado ou pré-livro: quem lê o resultado precisa saber até onde vai."""
+    assert base_julho.periodo == "01/07/2026 a 31/07/2026"
+    assert base_julho.resumo()["periodo"] == base_julho.periodo

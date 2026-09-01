@@ -21,6 +21,7 @@ def montar(base: BaseTratada, apuracao: Apuracao, registros: list) -> dict[str, 
     return {
         "versao": __version__,
         "competencia": resumo["competencia"],
+        "periodo": resumo["periodo"],
         "arquivo": resumo["arquivo"],
         "sha256": resumo["sha256"],
         "gerado_em": resumo["gerado_em"],

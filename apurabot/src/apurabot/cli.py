@@ -54,6 +54,7 @@ def _cabecalho(base: BaseTratada) -> dict:
     resumo = base.resumo()
     _titulo(f"Apurabot {__version__} — apuração de ICMS")
     _campo("Competência", resumo["competencia"])
+    _campo("Período do movimento", resumo["periodo"])
     _campo("Arquivo", resumo["arquivo"])
     _campo("Linhas no Livro Fiscal", _milhar(resumo["linhas_no_livro"]))
     _campo("Linhas relevantes para ICMS", _milhar(resumo["linhas_relevantes"]))
