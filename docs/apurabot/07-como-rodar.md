@@ -114,12 +114,12 @@ Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
 
 | Aba | Conteúdo |
 |---|---|
-| **RESUMO** | Procedência do arquivo, volume, equalização e categorias |
+| **RESUMO** | Procedência do arquivo, período que o livro cobre, volume, equalização e categorias |
 | **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
 | **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → chave da regra → produto, com a operação, o % estornado e o CHECK |
 | **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
 | **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |
-| **PENDÊNCIAS** | O que bloqueia o encerramento |
+| **PENDÊNCIAS** | O que bloqueia o encerramento — as mesmas que a tela mostra |
 | **POR ESTABELECIMENTO E CARGA** | O recorte por carga efetiva |
 | **BASE TRATADA** | Uma linha por linha do Livro, com a regra aplicada em cada uma |
 

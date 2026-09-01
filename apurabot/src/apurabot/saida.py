@@ -71,7 +71,13 @@ def _aba_base(wb, base: BaseTratada) -> None:
     aba.auto_filter.ref = aba.dimensions
 
 
-def _aba_pendencias(wb, base: BaseTratada) -> None:
+def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao) -> None:
+    """Tudo que bloqueia o encerramento, inclusive o que não vem de uma linha.
+
+    Atividade indefinida é pendência da apuração, não da base: ela não tem
+    linha de origem, e por isso já ficou de fora daqui uma vez. Quem trabalha
+    pela planilha não pode deixar de ver um bloqueio que a tela mostra.
+    """
     aba = wb.create_sheet("PENDÊNCIAS")
     colunas = [
         ("linha_origem", 12), ("estabelecimento", 30), ("nro_unico", 12),
@@ -85,6 +91,14 @@ def _aba_pendencias(wb, base: BaseTratada) -> None:
             t.origem.linha_origem, d.get("estabelecimento"), d.get("nro_unico"),
             t.origem.cfop_int, t.origem.produto_codigo, d.get("produto_descricao"),
             d.get("valor_icms"), " | ".join(t.pendencias),
+        ])
+    for filial in apuracao.sem_regra_de_atividade:
+        somas = filial.atividades_sem_regra
+        aba.append([
+            "", filial.estabelecimento, "", "", "", "", somas.credito_bruto,
+            f"ATIVIDADE INDEFINIDA: {somas.linhas} linha(s) não casaram com "
+            "nenhuma atividade — cadastre o CFOP em regimes.yaml, bloco "
+            "`atividades`",
         ])
     for linha in aba.iter_rows(min_row=2, min_col=7, max_col=7):
         for celula in linha:
@@ -112,7 +126,8 @@ def _aba_resumo(wb, base: BaseTratada) -> None:
     secao("PROCEDÊNCIA")
     aba.append(["Versão do Apurabot", __version__])
     for rotulo, chave in [
-        ("Competência", "competencia"), ("Arquivo de origem", "arquivo"),
+        ("Competência", "competencia"), ("Período do movimento", "periodo"),
+        ("Arquivo de origem", "arquivo"),
         ("SHA-256 do arquivo", "sha256"), ("Gerado em", "gerado_em"),
     ]:
         aba.append([rotulo, str(resumo[chave])])
@@ -312,7 +327,7 @@ def escrever(
     wb = Workbook()
     wb.remove(wb.active)
     _aba_base(wb, base)
-    _aba_pendencias(wb, base)
+    _aba_pendencias(wb, base, apuracao)
     _aba_por_carga(wb, base)
     _aba_apuracao(wb, apuracao)
     aba_apuracao_efetiva(wb, apuracao, base.parametros)

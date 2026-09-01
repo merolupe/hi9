@@ -248,6 +248,7 @@ function desenhar(d){
 
   partes.push(`<section><h2>O que foi lido</h2><div class="fichas">
     ${ficha("Competência", esc(d.competencia))}
+    ${ficha("Período do movimento", esc(d.periodo))}
     ${ficha("Arquivo", esc(d.arquivo))}
     ${ficha("Linhas no livro", inteiro.format(d.linhas_no_livro))}
     ${ficha("Relevantes para ICMS", inteiro.format(d.linhas_relevantes))}

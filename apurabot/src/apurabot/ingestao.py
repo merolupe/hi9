@@ -171,13 +171,28 @@ class Livro:
         return len(self.linhas)
 
     @property
-    def competencias(self) -> set[str]:
-        """Competências encontradas, no formato AAAA-MM."""
-        return {
-            d.strftime("%Y-%m")
+    def datas_de_movimento(self) -> list[dt.date]:
+        return [
+            d
             for linha in self.linhas
             if isinstance(d := linha.dados.get("data_movimento"), dt.date)
-        }
+        ]
+
+    @property
+    def competencias(self) -> set[str]:
+        """Competências encontradas, no formato AAAA-MM."""
+        return {d.strftime("%Y-%m") for d in self.datas_de_movimento}
+
+    @property
+    def periodo(self) -> tuple[dt.date, dt.date] | None:
+        """Primeiro e último movimento do arquivo.
+
+        É o que distingue um livro fechado de um pré-livro. Rodar a apuração
+        antes do encerramento é legítimo — serve para ver o que já dá para
+        conferir —, mas quem lê o resultado precisa saber até onde ele vai.
+        """
+        datas = self.datas_de_movimento
+        return (min(datas), max(datas)) if datas else None
 
 
 def _sha256(caminho: Path) -> str:

@@ -107,12 +107,22 @@ class BaseTratada:
             alvo["valor_icms"] += t.origem.dados.get("valor_icms") or 0.0
         return dict(somas)
 
+    @property
+    def periodo(self) -> str:
+        """O intervalo de datas que o livro cobre, em texto."""
+        intervalo = self.livro.periodo
+        if intervalo is None:
+            return "(o arquivo não traz data de movimento)"
+        inicio, fim = intervalo
+        return f"{inicio.strftime('%d/%m/%Y')} a {fim.strftime('%d/%m/%Y')}"
+
     def resumo(self) -> dict[str, Any]:
         situacoes = collections.Counter(t.carga.situacao.value for t in self.linhas)
         return {
             "competencia": self.competencia,
             "arquivo": self.livro.arquivo.name,
             "sha256": self.livro.sha256,
+            "periodo": self.periodo,
             "linhas_no_livro": len(self.livro),
             "linhas_relevantes": len(self.relevantes),
             "pendencias": len(self.com_pendencia),
