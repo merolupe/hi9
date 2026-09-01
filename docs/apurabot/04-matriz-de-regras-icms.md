@@ -311,6 +311,26 @@ período e saldo a transportar.
 
 ## 5. Regras que valem para todas as UFs
 
+### 5.1. O sinal do saldo é o do caixa
+
+```
+saldo = crédito mantido + crédito presumido − débito
+```
+
+**Positivo é credor: crédito que se transporta para o mês seguinte.**
+**Negativo é devedor: sai do caixa.**
+
+A conta gráfica trata o débito como positivo, e a ferramenta poderia ter
+seguido essa direção. Não segue, porque quem fecha a competência não lê a conta
+gráfica — lê o efeito financeiro, e ali um número negativo significa dinheiro
+saindo. `a recolher` repete o mesmo valor em positivo, porque é ele que vai
+para a guia.
+
+**O Registro de Apuração é a exceção, e é deliberada.** Lá as linhas 011
+(saldo devedor), 013 (imposto a recolher) e 014 (saldo credor a transportar)
+têm linhas próprias, todas positivas, como o livro manda. O espelho reproduz o
+documento, não a leitura gerencial.
+
 | Situação | Tratamento | Sinal no Livro Fiscal |
 |---|---|---|
 | **Devolução de compra** | Estorna o crédito da compra referida | CFOP de devolução de entrada |
@@ -358,6 +378,10 @@ saldo individual = valor transferido + saldo residual
 recebido pela centralizadora = soma do transferido pelos demais
 saldo final do grupo = saldo próprio da centralizadora + total recebido
 ```
+
+**Sinal:** os saldos circulam na convenção de caixa — positivo é credor,
+negativo é devedor. Ver item 5.1. Transferir "o saldo devedor" é, portanto,
+transferir um valor negativo.
 
 ### 6.3. Como a transferência se formaliza
 

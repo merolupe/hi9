@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .. import __version__
 from ..apuracao import Apuracao
 from ..base_tratada import BaseTratada
 from ..conferencia import ROTULO_DA_ATIVIDADE
@@ -18,6 +19,7 @@ def montar(base: BaseTratada, apuracao: Apuracao, registros: list) -> dict[str, 
     """O painel inteiro, pronto para virar JSON."""
     resumo = base.resumo()
     return {
+        "versao": __version__,
         "competencia": resumo["competencia"],
         "arquivo": resumo["arquivo"],
         "sha256": resumo["sha256"],
@@ -83,6 +85,7 @@ def _filial(filial) -> dict[str, Any]:
         "debito": filial.debito,
         "beneficio": filial.credito_presumido,
         "saldo": filial.saldo,
+        "a_recolher": filial.a_recolher,
         "atividades": [
             {
                 "nome": ROTULO_DA_ATIVIDADE.get(nome, nome),

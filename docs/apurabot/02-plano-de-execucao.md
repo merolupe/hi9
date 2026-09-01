@@ -5,7 +5,7 @@
 
 **Situação:** a competência de referência é reproduzida da ingestão ao benefício
 fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante bate ao
-centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 171
+centavo com a GIA entregue e com o Registro de Apuração emitido pelo ERP. 185
 testes automáticos.
 
 | Entrega | Situação |
@@ -201,6 +201,22 @@ Livro Fiscal, vê-se o resultado na tela — apuração por estabelecimento, Reg
 de Apuração, transferências a emitir, memória do benefício e pendências — e
 baixa-se a planilha. Sem caminho para digitar, sem pasta com nome fixo.
 
+### Por que não há instalação
+
+As quatro bibliotecas de que a ferramenta depende são **Python puro**, e viajam
+junto com o código em `apurabot/src/apurabot/vendor`. Baixar a pasta é
+instalar.
+
+Isso saiu de duas falhas na máquina real. Na primeira, o `pip install` foi
+barrado pela política de segurança. Na segunda, ele funcionou — mas acertou um
+Python diferente do que o lançador abria, e a ferramenta reclamou de biblioteca
+faltando logo depois de a instalação dizer que estava tudo certo. Nas duas
+vezes a pessoa tinha feito tudo certo.
+
+O passo que mais falhava era o que menos precisava existir. Quem mexe no código
+continua podendo instalar com `pip`; as bibliotecas do sistema têm precedência
+sobre as embarcadas.
+
 ### Por que o navegador, e não um executável
 
 A máquina do time fiscal é corporativa e **sem elevação de administrador**. O
@@ -226,6 +242,10 @@ repositório.
 
 A linha de comando continua inteira, para automatizar. O passo a passo está em
 [07 — Como rodar](07-como-rodar.md).
+
+`verificar.py` responde se um Python da máquina serve, e é por ele que o
+`Apurabot.bat` escolhe entre os vários que costumam conviver — perguntando, em
+vez de adivinhar pelo nome do comando.
 
 **Falta:** o encerramento de competência, que grava o saldo credor para o mês
 seguinte.

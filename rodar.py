@@ -15,9 +15,8 @@ Este arquivo contorna as duas coisas: não instala nada e não cria executável.
     python rodar.py apurar "caminho\\do\\livro.xls" --saida "pasta\\de\\saida"
     python rodar.py --help
 
-As três bibliotecas de que o Apurabot depende continuam necessárias:
-
-    pip install --user openpyxl "xlrd==2.0.1" PyYAML
+As bibliotecas de que o Apurabot depende **viajam junto com o código**, em
+`apurabot/src/apurabot/vendor`. Não é preciso instalar nada.
 """
 from __future__ import annotations
 
@@ -32,12 +31,13 @@ Falta a biblioteca {nome!r} — neste Python:
 
     {executavel}
 
-A máquina costuma ter mais de um Python instalado, e um `pip install`
-sozinho pode instalar em outro. Instale neste, que é o que está rodando:
+Ela deveria ter vindo junto com o código, em
+apurabot/src/apurabot/vendor. Se a pasta não está lá, o download veio
+incompleto: baixe o ZIP do Apurabot de novo e extraia inteiro.
 
-    "{executavel}" -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+Para o diagnóstico completo:
 
-O `--user` instala na sua conta, sem precisar de administrador.
+    "{executavel}" verificar.py
 """
 
 try:
