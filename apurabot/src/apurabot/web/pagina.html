@@ -257,6 +257,7 @@ function desenhar(d){
 
   if (d.pendencias.length) partes.push(pendencias(d.pendencias));
   partes.push(porFilial(d.filiais));
+  partes.push(saldoCredor(d));
   partes.push(registros(d.registros));
   if (d.transferencias.length) partes.push(transferencias(d.transferencias));
   if (d.beneficios.length) partes.push(beneficios(d.beneficios));
@@ -316,8 +317,39 @@ function porFilial(filiais){
     <p style="font-size:13px; color:var(--suave); margin:12px 0 0">
       <strong>Saldo positivo é credor</strong> — crédito a transportar para o mês
       seguinte. Negativo é devedor: sai do caixa, e é o que a coluna
-      <strong>A recolher</strong> repete em positivo. Ainda sem os ajustes
-      aprovados — veja o registro abaixo.</p></section>`;
+      <strong>A recolher</strong> repete em positivo. O saldo já abre com o
+      crédito que veio do mês anterior; os demais ajustes aprovados ainda não
+      entraram — veja o registro abaixo.</p></section>`;
+}
+
+// A conta gráfica não começa nem termina no mês: o crédito que sobra atravessa
+// a virada. É a linha 009 de um lado e a 014 do outro.
+function saldoCredor(d){
+  const com = d.filiais.filter(f => f.saldo_credor_anterior || f.credor);
+  if (!com.length) return "";
+  const linhas = com.map(f => `<tr>
+      <td>${esc(f.estabelecimento)}</td>
+      <td>${moeda(f.saldo_credor_anterior)}</td>
+      <td>${moeda(f.saldo_do_periodo, true)}</td>
+      <td>${moeda(f.credor)}</td>
+    </tr>`).join("");
+  const aviso = d.saldos_declarados ? "" :
+    `<p style="font-size:13px; color:var(--suave); margin:12px 0 0">
+       A abertura de ${esc(d.competencia)} não está declarada em
+       <code>parametros/saldos.yaml</code> — a apuração rodou com todos os
+       estabelecimentos abrindo o mês zerados.</p>`;
+  return `<section><h2>Saldo credor</h2>
+    <div class="rolagem"><table>
+      <thead><tr><th>Estabelecimento</th>
+        <th>Veio de ${esc(d.competencia_anterior)}</th>
+        <th>Apurado no mês</th>
+        <th>Vai para ${esc(d.competencia_seguinte)}</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div>
+    ${aviso}
+    <p style="font-size:13px; color:var(--suave); margin:12px 0 0">
+      A última coluna é a linha 014 do registro — a abertura de
+      ${esc(d.competencia_seguinte)}. Cadastre-a em
+      <code>parametros/saldos.yaml</code>.</p></section>`;
 }
 
 const LINHAS_DE_SOMA = new Set(["004","008","010","011","013","014"]);

@@ -346,8 +346,11 @@ def test_o_saldo_traz_o_credor_como_positivo(apuracao):
     leitura de quem fecha a competência, não a da conta gráfica.
     """
     guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
-    assert guara.saldo == pytest.approx(2_107_543.31, abs=CENTAVO)
-    assert guara.credor == pytest.approx(2_107_543.31, abs=CENTAVO)
+    # O mês, sozinho, produziu 2.107.543,31; o saldo final traz também os
+    # 107.620,97 que vieram de junho.
+    assert guara.saldo_do_periodo == pytest.approx(2_107_543.31, abs=CENTAVO)
+    assert guara.saldo == pytest.approx(2_215_164.28, abs=CENTAVO)
+    assert guara.credor == pytest.approx(2_215_164.28, abs=CENTAVO)
     assert guara.a_recolher == 0.0
 
     registro = apuracao.filiais["HINOVE (REGISTRO)"]

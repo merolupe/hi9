@@ -21,6 +21,9 @@ def montar(base: BaseTratada, apuracao: Apuracao, registros: list) -> dict[str, 
     return {
         "versao": __version__,
         "competencia": resumo["competencia"],
+        "competencia_anterior": apuracao.competencia_anterior,
+        "competencia_seguinte": apuracao.competencia_seguinte,
+        "saldos_declarados": apuracao.saldos_declarados,
         "periodo": resumo["periodo"],
         "arquivo": resumo["arquivo"],
         "sha256": resumo["sha256"],
@@ -85,8 +88,11 @@ def _filial(filial) -> dict[str, Any]:
         "credito_mantido": filial.credito_mantido,
         "debito": filial.debito,
         "beneficio": filial.credito_presumido,
+        "saldo_credor_anterior": filial.saldo_credor_anterior,
+        "saldo_do_periodo": filial.saldo_do_periodo,
         "saldo": filial.saldo,
         "a_recolher": filial.a_recolher,
+        "credor": filial.credor,
         "atividades": [
             {
                 "nome": ROTULO_DA_ATIVIDADE.get(nome, nome),

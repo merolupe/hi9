@@ -74,6 +74,7 @@ parametros/     A regra tributária. Editável e versionada — não é código.
   cargas.yaml          equalização da carga efetiva e tabelas de fertilizantes
   classificacao.yaml   como cada operação é classificada
   produtos.yaml        cadastro produto → categoria tributária
+  saldos.yaml          saldo credor de abertura, por competência
 
 src/apurabot/
   ingestao.py          lê os dois layouts de extração e valida o cabeçalho

@@ -324,7 +324,7 @@ período e saldo a transportar.
 ### 5.1. O sinal do saldo é o do caixa
 
 ```
-saldo = crédito mantido + crédito presumido − débito
+saldo = saldo credor anterior + crédito mantido + crédito presumido − débito
 ```
 
 **Positivo é credor: crédito que se transporta para o mês seguinte.**
@@ -355,6 +355,43 @@ documento, não a leitura gerencial.
 
 Sobrescrever o saldo credor à mão continua possível, mas é exceção registrada, não
 rotina.
+
+### 5.2. A conta gráfica não começa no dia 1º
+
+O Livro Fiscal traz os documentos de uma competência e nada mais. A conta
+gráfica, não: o crédito que sobrou no fim de um mês abre o mês seguinte. São as
+duas pontas da mesma conta, e no Registro de Apuração elas têm linha própria:
+
+| Linha | O que é | De onde vem |
+|---|---|---|
+| **009** — Saldo Credor do Período Anterior | A abertura do mês | Declarada, porque não está no Livro |
+| **014** — Saldo Credor a Transportar p/ o Período Seguinte | O fechamento do mês | Calculada: `010 − 004` |
+
+**A 014 de um mês é a 009 do mês seguinte.** É a única grandeza da apuração que
+atravessa a virada, e é o que torna o encadeamento das competências verificável:
+quem fecha agosto confere a abertura contra o fechamento de julho, sem refazer
+conta nenhuma.
+
+A abertura é declarada em `parametros/saldos.yaml`, por competência e por
+**código** da empresa. Uma competência presente no arquivo é declaração
+completa: estabelecimento que não aparece abriu o mês sem saldo credor.
+Competência ausente é outra coisa — aí ninguém declarou nada, a apuração roda
+com todo mundo zerado e o registro **marca a linha 009**, porque preencher por
+conta própria é o que a regra 4 do repositório proíbe.
+
+Duas consequências da ordem em que a abertura entra:
+
+* **não mexe na escrituração.** Crédito bruto, estorno e débito são do mês, e a
+  abertura não os toca. Se ela vazasse para lá, a conferência linha a linha
+  deixaria de fechar;
+* **entra antes da centralização.** O estabelecimento leva para o grupo o saldo
+  que efetivamente tem, abertura incluída.
+
+O benefício fiscal continua dimensionado sobre o saldo devedor da atividade
+industrial, sem a abertura. O que a abertura faz é limitar quanto dele se
+deduz, pela própria aritmética do livro: a linha 012 não pode passar da 011.
+Se a abertura devesse reduzir a base do benefício, e não só a dedução, a regra
+seria outra — ver decisão pendente nº 14.
 
 ---
 

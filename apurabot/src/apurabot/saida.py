@@ -188,34 +188,38 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
         ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
         ("credito_mantido", 17), ("debito", 16), ("credito_presumido", 18),
-        ("saldo (credor +)", 18), ("a recolher", 15), ("confere", 10),
+        ("saldo credor anterior", 21), ("saldo (credor +)", 18),
+        ("a recolher", 15), ("confere", 10),
     ]
     _escreve_cabecalho(aba, colunas)
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         aba.append([
             f.estabelecimento, f.uf, f.regime, f.linhas, f.credito_bruto,
             f.estorno, f.credito_indevido, f.credito_mantido, f.debito,
-            f.credito_presumido, f.saldo, f.a_recolher,
+            f.credito_presumido, f.saldo_credor_anterior, f.saldo, f.a_recolher,
             "OK" if f.confere else "DIVERGE",
         ])
     total = apuracao.total
     aba.append([
         "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
         total.credito_indevido, total.credito_mantido, total.debito,
-        total.credito_presumido, total.saldo, total.a_recolher,
-        "OK" if total.confere else "DIVERGE",
+        total.credito_presumido, total.saldo_credor_anterior, total.saldo,
+        total.a_recolher, "OK" if total.confere else "DIVERGE",
     ])
     for celula in aba[aba.max_row]:
         celula.font = Font(bold=True)
-    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=12):
+    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=13):
         for celula in linha:
             celula.number_format = MOEDA
 
     aba.append([])
     aba.append([
         "Saldo na convenção de caixa: positivo é credor — crédito a transportar "
-        "—, negativo é devedor. \"A recolher\" é o que sai do caixa."
+        "—, negativo é devedor. \"A recolher\" é o que sai do caixa. O saldo já "
+        "abre com o crédito do mês anterior."
     ])
+
+    _bloco_saldo_credor(aba, apuracao)
 
     aba.append([])
     aba.append(["Memória do benefício fiscal"])
@@ -299,6 +303,47 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
             ])
             for coluna in (3, 4, 5, 6):
                 aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
+
+
+def _bloco_saldo_credor(aba, apuracao: Apuracao) -> None:
+    """A conta gráfica atravessa a virada do mês — e a planilha mostra por onde.
+
+    A última coluna é o que a competência seguinte tem que receber como
+    abertura. Sai daqui pronta para o cadastro, para ninguém ter que subtrair
+    duas linhas do registro à mão.
+    """
+    anterior, seguinte = apuracao.competencia_anterior, apuracao.competencia_seguinte
+    aba.append([])
+    aba.append(["Saldo credor — linhas 009 e 014 do Registro de Apuração"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    if not apuracao.saldos_declarados:
+        aba.append([
+            "",
+            f"A abertura de {apuracao.competencia} não está declarada em "
+            "parametros/saldos.yaml — a apuração rodou com todos os "
+            "estabelecimentos abrindo o mês zerados.",
+        ])
+    aba.append([
+        "estabelecimento", f"veio de {anterior}", "apurado no mês",
+        f"vai para {seguinte}",
+    ])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    primeira = aba.max_row + 1
+    for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
+        if not (f.saldo_credor_anterior or f.credor):
+            continue
+        aba.append([f.estabelecimento, f.saldo_credor_anterior, f.saldo_do_periodo,
+                    f.credor])
+    for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+                               min_col=2, max_col=4):
+        for celula in linha:
+            celula.number_format = MOEDA
+    aba.append([
+        "",
+        f"A coluna \"vai para {seguinte}\" é a abertura da competência seguinte: "
+        "cadastre-a em parametros/saldos.yaml.",
+    ])
 
 
 #: Ordem de leitura das abas — da conclusão para o detalhe.

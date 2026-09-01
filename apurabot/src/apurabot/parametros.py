@@ -13,7 +13,7 @@ import yaml
 
 PASTA_PADRAO = Path(__file__).resolve().parents[2] / "parametros"
 
-ARQUIVOS = ("filiais", "regimes", "cargas", "classificacao", "produtos")
+ARQUIVOS = ("filiais", "regimes", "cargas", "classificacao", "produtos", "saldos")
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,7 @@ class Parametros:
     cargas: dict[str, Any]
     classificacao: dict[str, Any]
     produtos: dict[str, Any]
+    saldos: dict[str, Any]
     pasta: Path
 
     # -- atalhos usados pelo núcleo ------------------------------------
@@ -51,6 +52,23 @@ class Parametros:
     @property
     def limite_teto_aliquota(self) -> bool:
         return bool(self.cargas["equalizacao"]["limite_teto_aliquota"])
+
+    # -- saldo credor de abertura ---------------------------------------
+
+    def saldos_credores(self, competencia: str) -> dict[int, float] | None:
+        """Saldo credor de abertura de cada estabelecimento da competência.
+
+        Indexado pelo código da empresa. Devolve `None` quando a competência
+        não foi declarada — o que é diferente de declará-la com todos zerados:
+        no primeiro caso o registro marca a linha 009 como pendente, no segundo
+        ele a dá por fechada em zero.
+        """
+        for item in self.saldos.get("saldos_credores") or []:
+            if str(item.get("competencia") or "") != competencia:
+                continue
+            declarados = item.get("por_estabelecimento") or {}
+            return {int(k): float(v) for k, v in declarados.items()}
+        return None
 
 
 def carregar(pasta: Path | str | None = None) -> Parametros:

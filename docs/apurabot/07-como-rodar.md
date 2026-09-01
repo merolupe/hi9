@@ -143,6 +143,36 @@ em SP, onde é o excedente sobre a carga de saída. Ver
 **BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
 efetiva, categoria, regime e a regra aplicada, em texto.
 
+### O saldo credor, de um mês para o outro
+
+O Livro Fiscal só tem os documentos do mês. O crédito que sobrou do mês
+anterior não está lá, mas está na conta — é a linha 009 do registro. Por isso
+ele é **declarado** em `apurabot/parametros/saldos.yaml`:
+
+```yaml
+saldos_credores:
+  - competencia: "2026-08"
+    por_estabelecimento:
+      11: 2215164.28          # HINOVE (FILIAL GUARÁ)
+```
+
+O código (`11`, acima) é o da empresa, o mesmo do Livro Fiscal. Estabelecimento
+que não aparece na competência declarada abriu o mês sem saldo credor.
+
+**De onde tirar o número:** da apuração do mês anterior. A tela, a planilha
+(aba `APURAÇÃO POR FILIAL`) e o comando trazem o bloco **Saldo credor** com três
+colunas — o que veio, o que o mês apurou e o que vai para a competência
+seguinte. A última coluna é exatamente o que se cadastra:
+
+```
+  estabelecimento                    veio de 2026-06    apurado no mês  vai para 2026-08
+  HINOVE (FILIAL GUARÁ)                   107.620,97      2.107.543,31      2.215.164,28
+```
+
+Se a competência não estiver declarada, a apuração roda assim mesmo, com todo
+mundo abrindo o mês zerado — e o `REGISTRO` marca a linha 009 como
+`AGUARDA AJUSTE`, para ninguém confundir "não tinha saldo" com "ninguém disse".
+
 ---
 
 ## 6. Pendência e alerta
@@ -174,6 +204,7 @@ Nenhum número tributário está dentro do código.
 | `cargas.yaml` | Régua de cargas e tabelas de fertilizante |
 | `classificacao.yaml` | Como cada operação é classificada |
 | `produtos.yaml` | Cadastro produto → categoria tributária |
+| `saldos.yaml` | Saldo credor de abertura de cada competência |
 
 Alterou, é só rodar de novo.
 
@@ -203,6 +234,7 @@ Alterou, é só rodar de novo.
 | **CIAP** e **DIFAL** | Pausados |
 | Relatório de ajustes | Ainda não é lido pela ferramenta |
 | Regra de transferência de SP | Calculada, **não homologada** — o relatório avisa |
+| Encadeamento das competências | O saldo credor a transportar é calculado e exibido; passá-lo para o mês seguinte é cadastro manual em `saldos.yaml` |
 
 ---
 

@@ -194,3 +194,38 @@ transferência referenciada?
 `SEM REGRA`, bloqueando o encerramento. É de propósito: adivinhar aqui aumenta
 ou diminui o benefício sem que ninguém tenha decidido.
 
+
+## 14. 🟡 Saldo credor de abertura — o número de julho e o que ele reduz
+
+A linha 009 do Registro de Apuração é o crédito que veio do mês anterior. Ela
+não está no Livro Fiscal e por isso é declarada em `parametros/saldos.yaml`.
+Duas coisas ficaram em aberto.
+
+**Primeira: a abertura de 07/2026 da Filial Guará não foi lida de documento.**
+Ela é resíduo de conciliação. O Registro de Apuração de 07/2026 emitido pelo ERP
+declara R$ 2.215.164,28 na linha 014; sobre o Livro de julho o motor apura
+crédito de R$ 4.167.368,77 contra sub total de débito de R$ 2.059.825,46, o que
+fecha em R$ 2.107.543,31. A diferença de R$ 107.620,97 é o que a linha 009
+precisa ter para o registro fechar — mas ela também caberia nas linhas 002, 006
+ou 007, que ninguém declarou.
+
+**Pergunta:** o que a linha 014 do Registro de Apuração de 06/2026 traz para a
+Filial Guará? Se for R$ 107.620,97, a abertura está confirmada. Se for outro
+número, a diferença é ajuste de apuração e o cadastro muda de lugar.
+
+**Padrão assumido:** R$ 107.620,97 como abertura de 07/2026, marcado
+`homologado: false` no parâmetro. É o único arranjo que reproduz o documento
+que existe; o que falta é a confirmação de onde o valor nasce.
+
+**Segunda: a abertura reduz a dedução do benefício, ou também a base dele?**
+Hoje o crédito presumido de Rio Brilhante é dimensionado sobre o saldo devedor
+da atividade industrial, sem a abertura, e a abertura só limita quanto se deduz,
+pela aritmética do livro — a linha 012 não passa da 011. Nenhuma competência
+observada tem Rio Brilhante abrindo o mês com saldo credor, então a hipótese não
+foi testada contra documento.
+
+**Pergunta:** quando o estabelecimento incentivado abre o mês com saldo credor,
+esse crédito entra no cálculo do benefício ou fica fora dele, abatendo só o
+imposto a recolher?
+
+**Padrão assumido:** fica fora do cálculo e abate só a dedução.

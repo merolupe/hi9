@@ -339,3 +339,45 @@ Comercial que a GIA retificadora de 25/08/2026 corrigiu — o Registro emitido e
 07/08 é anterior à retificação. Sobre a GIA retificadora, o benefício bate ao
 centavo.
 
+
+---
+
+## 14. Guará abre julho com saldo credor — e é a linha 009 que fecha o registro
+
+O Registro de Apuração de 07/2026 emitido pelo ERP para a **Filial Guará**
+(empresa 11) declara na linha 014 o valor de **R$ 2.215.164,28** a transportar
+para o período seguinte. Sobre o Livro Fiscal de julho o motor apura:
+
+| Linha | Valor | Origem |
+|---|---|---|
+| 001 por Saídas com Débito | 1.633.053,78 | Livro Fiscal |
+| 003 Estornos de Créditos | 426.771,68 | regra de SP sobre o Livro |
+| **004 Sub Total** | **2.059.825,46** | |
+| 005 por Entradas com Crédito | 4.167.368,77 | Livro Fiscal |
+| **008 Sub Total** | **4.167.368,77** | |
+
+`008 − 004` dá **2.107.543,31** — R$ 107.620,97 abaixo do que o documento
+declara. As linhas 001, 003 e 005 são as que o Livro sustenta, e as três já
+estavam ancoradas na regressão contra a planilha manual e contra a Dinâmica.
+A diferença, portanto, está numa das linhas que não nascem de documento.
+
+Cadastrada como linha 009 — saldo credor vindo de junho —, ela fecha o registro
+no centavo:
+
+```
+009 Saldo Credor do Período Anterior ......   107.620,97
+010 Total .................................  4.274.989,74
+014 SALDO CREDOR a Transportar ............  2.215.164,28   ← o documento
+```
+
+**O que isso prova e o que não prova.** Prova que a apuração de julho de Guará
+está completa: não falta crédito nem sobra débito, e o único componente ausente
+era a abertura da conta gráfica. Não prova que a abertura vale exatamente esses
+R$ 107.620,97 — o mesmo resíduo caberia nas linhas 002, 006 ou 007. A confirmação
+é a linha 014 do Registro de Apuração de 06/2026, e até ela vir o parâmetro fica
+marcado como não homologado. Ver decisão pendente nº 14.
+
+**Guará é o único estabelecimento com abertura em julho.** Corumbá, Rio
+Brilhante, Barra do Garças, Londrina e Registro fecharam junho sem saldo credor,
+e o registro de Rio Brilhante — que reproduz o documento do ERP ao centavo,
+item 13 — confirma a leitura pelo lado de quem não tem abertura nenhuma.
