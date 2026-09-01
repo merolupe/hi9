@@ -11,6 +11,10 @@ testes próprios. A documentação de todas fica em `docs/`.
 |---|---|---|---|
 | **Apurabot** | `apurabot/` | Em desenvolvimento | Apuração mensal de ICMS (e, em fase posterior, PIS/Cofins) a partir do Livro Fiscal. A competência de referência já é reproduzida da ingestão ao benefício fiscal, sem pendências, e a apuração de Rio Brilhante confere ao centavo com a GIA entregue. |
 | _Fiscalbot_ | — | Existente, a ser importado | Confere o lançamento de cada nota. É o fornecedor do Livro Fiscal validado que o Apurabot consome. |
+| _Faturabot_ | — | Em desenvolvimento | Conferencias do time de expedição. Confere e consolida Desvios da balança, Escrituração de Saídas e Entradas de Diretos. |
+| _DiXML_ | — | Existente, a ser importado | Transforma lote de XMLs em Planilha. Permite validar qualquer informação fiscal presente no arquivo da nota. |
+| _GerarPendentes_ | — | Existente, a ser importado | Confronta dados e gera uma planilha de notas de mercadoria pendente de entrada. |
+| _GerarServPend_ | — | Existente, a ser importado | Confronta dados e gera uma planilha de notas de serviço pendente de entrada. |
 
 ## Como se usa o Apurabot
 
