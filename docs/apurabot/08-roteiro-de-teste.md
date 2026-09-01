@@ -17,7 +17,7 @@ vez só.
 | | |
 |---|---|
 | Um Livro Fiscal | extração **Movimento Livros Fiscais** do Sankhya, de uma competência fechada |
-| Python 3.10 ou mais novo | confira com `python --version`; instalação "somente para este usuário" não exige administrador |
+| Python 3.10 ou mais novo | confira com `python verificar.py`; a instalação "somente para este usuário" não exige administrador |
 | A pasta do repositório | <https://github.com/merolupe/hi9> → **Code** → **Download ZIP** → extrair |
 
 **Onde anotar:** abra um documento em branco. A cada teste que falhar, copie a
@@ -26,27 +26,22 @@ memória não ajuda a achar o defeito.
 
 ---
 
-## Preparo — uma vez só
+## Preparo
 
-Abra a pasta que você extraiu no Explorador, clique na barra de endereço, digite
-`cmd` e Enter. Na janela preta:
+Nenhum. Não há instalação.
+
+As bibliotecas viajam junto com o código, então baixar a pasta basta. Se quiser
+conferir antes que o Python da máquina serve, abra a pasta no Explorador, clique
+na barra de endereço, digite `cmd` e Enter, e rode:
 
 ```
-python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
-py -3 -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+python verificar.py
 ```
 
-**Rode as duas linhas.** A máquina costuma ter mais de um Python instalado, e as
-bibliotecas ficam só naquele em que você instalou — se o Apurabot abrir no
-outro, ele reclama que falta biblioteca mesmo você tendo instalado.
+**Tem que acontecer:** responde `OK` e o caminho do Python.
 
-**Tem que acontecer:** cada linha termina com `Successfully installed` ou
-`Requirement already satisfied`. Uma delas pode responder que o comando não
-existe: tudo bem, é sinal de que aquele Python não está na máquina.
-
-**Se der `Acesso negado`:** faltou o `--user`.
-
-Depois disso, feche a janela preta. Você não vai precisar dela de novo.
+**Se responder que não serve:** a mensagem diz o motivo — Python antigo demais,
+ou pasta baixada incompleta. É o único preparo possível, e ele é opcional.
 
 ---
 
@@ -60,9 +55,9 @@ Depois disso, feche a janela preta. Você não vai precisar dela de novo.
 2. o navegador abre sozinho, em poucos segundos, numa página com o título
    **Apurabot** e uma área tracejada escrita *"Arraste aqui o Livro Fiscal"*.
 
-**Se a janela preta abrir e fechar na hora:** o Python não foi encontrado ou o
-preparo não pegou. Abra o `cmd` na pasta e rode `python rodar.py janela` para
-ler a mensagem.
+**Se a janela preta abrir e fechar na hora:** o Python não foi encontrado, ou a
+pasta veio incompleta. Abra o `cmd` na pasta e rode `python verificar.py` para
+ler o motivo.
 
 **Se o navegador não abrir sozinho:** copie o endereço da janela preta e cole no
 navegador. Anote — não é bloqueante, mas é defeito.

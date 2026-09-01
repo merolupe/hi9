@@ -6,19 +6,23 @@ extraído do Sankhya e validado pelo Fiscalbot.
 > **Situação:** a competência de referência é reproduzida da ingestão ao
 > benefício fiscal, **fecha sem nenhuma pendência**, e a apuração de Rio Brilhante
 > bate ao centavo com a GIA entregue e com o Registro de Apuração do ERP.
-> 171 testes automáticos.
+> 185 testes automáticos.
 > Ver o [plano de execução](../docs/apurabot/02-plano-de-execucao.md).
 
 ## O que já faz
 
 ```bash
-pip install --user openpyxl "xlrd==2.0.1" PyYAML
 python rodar.py apurar <livro_fiscal.xlsx> --saida <pasta>
 ```
 
-Roda direto da pasta, **sem instalar**: em máquina corporativa, instalar programa
-esbarra em permissão de administrador e em política de executável. Quem instala
-pode usar `pip install -e apurabot` e o comando `apurabot`.
+**Não há passo de instalação.** Em máquina corporativa, instalar esbarra em
+permissão de administrador e em política de executável, então as bibliotecas
+viajam junto do código, em `src/apurabot/vendor` — todas Python puro. Ver
+[`src/apurabot/vendor/LEIA-ME.md`](src/apurabot/vendor/LEIA-ME.md).
+
+Quem tem a máquina livre pode usar `pip install -e apurabot`: as dependências
+estão declaradas no `pyproject.toml`, e as do sistema têm precedência sobre as
+embarcadas.
 
 Passo a passo completo em [07 — Como rodar](../docs/apurabot/07-como-rodar.md),
 e o [08 — Roteiro de teste](../docs/apurabot/08-roteiro-de-teste.md) para a
@@ -86,11 +90,13 @@ src/apurabot/
   conferencia.py       registro, apuração efetiva e transferências
   saida.py             escreve o .xlsx
   cli.py               linha de comando
+  _dependencias.py     põe `vendor/` ao alcance do import
+  vendor/              openpyxl, et_xmlfile, xlrd e PyYAML, embarcadas
   web/servidor.py      a janela: servidor local e navegador
   web/painel.py        o que a janela mostra
   web/pagina.html      a interface
 
-tests/          171 testes: unidade + regressão contra a competência de referência
+tests/          185 testes: unidade + regressão contra a competência de referência
 analise/        Scripts exploratórios que reproduzem os números documentados
 ```
 

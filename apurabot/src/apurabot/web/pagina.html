@@ -25,7 +25,7 @@ body{
   margin:0; background:var(--fundo); color:var(--texto);
   font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
 }
-.envelope{max-width:1100px; margin:0 auto; padding:28px 20px 80px}
+.envelope{max-width:1280px; margin:0 auto; padding:28px 20px 80px}
 header{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
 h1{font-size:26px; margin:0; letter-spacing:-.3px}
 h1 span{color:var(--marca)}
@@ -78,8 +78,8 @@ section > h2{
 .ficha .valor{font-size:19px; font-weight:600; font-variant-numeric:tabular-nums}
 
 .rolagem{overflow-x:auto; margin:0 -4px}
-table{border-collapse:collapse; width:100%; font-size:14.5px}
-th,td{padding:8px 10px; text-align:right; white-space:nowrap}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:8px 9px; text-align:right; white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
 th{
   font-size:12px; text-transform:uppercase; letter-spacing:.4px;
@@ -88,7 +88,7 @@ th{
 td{border-bottom:1px solid var(--borda); font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:none}
 tr.total td{font-weight:700; border-top:2px solid var(--borda)}
-.negativo{color:var(--ok)}
+.credor{color:var(--ok)}
 .devedor{color:var(--erro)}
 
 details{border-top:1px solid var(--borda)}
@@ -176,7 +176,8 @@ function moeda(v, colorir){
   if (v === null || v === undefined) return "";
   const texto = n.format(v);
   if (!colorir || !v) return texto;
-  return `<span class="${v > 0 ? "devedor" : "negativo"}">${texto}</span>`;
+  // Convenção de caixa: saldo credor é a favor, devedor sai do caixa.
+  return `<span class="${v < 0 ? "devedor" : "credor"}">${texto}</span>`;
 }
 
 /* ---------------- largar o arquivo ---------------- */
@@ -261,6 +262,7 @@ function desenhar(d){
 
   partes.push(`<section><h2>Procedência</h2>
     <div style="font-size:13.5px; color:var(--suave)">
+      Apurabot ${esc(d.versao)}<br>
       SHA-256 do arquivo lido: <code>${esc(d.sha256)}</code><br>
       Gerado em ${esc(d.gerado_em)}
     </div></section>`);
@@ -285,7 +287,8 @@ function pendencias(itens){
 }
 
 function porFilial(filiais){
-  const soma = {credito_bruto:0, estorno:0, credito_mantido:0, debito:0, beneficio:0, saldo:0};
+  const soma = {credito_bruto:0, estorno:0, credito_mantido:0, debito:0,
+                beneficio:0, saldo:0, a_recolher:0};
   const linhas = filiais.map(f => {
     for (const k in soma) soma[k] += f[k];
     return `<tr>
@@ -293,22 +296,27 @@ function porFilial(filiais){
       <td>${moeda(f.credito_bruto)}</td><td>${moeda(f.estorno)}</td>
       <td>${moeda(f.credito_mantido)}</td><td>${moeda(f.debito)}</td>
       <td>${moeda(f.beneficio)}</td><td>${moeda(f.saldo, true)}</td>
+      <td>${moeda(f.a_recolher)}</td>
     </tr>`;
   }).join("");
   return `<section><h2>Apuração por estabelecimento</h2>
     <div class="rolagem"><table>
       <thead><tr><th>Estabelecimento</th><th style="text-align:left">UF</th>
         <th>Crédito bruto</th><th>Estorno</th><th>Crédito mantido</th>
-        <th>Débito</th><th>Benefício</th><th>Saldo</th></tr></thead>
+        <th>Débito</th><th>Benefício</th><th>Saldo</th>
+        <th>A recolher</th></tr></thead>
       <tbody>${linhas}
         <tr class="total"><td>TOTAL</td><td></td>
           <td>${moeda(soma.credito_bruto)}</td><td>${moeda(soma.estorno)}</td>
           <td>${moeda(soma.credito_mantido)}</td><td>${moeda(soma.debito)}</td>
-          <td>${moeda(soma.beneficio)}</td><td>${moeda(soma.saldo, true)}</td></tr>
+          <td>${moeda(soma.beneficio)}</td><td>${moeda(soma.saldo, true)}</td>
+          <td>${moeda(soma.a_recolher)}</td></tr>
       </tbody></table></div>
     <p style="font-size:13px; color:var(--suave); margin:12px 0 0">
-      Saldo positivo é devedor; negativo é credor a transportar. Ainda sem os
-      ajustes aprovados — veja o registro abaixo.</p></section>`;
+      <strong>Saldo positivo é credor</strong> — crédito a transportar para o mês
+      seguinte. Negativo é devedor: sai do caixa, e é o que a coluna
+      <strong>A recolher</strong> repete em positivo. Ainda sem os ajustes
+      aprovados — veja o registro abaixo.</p></section>`;
 }
 
 const LINHAS_DE_SOMA = new Set(["004","008","010","011","013","014"]);
@@ -375,7 +383,7 @@ function transferencias(grupos){
       <p style="font-size:13.5px; color:var(--suave); margin:8px 0 0">
         Saldo próprio ${n.format(g.saldo_proprio)} · recebido
         ${n.format(g.total_recebido)} · saldo do grupo
-        ${n.format(g.saldo_final)}</p></div>`;
+        ${n.format(g.saldo_final)} (positivo é credor)</p></div>`;
   }).join("");
   return `<section><h2>Transferências a emitir depois do encerramento</h2>
     <p style="font-size:13.5px; color:var(--suave); margin:0 0 16px">

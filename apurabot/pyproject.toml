@@ -3,6 +3,10 @@ name = "apurabot"
 version = "0.1.0"
 description = "Apuração mensal de ICMS da Hinove Agrociência S.A."
 requires-python = ">=3.10"
+# Estas três também viajam embarcadas em `src/apurabot/vendor`, para a
+# ferramenta rodar sem instalação em máquina sem administrador. Declará-las
+# aqui faz o `pip install` preferir as do sistema, que é o desejável quando
+# há um. Ver `src/apurabot/vendor/LEIA-ME.md`.
 dependencies = [
     "openpyxl>=3.1",   # leitura e escrita de .xlsx
     "xlrd==2.0.1",     # leitura de .xls (formato antigo do Sankhya)
@@ -22,6 +26,7 @@ where = ["src"]
 # A janela do navegador é um arquivo estático dentro do pacote.
 [tool.setuptools.package-data]
 "apurabot.web" = ["*.html"]
+"apurabot" = ["vendor/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

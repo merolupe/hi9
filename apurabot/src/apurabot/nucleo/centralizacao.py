@@ -14,6 +14,10 @@ O que a camada garante:
     saldo individual = valor transferido + saldo residual
     recebido pela centralizadora = soma do transferido pelos demais
 
+Os saldos chegam aqui na convenção de caixa da apuração: **positivo é credor,
+negativo é devedor.** Por isso "transferir o saldo devedor" é transferir um
+valor negativo.
+
 O mecanismo muda com a UF:
 
     nfe                   a transferência é documentada por NF-e emitida pelo
@@ -81,7 +85,7 @@ class Transferencia:
                 f"{self.origem}: saldo {reais(self.saldo_individual)} — "
                 "nada a transferir nesta competência"
             )
-        sentido = "devedor" if self.valor_transferido > 0 else "credor"
+        sentido = "devedor" if self.valor_transferido < 0 else "credor"
         como = (
             f"NF-e de transferência de saldo, CFOP "
             f"{' ou '.join(str(c) for c in self.cfop_sugerido)}"
@@ -110,7 +114,7 @@ class ResultadoCentralizacao:
 
     @property
     def saldo_final(self) -> float:
-        """Positivo = a recolher pelo grupo; negativo = saldo credor a transportar."""
+        """Positivo = crédito do grupo a transportar; negativo = a recolher."""
         return self.saldo_proprio + self.total_recebido
 
     @property
@@ -145,20 +149,29 @@ def regras(params: Parametros) -> dict[str, dict[str, Any]]:
     return params.filiais.get("regras_de_centralizacao") or {}
 
 
-def recebido_por(
+def debito_recebido_por(
     resultados: list[ResultadoCentralizacao], estabelecimento: str
 ) -> float:
-    """Saldo que um estabelecimento recebe por ser centralizador.
+    """Débito que um estabelecimento assume por ser centralizador.
 
     É a linha 002 do Registro de Apuração da centralizadora — "recebimento de
     saldo devedor do estabelecimento centralizador" — quando o mecanismo da UF
     é o ajuste de apuração.
+
+    Devolve um valor **positivo**, porque no livro o débito é positivo: aqui a
+    convenção de caixa da apuração é trocada pela da conta gráfica.
+
+    O caminho inverso — o centralizado com saldo credor — não está modelado.
+    Ele seria crédito da centralizadora, linha 006, e nenhuma competência
+    observada o produziu. Ver decisão pendente nº 7.
     """
     return sum(
-        r.total_recebido
+        -t.valor_transferido
         for r in resultados
         if r.centralizadora == estabelecimento
         and r.mecanismo == AJUSTE_DE_APURACAO
+        for t in r.transferencias
+        if t.valor_transferido < 0
     )
 
 
@@ -242,8 +255,9 @@ def _centralizados(cadastro: dict[str, Any], uf: str) -> list[str]:
 
 
 def _transferivel(saldo: float, transfere: str) -> float:
+    """Na convenção de caixa, devedor é negativo e credor é positivo."""
     if transfere == SALDO_INTEGRAL:
         return saldo
     if transfere == SALDO_DEVEDOR:
-        return saldo if saldo > 0 else 0.0
-    return saldo if saldo < 0 else 0.0
+        return saldo if saldo < 0 else 0.0
+    return saldo if saldo > 0 else 0.0

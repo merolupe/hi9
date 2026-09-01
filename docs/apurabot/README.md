@@ -6,7 +6,7 @@ Apuração mensal de ICMS da Hinove Agrociência S.A. a partir do Livro Fiscal.
 
 **A competência de referência é reproduzida da ingestão ao benefício fiscal,
 fecha sem nenhuma pendência, e a apuração de Rio Brilhante bate ao centavo com a
-GIA entregue e com o Registro de Apuração do ERP.** 171 testes automáticos.
+GIA entregue e com o Registro de Apuração do ERP.** 185 testes automáticos.
 
 | | |
 |---|---|

@@ -31,31 +31,26 @@ Quem usa Git: `git clone https://github.com/merolupe/hi9.git`
 
 ---
 
-## 3. Preparar — uma vez só
+## 3. Preparar
 
-Terminal na pasta que você extraiu. O jeito rápido: abra a pasta no Explorador,
-clique na barra de endereço, digite `cmd` e Enter.
+Nada. Não há passo de instalação.
+
+As bibliotecas de que o Apurabot depende **viajam junto com o código**, em
+`apurabot/src/apurabot/vendor`. Baixar a pasta é instalar.
+
+> Isto mudou depois de o `pip install` falhar duas vezes na máquina real — uma
+> barrado pela política de segurança, outra acertando um Python diferente do que
+> a ferramenta abre. Nas duas a pessoa tinha feito tudo certo. O passo que mais
+> falhava era o que menos precisava existir.
+
+Só é preciso ter **Python 3.10 ou mais novo** na máquina. Para conferir se o
+seu serve, sem abrir a ferramenta:
 
 ```
-python -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
-py -3 -m pip install --user openpyxl "xlrd==2.0.1" PyYAML
+python verificar.py
 ```
 
-O `--user` instala na sua conta, sem administrador. É a única vez que você
-precisa do terminal.
-
-**Rode as duas linhas.** Uma máquina costuma ter mais de um Python instalado, e
-as bibliotecas ficam só naquele em que você instalou. Se uma das linhas
-responder que o comando não existe, tudo bem — é sinal de que aquele Python não
-está aqui.
-
-> `pip install` sozinho, sem o `python -m` ou o `py -3 -m` na frente, instala
-> em **um** Python — e pode não ser o que o Apurabot vai usar. O sintoma é
-> instalar com sucesso e mesmo assim receber *"Falta a biblioteca 'yaml'"*.
-
-**Não instale o pacote.** O Apurabot roda direto da pasta pelo `python.exe`, que
-já está aprovado na máquina. `pip install -e apurabot` criaria um `apurabot.exe`
-novo, e a política corporativa costuma barrá-lo — o sintoma é *"Acesso negado"*.
+Responde `OK` e o caminho do Python, ou diz exatamente o que falta.
 
 ---
 
@@ -188,14 +183,13 @@ Alterou, é só rodar de novo.
 
 | Mensagem | Causa e solução |
 |---|---|
-| **`Acesso negado`** ao rodar `apurabot` | A política barrou o executável criado pelo `pip install`. Use o `Apurabot.bat` — ele não cria programa nenhum. |
+| **Nenhum Python consegue rodar** | Ou não há Python 3.10+, ou a pasta veio incompleta. Rode `python verificar.py` para saber qual dos dois. |
+| **`Falta a biblioteca ...`** | A pasta veio incompleta — as bibliotecas deveriam estar em `apurabot/src/apurabot/vendor`. Baixe o ZIP de novo e extraia **inteiro**. |
 | **O navegador não abriu sozinho** | Copie o endereço `http://127.0.0.1:…` que aparece na janela preta e cole no navegador. |
-| **A janela preta fecha na hora** | O Python não foi encontrado, ou faltou o passo 3. Rode `python rodar.py janela` no terminal para ler a mensagem. |
+| **A janela preta fecha na hora** | Abra o `cmd` na pasta e rode `python verificar.py` para ler o motivo. |
 | **A página diz que perdeu contato** | A janela preta foi fechada. Abra o `Apurabot.bat` de novo. |
-| **`Acesso negado`** no `pip` | Faltou `--user`. |
-| **`pip não é reconhecido`** | Use `python -m pip`. |
-| **`python não é reconhecido`** | Falta o "Add Python to PATH" do passo 1. Tente `py` no lugar de `python`. |
-| **`Falta a biblioteca ...`** | Instalou num Python e o Apurabot abriu em outro. A mensagem diz o caminho do Python que está rodando — rode o `-m pip install --user` com **esse** caminho. |
+| **`python não é reconhecido`** | O Python não está no PATH. O `Apurabot.bat` também tenta `py`; se ele funcionar, use-o. |
+| **`Acesso negado`** ao rodar `apurabot` | A política barrou um executável criado por `pip install -e`. Use o `Apurabot.bat` — ele não cria programa nenhum. |
 | **`invalid choice: 'apurar'`** | Código desatualizado. Baixe o ZIP de novo. |
 | **`Encerramento BLOQUEADO`** | Não é erro de instalação — é a ferramenta cobrando pendência. Ver passo 6. |
 
@@ -213,8 +207,11 @@ Alterou, é só rodar de novo.
 
 ## 10. Testes
 
+Para quem for mexer no código. O `pytest` é a única coisa que precisa ser
+instalada, e só para isto:
+
 ```
-pip install --user pytest
+python -m pip install --user pytest
 cd apurabot
 python -m pytest
 ```

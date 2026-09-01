@@ -17,9 +17,12 @@ testes próprios. A documentação de todas fica em `docs/`.
 Dois cliques em **`Apurabot.bat`**. A ferramenta abre no navegador: arraste o
 Livro Fiscal, veja o resultado na tela e baixe a planilha.
 
-Nada é instalado e nenhum privilégio de administrador é pedido — a interface é o
-navegador, e o servidor sobe em `127.0.0.1` pelo Python que já está na máquina.
-O dado fiscal não sai dali.
+**Não há passo de instalação.** As bibliotecas viajam junto do código, e a
+interface é o navegador: o servidor sobe em `127.0.0.1` pelo Python que já está
+na máquina. Nenhum privilégio de administrador é pedido, nada é baixado, e o
+dado fiscal não sai dali.
+
+Só é preciso ter Python 3.10 ou mais novo. Para conferir: `python verificar.py`.
 
 O passo a passo, incluindo a linha de comando, está em
 [`docs/apurabot/07-como-rodar.md`](docs/apurabot/07-como-rodar.md). Para testar

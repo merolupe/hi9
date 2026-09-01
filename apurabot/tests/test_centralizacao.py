@@ -13,9 +13,11 @@ from apurabot.nucleo.centralizacao import (
     SALDO_DEVEDOR,
     SALDO_INTEGRAL,
     calcular,
-    recebido_por,
+    debito_recebido_por,
 )
 
+# Os saldos chegam à centralização na convenção de caixa da apuração:
+# POSITIVO É CREDOR, NEGATIVO É DEVEDOR.
 CENTAVO = 0.005
 GUARA = "HINOVE (FILIAL GUARÁ)"
 REGISTRO = "HINOVE (REGISTRO)"
@@ -39,7 +41,7 @@ def grupo_de(saldos, parametros, uf="SP"):
 # -- a identidade da camada ------------------------------------------------
 
 def test_o_saldo_individual_se_reparte_em_transferido_e_residual(parametros):
-    r = grupo_de({GUARA: -100_000.00, REGISTRO: 287_113.66}, parametros)
+    r = grupo_de({GUARA: 100_000.00, REGISTRO: -287_113.66}, parametros)
     t = r.transferencias[0]
     assert t.saldo_individual == pytest.approx(
         t.valor_transferido + t.saldo_residual, abs=CENTAVO
@@ -49,21 +51,21 @@ def test_o_saldo_individual_se_reparte_em_transferido_e_residual(parametros):
 
 def test_a_centralizadora_recebe_a_soma_do_que_os_demais_transferem(parametros):
     r = grupo_de(
-        {GUARA: -100_000.00, REGISTRO: 50_000.00, MATRIZ: 20_000.00}, parametros
+        {GUARA: 100_000.00, REGISTRO: -50_000.00, MATRIZ: -20_000.00}, parametros
     )
-    assert r.total_recebido == pytest.approx(70_000.00, abs=CENTAVO)
-    assert r.saldo_final == pytest.approx(-30_000.00, abs=CENTAVO)
+    assert r.total_recebido == pytest.approx(-70_000.00, abs=CENTAVO)
+    assert r.saldo_final == pytest.approx(30_000.00, abs=CENTAVO)
 
 
 def test_a_centralizadora_nao_transfere_para_si_mesma(parametros):
-    r = grupo_de({GUARA: 500_000.00, REGISTRO: 10_000.00}, parametros)
+    r = grupo_de({GUARA: -500_000.00, REGISTRO: -10_000.00}, parametros)
     assert [t.origem for t in r.transferencias] == [REGISTRO]
-    assert r.saldo_proprio == pytest.approx(500_000.00, abs=CENTAVO)
+    assert r.saldo_proprio == pytest.approx(-500_000.00, abs=CENTAVO)
 
 
 def test_estabelecimento_sem_movimento_fica_de_fora(parametros):
     """Quem não apurou nada não gera transferência de zero."""
-    r = grupo_de({GUARA: -100.00, REGISTRO: 10_000.00}, parametros)
+    r = grupo_de({GUARA: 100.00, REGISTRO: -10_000.00}, parametros)
     assert MATRIZ not in [t.origem for t in r.transferencias]
 
 
@@ -71,27 +73,30 @@ def test_estabelecimento_sem_movimento_fica_de_fora(parametros):
 
 def test_saldo_integral_transfere_devedor_e_credor(parametros):
     p = com_regra(parametros, transfere=SALDO_INTEGRAL)
-    r = grupo_de({GUARA: 0.0, REGISTRO: 10_000.00, MATRIZ: -4_000.00}, p)
+    r = grupo_de({GUARA: 0.0, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
     por_origem = {t.origem: t.valor_transferido for t in r.transferencias}
-    assert por_origem[REGISTRO] == pytest.approx(10_000.00, abs=CENTAVO)
-    assert por_origem[MATRIZ] == pytest.approx(-4_000.00, abs=CENTAVO)
+    assert por_origem[REGISTRO] == pytest.approx(-10_000.00, abs=CENTAVO)
+    assert por_origem[MATRIZ] == pytest.approx(4_000.00, abs=CENTAVO)
 
 
 def test_saldo_devedor_deixa_o_credor_no_estabelecimento(parametros):
+    """Devedor é negativo: quem tem crédito não transfere nada."""
     p = com_regra(parametros, transfere=SALDO_DEVEDOR)
-    r = grupo_de({GUARA: 0.0, REGISTRO: 10_000.00, MATRIZ: -4_000.00}, p)
+    r = grupo_de({GUARA: 0.0, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
     por_origem = {t.origem: t for t in r.transferencias}
-    assert por_origem[REGISTRO].valor_transferido == pytest.approx(10_000.00, abs=CENTAVO)
+    assert por_origem[REGISTRO].valor_transferido == pytest.approx(
+        -10_000.00, abs=CENTAVO
+    )
     assert por_origem[MATRIZ].valor_transferido == 0.0
-    assert por_origem[MATRIZ].saldo_residual == pytest.approx(-4_000.00, abs=CENTAVO)
+    assert por_origem[MATRIZ].saldo_residual == pytest.approx(4_000.00, abs=CENTAVO)
 
 
 def test_saldo_credor_deixa_o_devedor_no_estabelecimento(parametros):
     p = com_regra(parametros, transfere=SALDO_CREDOR)
-    r = grupo_de({GUARA: 0.0, REGISTRO: 10_000.00, MATRIZ: -4_000.00}, p)
+    r = grupo_de({GUARA: 0.0, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
     por_origem = {t.origem: t for t in r.transferencias}
     assert por_origem[REGISTRO].valor_transferido == 0.0
-    assert por_origem[MATRIZ].valor_transferido == pytest.approx(-4_000.00, abs=CENTAVO)
+    assert por_origem[MATRIZ].valor_transferido == pytest.approx(4_000.00, abs=CENTAVO)
 
 
 def test_regra_de_transferencia_desconhecida_falha(parametros):
@@ -113,21 +118,22 @@ def test_a_transferencia_vira_instrucao_e_nao_pendencia(parametros):
 
     O que a camada devolve é o que precisa ser emitido depois do encerramento.
     """
-    r = grupo_de({GUARA: -100.00, REGISTRO: 287_113.66}, parametros)
+    r = grupo_de({GUARA: 100.00, REGISTRO: -287_113.66}, parametros)
     assert not hasattr(r, "pendencias")
     assert len(r.instrucoes) == 1
     assert "287.113,66" in r.instrucoes[0]   # milhar e decimal como no Brasil
+    assert "devedor" in r.instrucoes[0]      # o sinal negativo vira a palavra
     assert REGISTRO in r.instrucoes[0] and GUARA in r.instrucoes[0]
 
 
 def test_sem_saldo_a_transferir_nao_ha_instrucao(parametros):
     p = com_regra(parametros, transfere=SALDO_DEVEDOR)
-    r = grupo_de({GUARA: -100.00, REGISTRO: -50_000.00}, p)
+    r = grupo_de({GUARA: 100.00, REGISTRO: 50_000.00}, p)   # os dois credores
     assert r.instrucoes == []
 
 
 def test_a_instrucao_de_sp_pede_nfe_com_o_cfop_parametrizado(parametros):
-    r = grupo_de({GUARA: 0.0, REGISTRO: 1_000.00}, parametros)
+    r = grupo_de({GUARA: 0.0, REGISTRO: -1_000.00}, parametros)
     assert r.mecanismo == NFE
     assert "NF-e" in r.instrucoes[0]
     assert "5601" in r.instrucoes[0]
@@ -143,15 +149,18 @@ def test_a_regra_de_sp_ainda_nao_esta_homologada(parametros):
 # -- MS: a transferência é lançamento, não documento ------------------------
 
 def test_ms_centraliza_em_rio_brilhante_por_ajuste_de_apuracao(parametros):
-    r = grupo_de({RIO_BRILHANTE: 108_915.42, CORUMBA: 99_412.10}, parametros, uf="MS")
+    r = grupo_de(
+        {RIO_BRILHANTE: -108_915.42, CORUMBA: -99_412.10}, parametros, uf="MS"
+    )
     assert r.centralizadora == RIO_BRILHANTE
     assert r.mecanismo == AJUSTE_DE_APURACAO
     assert [t.origem for t in r.transferencias] == [CORUMBA]
-    assert r.total_recebido == pytest.approx(99_412.10, abs=CENTAVO)
+    assert r.total_recebido == pytest.approx(-99_412.10, abs=CENTAVO)
+    assert r.saldo_final == pytest.approx(-208_327.52, abs=CENTAVO)
 
 
 def test_a_instrucao_de_ms_nao_pede_nfe(parametros):
-    r = grupo_de({RIO_BRILHANTE: 0.0, CORUMBA: 99_412.10}, parametros, uf="MS")
+    r = grupo_de({RIO_BRILHANTE: 0.0, CORUMBA: -99_412.10}, parametros, uf="MS")
     assert "NF-e" not in r.instrucoes[0]
     assert "Registro de Apuração" in r.instrucoes[0]
 
@@ -163,11 +172,27 @@ def test_so_o_ajuste_de_apuracao_alimenta_a_linha_002(parametros):
     gráfica da centralizadora — entra pela escrituração da nota.
     """
     resultados = calcular(
-        {GUARA: -100.00, REGISTRO: 10_000.00,
-         RIO_BRILHANTE: 0.0, CORUMBA: 99_412.10},
+        {GUARA: 100.00, REGISTRO: -10_000.00,
+         RIO_BRILHANTE: 0.0, CORUMBA: -99_412.10},
         parametros,
     )
-    assert recebido_por(resultados, RIO_BRILHANTE) == pytest.approx(
+    # Positivo: o livro registra débito em positivo, e é aqui que a convenção
+    # de caixa da apuração é trocada pela da conta gráfica.
+    assert debito_recebido_por(resultados, RIO_BRILHANTE) == pytest.approx(
         99_412.10, abs=CENTAVO
     )
-    assert recebido_por(resultados, GUARA) == 0.0
+    assert debito_recebido_por(resultados, GUARA) == 0.0
+
+
+def test_a_convencao_de_sinal_e_a_do_caixa(parametros):
+    """Saldo credor é dinheiro a favor; devedor sai do caixa.
+
+    A conta gráfica trata o débito como positivo. Aqui o sinal é o do efeito
+    financeiro, porque é assim que quem fecha a competência lê o resultado.
+    """
+    r = grupo_de({GUARA: 0.0, REGISTRO: -287_113.66, MATRIZ: 40_000.00}, parametros)
+    por_origem = {t.origem: t for t in r.transferencias}
+    assert por_origem[REGISTRO].saldo_individual < 0, "devedor é negativo"
+    assert por_origem[MATRIZ].saldo_individual > 0, "credor é positivo"
+    assert "devedor" in por_origem[REGISTRO].instrucao
+    assert "credor" in por_origem[MATRIZ].instrucao

@@ -275,7 +275,7 @@ def _resumo(filial, apuracao, ajustes) -> list[LinhaResumo]:
     def ajuste(campo: str) -> float:
         return ajustes.total(campo, nome) if ajustes else 0.0
 
-    recebido = apuracao.recebido_por_centralizacao(nome)
+    recebido = apuracao.debito_por_centralizacao(nome)
 
     l001 = LinhaResumo(1, "por Saídas/Prestações com Débito do Imposto", filial.debito)
 

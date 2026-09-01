@@ -122,9 +122,14 @@ class ApuracaoFilial:
                  "credito_indevido": 0.0}
     ))
 
+    #: Só a linha TOTAL usa: ela soma filiais e não tem benefício próprio.
+    presumido_consolidado: float = 0.0
+
     @property
     def credito_presumido(self) -> float:
-        return self.beneficio.credito_presumido if self.beneficio else 0.0
+        if self.beneficio is not None:
+            return self.beneficio.credito_presumido
+        return self.presumido_consolidado
 
     @property
     def fadefe(self) -> float:
@@ -133,8 +138,29 @@ class ApuracaoFilial:
 
     @property
     def saldo(self) -> float:
-        """Positivo = a recolher; negativo = credor. Sem DIFAL e sem ajustes."""
-        return self.debito - self.credito_mantido - self.credito_presumido
+        """Convenção de caixa: **positivo é credor, negativo é devedor.**
+
+        Saldo credor é dinheiro a favor — crédito que se leva para o mês
+        seguinte. Saldo devedor sai do caixa. Por isso o sinal é o do efeito
+        financeiro, e não o da conta gráfica, onde o débito é que é positivo.
+
+        As linhas 011 a 014 do Registro de Apuração não seguem esta convenção:
+        lá devedor e credor têm linhas próprias, ambas positivas, como o livro
+        manda. Ver `nucleo/registro.py`.
+
+        Sem DIFAL e sem os ajustes que não nascem do Livro Fiscal.
+        """
+        return self.credito_mantido + self.credito_presumido - self.debito
+
+    @property
+    def a_recolher(self) -> float:
+        """O que sai do caixa — zero quando o saldo é credor."""
+        return max(-self.saldo, 0.0) + 0.0      # o + 0.0 mata o "-0,00"
+
+    @property
+    def credor(self) -> float:
+        """O crédito que se transporta para o mês seguinte."""
+        return max(self.saldo, 0.0) + 0.0
 
     @property
     def confere(self) -> bool:
@@ -166,6 +192,7 @@ class Apuracao:
             t.credito_indevido += f.credito_indevido
             t.debito += f.debito
             t.linhas += f.linhas
+            t.presumido_consolidado += f.credito_presumido
         return t
 
     @property
@@ -191,9 +218,9 @@ class Apuracao:
         """Transferências a emitir depois do encerramento da competência."""
         return [i for c in self.centralizacao for i in c.instrucoes]
 
-    def recebido_por_centralizacao(self, estabelecimento: str) -> float:
-        """Saldo que o estabelecimento recebe por centralizar — linha 002."""
-        return centr.recebido_por(self.centralizacao, estabelecimento)
+    def debito_por_centralizacao(self, estabelecimento: str) -> float:
+        """Débito que o estabelecimento assume por centralizar — linha 002."""
+        return centr.debito_recebido_por(self.centralizacao, estabelecimento)
 
     @property
     def sem_regra_de_atividade(self) -> list[ApuracaoFilial]:

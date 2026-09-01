@@ -288,11 +288,13 @@ def test_o_saldo_de_corumba_e_o_que_rio_brilhante_recebe_do_centralizador(apurac
     R$ 99.412,10 de "Recebimento de saldo devedor - estabelecimento
     centralizador". Esse é exatamente o saldo devedor que Corumbá apura.
 
-    A regra de centralização de MS ainda não está modelada — ver decisão
-    pendente nº 7. Este teste é a evidência de que ela existe.
+    O saldo vem na convenção de caixa — devedor é negativo —, e o que entra no
+    livro da centralizadora é o débito, positivo.
     """
     corumba = apuracao.filiais["HINOVE (CORUMBÁ- MS)"]
-    assert corumba.saldo == pytest.approx(99_412.10, abs=CENTAVO)
+    assert corumba.saldo == pytest.approx(-99_412.10, abs=CENTAVO)
+    assert corumba.a_recolher == pytest.approx(99_412.10, abs=CENTAVO)
+    assert corumba.credor == 0.0
 
 
 def _grupo(apuracao, uf):
@@ -307,8 +309,8 @@ def test_ms_centraliza_em_rio_brilhante(apuracao):
     """Corumbá transfere o saldo devedor; Rio Brilhante o recebe na linha 002."""
     grupo = _grupo(apuracao, "MS")
     assert grupo.centralizadora == "HINOVE (RIO BRILHANTE)"
-    assert grupo.total_recebido == pytest.approx(99_412.10, abs=CENTAVO)
-    assert apuracao.recebido_por_centralizacao(RB) == pytest.approx(
+    assert grupo.total_recebido == pytest.approx(-99_412.10, abs=CENTAVO)
+    assert apuracao.debito_por_centralizacao(RB) == pytest.approx(
         99_412.10, abs=CENTAVO
     )
 
@@ -317,7 +319,7 @@ def test_registro_transfere_o_saldo_devedor_para_guara(apuracao):
     """Identidade da camada, sobre os saldos reais da competência."""
     grupo = _grupo(apuracao, "SP")
     registro = next(t for t in grupo.transferencias if t.origem == "HINOVE (REGISTRO)")
-    assert registro.saldo_individual == pytest.approx(287_113.66, abs=CENTAVO)
+    assert registro.saldo_individual == pytest.approx(-287_113.66, abs=CENTAVO)
     assert registro.saldo_individual == pytest.approx(
         registro.valor_transferido + registro.saldo_residual, abs=CENTAVO
     )
@@ -336,3 +338,27 @@ def test_a_transferencia_e_instrucao_e_nao_bloqueia_o_encerramento(apuracao):
     assert any("HINOVE (REGISTRO)" in i for i in grupo.instrucoes)
     assert all("NF-e" in i for i in grupo.instrucoes)
 
+
+def test_o_saldo_traz_o_credor_como_positivo(apuracao):
+    """Guará fecha credor e Registro fecha devedor — os sinais dizem qual é qual.
+
+    Saldo credor é crédito que se transporta; saldo devedor sai do caixa. É a
+    leitura de quem fecha a competência, não a da conta gráfica.
+    """
+    guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
+    assert guara.saldo == pytest.approx(2_107_543.31, abs=CENTAVO)
+    assert guara.credor == pytest.approx(2_107_543.31, abs=CENTAVO)
+    assert guara.a_recolher == 0.0
+
+    registro = apuracao.filiais["HINOVE (REGISTRO)"]
+    assert registro.saldo == pytest.approx(-287_113.66, abs=CENTAVO)
+    assert registro.a_recolher == pytest.approx(287_113.66, abs=CENTAVO)
+
+
+def test_o_saldo_do_total_e_a_soma_dos_saldos_das_filiais(apuracao):
+    """O benefício fiscal não pode sumir na linha de total."""
+    soma = sum(f.saldo for f in apuracao.filiais.values())
+    assert apuracao.total.saldo == pytest.approx(soma, abs=CENTAVO)
+    assert apuracao.total.credito_presumido == pytest.approx(
+        apuracao.credito_presumido, abs=CENTAVO
+    )

@@ -11,6 +11,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from . import __version__
 from .apuracao import Apuracao, apurar
 from .conferencia import aba_apuracao_efetiva, aba_registro, aba_transferencias
 from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
@@ -109,6 +110,7 @@ def _aba_resumo(wb, base: BaseTratada) -> None:
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
 
     secao("PROCEDÊNCIA")
+    aba.append(["Versão do Apurabot", __version__])
     for rotulo, chave in [
         ("Competência", "competencia"), ("Arquivo de origem", "arquivo"),
         ("SHA-256 do arquivo", "sha256"), ("Gerado em", "gerado_em"),
@@ -171,27 +173,34 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
         ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
         ("credito_mantido", 17), ("debito", 16), ("credito_presumido", 18),
-        ("saldo", 16), ("confere", 10),
+        ("saldo (credor +)", 18), ("a recolher", 15), ("confere", 10),
     ]
     _escreve_cabecalho(aba, colunas)
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         aba.append([
             f.estabelecimento, f.uf, f.regime, f.linhas, f.credito_bruto,
             f.estorno, f.credito_indevido, f.credito_mantido, f.debito,
-            f.credito_presumido, f.saldo, "OK" if f.confere else "DIVERGE",
+            f.credito_presumido, f.saldo, f.a_recolher,
+            "OK" if f.confere else "DIVERGE",
         ])
     total = apuracao.total
     aba.append([
         "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
         total.credito_indevido, total.credito_mantido, total.debito,
-        apuracao.credito_presumido, total.saldo,
+        total.credito_presumido, total.saldo, total.a_recolher,
         "OK" if total.confere else "DIVERGE",
     ])
     for celula in aba[aba.max_row]:
         celula.font = Font(bold=True)
-    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=11):
+    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=12):
         for celula in linha:
             celula.number_format = MOEDA
+
+    aba.append([])
+    aba.append([
+        "Saldo na convenção de caixa: positivo é credor — crédito a transportar "
+        "—, negativo é devedor. \"A recolher\" é o que sai do caixa."
+    ])
 
     aba.append([])
     aba.append(["Memória do benefício fiscal"])

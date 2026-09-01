@@ -13,6 +13,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from . import __version__
 from .apuracao import Apuracao, apurar
 from .base_tratada import BaseTratada, tratar
 from .conferencia import ROTULO_DA_ATIVIDADE
@@ -50,7 +51,7 @@ def _ler(args: argparse.Namespace) -> BaseTratada | int:
 
 def _cabecalho(base: BaseTratada) -> dict:
     resumo = base.resumo()
-    _titulo("Apurabot — apuração de ICMS")
+    _titulo(f"Apurabot {__version__} — apuração de ICMS")
     _campo("Competência", resumo["competencia"])
     _campo("Arquivo", resumo["arquivo"])
     _campo("Linhas no Livro Fiscal", _milhar(resumo["linhas_no_livro"]))
@@ -82,12 +83,16 @@ def _pendencias(base: BaseTratada, apuracao: Apuracao | None) -> int:
 
 def _apuracao(apuracao: Apuracao) -> None:
     _titulo("Apuração por estabelecimento")
-    print(f"  {'estabelecimento':<32}{'UF':<4}{'crédito':>14}{'débito':>14}{'saldo':>14}")
+    print(
+        f"  {'estabelecimento':<32}{'UF':<4}{'crédito':>14}{'débito':>14}"
+        f"{'saldo':>16}{'a recolher':>14}"
+    )
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         print(
             f"  {f.estabelecimento:<32}{f.uf:<4}{reais(f.credito_mantido):>14}"
-            f"{reais(f.debito):>14}{reais(f.saldo):>14}"
+            f"{reais(f.debito):>14}{reais(f.saldo):>16}{reais(f.a_recolher):>14}"
         )
+    print("\n  Saldo positivo é credor; negativo sai do caixa.")
 
     por_atividade = [f for f in apuracao.filiais.values() if f.segrega_por_atividade]
     if por_atividade:
