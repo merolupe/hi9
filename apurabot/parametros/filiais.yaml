@@ -3,8 +3,7 @@
 # nunca pelo nome — os nomes têm espaçamento irregular na origem.
 #
 # `cnpj` e `inscricao_estadual` aparecem no cabeçalho do Registro de Apuração.
-# Onde estiverem em branco, o registro sai com o campo marcado como não
-# cadastrado — preencha com o que consta no cadastro da filial.
+# Vêm do cadastro de empresas do Sankhya, conferidos em 01/09/2026.
 #
 # Revisão: Gerência Fiscal/Tributária | Vigência: a partir de 2026-01-01
 
@@ -12,6 +11,8 @@ filiais:
   - codigo: 1
     nome: HINOVE (MATRIZ)
     uf: SP
+    cnpj: "14031191000163"
+    inscricao_estadual: "181159423115"
     regime: sp_equilibrio_fiscal
     centralizacao: { participa: true, papel: centralizado }
 
@@ -24,35 +25,43 @@ filiais:
     beneficio_fiscal: ms_rio_brilhante        # Termo de Acordo
     centralizacao: { participa: true, papel: centralizadora }
 
-  # ATENÇÃO: códigos abaixo a confirmar na extração do Sankhya.
-  # Julho/2026 só expôs os códigos 1 e 2 nas linhas amostradas.
-  - codigo: null
+  - codigo: 4
     nome: HINOVE (REGISTRO)
     uf: SP
+    cnpj: "14031191000406"
+    inscricao_estadual: "574084480110"
     regime: sp_equilibrio_fiscal
     centralizacao: { participa: true, papel: centralizado }
 
-  - codigo: null
+  - codigo: 11
     nome: HINOVE (FILIAL GUARÁ)
     uf: SP
+    cnpj: "14031191000910"
+    inscricao_estadual: "325043425110"
     regime: sp_equilibrio_fiscal
     centralizacao: { participa: true, papel: centralizadora }
 
-  - codigo: null
+  - codigo: 9
     nome: HINOVE (CORUMBÁ- MS)
     uf: MS
+    cnpj: "14031191000830"
+    inscricao_estadual: "284749885"
     regime: ms_estorno_proporcional
     centralizacao: { participa: true, papel: centralizado }
 
-  - codigo: null
+  - codigo: 8
     nome: HINOVE (BARRA DO GARÇAS - MT)
     uf: MT
+    cnpj: "14031191000759"
+    inscricao_estadual: "139223428"
     regime: mt_diferimento
     centralizacao: { participa: false }
 
-  - codigo: null
+  - codigo: 7
     nome: HINOVE (LONDRINA)
     uf: PR
+    cnpj: "14031191000678"
+    inscricao_estadual: "9093419224"
     regime: pr_diferimento
     centralizacao: { participa: false }
 

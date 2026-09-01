@@ -209,16 +209,22 @@ atividades:
     # Os pares intra/inter andam juntos: se 5118 é industrial, 6118 também é.
     # Nada aqui é inferido do comportamento da apuração — cada CFOP está na
     # atividade que a sua própria descrição na tabela de CFOP indica.
+    #
+    # A devolução segue a venda que desfaz: 1201/2201/3201 é devolução de venda
+    # de produção do estabelecimento e por isso é industrial; 1202/2202/3202 é
+    # devolução de venda de mercadoria adquirida de terceiros, e é comercial.
     por_cfop:
       industrial:
         debito: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122]
         credito: [1101, 2101, 3101, 1111, 2111, 1116, 2116, 1122, 2122,
-                  1151, 2151, 3151]          # transferência p/ industrialização
+                  1151, 2151, 3151,          # transferência p/ industrialização
+                  1201, 2201, 3201]          # devolução de venda de produção
       comercial:
         debito: [5102, 6102, 5103, 6103, 5104, 6104, 5115, 6115, 5117, 6117,
                  5119, 6119, 5120, 6120, 5905, 6905, 5906, 6906, 5934, 6934]
         credito: [1102, 2102, 3102, 1113, 2113, 1118, 2118, 1121, 2121,
                   1152, 2152, 3152,          # transferência p/ comercialização
+                  1202, 2202, 3202,          # devolução de venda de terceiros
                   1352, 2352, 1353, 2353, 1906, 2906, 1907, 2907]
       prestacional_outras:
         debito: [5910, 6910, 5911, 6911, 5949, 6949]

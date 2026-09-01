@@ -46,13 +46,51 @@ def classificar(linha: LinhaLivro, params: Parametros) -> ResultadoClassificacao
     )
 
 
+def casa_lancamento_sem_contabil(linha: LinhaLivro, item: dict) -> str | None:
+    """Este item de `lancamentos_sem_contabil` reconhece esta linha?
+
+    Devolve o motivo do casamento, ou None. Três chaves, e basta uma:
+
+    `produto`             o código do produto do lançamento;
+    `cfop`                a lista de CFOP;
+    `sem_valor_contabil`  a **forma** do lançamento — sem valor contábil, com
+                          base e com ICMS. É como o complemento de ICMS chega
+                          quando é lançado contra o código do produto real, e
+                          não contra um código próprio.
+
+    A forma só reconhece o que hoje já seria pendência: um lançamento com valor
+    contábil nunca casa por ela. Sem isso, a chave alargaria a regra para
+    linhas normais do mesmo CFOP.
+    """
+    produto = item.get("produto")
+    if produto is not None and linha.produto_codigo == str(produto):
+        return f"produto {produto}"
+    cfops = set(item.get("cfop") or [])
+    if cfops and linha.cfop_int in cfops:
+        return f"CFOP {linha.cfop_int}"
+    if item.get("sem_valor_contabil") and _tem_a_forma_de_lancamento_sem_contabil(linha):
+        return "lançado sem valor contábil, só com base e ICMS"
+    return None
+
+
+def _tem_a_forma_de_lancamento_sem_contabil(linha: LinhaLivro) -> bool:
+    def numero(campo: str) -> float:
+        try:
+            return float(linha.dados.get(campo) or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    return (
+        not numero("valor_contabil")
+        and numero("base_icms") > 0
+        and numero("valor_icms") != 0
+    )
+
+
 def _lancamento_sem_contabil(linha, params) -> ResultadoClassificacao | None:
     for item in params.classificacao.get("lancamentos_sem_contabil") or []:
-        produto = item.get("produto")
-        cfops = set(item.get("cfop") or [])
-        if (produto is not None and linha.produto_codigo == str(produto)) or (
-            cfops and linha.cfop_int in cfops
-        ):
+        motivo = casa_lancamento_sem_contabil(linha, item)
+        if motivo:
             return ResultadoClassificacao(
                 categoria=item["categoria"],
                 regra=f"lançamento sem contábil — {item.get('descricao', '')}",

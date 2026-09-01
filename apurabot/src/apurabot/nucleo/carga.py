@@ -14,6 +14,7 @@ from enum import Enum
 
 from ..ingestao import LinhaLivro
 from ..parametros import Parametros
+from .classificacao import casa_lancamento_sem_contabil
 
 
 class Situacao(str, Enum):
@@ -116,22 +117,20 @@ def _lancamento_sem_contabil(
 ) -> ResultadoCarga | None:
     """Trata os lançamentos cuja carga não sai de `ICMS ÷ valor contábil`.
 
-    Hoje são dois: o crédito de ativo (CIAP, produto 615000001 / CFOP 1604) e o
-    complemento de ICMS (produto 701000075). Ambos chegam com valor contábil
-    zerado, então a carga vem do parâmetro e não da fórmula.
+    São o crédito de ativo (CIAP) e o complemento de ICMS. Ambos chegam com
+    valor contábil zerado, então a carga vem do parâmetro e não da fórmula.
+
+    Quem reconhece cada um é `casa_lancamento_sem_contabil`, para o critério
+    ser um só aqui e na classificação.
     """
     itens = params.classificacao.get("lancamentos_sem_contabil") or []
     for item in itens:
-        produto = item.get("produto")
-        cfops = set(item.get("cfop") or [])
-        casa_produto = produto is not None and linha.produto_codigo == str(produto)
-        casa_cfop = bool(cfops) and linha.cfop_int in cfops
-        if not (casa_produto or casa_cfop):
+        origem = casa_lancamento_sem_contabil(linha, item)
+        if origem is None:
             continue
 
         carga = item.get("carga_efetiva")
         descricao = item.get("descricao", item.get("categoria", ""))
-        origem = f"produto {produto}" if casa_produto else f"CFOP {linha.cfop_int}"
         pendente = "" if item.get("homologado", True) else " (regra não homologada)"
 
         if carga == "CIAP":
