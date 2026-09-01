@@ -281,7 +281,7 @@ Para não reportar como defeito:
 | | |
 |---|---|
 | **Leitura de `ajustes.xlsx`** | as linhas marcadas `aguarda ajuste` dependem disto — é a Entrega 2 |
-| **Encerramento de competência** | o saldo credor ainda não é transportado para o mês seguinte |
+| **Encerramento de competência** | o saldo credor a transportar é calculado e exibido, mas o encadeamento entre competências é manual: o número vai para `parametros/saldos.yaml` à mão |
 | **DIFAL** e **CIAP** | pausados por decisão de escopo |
 | **Regra de transferência de SP** | calculada, não homologada — a tela avisa |
 | **Local de expedição** | o cruzamento com o relatório de expedição não está implementado (decisão pendente nº 12) |

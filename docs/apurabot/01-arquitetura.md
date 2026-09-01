@@ -147,7 +147,8 @@ apurabot/
 │   ├── regimes.yaml
 │   ├── cargas.yaml
 │   ├── classificacao.yaml
-│   └── produtos.yaml    cadastro produto → categoria tributária
+│   ├── produtos.yaml    cadastro produto → categoria tributária
+│   └── saldos.yaml      saldo credor de abertura, por competência
 ├── tests/
 │   ├── unidade/         cada regra isolada
 │   └── regressao/       Junho e Julho/2026 como referência

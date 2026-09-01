@@ -22,6 +22,20 @@ from .nucleo.estorno import ResultadoEstorno, calcular
 from .parametros import Parametros
 
 
+def mes_vizinho(competencia: str, passo: int) -> str:
+    """'2026-07' e -1 → '2026-06'. Devolve vazio se a competência não tem forma.
+
+    Serve para dizer de onde veio e para onde vai o saldo credor, que é a única
+    coisa na apuração que atravessa a virada do mês.
+    """
+    try:
+        ano, mes = (int(parte) for parte in str(competencia).split("-", 1))
+    except (TypeError, ValueError):
+        return ""
+    total = ano * 12 + (mes - 1) + passo
+    return f"{total // 12:04d}-{total % 12 + 1:02d}"
+
+
 @dataclass
 class AjustesDaApuracao:
     """Lançamentos que não nascem de documento no Livro Fiscal.
@@ -107,6 +121,10 @@ class ApuracaoFilial:
     estabelecimento: str
     uf: str
     regime: str
+    codigo: int | None = None
+    #: Linha 009 do Registro — o crédito que veio do mês anterior. Não nasce do
+    #: Livro Fiscal: vem declarado em `parametros/saldos.yaml`.
+    saldo_credor_anterior: float = 0.0
     credito_bruto: float = 0.0
     credito_mantido: float = 0.0
     estorno: float = 0.0
@@ -148,9 +166,18 @@ class ApuracaoFilial:
         lá devedor e credor têm linhas próprias, ambas positivas, como o livro
         manda. Ver `nucleo/registro.py`.
 
-        Sem DIFAL e sem os ajustes que não nascem do Livro Fiscal.
+        A conta abre com o saldo credor do mês anterior — a linha 009 do
+        registro —, porque a conta gráfica é contínua: o crédito que sobrou não
+        se perde na virada do mês.
+
+        Sem DIFAL e sem os demais ajustes que não nascem do Livro Fiscal.
         """
-        return self.credito_mantido + self.credito_presumido - self.debito
+        return (
+            self.credito_mantido
+            + self.credito_presumido
+            + self.saldo_credor_anterior
+            - self.debito
+        )
 
     @property
     def a_recolher(self) -> float:
@@ -159,8 +186,21 @@ class ApuracaoFilial:
 
     @property
     def credor(self) -> float:
-        """O crédito que se transporta para o mês seguinte."""
+        """O crédito que se transporta para o mês seguinte — a linha 014.
+
+        É a abertura do mês que vem: este número é o que vai para
+        `parametros/saldos.yaml` na competência seguinte.
+        """
         return max(self.saldo, 0.0) + 0.0
+
+    @property
+    def saldo_do_periodo(self) -> float:
+        """O que a competência produziu sozinha, sem a abertura.
+
+        Serve para separar duas perguntas que o saldo final mistura: o mês foi
+        credor ou devedor, e o estabelecimento tem ou não crédito acumulado.
+        """
+        return self.saldo - self.saldo_credor_anterior
 
     @property
     def confere(self) -> bool:
@@ -181,6 +221,24 @@ class Apuracao:
     filiais: dict[str, ApuracaoFilial]
     base: BaseTratada
     centralizacao: list[centr.ResultadoCentralizacao] = field(default_factory=list)
+    #: A competência tem saldo credor de abertura declarado?
+    #: Competência não declarada não é competência que abre em zero: enquanto
+    #: ninguém disser o que veio do mês anterior, a linha 009 sai marcada.
+    saldos_declarados: bool = False
+
+    @property
+    def competencia(self) -> str:
+        return self.base.competencia
+
+    @property
+    def competencia_anterior(self) -> str:
+        """De onde veio o saldo credor de abertura."""
+        return mes_vizinho(self.competencia, -1)
+
+    @property
+    def competencia_seguinte(self) -> str:
+        """Para onde vai o saldo credor a transportar."""
+        return mes_vizinho(self.competencia, +1)
 
     @property
     def total(self) -> ApuracaoFilial:
@@ -192,6 +250,7 @@ class Apuracao:
             t.credito_indevido += f.credito_indevido
             t.debito += f.debito
             t.linhas += f.linhas
+            t.saldo_credor_anterior += f.saldo_credor_anterior
             t.presumido_consolidado += f.credito_presumido
         return t
 
@@ -260,6 +319,7 @@ def apurar(
                 estabelecimento=chave,
                 uf=uf,
                 regime=resultado.regime,
+                codigo=int(ficha["codigo"]) if ficha.get("codigo") is not None else None,
                 segrega_por_atividade=ativ.mapa_da_uf(uf, params) is not None,
             )
         filial.credito_bruto += resultado.credito_bruto
@@ -301,12 +361,43 @@ def apurar(
             ),
         )
 
-    apuracao = Apuracao(filiais=filiais, base=base)
+    # Abertura da conta gráfica — a linha 009. Vem antes da centralização
+    # porque muda o saldo que cada estabelecimento leva para o grupo.
+    abertura = _abertura(base, params, ajustes, filiais)
+
+    apuracao = Apuracao(filiais=filiais, base=base, saldos_declarados=abertura)
 
     # Camada 9 — centralização. Vem por último porque opera sobre o saldo já
     # apurado de cada estabelecimento.
     apuracao.centralizacao = centr.calcular(apuracao.saldos, params)
     return apuracao
+
+
+def _abertura(
+    base: BaseTratada,
+    params: Parametros,
+    ajustes: AjustesDaApuracao,
+    filiais: dict[str, ApuracaoFilial],
+) -> bool:
+    """Aplica o saldo credor do mês anterior e diz se ele foi declarado.
+
+    O Livro Fiscal traz os documentos da competência e nada mais — o crédito
+    que sobrou do mês passado só pode vir declarado. A fonte é
+    `parametros/saldos.yaml`, indexada pelo código da empresa; um ajuste
+    aprovado para a rodada, quando existe, prevalece sobre ela.
+    """
+    declarados = params.saldos_credores(base.competencia)
+    for chave, filial in filiais.items():
+        do_parametro = (
+            float((declarados or {}).get(filial.codigo, 0.0))
+            if filial.codigo is not None
+            else 0.0
+        )
+        do_ajuste = ajustes.saldo_credor_anterior.get(chave)
+        filial.saldo_credor_anterior = (
+            float(do_ajuste) if do_ajuste is not None else do_parametro
+        )
+    return declarados is not None
 
 
 def _somar_na_atividade(

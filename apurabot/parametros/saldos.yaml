@@ -1,0 +1,43 @@
+# Saldo credor do período anterior — a abertura da conta gráfica.
+#
+# É a linha 009 do Registro de Apuração: o crédito que o estabelecimento trouxe
+# do mês passado e que se soma ao crédito do mês antes de apurar o saldo. Não
+# nasce do Livro Fiscal — o Livro só tem os documentos da competência —, então
+# tem que ser declarado aqui.
+#
+# De onde vem o número: é a **linha 014 do Registro de Apuração da competência
+# anterior** ("SALDO CREDOR a Transportar p/ o Período Seguinte"). O Apurabot
+# calcula essa linha 014; quando a série estiver encadeada, o valor de um mês
+# sai do fechamento do anterior. Enquanto a ferramenta não tiver a série
+# inteira, a abertura entra por aqui.
+#
+# `por_estabelecimento` é indexado pelo CODIGO da empresa (coluna G do Livro
+# Fiscal), nunca pelo nome — os nomes têm espaçamento irregular na origem.
+#
+# CONVENÇÃO: uma competência presente neste arquivo é uma declaração COMPLETA.
+# Estabelecimento que não aparece em `por_estabelecimento` abriu o mês sem saldo
+# credor. Competência ausente do arquivo é diferente disso: aí a linha 009 sai
+# zerada e MARCADA no registro, porque ninguém declarou nada — é a regra 4 do
+# repositório, que proíbe preencher por conta própria.
+#
+# Revisão: Gerência Fiscal/Tributária
+
+saldos_credores:
+
+  - competencia: "2026-07"
+    homologado: false
+    origem: >
+      Conciliado contra o Registro de Apuração do ICMS de 07/2026 emitido pelo
+      ERP para a Filial Guará (empresa 11), cuja linha 014 declara
+      R$ 2.215.164,28 a transportar. Sobre o Livro Fiscal de 07/2026 o Apurabot
+      apura crédito de R$ 4.167.368,77 e sub total de débito de
+      R$ 2.059.825,46, o que fecha em R$ 2.107.543,31 sem abertura; a diferença
+      de R$ 107.620,97 é o que a linha 009 precisa ter para o registro fechar
+      com o do ERP.
+    pendencia: >
+      NÃO HOMOLOGADO. O valor é resíduo de conciliação, não leitura de
+      documento: falta confrontá-lo com a linha 014 do Registro de Apuração de
+      06/2026. Se aquela linha trouxer outro número, a diferença não é abertura
+      e sim ajuste das linhas 002, 006 ou 007 — ver decisão pendente nº 14.
+    por_estabelecimento:
+      11: 107620.97           # HINOVE (FILIAL GUARÁ)

@@ -177,11 +177,15 @@ def test_a_deducao_nao_supera_o_saldo_devedor(registros):
 # -- o que ainda não veio fica marcado --------------------------------------
 
 def test_sem_ajuste_declarado_as_linhas_saem_marcadas(base_julho, parametros):
-    """O registro diz o que falta em vez de fingir um total."""
+    """O registro diz o que falta em vez de fingir um total.
+
+    A 009 não está na lista: o saldo credor de abertura tem casa própria em
+    `parametros/saldos.yaml` e julho está declarado lá.
+    """
     registros = reg.montar(apurar(base_julho, parametros), parametros, None)
     rb = next(r for r in registros if r.estabelecimento == RB)
     assert rb.aguarda_ajustes
-    assert {i.codigo for i in rb.resumo if i.aguarda_ajuste} == {3, 6, 7, 9}
+    assert {i.codigo for i in rb.resumo if i.aguarda_ajuste} == {3, 6, 7}
 
 
 def test_com_ajuste_declarado_nada_fica_marcado(rio_brilhante):

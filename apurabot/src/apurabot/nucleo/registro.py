@@ -16,6 +16,10 @@ se encontram. E é onde aparecem as linhas que não nascem de documento — 002,
 003 por ajuste, 006, 007 e 009 —, que só podem vir declaradas pelo time fiscal.
 Enquanto não vierem, saem zeradas e marcadas: o registro diz o que falta em vez
 de fingir um total.
+
+A linha 009 é a exceção que já tem endereço: o saldo credor do período anterior
+é declarado por competência em `parametros/saldos.yaml` e chega aqui pronto,
+aplicado pela apuração. As demais ainda esperam o relatório de ajustes.
 """
 from __future__ import annotations
 
@@ -311,9 +315,14 @@ def _resumo(filial, apuracao, ajustes) -> list[LinhaResumo]:
 
     l008 = LinhaResumo(8, "Sub Total", l005.valor + l006.valor + l007.valor)
 
-    anterior = float((ajustes.saldo_credor_anterior.get(nome) if ajustes else 0.0) or 0.0)
-    l009 = LinhaResumo(9, "Saldo Credor do Período Anterior", anterior)
-    l009.aguarda_ajuste = not declarados
+    # A abertura da conta gráfica já foi resolvida pela apuração — parâmetro da
+    # competência ou ajuste aprovado, nesta ordem. Aqui ela só é transcrita.
+    l009 = LinhaResumo(
+        9, "Saldo Credor do Período Anterior", filial.saldo_credor_anterior
+    )
+    l009.aguarda_ajuste = not apuracao.saldos_declarados and not (
+        ajustes and nome in ajustes.saldo_credor_anterior
+    )
 
     l010 = LinhaResumo(10, "Total", l008.valor + l009.valor)
 

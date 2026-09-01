@@ -94,7 +94,12 @@ def _apuracao(apuracao: Apuracao) -> None:
             f"  {f.estabelecimento:<32}{f.uf:<4}{reais(f.credito_mantido):>14}"
             f"{reais(f.debito):>14}{reais(f.saldo):>16}{reais(f.a_recolher):>14}"
         )
-    print("\n  Saldo positivo é credor; negativo sai do caixa.")
+    print(
+        "\n  Saldo positivo é credor; negativo sai do caixa."
+        " O saldo já abre com o crédito do mês anterior."
+    )
+
+    _saldo_credor(apuracao)
 
     por_atividade = [f for f in apuracao.filiais.values() if f.segrega_por_atividade]
     if por_atividade:
@@ -130,6 +135,39 @@ def _apuracao(apuracao: Apuracao) -> None:
         _titulo("Transferências a emitir após o encerramento")
         for instrucao in instrucoes:
             print(f"  {instrucao}")
+
+
+def _saldo_credor(apuracao: Apuracao) -> None:
+    """A conta gráfica não começa do zero — e não termina no fim do mês."""
+    com_saldo = [
+        f
+        for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento))
+        if f.saldo_credor_anterior or f.credor
+    ]
+    if not com_saldo:
+        return
+
+    anterior, seguinte = apuracao.competencia_anterior, apuracao.competencia_seguinte
+    _titulo("Saldo credor")
+    print(
+        f"  {'estabelecimento':<32}{'veio de ' + anterior:>18}"
+        f"{'apurado no mês':>18}{'vai para ' + seguinte:>18}"
+    )
+    for f in com_saldo:
+        print(
+            f"  {f.estabelecimento:<32}{reais(f.saldo_credor_anterior):>18}"
+            f"{reais(f.saldo_do_periodo):>18}{reais(f.credor):>18}"
+        )
+    if not apuracao.saldos_declarados:
+        print(
+            f"\n  A abertura de {apuracao.competencia} não está declarada em "
+            "parametros/saldos.yaml —\n  a apuração rodou como se todos os "
+            "estabelecimentos abrissem o mês zerados."
+        )
+    print(
+        f"\n  A última coluna é a abertura de {seguinte}: cadastre-a em "
+        "parametros/saldos.yaml."
+    )
 
 
 def _comando_apurar(args: argparse.Namespace) -> int:

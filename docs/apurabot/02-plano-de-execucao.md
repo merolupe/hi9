@@ -84,15 +84,22 @@ apuração, tomadas e aprovadas pelo time fiscal.
 | 003 Estornos de Créditos | estorno decidido na apuração, além do que a regra calcula sobre o Livro |
 | 006 Outros Créditos | crédito autorizado por dispositivo do RICMS, sem documento de entrada |
 | 007 Estornos de Débitos | débito escriturado que a apuração devolve |
-| 009 Saldo Credor do Período Anterior | o crédito transportado do mês anterior |
 
 O motor já sabe o lugar de cada um: enquanto não vierem, o `REGISTRO` sai com
 essas linhas zeradas e marcadas **AGUARDA AJUSTE**. Ele não inventa o número e
 não esconde a falta.
 
-Uma exceção que já saiu da lista: onde a UF centraliza por lançamento — MS —, o
-recebimento de saldo devedor da linha 002 é **calculado** pela camada 9 a partir
-do saldo do estabelecimento centralizado. Não é ajuste declarado.
+Duas já saíram da lista.
+
+Onde a UF centraliza por lançamento — MS —, o recebimento de saldo devedor da
+linha 002 é **calculado** pela camada 9 a partir do saldo do estabelecimento
+centralizado. Não é ajuste declarado.
+
+A linha 009, saldo credor do período anterior, ganhou casa própria em
+`parametros/saldos.yaml`: é declarada por competência e por código de empresa,
+e chega ao registro pronta. Competência não declarada continua marcando a linha
+— o que mudou é que declarar deixou de depender do relatório de ajustes. Ver
+[04 — Matriz de regras](04-matriz-de-regras-icms.md), item 5.2.
 
 ### Como isso entra no fechamento do mês
 
@@ -247,8 +254,10 @@ A linha de comando continua inteira, para automatizar. O passo a passo está em
 `Apurabot.bat` escolhe entre os vários que costumam conviver — perguntando, em
 vez de adivinhar pelo nome do comando.
 
-**Falta:** o encerramento de competência, que grava o saldo credor para o mês
-seguinte.
+**Falta:** o encerramento de competência, que encadearia as competências
+sozinho. Hoje a apuração calcula o saldo credor a transportar e o exibe pronto
+para cadastro — a passagem para o mês seguinte é feita à mão, em
+`parametros/saldos.yaml`.
 
 ---
 
