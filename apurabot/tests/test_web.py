@@ -191,3 +191,32 @@ def test_o_numero_da_instrucao_sai_no_formato_brasileiro():
     assert reais(287_113.66) == "287.113,66"
     assert reais(-1_234_567.891) == "-1.234.567,89"
     assert reais(0.0) == "0,00"
+
+
+# -- falta de parâmetro não é defeito ---------------------------------------
+
+def test_filial_nao_cadastrada_manda_cadastrar_e_nao_abrir_chamado():
+    """A regra 4 do repositório manda parar; a mensagem tem que dizer o quê.
+
+    Quem fecha a competência resolve isto sozinho, editando um `.yaml`. Chamar
+    de defeito da ferramenta mandaria a pessoa abrir chamado para um problema
+    que é dela e que ela sabe resolver.
+    """
+    from apurabot.nucleo.estorno import RegimeDesconhecido
+    from apurabot.web.servidor import _erro_amigavel
+
+    texto = _erro_amigavel(RegimeDesconhecido(
+        "estabelecimento 'HINOVE (NOVA)' não está em filiais.yaml — "
+        "cadastre-o antes de apurar"
+    ))
+    assert "não é defeito da ferramenta" in texto
+    assert "apurabot/parametros" in texto
+    assert "RegimeDesconhecido" not in texto, "o nome da classe não diz nada a ninguém"
+
+
+def test_defeito_de_verdade_continua_sendo_chamado_de_defeito():
+    from apurabot.web.servidor import _erro_amigavel
+
+    texto = _erro_amigavel(ZeroDivisionError("division by zero"))
+    assert "defeito da ferramenta" in texto
+    assert "não é defeito" not in texto

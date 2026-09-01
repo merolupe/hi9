@@ -192,6 +192,7 @@ Alterou, é só rodar de novo.
 | **`Acesso negado`** ao rodar `apurabot` | A política barrou um executável criado por `pip install -e`. Use o `Apurabot.bat` — ele não cria programa nenhum. |
 | **`invalid choice: 'apurar'`** | Código desatualizado. Baixe o ZIP de novo. |
 | **`Encerramento BLOQUEADO`** | Não é erro de instalação — é a ferramenta cobrando pendência. Ver passo 6. |
+| **"não é defeito da ferramenta: é uma regra que ainda não foi cadastrada"** | Um estabelecimento, CFOP ou regime apareceu no livro e não está nos parâmetros. A mensagem diz qual arquivo e o que falta. Ver passo 7. |
 
 ---
 
