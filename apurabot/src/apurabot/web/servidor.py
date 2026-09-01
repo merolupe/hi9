@@ -38,6 +38,7 @@ from urllib.parse import parse_qs, urlparse
 from ..apuracao import apurar
 from ..base_tratada import tratar
 from ..ingestao import LayoutInvalido
+from ..erros import FALTA_DE_PARAMETRO, ONDE_CADASTRAR
 from ..nucleo import registro as reg
 from ..saida import escrever
 from . import painel
@@ -70,6 +71,13 @@ def _erro_amigavel(erro: BaseException) -> str:
         return str(erro)
     if isinstance(erro, FileNotFoundError):
         return "Arquivo não encontrado."
+    if isinstance(erro, FALTA_DE_PARAMETRO):
+        return (
+            f"{erro}\n\n"
+            "Isto não é defeito da ferramenta: é uma regra que ainda não foi "
+            f"cadastrada. {ONDE_CADASTRAR} Depois de cadastrar, é só arrastar "
+            "o livro de novo."
+        )
     return (
         f"{type(erro).__name__}: {erro}\n\n"
         "Se o arquivo é o Livro Fiscal correto, isto é defeito da ferramenta — "

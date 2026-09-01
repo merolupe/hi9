@@ -17,6 +17,7 @@ from . import __version__
 from .apuracao import Apuracao, apurar
 from .base_tratada import BaseTratada, tratar
 from .conferencia import ROTULO_DA_ATIVIDADE
+from .erros import FALTA_DE_PARAMETRO, ONDE_CADASTRAR
 from .formato import reais
 from .ingestao import LayoutInvalido
 from .nucleo import atividade as ativ
@@ -136,7 +137,12 @@ def _comando_apurar(args: argparse.Namespace) -> int:
         return base
 
     resumo = _cabecalho(base)
-    apuracao = apurar(base)
+    try:
+        apuracao = apurar(base)
+    except FALTA_DE_PARAMETRO as erro:
+        print(f"\nFalta cadastrar uma regra:\n\n{erro}\n", file=sys.stderr)
+        print(f"{ONDE_CADASTRAR}\n", file=sys.stderr)
+        return 2
     _apuracao(apuracao)
     pendentes = _pendencias(base, apuracao)
 
