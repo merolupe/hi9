@@ -484,13 +484,22 @@ partir do saldo apurado do centralizado e o leva à linha 002 da centralizadora.
 
 ### 6.4. SP
 
-São Paulo centraliza em **Guará**; Matriz e Registro são centralizados. O
-mecanismo é a NF-e.
+São Paulo centraliza em **Guará**; Matriz e Registro são centralizados.
 
-**A regra de transferência de SP ainda não está homologada.** O desenho vem do
-escopo funcional v1.0, e falta a Gerência Fiscal/Tributária confirmar o que se
-transfere e por qual CFOP — ver decisão pendente nº 11. Enquanto isso, o
-relatório marca o resultado como rascunho.
+**A regra de transferência de SP ainda não está homologada,** e o parâmetro
+descreve um desenho que o Registro de Apuração contradiz. O parâmetro diz NF-e;
+o documento mostra lançamento de apuração, nos dois sentidos e com a mesma
+redação que MS usa — "recebimento de saldo credor / devedor — estabelecimento
+centralizador", nas linhas 006 e 002.
+
+O documento também evidencia o **teto**: o crédito que o centralizado transfere
+para a centralizadora para no saldo devedor dela. Numa competência observada, a
+linha 006 trouxe exatamente o saldo devedor de Guará, e o mês fechou com as
+linhas 011 e 014 em zero.
+
+O que ainda falta decidir é o mecanismo no parâmetro e o caso inverso — a
+centralizadora credora e o centralizado devedor. Ver decisão pendente nº 11.
+Enquanto isso, o relatório marca o resultado como rascunho.
 
 ### 6.5. MS
 

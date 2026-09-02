@@ -129,23 +129,37 @@ Os dois carregam saldo credor próprio.
 
 **Padrão assumido:** fora do escopo — não estão em `filiais.yaml`.
 
-## 11. 🟡 SP — o que o centralizado transfere para Guará?
+## 11. 🟡 SP — como o centralizado transfere para Guará?
 
-A centralização está calculada, mas a regra de transferência vem do escopo
-funcional v1.0 e não foi confirmada.
+A centralização está calculada, mas o parâmetro descreve SP com um desenho que
+o Registro de Apuração de 06/2026 da Filial Guará contradiz em dois pontos.
 
-**Perguntas:**
+**O que o documento mostra.** Guará recebeu, no mesmo mês, os dois sentidos, e
+por lançamento de apuração — não por NF-e:
 
-1. O estabelecimento centralizado transfere o **saldo integral** (devedor e
-   credor), só o **saldo devedor**, ou só o **saldo credor**?
-2. Qual CFOP a NF-e de transferência usa? O parâmetro hoje sugere 5601, 5602 e
-   5605.
+| Linha | Valor | Redação no documento |
+|---|---|---|
+| 006 Outros Créditos | 455.859,54 | recebimento de saldo credor — estabelecimento centralizador |
+| 002 Outros Débitos | 1.022,71 | recebimento de saldo devedor — estabelecimento centralizador |
 
-A segunda pergunta tem consequência prática: é esse CFOP que a aba
-TRANSFERÊNCIAS instrui a emitir, e é por ele que a conferência da competência
-seguinte vai reencontrar a nota.
+É a mesma redação que MS usa. E o valor da linha 006 é **exatamente** o saldo
+devedor que Guará tinha: o mês fecha com 011 e 014 em zero. Isso confirma a
+regra do teto — o crédito transferido para a centralizadora para no saldo
+devedor dela, e o excedente fica onde está.
 
-**Padrão assumido:** `saldo_integral`, com a regra marcada `homologado: false` em
+**O que ainda falta decidir:**
+
+1. **O mecanismo muda no parâmetro?** `filiais.yaml` traz `mecanismo: nfe` para
+   SP, e a aba TRANSFERÊNCIAS instrui a emitir NF-e. O documento aponta para
+   `ajuste_de_apuracao`. Se for esse o caso, a instrução emitida hoje está
+   errada, e os CFOP 5601/5602/5605 do parâmetro deixam de fazer sentido.
+2. **O que acontece quando a centralizadora está credora e o centralizado
+   devedor** — que é justamente o caso de julho, o inverso do de junho. Guará
+   fecha credor em 2,1 milhões e Registro deve 287.113,66. Não transfere nada,
+   porque não há saldo devedor a compensar? Ou Guará manda crédito para
+   Registro até o valor que ele deve?
+
+**Padrão assumido:** `saldo_integral` por `nfe`, marcado `homologado: false` em
 `filiais.yaml`. O relatório avisa que o resultado é rascunho.
 
 ## 12. 🟡 Local de expedição — qual relatório e como cruzar?
@@ -195,37 +209,37 @@ transferência referenciada?
 ou diminui o benefício sem que ninguém tenha decidido.
 
 
-## 14. 🟡 Saldo credor de abertura — o número de julho e o que ele reduz
+## 14. 🟢 Saldo credor de abertura — respondida para 07/2026
 
-A linha 009 do Registro de Apuração é o crédito que veio do mês anterior. Ela
-não está no Livro Fiscal e por isso é declarada em `parametros/saldos.yaml`.
-Duas coisas ficaram em aberto.
+A linha 009 do Registro é o crédito que veio do mês anterior. Não está no Livro
+Fiscal e por isso é declarada em `parametros/saldos.yaml`.
 
-**Primeira: a abertura de 07/2026 da Filial Guará não foi lida de documento.**
-Ela é resíduo de conciliação. O Registro de Apuração de 07/2026 emitido pelo ERP
-declara R$ 2.215.164,28 na linha 014; sobre o Livro de julho o motor apura
-crédito de R$ 4.167.368,77 contra sub total de débito de R$ 2.059.825,46, o que
-fecha em R$ 2.107.543,31. A diferença de R$ 107.620,97 é o que a linha 009
-precisa ter para o registro fechar — mas ela também caberia nas linhas 002, 006
-ou 007, que ninguém declarou.
+**Respondida em 02/09/2026, pelo Registro de Apuração de 06/2026 da Filial
+Guará:** a linha 014 de junho fecha em **R$ 0,00**, e a linha 009 dele também.
+Nenhum estabelecimento do grupo abriu julho com saldo credor, e o parâmetro
+declara a competência com a lista vazia — que é a declaração de que todos abrem
+zerados, e não a ausência de declaração.
 
-**Pergunta:** o que a linha 014 do Registro de Apuração de 06/2026 traz para a
-Filial Guará? Se for R$ 107.620,97, a abertura está confirmada. Se for outro
-número, a diferença é ajuste de apuração e o cadastro muda de lugar.
+Junho fechou em zero porque a centralização de SP transferiu para Guará
+exatamente o crédito de que ele precisava. Ver
+[05 — Achados](05-achados-julho-2026.md), item 15.
 
-**Padrão assumido:** R$ 107.620,97 como abertura de 07/2026, marcado
-`homologado: false` no parâmetro. É o único arranjo que reproduz o documento
-que existe; o que falta é a confirmação de onde o valor nasce.
+**Fica em aberto o destino dos R$ 107.620,97** que separam a apuração de julho
+de Guará (R$ 2.107.543,31) do que o Registro de 07/2026 declara
+(R$ 2.215.164,28). Não é abertura: é ajuste da competência, linha 002, 006 ou
+007. Como é crédito líquido, o candidato natural é a **linha 006** — em junho
+ela trouxe o recebimento de saldo credor da centralização. Confirmar depende da
+folha 3 do Registro de 07/2026.
 
-**Segunda: a abertura reduz a dedução do benefício, ou também a base dele?**
-Hoje o crédito presumido de Rio Brilhante é dimensionado sobre o saldo devedor
-da atividade industrial, sem a abertura, e a abertura só limita quanto se deduz,
-pela aritmética do livro — a linha 012 não passa da 011. Nenhuma competência
-observada tem Rio Brilhante abrindo o mês com saldo credor, então a hipótese não
-foi testada contra documento.
+Isso não bloqueia nada: o valor entra pela aba `AJUSTES` quando for declarado, e
+até lá o registro de Guará mostra `AGUARDA AJUSTE` nas linhas 002, 006 e 007.
 
-**Pergunta:** quando o estabelecimento incentivado abre o mês com saldo credor,
-esse crédito entra no cálculo do benefício ou fica fora dele, abatendo só o
-imposto a recolher?
+**Segue em aberto:** quando o estabelecimento incentivado abrir o mês com saldo
+credor, esse crédito entra no cálculo do benefício de MS ou fica fora dele,
+abatendo só o imposto a recolher? Hoje o crédito presumido de Rio Brilhante é
+dimensionado sobre o saldo devedor da atividade industrial, sem a abertura, e a
+abertura só limita quanto se deduz, pela aritmética do livro — a linha 012 não
+passa da 011. Nenhuma competência observada tem Rio Brilhante abrindo o mês com
+saldo credor, então a hipótese não foi testada contra documento.
 
 **Padrão assumido:** fica fora do cálculo e abate só a dedução.

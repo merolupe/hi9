@@ -2,12 +2,16 @@
 
 O Livro Fiscal traz os documentos de uma competência e nada mais. O crédito que
 sobrou do mês anterior não está lá, mas está na conta: é a linha 009 do Registro
-de Apuração, e sem ela o saldo do mês sai menor do que é.
+de Apuração.
 
-O alvo é a linha 014 do Registro de Apuração emitido pelo ERP para a FILIAL
-GUARÁ (empresa 11) em 07/2026 — R$ 2.215.164,28 a transportar. É o único
-documento que amarra as duas pontas: sobre o Livro de julho o Apurabot apura
-R$ 2.107.543,31, e a diferença é exatamente a abertura declarada.
+A referência é o Registro de Apuração emitido pelo ERP para a FILIAL GUARÁ
+(empresa 11) em **06/2026**, que fecha a linha 014 em R$ 0,00 — e a própria
+linha 009 dele também. Julho, portanto, abre zerado, e é isso que
+`parametros/saldos.yaml` declara.
+
+Zerado **declarado** não é a mesma coisa que zerado por falta de declaração: no
+primeiro caso o registro fecha, no segundo ele marca a linha 009. A diferença
+é o que a maior parte destes testes cobre.
 """
 from __future__ import annotations
 
@@ -22,12 +26,10 @@ CENTAVO = 0.005
 GUARA = "HINOVE (FILIAL GUARÁ)"
 CODIGO_GUARA = 11
 
-#: Registro de Apuração do ICMS — FILIAL GUARÁ, 07/2026, linha 014.
-A_TRANSPORTAR = 2_215_164.28
-#: O que julho produziu sozinho, sem a abertura.
+#: O que o Livro de julho produz em Guará, e o que ele transporta — os dois
+#: iguais, porque a abertura é zero.
 DO_PERIODO = 2_107_543.31
-#: Linha 009 — o que veio de junho. Ver `parametros/saldos.yaml`.
-ABERTURA = 107_620.97
+A_TRANSPORTAR = DO_PERIODO
 
 
 @pytest.fixture(scope="module")
@@ -48,10 +50,28 @@ def sem_declaracao(parametros):
 
 # -- o parâmetro ------------------------------------------------------------
 
-def test_a_abertura_e_declarada_por_competencia_e_codigo(parametros):
-    """Pelo código da empresa, nunca pelo nome — os nomes vêm irregulares."""
-    declarados = parametros.saldos_credores("2026-07")
-    assert declarados == {CODIGO_GUARA: pytest.approx(ABERTURA, abs=CENTAVO)}
+def test_competencia_declarada_sem_ninguem_e_declaracao_de_que_todos_abrem_zerados(
+    parametros,
+):
+    """Julho está declarado, e a declaração é de que ninguém trouxe crédito.
+
+    É o que o Registro de 06/2026 de Guará mostra: linha 014 em R$ 0,00.
+    """
+    assert parametros.saldos_credores("2026-07") == {}
+
+
+def test_a_abertura_e_indexada_pelo_codigo_da_empresa(base_julho, parametros):
+    """Pelo código, nunca pelo nome — os nomes vêm com espaçamento irregular."""
+    p = copy.deepcopy(parametros)
+    p.saldos["saldos_credores"] = [
+        {"competencia": "2026-07", "por_estabelecimento": {CODIGO_GUARA: 1_000.0}}
+    ]
+    assert p.saldos_credores("2026-07") == {CODIGO_GUARA: pytest.approx(1_000.0)}
+    apuracao = apurar(base_julho, p)
+    guara = apuracao.filiais[GUARA]
+    assert guara.saldo_credor_anterior == pytest.approx(1_000.0)
+    # E o que abre soma no que se transporta: 014 = 009 + o do período.
+    assert guara.credor == pytest.approx(DO_PERIODO + 1_000.0, abs=CENTAVO)
 
 
 def test_competencia_nao_declarada_e_diferente_de_declarada_em_zero(parametros):
@@ -70,12 +90,11 @@ def test_a_competencia_vizinha_sai_da_propria_competencia(apuracao):
 
 # -- a conta gráfica --------------------------------------------------------
 
-def test_guara_fecha_julho_no_valor_que_o_erp_declara(apuracao):
-    """A prova da linha 014: 2.107.543,31 do mês + 107.620,97 de junho."""
+def test_guara_abre_julho_zerado_porque_junho_fechou_em_zero(apuracao):
+    """O Registro de 06/2026 fecha a linha 014 em R$ 0,00 — e é declarado."""
     guara = apuracao.filiais[GUARA]
-    assert guara.saldo_credor_anterior == pytest.approx(ABERTURA, abs=CENTAVO)
+    assert guara.saldo_credor_anterior == 0.0
     assert guara.saldo_do_periodo == pytest.approx(DO_PERIODO, abs=CENTAVO)
-    assert guara.saldo == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
     assert guara.credor == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
     assert guara.a_recolher == 0.0
 
@@ -84,7 +103,7 @@ def test_a_linha_014_do_registro_e_a_linha_009_do_mes_seguinte(apuracao, paramet
     """As duas pontas da mesma conta, no documento que o fiscal assina."""
     registros = reg.montar(apuracao, parametros)
     guara = next(r for r in registros if r.estabelecimento == GUARA)
-    assert guara.linha(9).valor == pytest.approx(ABERTURA, abs=CENTAVO)
+    assert guara.linha(9).valor == 0.0
     assert guara.linha(14).valor == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
     # 010 = 008 + 009, e 014 = 010 − 004. Sem a 009 o registro não fecharia.
     assert guara.linha(10).valor == pytest.approx(
@@ -95,11 +114,10 @@ def test_a_linha_014_do_registro_e_a_linha_009_do_mes_seguinte(apuracao, paramet
     )
 
 
-def test_quem_nao_foi_declarado_abre_o_mes_zerado(apuracao):
-    """Competência declarada é declaração completa: o resto abriu em zero."""
-    outros = [f for f in apuracao.filiais.values() if f.estabelecimento != GUARA]
-    assert outros
-    assert all(f.saldo_credor_anterior == 0.0 for f in outros)
+def test_competencia_declarada_e_declaracao_completa(apuracao):
+    """Quem não aparece no parâmetro abriu o mês em zero — todo mundo, aqui."""
+    assert apuracao.saldos_declarados
+    assert all(f.saldo_credor_anterior == 0.0 for f in apuracao.filiais.values())
 
 
 def test_a_abertura_nao_mexe_no_credito_nem_no_debito_do_mes(apuracao):
@@ -191,7 +209,7 @@ def test_o_painel_publica_as_duas_pontas(base_julho, parametros):
     assert dados["competencia_seguinte"] == "2026-08"
     assert dados["saldos_declarados"] is True
     guara = next(f for f in dados["filiais"] if f["estabelecimento"] == GUARA)
-    assert guara["saldo_credor_anterior"] == pytest.approx(ABERTURA, abs=CENTAVO)
+    assert guara["saldo_credor_anterior"] == 0.0
     assert guara["credor"] == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
 
 
