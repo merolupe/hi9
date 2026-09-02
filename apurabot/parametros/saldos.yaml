@@ -16,28 +16,41 @@
 #
 # CONVENÇÃO: uma competência presente neste arquivo é uma declaração COMPLETA.
 # Estabelecimento que não aparece em `por_estabelecimento` abriu o mês sem saldo
-# credor. Competência ausente do arquivo é diferente disso: aí a linha 009 sai
-# zerada e MARCADA no registro, porque ninguém declarou nada — é a regra 4 do
-# repositório, que proíbe preencher por conta própria.
+# credor — e uma competência sem nenhum estabelecimento listado é a declaração
+# de que ninguém abriu o mês com crédito. Competência ausente do arquivo é
+# diferente disso: aí a linha 009 sai zerada e MARCADA no registro, porque
+# ninguém declarou nada — é a regra 4 do repositório, que proíbe preencher por
+# conta própria.
 #
 # Revisão: Gerência Fiscal/Tributária
 
 saldos_credores:
 
   - competencia: "2026-07"
-    homologado: false
+    homologado: true
     origem: >
-      Conciliado contra o Registro de Apuração do ICMS de 07/2026 emitido pelo
-      ERP para a Filial Guará (empresa 11), cuja linha 014 declara
-      R$ 2.215.164,28 a transportar. Sobre o Livro Fiscal de 07/2026 o Apurabot
-      apura crédito de R$ 4.167.368,77 e sub total de débito de
-      R$ 2.059.825,46, o que fecha em R$ 2.107.543,31 sem abertura; a diferença
-      de R$ 107.620,97 é o que a linha 009 precisa ter para o registro fechar
-      com o do ERP.
+      Registro de Apuração do ICMS de 06/2026, emitido pelo ERP em 07/07/2026
+      para a Filial Guará (empresa 11): a linha 014 fecha em R$ 0,00, e a
+      própria linha 009 de junho também. Junho zerou porque a centralização de
+      SP transferiu para Guará exatamente o crédito de que ele precisava —
+      R$ 455.859,54 na linha 006 contra um saldo devedor de igual valor.
+      Nenhum estabelecimento do grupo abriu julho com saldo credor.
+    por_estabelecimento: {}
+
+  - competencia: "2026-08"
+    homologado: true
+    origem: >
+      Linha 014 do Registro de Apuração de 07/2026. Guará: R$ 2.215.164,28, o
+      valor que o Registro emitido pelo ERP declara a transportar. Londrina:
+      R$ 13.882,40, o saldo credor que a apuração de julho fechou — PR difere a
+      saída e o crédito se acumula (decisão nº 1). Os demais estabelecimentos
+      fecharam julho devedores e recolheram, então abrem agosto zerados.
     pendencia: >
-      NÃO HOMOLOGADO. O valor é resíduo de conciliação, não leitura de
-      documento: falta confrontá-lo com a linha 014 do Registro de Apuração de
-      06/2026. Se aquela linha trouxer outro número, a diferença não é abertura
-      e sim ajuste das linhas 002, 006 ou 007 — ver decisão pendente nº 14.
+      Sobre Guará, o motor apura R$ 2.107.543,31 para julho, R$ 107.620,97 a
+      menos que o documento. A diferença é ajuste da competência de julho —
+      linha 002, 006 ou 007 — ainda não declarado. A abertura de agosto segue o
+      documento, que é o que a lei transporta; quando o ajuste de julho for
+      declarado, os dois passam a fechar sozinhos. Ver decisão pendente nº 14.
     por_estabelecimento:
-      11: 107620.97           # HINOVE (FILIAL GUARÁ)
+      11: 2215164.28          # HINOVE (FILIAL GUARÁ)
+      7: 13882.40             # HINOVE (LONDRINA)

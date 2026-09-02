@@ -343,11 +343,11 @@ centavo.
 
 ---
 
-## 14. Guará abre julho com saldo credor — e é a linha 009 que fecha o registro
+## 14. Guará abre julho zerado — e os R$ 107.620,97 são ajuste, não abertura
 
 O Registro de Apuração de 07/2026 emitido pelo ERP para a **Filial Guará**
-(empresa 11) declara na linha 014 o valor de **R$ 2.215.164,28** a transportar
-para o período seguinte. Sobre o Livro Fiscal de julho o motor apura:
+(empresa 11) declara na linha 014 o valor de **R$ 2.215.164,28** a transportar.
+Sobre o Livro Fiscal de julho o motor apura:
 
 | Linha | Valor | Origem |
 |---|---|---|
@@ -358,27 +358,56 @@ para o período seguinte. Sobre o Livro Fiscal de julho o motor apura:
 | **008 Sub Total** | **4.167.368,77** | |
 
 `008 − 004` dá **2.107.543,31** — R$ 107.620,97 abaixo do que o documento
-declara. As linhas 001, 003 e 005 são as que o Livro sustenta, e as três já
-estavam ancoradas na regressão contra a planilha manual e contra a Dinâmica.
-A diferença, portanto, está numa das linhas que não nascem de documento.
+declara. As linhas 001, 003 e 005 são as que o Livro sustenta, e as três estão
+ancoradas na regressão contra a planilha manual e contra a Dinâmica. A
+diferença, portanto, está numa das linhas que não nascem de documento.
 
-Cadastrada como linha 009 — saldo credor vindo de junho —, ela fecha o registro
-no centavo:
+**Não é a linha 009.** O Registro de Apuração de **06/2026** da mesma filial,
+emitido em 07/07/2026, fecha a linha 014 em **R$ 0,00** — e a linha 009 dele
+também. Julho abre zerado, e `parametros/saldos.yaml` declara isso.
+
+O resíduo é, então, ajuste da competência: linha 002, 006 ou 007, a declarar. O
+registro de junho mostra que as três são usadas em Guará:
+
+| Linha | Valor em 06/2026 | Discriminação |
+|---|---|---|
+| 002 Outros Débitos | 16.948,65 | diferencial de alíquota 6.747,34 · estorno de créditos para ajuste 8.665,29 · baixa de estoque 513,31 · **recebimento de saldo devedor 1.022,71** |
+| 003 Estornos de Créditos | 408.171,19 | "estorno proporcional a saídas não tributadas, considerando o equilíbrio fiscal" |
+| 006 Outros Créditos | 455.859,54 | **recebimento de saldo credor — estabelecimento centralizador** |
+
+Como o resíduo de julho é crédito, o candidato natural é a linha 006. Confirmar
+depende da folha 3 do Registro de 07/2026, que ainda não foi lida.
+
+**O que a conciliação prova.** Que a apuração de julho de Guará está completa no
+que o Livro sustenta: não falta crédito nem sobra débito, e o que resta é
+lançamento declarado, que a ferramenta agora sabe receber.
+
+## 15. Junho de Guará fecha em zero — e mostra como SP centraliza
+
+O mesmo documento de 06/2026 fecha as duas colunas no mesmo número:
 
 ```
-009 Saldo Credor do Período Anterior ......   107.620,97
-010 Total .................................  4.274.989,74
-014 SALDO CREDOR a Transportar ............  2.215.164,28   ← o documento
+004 Sub Total (débito) ....  3.383.492,59
+008 Sub Total (crédito) ...  3.383.492,59
+011 SALDO DEVEDOR .........          0,00
+014 SALDO CREDOR ..........          0,00
 ```
 
-**O que isso prova e o que não prova.** Prova que a apuração de julho de Guará
-está completa: não falta crédito nem sobra débito, e o único componente ausente
-era a abertura da conta gráfica. Não prova que a abertura vale exatamente esses
-R$ 107.620,97 — o mesmo resíduo caberia nas linhas 002, 006 ou 007. A confirmação
-é a linha 014 do Registro de Apuração de 06/2026, e até ela vir o parâmetro fica
-marcado como não homologado. Ver decisão pendente nº 14.
+Não é coincidência. Guará apurou saldo devedor e recebeu, na linha 006, **exatamente**
+os R$ 455.859,54 de que precisava para zerar — nem um centavo a mais. É a
+regra do teto: o crédito transferido pelos estabelecimentos centralizados para
+a centralizadora **para no saldo devedor dela**. O excedente fica onde está.
 
-**Guará é o único estabelecimento com abertura em julho.** Corumbá, Rio
-Brilhante, Barra do Garças, Londrina e Registro fecharam junho sem saldo credor,
-e o registro de Rio Brilhante — que reproduz o documento do ERP ao centavo,
-item 13 — confirma a leitura pelo lado de quem não tem abertura nenhuma.
+Dois pontos que o documento estabelece e que a ferramenta ainda não reflete:
+
+**A transferência de SP é lançamento de apuração, não NF-e.** As duas pontas
+aparecem discriminadas com a mesma redação que MS usa: "recebimento de saldo
+credor — estabelecimento centralizador" na linha 006, e "recebimento de saldo
+devedor — estabelecimento centralizador" na linha 002. Hoje `filiais.yaml`
+descreve SP com `mecanismo: nfe`, marcado como não homologado.
+
+**Os dois sentidos são recebidos pela centralizadora.** Em junho Guará recebeu
+crédito (455.859,54) e débito (1.022,71) no mesmo mês, de estabelecimentos
+diferentes.
+
+Ver decisão pendente nº 11.

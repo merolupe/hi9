@@ -77,6 +77,14 @@ filiais:
 #   saldo_devedor    só quando deve
 #   saldo_credor     só quando tem crédito
 #
+# O crédito transferido tem TETO: o saldo devedor da centralizadora. Ele existe
+# para compensar, e o que passa disso fica onde está. O saldo devedor não tem
+# teto — a centralizadora assume a dívida do grupo para recolher de uma vez.
+#
+# `emite_nfe` diz se a transferência também é documentada por NF-e. Não é o
+# contrário de `mecanismo`: onde a UF exige a nota, ela sai DEPOIS do
+# fechamento, porque é o resultado da apuração que a origina.
+#
 # `mecanismo` diz como a transferência se formaliza:
 #   nfe                 NF-e emitida pelo estabelecimento centralizado
 #   ajuste_de_apuracao  lançamento no Registro de Apuração, sem documento próprio
@@ -90,12 +98,20 @@ regras_de_centralizacao:
   sp:
     uf: SP
     transfere: saldo_integral
-    mecanismo: nfe
+    mecanismo: ajuste_de_apuracao
+    emite_nfe: true
     cfop_transferencia: [5601, 5602, 5605]
-    homologado: false
-    # NÃO HOMOLOGADA. O desenho vem do escopo funcional v1.0; falta a Gerência
-    # Fiscal/Tributária confirmar o que se transfere e por qual CFOP.
-    # Ver decisão pendente nº 11.
+    homologado: true
+    # Confirmado pela Gerência Fiscal/Tributária em 02/09/2026, sobre o Registro
+    # de Apuração de 06/2026 da Filial Guará. Os dois sentidos chegam à
+    # centralizadora como lançamento de apuração, com a mesma redação que MS
+    # usa: "recebimento de saldo credor / devedor - estabelecimento
+    # centralizador", nas linhas 006 e 002.
+    #
+    # A NF-e continua sendo emitida — mas depois. Ela nasce do resultado da
+    # apuração e não retroage, então quem fecha a competência é o lançamento e
+    # a nota vai escriturada no mês seguinte. É por isso que `emite_nfe` é campo
+    # próprio, e não o contrário de `mecanismo`.
 
   ms:
     uf: MS

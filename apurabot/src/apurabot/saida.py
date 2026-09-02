@@ -262,7 +262,7 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
         ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
         ("credito_mantido", 17), ("debito", 16), ("credito_presumido", 18),
-        ("saldo credor anterior", 21), ("saldo (credor +)", 18),
+        ("difal", 14), ("saldo credor anterior", 21), ("saldo (credor +)", 18),
         ("a recolher", 15), ("confere", 10),
     ]
     _escreve_cabecalho(aba, colunas)
@@ -270,19 +270,19 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         aba.append([
             f.estabelecimento, f.uf, f.regime, f.linhas, f.credito_bruto,
             f.estorno, f.credito_indevido, f.credito_mantido, f.debito,
-            f.credito_presumido, f.saldo_credor_anterior, f.saldo, f.a_recolher,
-            "OK" if f.confere else "DIVERGE",
+            f.credito_presumido, f.difal, f.saldo_credor_anterior, f.saldo,
+            f.a_recolher, "OK" if f.confere else "DIVERGE",
         ])
     total = apuracao.total
     aba.append([
         "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
         total.credito_indevido, total.credito_mantido, total.debito,
-        total.credito_presumido, total.saldo_credor_anterior, total.saldo,
-        total.a_recolher, "OK" if total.confere else "DIVERGE",
+        total.credito_presumido, total.difal, total.saldo_credor_anterior,
+        total.saldo, total.a_recolher, "OK" if total.confere else "DIVERGE",
     ])
     for celula in aba[aba.max_row]:
         celula.font = Font(bold=True)
-    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=13):
+    for linha in aba.iter_rows(min_row=2, min_col=5, max_col=14):
         for celula in linha:
             celula.number_format = MOEDA
 

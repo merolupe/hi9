@@ -38,7 +38,11 @@ SAIDAS_TOTAL = (20_260_112.91, 3_968_178.21, 505_991.41, 13_235_819.33,
 
 # Resumo da Apuração, folha 3 do mesmo documento.
 AJUSTE_ESTORNO = 3_865.30          # linha 003, "estorno para ajuste de apuração"
-AJUSTE_ART_68 = 46_138.68          # linha 006, art. 68 do RICMS/MS
+# Linha 006, crédito outorgado apropriado no período (código MS090004).
+# É o valor do Registro emitido em 07/08/2026, anterior à retificação — o
+# controle de crédito outorgado do time fiscal fecha julho em 68.473,36. Este
+# teste reproduz o documento como ele foi emitido; ver decisão pendente nº 15.
+AJUSTE_ART_68 = 46_138.68
 AJUSTE_ESTORNO_DEBITO = 33_039.71  # estorno de débitos
 
 RESUMO = {

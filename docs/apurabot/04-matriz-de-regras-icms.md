@@ -450,13 +450,22 @@ competência: ela **emite a instrução** do que precisa ser transferido.
 Quem centraliza, quem é centralizado, o que se transfere e por qual mecanismo
 estão em `parametros/filiais.yaml`.
 
-### 6.1. O que se transfere
+### 6.1. O que se transfere, e até quanto
 
 | Regra | O centralizado passa adiante |
 |---|---|
 | `saldo_integral` | o saldo, devedor ou credor |
 | `saldo_devedor` | só quando deve; o crédito fica no estabelecimento |
 | `saldo_credor` | só quando tem crédito; o débito fica no estabelecimento |
+
+**O crédito tem teto: o saldo devedor da centralizadora.** A transferência
+existe para compensar, e o que passa disso fica onde está. O saldo devedor não
+tem teto — a centralizadora assume a dívida do grupo para recolher de uma vez
+só.
+
+O teto é do grupo, não de cada estabelecimento: com dois centralizados credores
+e uma dívida só, o segundo transfere o que sobrou do primeiro. A ordem, hoje, é
+a do cadastro — e é decisão pendente enquanto nenhuma competência a exercitar.
 
 ### 6.2. Identidades que a ferramenta valida
 
@@ -484,13 +493,19 @@ partir do saldo apurado do centralizado e o leva à linha 002 da centralizadora.
 
 ### 6.4. SP
 
-São Paulo centraliza em **Guará**; Matriz e Registro são centralizados. O
-mecanismo é a NF-e.
+São Paulo centraliza em **Guará**; Matriz e Registro são centralizados.
 
-**A regra de transferência de SP ainda não está homologada.** O desenho vem do
-escopo funcional v1.0, e falta a Gerência Fiscal/Tributária confirmar o que se
-transfere e por qual CFOP — ver decisão pendente nº 11. Enquanto isso, o
-relatório marca o resultado como rascunho.
+**A transferência chega como lançamento de apuração**, nos dois sentidos e com
+a mesma redação que MS usa — "recebimento de saldo credor / devedor —
+estabelecimento centralizador", nas linhas 006 e 002 do Registro da
+centralizadora.
+
+**A NF-e continua sendo emitida, e não é alternativa ao lançamento.** Ela nasce
+do resultado da apuração e não retroage: sai depois do fechamento e vai
+escriturada na competência seguinte. Quem fecha o mês é o lançamento; a nota
+formaliza.
+
+**O crédito transferido para no saldo devedor da centralizadora** — ver 6.1.
 
 ### 6.5. MS
 

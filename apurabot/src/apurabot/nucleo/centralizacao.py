@@ -18,16 +18,28 @@ Os saldos chegam aqui na convenção de caixa da apuração: **positivo é credo
 negativo é devedor.** Por isso "transferir o saldo devedor" é transferir um
 valor negativo.
 
-O mecanismo muda com a UF:
+O mecanismo diz como a transferência entra na conta gráfica:
 
-    nfe                   a transferência é documentada por NF-e emitida pelo
+    nfe                   a transferência só existe pela NF-e emitida pelo
                           estabelecimento centralizado
     ajuste_de_apuracao    a transferência é lançamento no Registro de Apuração —
-                          débito na centralizadora, crédito no centralizado —
-                          sem documento fiscal próprio
+                          linha 002 quando a centralizadora recebe saldo devedor,
+                          linha 006 quando recebe saldo credor
 
-Quem centraliza, quem é centralizado, o que se transfere e por qual mecanismo
-estão em `parametros/filiais.yaml`, nunca aqui.
+**Lançamento de ajuste e NF-e não são alternativas.** Onde a UF exige a nota,
+ela continua sendo emitida — só que **depois** do fim do mês, porque é o
+resultado da apuração que a origina, e ela não retroage. Quem fecha a
+competência é o lançamento; a nota formaliza e vai escriturada no mês seguinte.
+Por isso `emite_nfe` é campo próprio, e não o contrário de `mecanismo`.
+
+**O crédito transferido tem teto: o saldo devedor da centralizadora.** Ele
+existe para compensar, e o que passa disso fica onde está — a competência
+observada mostra a centralizadora recebendo exatamente o crédito de que
+precisava para zerar, e nem um centavo além. O saldo devedor não tem teto: a
+centralizadora assume a dívida do grupo para recolher de uma vez só.
+
+Quem centraliza, quem é centralizado, o que se transfere, com qual teto e por
+qual mecanismo estão em `parametros/filiais.yaml`, nunca aqui.
 """
 from __future__ import annotations
 
@@ -65,10 +77,14 @@ class Transferencia:
     saldo_individual: float = 0.0
     valor_transferido: float = 0.0
     mecanismo: str = NFE
+    emite_nfe: bool = False
     cfop_sugerido: list[int] = field(default_factory=list)
+    #: Crédito que não coube no saldo devedor da centralizadora e ficou aqui.
+    retido_pelo_teto: float = 0.0
 
     @property
     def saldo_residual(self) -> float:
+        """O que fica no estabelecimento — o retido pelo teto está aqui."""
         return self.saldo_individual - self.valor_transferido
 
     @property
@@ -79,23 +95,40 @@ class Transferencia:
 
     @property
     def instrucao(self) -> str:
-        """O que o time fiscal precisa emitir depois de fechar a competência."""
+        """O que o time fiscal precisa fazer depois de fechar a competência."""
         if not self.valor_transferido:
+            if self.retido_pelo_teto:
+                return (
+                    f"{self.origem}: saldo credor de "
+                    f"{reais(self.saldo_individual)} — nada a transferir, porque "
+                    f"{self.destino} não fechou com saldo devedor a compensar"
+                )
             return (
                 f"{self.origem}: saldo {reais(self.saldo_individual)} — "
                 "nada a transferir nesta competência"
             )
         sentido = "devedor" if self.valor_transferido < 0 else "credor"
-        como = (
-            f"NF-e de transferência de saldo, CFOP "
-            f"{' ou '.join(str(c) for c in self.cfop_sugerido)}"
-            if self.mecanismo == NFE and self.cfop_sugerido
-            else MECANISMOS.get(self.mecanismo, self.mecanismo)
-        )
-        return (
+        partes = [
             f"{self.origem} → {self.destino}: transferir saldo {sentido} de "
-            f"{reais(abs(self.valor_transferido))} por {como}"
-        )
+            f"{reais(abs(self.valor_transferido))} por "
+            + MECANISMOS.get(self.mecanismo, self.mecanismo)
+        ]
+        if self.emite_nfe:
+            cfop = (
+                f", CFOP {' ou '.join(str(c) for c in self.cfop_sugerido)}"
+                if self.cfop_sugerido else ""
+            )
+            partes.append(
+                f"e emitir a NF-e de transferência de saldo{cfop} — ela nasce do "
+                "resultado da apuração, então sai depois do fechamento e vai "
+                "escriturada na competência seguinte"
+            )
+        if self.retido_pelo_teto:
+            partes.append(
+                f"o crédito de {reais(self.retido_pelo_teto)} que passou do "
+                f"saldo devedor de {self.destino} fica onde está"
+            )
+        return "; ".join(partes)
 
 
 @dataclass
@@ -136,9 +169,14 @@ class ResultadoCentralizacao:
             f"Saldo próprio da centralizadora: {reais(self.saldo_proprio)}",
         ]
         for t in self.transferencias:
+            teto = (
+                f"  (teto: {reais(t.retido_pelo_teto)} de crédito não coube no "
+                "saldo devedor da centralizadora)" if t.retido_pelo_teto else ""
+            )
             linhas.append(
                 f"{t.origem}: saldo {reais(t.saldo_individual)} → transfere "
                 f"{reais(t.valor_transferido)}, residual {reais(t.saldo_residual)}"
+                + teto
             )
         linhas.append(f"Recebido pela centralizadora: {reais(self.total_recebido)}")
         linhas.append(f"Saldo final do grupo: {reais(self.saldo_final)}")
@@ -195,6 +233,7 @@ def calcular(saldos: dict[str, float], params: Parametros) -> list[ResultadoCent
                 f"— os válidos são {SALDO_INTEGRAL}, {SALDO_DEVEDOR} e {SALDO_CREDOR}"
             )
         mecanismo = regra.get("mecanismo", NFE)
+        emite_nfe = bool(regra.get("emite_nfe", mecanismo == NFE))
         if mecanismo not in MECANISMOS:
             raise CentralizacaoDesconhecida(
                 f"regra {nome_regra!r}: `mecanismo` {mecanismo!r} não é reconhecido "
@@ -217,18 +256,34 @@ def calcular(saldos: dict[str, float], params: Parametros) -> list[ResultadoCent
             saldo_proprio=saldos.get(centralizadora, 0.0),
         )
         cfops = [int(c) for c in (regra.get("cfop_transferencia") or [])]
+
+        # O crédito transferido para de compensar quando a dívida da
+        # centralizadora acaba. O teto é consumido na ordem do cadastro — com
+        # dois centralizados credores e dívida para um só, é o primeiro que
+        # transfere. Nenhuma competência observada chegou aí; quando chegar, a
+        # ordem tem que ser decidida em vez de herdada do arquivo.
+        teto = max(-resultado.saldo_proprio, 0.0)
+
         for nome in _centralizados(cadastro, uf):
             saldo = saldos.get(nome)
             if saldo is None:
                 continue
+            valor = _transferivel(saldo, transfere)
+            retido = 0.0
+            if valor > 0:                       # crédito: respeita o teto
+                cabe = min(valor, teto)
+                retido, valor = valor - cabe, cabe
+                teto -= cabe
             resultado.transferencias.append(
                 Transferencia(
                     origem=nome,
                     destino=centralizadora,
                     saldo_individual=saldo,
-                    valor_transferido=_transferivel(saldo, transfere),
+                    valor_transferido=valor,
                     mecanismo=mecanismo,
+                    emite_nfe=emite_nfe,
                     cfop_sugerido=cfops,
+                    retido_pelo_teto=retido,
                 )
             )
         resultados.append(resultado)

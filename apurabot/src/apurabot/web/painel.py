@@ -40,6 +40,20 @@ def montar(base: BaseTratada, apuracao: Apuracao, registros: list) -> dict[str, 
         "transferencias": _transferencias(apuracao),
         "beneficios": [_beneficio(f) for f in _em_ordem(apuracao) if f.beneficio],
         "serie": _serie(apuracao),
+        "difal": {
+            "total": apuracao.difal,
+            "na_conta": apuracao.total.difal_na_conta,
+            "em_guia": apuracao.difal_em_guia,
+            "por_filial": [
+                {
+                    "estabelecimento": f.estabelecimento,
+                    "uf": f.uf,
+                    "valor": f.difal,
+                    "na_conta_grafica": f.difal_na_conta_grafica,
+                }
+                for f in _em_ordem(apuracao) if f.difal
+            ],
+        },
     }
 
 
@@ -144,6 +158,8 @@ def _filial(filial) -> dict[str, Any]:
         "credito_mantido": filial.credito_mantido,
         "debito": filial.debito,
         "beneficio": filial.credito_presumido,
+        "difal": filial.difal,
+        "difal_na_conta_grafica": filial.difal_na_conta_grafica,
         "saldo_credor_anterior": filial.saldo_credor_anterior,
         "saldo_do_periodo": filial.saldo_do_periodo,
         "saldo": filial.saldo,

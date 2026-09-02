@@ -180,6 +180,15 @@ class ApuracaoFilial:
     #: Linha 009 do Registro — o crédito que veio do mês anterior. Não nasce do
     #: Livro Fiscal: vem declarado em `parametros/saldos.yaml`.
     saldo_credor_anterior: float = 0.0
+    #: Diferencial de alíquota das entradas de uso, consumo e ativo. Vem
+    #: calculado do Livro Fiscal, na coluna `Diferença ICMS`.
+    difal: float = 0.0
+    #: A parte do DIFAL que entra na conta gráfica. A linha TOTAL soma filiais
+    #: de UFs diferentes, então o destino não é um só: guardar o valor já
+    #: decidido é o que deixa o total somável.
+    difal_na_conta: float = 0.0
+    #: O DIFAL desta UF entra na conta gráfica, ou é guia avulsa?
+    difal_na_conta_grafica: bool = False
     #: Efeito líquido dos ajustes declarados sobre a conta, no sinal do caixa:
     #: as linhas 006 e 007 somam, as 002 e 003 subtraem. Não inclui o débito
     #: recebido por centralização, que é consequência da apuração e não parte
@@ -215,6 +224,11 @@ class ApuracaoFilial:
         return self.beneficio.fadefe if self.beneficio else 0.0
 
     @property
+    def difal_em_guia(self) -> float:
+        """O DIFAL que sai por fora — informativo, como o FADEFE."""
+        return self.difal - self.difal_na_conta
+
+    @property
     def saldo(self) -> float:
         """Convenção de caixa: **positivo é credor, negativo é devedor.**
 
@@ -231,8 +245,13 @@ class ApuracaoFilial:
         se perde na virada do mês. E fecha com os ajustes declarados, que são
         decisão da apuração tanto quanto o estorno que a regra calcula.
 
-        Sem DIFAL, e sem o débito recebido por centralização: esse é
-        consequência da apuração, não parte dela.
+        O DIFAL entra onde a UF o cobra na conta gráfica, e fica de fora onde
+        ele é guia avulsa. Em SP ele entra **antes da centralização**: é da
+        unidade que fez a entrada, e é o saldo dela, já com o DIFAL, que vai
+        para o grupo.
+
+        Sem o débito recebido por centralização: esse é consequência da
+        apuração, não parte dela.
         """
         return (
             self.credito_mantido
@@ -240,6 +259,7 @@ class ApuracaoFilial:
             + self.saldo_credor_anterior
             + self.ajustes_da_conta
             - self.debito
+            - self.difal_na_conta
         )
 
     @property
@@ -320,6 +340,8 @@ class Apuracao:
             t.linhas += f.linhas
             t.saldo_credor_anterior += f.saldo_credor_anterior
             t.ajustes_da_conta += f.ajustes_da_conta
+            t.difal += f.difal
+            t.difal_na_conta += f.difal_na_conta
             t.presumido_consolidado += f.credito_presumido
         return t
 
@@ -330,6 +352,15 @@ class Apuracao:
     @property
     def fadefe(self) -> float:
         return sum(f.fadefe for f in self.filiais.values())
+
+    @property
+    def difal(self) -> float:
+        return sum(f.difal for f in self.filiais.values())
+
+    @property
+    def difal_em_guia(self) -> float:
+        """O DIFAL que se recolhe por fora da conta gráfica."""
+        return sum(f.difal_em_guia for f in self.filiais.values())
 
     @property
     def inconsistentes(self) -> list[ApuracaoFilial]:
@@ -455,6 +486,8 @@ def apurar(
             ),
         )
 
+    _difal(base, filiais, params, cadastro)
+
     # Os ajustes escritos nas linhas do Livro. Fora do laço de movimento de
     # propósito: uma linha pode não ter ICMS nenhum e ainda assim merecer
     # ajuste — "esta nota devia ter tido débito e não teve" é disso que trata a
@@ -484,6 +517,51 @@ def apurar(
     # apurado de cada estabelecimento.
     apuracao.centralizacao = centr.calcular(apuracao.saldos, params)
     return apuracao
+
+
+def _difal(
+    base: BaseTratada,
+    filiais: dict[str, ApuracaoFilial],
+    params: Parametros,
+    cadastro: dict[str, Any],
+) -> None:
+    """Soma o diferencial de alíquota e decide o destino dele.
+
+    **Fora do laço de movimento, de propósito.** A entrada de uso e consumo
+    escritura ICMS zero — não há crédito a tomar —, então ela não tem nem
+    crédito nem débito e o laço da apuração a descarta. O DIFAL dela está na
+    coluna `Diferença ICMS`, calculada pelo ERP a partir do ICMS destacado no
+    XML, e some junto se for lido lá dentro.
+
+    O DIFAL não é decisão da apuração: chega pronto do Livro. O que a UF decide
+    é o destino — conta gráfica ou guia avulsa. Ver `regimes.yaml`, bloco
+    `difal`.
+    """
+    for tratada in base.linhas:
+        valor = float(tratada.origem.dados.get("diferenca_icms") or 0.0)
+        if not valor:
+            continue
+        chave = " ".join(str(tratada.origem.dados.get("estabelecimento") or "").split())
+        filial = filiais.get(chave)
+        if filial is None:
+            # Estabelecimento que só teve DIFAL no mês ainda assim tem apuração:
+            # o Registro dele existe, com a linha 002 preenchida.
+            ficha = cadastro.get(chave.casefold()) or {}
+            uf = ficha.get("uf", "")
+            filial = filiais[chave] = ApuracaoFilial(
+                estabelecimento=chave,
+                uf=uf,
+                regime=str(ficha.get("regime") or ""),
+                codigo=int(ficha["codigo"]) if ficha.get("codigo") is not None else None,
+                segrega_por_atividade=ativ.mapa_da_uf(uf, params) is not None,
+            )
+        filial.difal += valor
+
+    for filial in filiais.values():
+        filial.difal_na_conta_grafica = bool(
+            params.difal_da_uf(filial.uf).get("na_conta_grafica", False)
+        )
+        filial.difal_na_conta = filial.difal if filial.difal_na_conta_grafica else 0.0
 
 
 def _ajustes_das_linhas(

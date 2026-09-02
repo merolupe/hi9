@@ -268,6 +268,7 @@ function desenhar(d){
   if (d.pendencias.length) partes.push(pendencias(d.pendencias));
   partes.push(porFilial(d.filiais));
   partes.push(saldoCredor(d));
+  partes.push(difal(d.difal));
   partes.push(ajustes(d.ajustes));
   partes.push(registros(d.registros));
   if (d.transferencias.length) partes.push(transferencias(d.transferencias));
@@ -386,6 +387,34 @@ async function salvarSerie(){
   } catch (erro) {
     recado.textContent = erro.message;
   }
+}
+
+// O diferencial de alíquota. Vem calculado do Livro; o que muda com a UF é o
+// destino — conta gráfica onde ela o cobra ali, guia avulsa onde não.
+function difal(d){
+  if (!d || !d.por_filial.length) return "";
+  const linhas = d.por_filial.map(f => `<tr>
+      <td style="text-align:left">${esc(f.estabelecimento)}</td>
+      <td style="text-align:left">${esc(f.uf)}</td>
+      <td>${moeda(f.valor)}</td>
+      <td style="text-align:left">${f.na_conta_grafica
+        ? "entra na conta gráfica, linha 002"
+        : "guia avulsa — fora da conta gráfica"}</td>
+    </tr>`).join("");
+  const guia = d.em_guia ? `<p style="font-size:13px; color:var(--suave); margin:12px 0 0">
+      A recolher em <strong>guia avulsa</strong>: ${moeda(d.em_guia)} — informativo,
+      como o FADEFE: não entra no saldo.</p>` : "";
+  return `<section><h2>Diferencial de alíquota</h2>
+    <div class="rolagem"><table>
+      <thead><tr><th style="text-align:left">Estabelecimento</th>
+        <th style="text-align:left">UF</th><th>DIFAL</th>
+        <th style="text-align:left">Destino</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div>
+    ${guia}
+    <p style="font-size:13px; color:var(--suave); margin:12px 0 0">
+      Vem calculado do Livro Fiscal, coluna <code>Diferença ICMS</code>. A
+      entrada de uso e consumo escritura ICMS zero — não há crédito a tomar —,
+      então o valor sai do ICMS destacado no XML.</p></section>`;
 }
 
 // Os ajustes: o que a apuração decide e o Livro não sabe. Chegam pelas colunas

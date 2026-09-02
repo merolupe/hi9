@@ -173,7 +173,7 @@ def montar(apuracao, params: Parametros, ajustes=None) -> list[Registro]:
                 competencia=apuracao.base.competencia,
                 entradas=entradas,
                 saidas=saidas,
-                resumo=_resumo(filial, apuracao, ajustes),
+                resumo=_resumo(filial, apuracao, ajustes, params),
             )
         )
     return registros
@@ -277,7 +277,7 @@ def _numero(valor) -> float:
         return 0.0
 
 
-def _resumo(filial, apuracao, ajustes) -> list[LinhaResumo]:
+def _resumo(filial, apuracao, ajustes, params: Parametros) -> list[LinhaResumo]:
     """As quatorze linhas, na ordem e com os rótulos do livro."""
     nome = filial.estabelecimento
     declarados = bool(ajustes and ajustes.declarados(nome))
@@ -289,14 +289,25 @@ def _resumo(filial, apuracao, ajustes) -> list[LinhaResumo]:
 
     l001 = LinhaResumo(1, "por Saídas/Prestações com Débito do Imposto", filial.debito)
 
-    l002 = LinhaResumo(2, "Outros Débitos", ajuste("outros_debitos") + recebido)
+    # O DIFAL entra aqui onde a UF o cobra na conta gráfica. Não é ajuste
+    # declarado: vem calculado do Livro, como o débito de saída.
+    difal = filial.difal_na_conta
+    l002 = LinhaResumo(
+        2, "Outros Débitos", ajuste("outros_debitos") + recebido + difal
+    )
+    if difal:
+        l002.discriminacao.append((
+            str((params.difal_da_uf(filial.uf).get("descricao")
+                 or "Diferencial de alíquota")),
+            difal,
+        ))
     if recebido:
         l002.discriminacao.append(
             ("Recebimento de saldo devedor — estabelecimento centralizador", recebido)
         )
     if ajuste("outros_debitos"):
         l002.discriminacao.append(("Outros débitos declarados", ajuste("outros_debitos")))
-    l002.aguarda_ajuste = not declarados and not recebido
+    l002.aguarda_ajuste = not declarados and not recebido and not difal
 
     # O crédito indevido é crédito tomado que a regra manda devolver: no livro
     # ele mora na mesma linha do estorno.
