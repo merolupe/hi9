@@ -180,34 +180,28 @@ terceiro?
 estiver, uma saída de armazém geral industrializador é classificada pela
 descrição e pelo CFOP, e pode ficar como produção quando é revenda.
 
-## 13. 🟡 CFOP 2923 — a transmissão de propriedade em armazém é produção ou revenda?
+## 13. 🟢 CFOP 2923 — resolvida: é sempre comercial
 
 O CFOP 1923/2923 é a entrada de mercadoria recebida do vendedor remetente em
 venda à ordem. Na prática da empresa, ele documenta **transmissão de
 propriedade de mercadoria depositada em armazém**, em referência a notas de
 transferência entre unidades.
 
-E é aí que fica indefinido. A transferência entre unidades já tem par no mapa —
-1151/2151 para industrialização, 1152/2152 para comercialização —, mas o 2923
-não distingue: o mesmo código serve para as duas.
+A dúvida era se o destino da mercadoria deveria decidir a atividade, como no par
+1151/1152. A segregação não é detalhe: é ela que dimensiona o benefício de Rio
+Brilhante, que incide só sobre o saldo devedor industrial.
 
-**A pergunta não é dispensável.** A segregação por atividade é o que dimensiona
-o benefício de Rio Brilhante, que incide só sobre o saldo devedor industrial.
-Toda linha de crédito precisa cair em um dos baldes, e a escolha move dinheiro:
+**Respondida em 02/09/2026 pela Gerência Fiscal/Tributária: é sempre
+comercial**, independentemente do produto ou da nota de transferência
+referenciada. Cadastrado em `regimes.yaml`, bloco `atividades.ms.por_cfop`.
 
-| Se o 2923 for… | Benefício de Rio Brilhante |
-|---|---|
-| Comercial | inalterado |
-| Industrial | menor, porque o crédito industrial sobe e abate a base do incentivo |
+É coerente com a contraparte: o 5934/6934 — remessa simbólica de mercadoria
+depositada em armazém — já era comercial. Os dois lados da mesma operação ficam
+na mesma atividade.
 
-**Perguntas:** o destino da mercadoria transferida define a atividade, como no
-par 2151/2152? Se sim, dá para saber pelo produto, ou só pela nota de
-transferência referenciada?
-
-**Padrão assumido:** nenhum — o CFOP não está no mapa, e as linhas caem em
-`SEM REGRA`, bloqueando o encerramento. É de propósito: adivinhar aqui aumenta
-ou diminui o benefício sem que ninguém tenha decidido.
-
+Efeito medido em 08/2026: os R$ 55.369,48 de crédito das três linhas de Rio
+Brilhante saem de `SEM REGRA` para Comercial. O crédito industrial não muda, e
+**o benefício fiscal fica idêntico** — R$ 442.528,58.
 
 ## 14. 🟢 Saldo credor de abertura — respondida para 07/2026
 

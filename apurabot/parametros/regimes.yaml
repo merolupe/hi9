@@ -213,6 +213,11 @@ atividades:
     # A devolução segue a venda que desfaz: 1201/2201/3201 é devolução de venda
     # de produção do estabelecimento e por isso é industrial; 1202/2202/3202 é
     # devolução de venda de mercadoria adquirida de terceiros, e é comercial.
+    #
+    # 1923/2923 é a entrada de mercadoria que a empresa recebe por transmissão
+    # de propriedade em armazém — a contraparte do 5934/6934, que já é
+    # comercial. Decidido pela Gerência Fiscal/Tributária: é sempre comercial,
+    # independentemente do produto ou da nota de transferência referenciada.
     por_cfop:
       industrial:
         debito: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122]
@@ -225,7 +230,8 @@ atividades:
         credito: [1102, 2102, 3102, 1113, 2113, 1118, 2118, 1121, 2121,
                   1152, 2152, 3152,          # transferência p/ comercialização
                   1202, 2202, 3202,          # devolução de venda de terceiros
-                  1352, 2352, 1353, 2353, 1906, 2906, 1907, 2907]
+                  1352, 2352, 1353, 2353, 1906, 2906, 1907, 2907,
+                  1923, 2923]                # armazém: transmissão de propriedade
       prestacional_outras:
         debito: [5910, 6910, 5911, 6911, 5949, 6949]
         credito: [1604, 2604, 1949, 2949]
