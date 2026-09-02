@@ -406,11 +406,71 @@ Dois pontos que o documento estabelece e que a ferramenta ainda não reflete:
 **A transferência de SP é lançamento de apuração, não NF-e.** As duas pontas
 aparecem discriminadas com a mesma redação que MS usa: "recebimento de saldo
 credor — estabelecimento centralizador" na linha 006, e "recebimento de saldo
-devedor — estabelecimento centralizador" na linha 002. Hoje `filiais.yaml`
-descreve SP com `mecanismo: nfe`, marcado como não homologado.
+devedor — estabelecimento centralizador" na linha 002. `filiais.yaml` foi
+corrigido: SP passou a `mecanismo: ajuste_de_apuracao` com `emite_nfe: true`,
+homologado em 02/09/2026.
 
 **Os dois sentidos são recebidos pela centralizadora.** Em junho Guará recebeu
 crédito (455.859,54) e débito (1.022,71) no mesmo mês, de estabelecimentos
 diferentes.
 
 Ver decisão pendente nº 11.
+
+## 16. Os seis registros de julho fecham a virada do mês (02/09/2026)
+
+Com os Registros de Apuração de 07/2026 de Matriz, Registro, Rio Brilhante,
+Corumbá, Londrina e Guará em mãos, a abertura de agosto deixa de ser estimativa
+e passa a ser leitura de documento. A linha 014 de cada um:
+
+| Estabelecimento | cód | 009 (abre julho) | 014 (abre agosto) |
+|---|---|---|---|
+| HINOVE (MATRIZ) | 1 | 0,00 | 0,00 |
+| HINOVE (RIO BRILHANTE) | 2 | 0,00 | 0,00 |
+| HINOVE (REGISTRO) | 4 | 0,00 | 0,00 |
+| HINOVE (LONDRINA) | 7 | 327.121,97 | **341.004,37** |
+| HINOVE (CORUMBÁ- MS) | 9 | 0,00 | 0,00 |
+| HINOVE (FILIAL GUARÁ) | 11 | 1.782,53 | **2.215.164,28** |
+
+Barra do Garças (8) não tem registro emitido no período.
+
+**Londrina é a conta gráfica inteira num documento só.** PR difere a saída, então
+o mês não tem débito e a linha 014 é a soma da abertura com o crédito das
+entradas: 327.121,97 + 13.882,40 = 341.004,37. O motor reproduz as três linhas,
+e é o teste mais direto que existe da virada do mês
+(`test_londrina_fecha_julho_na_linha_014_do_documento`).
+
+Correção do que estava cadastrado: `saldos.yaml` trazia R$ 13.882,40 como
+abertura de agosto em Londrina. Esse é o crédito das entradas do próprio julho
+— a linha 005 —, não a linha 014. A abertura correta é **R$ 341.004,37**.
+
+**A centralização de SP fecha entre as três pontas.** O que Guará declara ter
+recebido na linha 002 é a soma exata do que os dois centralizados declaram ter
+transferido na linha 006:
+
+```
+Registro (4) ....  299.453,69
+Matriz (1) ......      110,25
+                   ----------
+Guará (11) 002 ..  299.563,94   ✔ igual ao documento de Guará
+```
+
+Os R$ 2,99 do item 14 estão, portanto, entre o motor e o ERP — não entre dois
+documentos do ERP. O ERP transferiu R$ 299.453,69 de Registro e deixou lá
+R$ 24,27 de saldo devedor; o motor apura o saldo devedor de Registro inteiro. É
+resíduo de composição da linha 002 de Registro, cujo detalhe (DIFAL 12.337,04 +
+baixa de estoque 40,85) o motor só conhece pela parte do DIFAL.
+
+**As demais linhas dos cinco documentos batem com a regressão que já existia.**
+Crédito da linha 005 e estorno da linha 003, contra `test_regressao_apuracao`:
+
+| Estabelecimento | 005 | 003 | confere |
+|---|---|---|---|
+| REGISTRO | 286.030,83 | 50.481,97 | ✔ |
+| GUARÁ | 4.167.368,77 | 426.771,68 | ✔ |
+| LONDRINA | 13.882,40 | 0,00 | ✔ |
+| CORUMBÁ | 46.464,79 | 19.961,55 | ✔ |
+| RIO BRILHANTE | 469.903,05 | 335.101,40 | ✔ |
+
+Rio Brilhante confirma também o crédito outorgado retificado do art. 68 —
+**R$ 68.473,36** na linha 006 — e a centralização de MS: Corumbá transfere
+R$ 99.412,10 de saldo devedor na linha 006 e Rio Brilhante o recebe na 002.

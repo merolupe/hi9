@@ -29,9 +29,11 @@ saldos_credores:
   - competencia: "2026-07"
     homologado: true
     origem: >
-      Linha 009 do Registro de Apuração de 07/2026 da Filial Guará (empresa
-      11), emitido em 06/08/2026: R$ 1.782,53. Os demais estabelecimentos
-      fecharam junho devedores e abrem julho zerados.
+      Linha 009 dos Registros de Apuração de 07/2026, um por estabelecimento.
+      Filial Guará (empresa 11), emitido em 06/08/2026: R$ 1.782,53. Londrina
+      (empresa 7), emitido em 06/08/2026: R$ 327.121,97. Matriz, Registro, Rio
+      Brilhante e Corumbá abrem julho zerados — a linha 009 dos quatro
+      documentos é R$ 0,00, porque fecharam junho devedores e recolheram.
     pendencia: >
       O Registro de 06/2026 da mesma filial fecha a linha 014 em R$ 0,00 — e a
       linha 009 dele também. Junho zerou porque a centralização de SP
@@ -42,21 +44,18 @@ saldos_credores:
       não na ferramenta; vale a pena o time fiscal olhar.
     por_estabelecimento:
       11: 1782.53             # HINOVE (FILIAL GUARÁ)
+      7: 327121.97            # HINOVE (LONDRINA)
 
   - competencia: "2026-08"
     homologado: true
     origem: >
-      Linha 014 do Registro de Apuração de 07/2026. Guará: R$ 2.215.164,28, o
-      valor que o Registro emitido pelo ERP declara a transportar. Londrina:
-      R$ 13.882,40, o saldo credor que a apuração de julho fechou — PR difere a
-      saída e o crédito se acumula (decisão nº 1). Os demais estabelecimentos
-      fecharam julho devedores e recolheram, então abrem agosto zerados.
-    pendencia: >
-      Sobre Guará, o motor apura R$ 2.107.543,31 para julho, R$ 107.620,97 a
-      menos que o documento. A diferença é ajuste da competência de julho —
-      linha 002, 006 ou 007 — ainda não declarado. A abertura de agosto segue o
-      documento, que é o que a lei transporta; quando o ajuste de julho for
-      declarado, os dois passam a fechar sozinhos. Ver decisão pendente nº 14.
+      Linha 014 dos Registros de Apuração de 07/2026, um por estabelecimento.
+      Filial Guará (empresa 11): R$ 2.215.164,28. Londrina (empresa 7):
+      R$ 341.004,37 — que é o saldo credor que julho abriu (R$ 327.121,97) mais
+      o crédito das entradas do próprio julho (R$ 13.882,40); PR difere a saída
+      e o crédito se acumula (decisão nº 1). Matriz, Registro, Rio Brilhante e
+      Corumbá fecham julho com a linha 014 em R$ 0,00 e abrem agosto zerados.
+      Barra do Garças não tem Registro emitido no período.
     por_estabelecimento:
       11: 2215164.28          # HINOVE (FILIAL GUARÁ)
-      7: 13882.40             # HINOVE (LONDRINA)
+      7: 341004.37            # HINOVE (LONDRINA)

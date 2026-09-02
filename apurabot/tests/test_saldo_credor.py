@@ -4,9 +4,15 @@ O Livro Fiscal traz os documentos de uma competência e nada mais. O crédito qu
 sobrou do mês anterior não está lá, mas está na conta: é a linha 009 do Registro
 de Apuração.
 
-A referência é a linha 009 do Registro de Apuração de 07/2026 da FILIAL GUARÁ
-(empresa 11): **R$ 1.782,53**. Os demais estabelecimentos fecharam junho
+A referência é a linha 009 dos Registros de Apuração de 07/2026: FILIAL GUARÁ
+(empresa 11) abre com **R$ 1.782,53** e LONDRINA (empresa 7) com
+**R$ 327.121,97**. Matriz, Registro, Rio Brilhante e Corumbá fecharam junho
 devedores e abrem julho zerados.
+
+Londrina é a conta gráfica inteira num só documento: PR difere a saída, então o
+mês não tem débito e a linha 014 é a soma da abertura com o crédito das
+entradas — 327.121,97 + 13.882,40 = **R$ 341.004,37**, que é a abertura de
+agosto.
 
 Zerado **declarado** não é a mesma coisa que zerado por falta de declaração: no
 primeiro caso o registro fecha, no segundo ele marca a linha 009. É o que a
@@ -24,6 +30,8 @@ from apurabot.nucleo import registro as reg
 CENTAVO = 0.005
 GUARA = "HINOVE (FILIAL GUARÁ)"
 CODIGO_GUARA = 11
+LONDRINA = "HINOVE (LONDRINA)"
+CODIGO_LONDRINA = 7
 
 #: Linha 009 do Registro de 07/2026 de Guará.
 ABERTURA = 1_782.53
@@ -36,6 +44,13 @@ A_TRANSPORTAR = DO_PERIODO + ABERTURA
 #: O saldo individual da filial é antes da transferência; o registro é depois.
 LINHA_002 = 303_470.87
 LINHA_014 = 1_805_854.97
+
+#: Linha 009 do Registro de 07/2026 de Londrina.
+ABERTURA_LONDRINA = 327_121.97
+#: Crédito das entradas de julho em Londrina — a linha 005 do mesmo documento.
+DO_PERIODO_LONDRINA = 13_882.40
+#: Linha 014 do mesmo documento: a abertura de agosto.
+A_TRANSPORTAR_LONDRINA = 341_004.37
 
 
 @pytest.fixture(scope="module")
@@ -57,9 +72,18 @@ def sem_declaracao(parametros):
 # -- o parâmetro ------------------------------------------------------------
 
 def test_a_abertura_de_julho_vem_do_registro_do_erp(parametros):
-    """Só Guará abriu julho com crédito, e é a linha 009 do documento."""
+    """Guará e Londrina abriram julho com crédito — a linha 009 de cada um."""
     assert parametros.saldos_credores("2026-07") == {
-        CODIGO_GUARA: pytest.approx(ABERTURA, abs=CENTAVO)
+        CODIGO_GUARA: pytest.approx(ABERTURA, abs=CENTAVO),
+        CODIGO_LONDRINA: pytest.approx(ABERTURA_LONDRINA, abs=CENTAVO),
+    }
+
+
+def test_a_abertura_de_agosto_e_a_linha_014_de_julho(parametros):
+    """A virada do mês: o que julho transporta é o que agosto recebe."""
+    assert parametros.saldos_credores("2026-08") == {
+        CODIGO_GUARA: pytest.approx(2_215_164.28, abs=CENTAVO),
+        CODIGO_LONDRINA: pytest.approx(A_TRANSPORTAR_LONDRINA, abs=CENTAVO),
     }
 
 
@@ -117,10 +141,50 @@ def test_a_linha_014_do_registro_e_a_linha_009_do_mes_seguinte(apuracao, paramet
     )
 
 
+def test_londrina_fecha_julho_na_linha_014_do_documento(apuracao, parametros):
+    """PR difere a saída: sem débito, a conta é abertura mais crédito do mês.
+
+    É a checagem mais direta que existe da virada do mês — as três linhas do
+    Registro de Londrina (009, 005 e 014) saem do mesmo documento do ERP, e a
+    014 é exatamente o que `saldos.yaml` declara como abertura de agosto.
+    """
+    londrina = apuracao.filiais[LONDRINA]
+    assert londrina.saldo_credor_anterior == pytest.approx(
+        ABERTURA_LONDRINA, abs=CENTAVO
+    )
+    assert londrina.credito_mantido == pytest.approx(
+        DO_PERIODO_LONDRINA, abs=CENTAVO
+    )
+    assert londrina.debito == 0.0
+    assert londrina.credor == pytest.approx(A_TRANSPORTAR_LONDRINA, abs=CENTAVO)
+    assert londrina.a_recolher == 0.0
+
+    registro = next(
+        r for r in reg.montar(apuracao, parametros)
+        if r.estabelecimento == LONDRINA
+    )
+    assert registro.linha(9).valor == pytest.approx(ABERTURA_LONDRINA, abs=CENTAVO)
+    assert registro.linha(5).valor == pytest.approx(
+        DO_PERIODO_LONDRINA, abs=CENTAVO
+    )
+    assert registro.linha(14).valor == pytest.approx(
+        A_TRANSPORTAR_LONDRINA, abs=CENTAVO
+    )
+
+
 def test_competencia_declarada_e_declaracao_completa(apuracao):
-    """Quem não aparece no parâmetro abriu o mês em zero — todos menos Guará."""
+    """Quem não aparece no parâmetro abriu o mês em zero.
+
+    Julho declara dois: Guará e Londrina. Os outros quatro fecharam junho
+    devedores, e a ausência deles no parâmetro é a declaração de que abriram
+    zerados — não é falta de declaração.
+    """
     assert apuracao.saldos_declarados
-    outros = [f for f in apuracao.filiais.values() if f.estabelecimento != GUARA]
+    com_abertura = {GUARA, LONDRINA}
+    outros = [
+        f for f in apuracao.filiais.values()
+        if f.estabelecimento not in com_abertura
+    ]
     assert outros
     assert all(f.saldo_credor_anterior == 0.0 for f in outros)
 
