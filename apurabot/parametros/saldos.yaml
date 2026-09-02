@@ -29,13 +29,19 @@ saldos_credores:
   - competencia: "2026-07"
     homologado: true
     origem: >
-      Registro de Apuração do ICMS de 06/2026, emitido pelo ERP em 07/07/2026
-      para a Filial Guará (empresa 11): a linha 014 fecha em R$ 0,00, e a
-      própria linha 009 de junho também. Junho zerou porque a centralização de
-      SP transferiu para Guará exatamente o crédito de que ele precisava —
-      R$ 455.859,54 na linha 006 contra um saldo devedor de igual valor.
-      Nenhum estabelecimento do grupo abriu julho com saldo credor.
-    por_estabelecimento: {}
+      Linha 009 do Registro de Apuração de 07/2026 da Filial Guará (empresa
+      11), emitido em 06/08/2026: R$ 1.782,53. Os demais estabelecimentos
+      fecharam junho devedores e abrem julho zerados.
+    pendencia: >
+      O Registro de 06/2026 da mesma filial fecha a linha 014 em R$ 0,00 — e a
+      linha 009 dele também. Junho zerou porque a centralização de SP
+      transferiu para Guará exatamente o crédito de que ele precisava:
+      R$ 455.859,54 na linha 006 contra saldo devedor de igual valor. Ou seja,
+      o que julho declara ter recebido não é o que junho declara ter
+      transportado. A diferença é de R$ 1.782,53 e está nos documentos do ERP,
+      não na ferramenta; vale a pena o time fiscal olhar.
+    por_estabelecimento:
+      11: 1782.53             # HINOVE (FILIAL GUARÁ)
 
   - competencia: "2026-08"
     homologado: true

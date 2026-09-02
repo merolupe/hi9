@@ -343,44 +343,47 @@ centavo.
 
 ---
 
-## 14. Guará abre julho zerado — e os R$ 107.620,97 são ajuste, não abertura
+## 14. O registro de julho de Guará fecha em R$ 2,99
 
-O Registro de Apuração de 07/2026 emitido pelo ERP para a **Filial Guará**
-(empresa 11) declara na linha 014 o valor de **R$ 2.215.164,28** a transportar.
-Sobre o Livro Fiscal de julho o motor apura:
+A folha 3 do Registro de Apuração de 07/2026 da Filial Guará decompõe o que
+faltava. Contra o que o motor apura sobre o Livro:
 
-| Linha | Valor | Origem |
+| Linha | Motor | Documento | Diferença |
+|---|---|---|---|
+| 001 por Saídas com Débito | 1.633.053,78 | 1.633.053,78 | — |
+| 002 Outros Débitos | 303.470,87 | 308.585,58 | 5.114,71 |
+| 003 Estornos de Créditos | 426.771,68 | 426.771,68 | — |
+| 005 por Entradas com Crédito | 4.167.368,77 | 4.167.368,77 | — |
+| 006 Outros Créditos | 0,00 | 414.424,02 | 414.424,02 |
+| 009 Saldo Credor Anterior | 0,00 | 1.782,53 | 1.782,53 |
+| **014 a Transportar** | **1.804.072,44** | **2.215.164,28** | **411.091,84** |
+
+As três linhas que o Livro sustenta — 001, 003 e 005 — batem ao centavo. Todo o
+resto é lançamento que não nasce de documento, discriminado no próprio registro:
+
+| O quê | Valor | Linha |
 |---|---|---|
-| 001 por Saídas com Débito | 1.633.053,78 | Livro Fiscal |
-| 003 Estornos de Créditos | 426.771,68 | regra de SP sobre o Livro |
-| **004 Sub Total** | **2.059.825,46** | |
-| 005 por Entradas com Crédito | 4.167.368,77 | Livro Fiscal |
-| **008 Sub Total** | **4.167.368,77** | |
+| Recebimento de crédito de estabelecimento de produtor ou cooperativas | +400.000,00 | 006 |
+| Estorno de débitos | +14.424,02 | 006 |
+| Saldo credor do período anterior | +1.782,53 | 009 |
+| Baixa de estoque — Artigo 73 | −5.111,72 | 002 |
+| Centralização recebida, diferença | −2,99 | 002 |
+| **Total** | **411.091,84** | |
 
-`008 − 004` dá **2.107.543,31** — R$ 107.620,97 abaixo do que o documento
-declara. As linhas 001, 003 e 005 são as que o Livro sustenta, e as três estão
-ancoradas na regressão contra a planilha manual e contra a Dinâmica. A
-diferença, portanto, está numa das linhas que não nascem de documento.
+Cadastrada a abertura e declarados os três ajustes, o registro fecha em
+**R$ 2,99** — resíduo na linha 002, entre os R$ 299.563,94 que o documento
+declara ter recebido por centralização e os R$ 299.560,95 que o motor apura
+como saldo devedor de Registro e Matriz.
 
-**Não é a linha 009.** O Registro de Apuração de **06/2026** da mesma filial,
-emitido em 07/07/2026, fecha a linha 014 em **R$ 0,00** — e a linha 009 dele
-também. Julho abre zerado, e `parametros/saldos.yaml` declara isso.
+Duas observações que o time fiscal pode querer olhar:
 
-O resíduo é, então, ajuste da competência: linha 002, 006 ou 007, a declarar. O
-registro de junho mostra que as três são usadas em Guará:
+**Os R$ 14.424,02 da linha 006 são o crédito indevido de Corumbá** — o CFOP
+2152 que é contraparte do 6152 de Guará (ver item 10). O motor já o separa do
+estorno em Corumbá; o documento mostra Guará recuperando-o do outro lado.
 
-| Linha | Valor em 06/2026 | Discriminação |
-|---|---|---|
-| 002 Outros Débitos | 16.948,65 | diferencial de alíquota 6.747,34 · estorno de créditos para ajuste 8.665,29 · baixa de estoque 513,31 · **recebimento de saldo devedor 1.022,71** |
-| 003 Estornos de Créditos | 408.171,19 | "estorno proporcional a saídas não tributadas, considerando o equilíbrio fiscal" |
-| 006 Outros Créditos | 455.859,54 | **recebimento de saldo credor — estabelecimento centralizador** |
-
-Como o resíduo de julho é crédito, o candidato natural é a linha 006. Confirmar
-depende da folha 3 do Registro de 07/2026, que ainda não foi lida.
-
-**O que a conciliação prova.** Que a apuração de julho de Guará está completa no
-que o Livro sustenta: não falta crédito nem sobra débito, e o que resta é
-lançamento declarado, que a ferramenta agora sabe receber.
+**A linha 009 de julho não é a linha 014 de junho.** Junho fecha em R$ 0,00 e
+julho abre com R$ 1.782,53. A descontinuidade está entre dois documentos do
+ERP, não na ferramenta.
 
 ## 15. Junho de Guará fecha em zero — e mostra como SP centraliza
 

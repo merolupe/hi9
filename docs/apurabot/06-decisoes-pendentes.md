@@ -220,15 +220,16 @@ Junho fechou em zero porque a centralização de SP transferiu para Guará
 exatamente o crédito de que ele precisava. Ver
 [05 — Achados](05-achados-julho-2026.md), item 15.
 
-**Fica em aberto o destino dos R$ 107.620,97** que separam a apuração de julho
-de Guará (R$ 2.107.543,31) do que o Registro de 07/2026 declara
-(R$ 2.215.164,28). Não é abertura: é ajuste da competência, linha 002, 006 ou
-007. Como é crédito líquido, o candidato natural é a **linha 006** — em junho
-ela trouxe o recebimento de saldo credor da centralização. Confirmar depende da
-folha 3 do Registro de 07/2026.
+**A diferença de julho está resolvida.** A folha 3 do Registro de 07/2026
+decompõe tudo: R$ 400.000,00 de recebimento de crédito de produtor ou
+cooperativas e R$ 14.424,02 de estorno de débitos na linha 006, R$ 5.111,72 de
+baixa de estoque na 002, mais a própria abertura. Com a abertura cadastrada e
+os três ajustes declarados, o registro fecha em R$ 2,99 — ver
+[05 — Achados](05-achados-julho-2026.md), item 14. Os ajustes entram pela aba
+`AJUSTES`; nada disso é parâmetro.
 
-Isso não bloqueia nada: o valor entra pela aba `AJUSTES` quando for declarado, e
-até lá o registro de Guará mostra `AGUARDA AJUSTE` nas linhas 002, 006 e 007.
+**Uma ponta menor:** a linha 009 de julho (R$ 1.782,53) não é a linha 014 de
+junho (R$ 0,00). A descontinuidade está entre dois documentos do ERP.
 
 **Segue em aberto:** quando o estabelecimento incentivado abrir o mês com saldo
 credor, esse crédito entra no cálculo do benefício de MS ou fica fora dele,
