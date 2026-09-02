@@ -53,6 +53,17 @@ class Parametros:
     def limite_teto_aliquota(self) -> bool:
         return bool(self.cargas["equalizacao"]["limite_teto_aliquota"])
 
+    # -- DIFAL ----------------------------------------------------------
+
+    def difal_da_uf(self, uf: str) -> dict[str, Any]:
+        """Como a UF trata o diferencial de alíquota.
+
+        UF sem bloco cadastrado devolve vazio, e o DIFAL dela fica fora da
+        conta gráfica: é a leitura conservadora, porque incluí-lo por conta
+        própria aumentaria o imposto sem ninguém ter decidido.
+        """
+        return (self.regimes.get("difal") or {}).get(str(uf).lower()) or {}
+
     # -- saldo credor de abertura ---------------------------------------
 
     def saldos_credores(self, competencia: str) -> dict[int, float] | None:

@@ -320,7 +320,7 @@ def test_registro_transfere_o_saldo_devedor_para_guara(apuracao):
     """Identidade da camada, sobre os saldos reais da competência."""
     grupo = _grupo(apuracao, "SP")
     registro = next(t for t in grupo.transferencias if t.origem == "HINOVE (REGISTRO)")
-    assert registro.saldo_individual == pytest.approx(-287_113.66, abs=CENTAVO)
+    assert registro.saldo_individual == pytest.approx(-299_450.70, abs=CENTAVO)
     assert registro.saldo_individual == pytest.approx(
         registro.valor_transferido + registro.saldo_residual, abs=CENTAVO
     )
@@ -349,13 +349,13 @@ def test_o_saldo_traz_o_credor_como_positivo(apuracao):
     guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
     # Julho abre zerado: o Registro de 06/2026 fecha a linha 014 em 0,00.
     assert guara.saldo_credor_anterior == 0.0
-    assert guara.saldo == pytest.approx(2_107_543.31, abs=CENTAVO)
-    assert guara.credor == pytest.approx(2_107_543.31, abs=CENTAVO)
+    assert guara.saldo == pytest.approx(2_103_633.39, abs=CENTAVO)
+    assert guara.credor == pytest.approx(2_103_633.39, abs=CENTAVO)
     assert guara.a_recolher == 0.0
 
     registro = apuracao.filiais["HINOVE (REGISTRO)"]
-    assert registro.saldo == pytest.approx(-287_113.66, abs=CENTAVO)
-    assert registro.a_recolher == pytest.approx(287_113.66, abs=CENTAVO)
+    assert registro.saldo == pytest.approx(-299_450.70, abs=CENTAVO)
+    assert registro.a_recolher == pytest.approx(299_450.70, abs=CENTAVO)
 
 
 def test_o_saldo_do_total_e_a_soma_dos_saldos_das_filiais(apuracao):

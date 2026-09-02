@@ -140,6 +140,23 @@ def _apuracao(apuracao: Apuracao) -> None:
             print(f"  {instrucao}")
 
 
+def _difal(apuracao: Apuracao) -> None:
+    """O diferencial de alíquota, e para onde ele vai em cada UF."""
+    com_difal = [f for f in apuracao.filiais.values() if f.difal]
+    if not com_difal:
+        return
+    _titulo("Diferencial de alíquota")
+    print("  Vem calculado do Livro Fiscal, coluna `Diferença ICMS`.")
+    for f in sorted(com_difal, key=lambda f: (f.uf, f.estabelecimento)):
+        destino = (
+            "entra na conta gráfica, linha 002" if f.difal_na_conta_grafica
+            else "guia avulsa — fora da conta gráfica"
+        )
+        print(f"  {f.estabelecimento:<32}{f.uf:<4}{reais(f.difal):>14}   {destino}")
+    if apuracao.difal_em_guia:
+        print(f"\n  A recolher em guia avulsa: {reais(apuracao.difal_em_guia)}")
+
+
 def _ajustes(apuracao: Apuracao) -> None:
     """O que foi declarado e o que ficou só marcado."""
     a = apuracao.ajustes
@@ -208,6 +225,7 @@ def _comando_apurar(args: argparse.Namespace) -> int:
         print(f"{ONDE_CADASTRAR}\n", file=sys.stderr)
         return 2
     _apuracao(apuracao)
+    _difal(apuracao)
     _ajustes(apuracao)
     pendentes = _pendencias(base, apuracao)
 

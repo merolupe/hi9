@@ -76,7 +76,13 @@ def dinamica(arquivo_julho):
 # --------------------------------------------------------------------------
 
 def test_le_o_livro_inteiro(base_julho):
-    assert len(base_julho.livro) == 6504
+    """6.503 documentos. A linha de totais do relatório fica de fora.
+
+    O extrato fecha com uma linha sem nota, sem CFOP e sem estabelecimento, e
+    com as colunas numéricas somadas. Ela não é documento: somá-la duplicaria o
+    que já está nas linhas.
+    """
+    assert len(base_julho.livro) == 6503
     assert base_julho.competencia == "2026-07"
 
     # A extração da apuração é anterior ao extrato "Movimento Livros Fiscais" e

@@ -235,3 +235,41 @@ atividades:
       prestacional_outras:
         debito: [5910, 6910, 5911, 6911, 5949, 6949]
         credito: [1604, 2604, 1949, 2949]
+
+# ---------------------------------------------------------------------------
+# DIFAL — diferencial de alíquota nas entradas de uso, consumo e ativo
+# ---------------------------------------------------------------------------
+# O valor já vem calculado no Livro Fiscal, na coluna `Diferença ICMS`. Ele não
+# sai do ICMS do próprio lançamento: a entrada de uso e consumo escritura ICMS
+# zero, porque não há crédito a tomar. O ERP calcula o DIFAL a partir do ICMS
+# destacado no XML e grava o resultado nessa coluna.
+#
+# A conferência de 08/2026 fechou lançamento a lançamento contra a planilha
+# DIFAL consolidada do time fiscal — 53 lançamentos, R$ 55.427,33 contra
+# R$ 55.427,35, dois centavos de arredondamento.
+#
+# O que muda com a UF é o destino, não o cálculo:
+#
+#   na_conta_grafica: true    entra na apuração, na linha indicada do Registro
+#   na_conta_grafica: false   é informativo — recolhido em guia avulsa, como
+#                             o FADEFE, e por isso fora do saldo
+#
+# Revisão: Gerência Fiscal/Tributária | Confirmado em 02/09/2026
+difal:
+
+  sp:
+    na_conta_grafica: true
+    linha_do_registro: 2
+    descricao: Diferencial ICMS Entrada
+    homologado: true
+    # Entra em cada unidade, antes de qualquer centralização: o DIFAL é da
+    # unidade que fez a entrada, e é o saldo dela, já com o DIFAL, que vai ao
+    # grupo. A redação é a que o Registro de Apuração do ERP usa na
+    # discriminação da linha 002.
+
+  ms:
+    na_conta_grafica: false
+    descricao: Diferencial de alíquota — guia avulsa
+    homologado: true
+    # Em MS o DIFAL não entra na conta gráfica: é recolhido em guia própria.
+    # Sai informado no relatório, ao lado do FADEFE, para não se perder.

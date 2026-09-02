@@ -26,15 +26,15 @@ CENTAVO = 0.005
 GUARA = "HINOVE (FILIAL GUARÁ)"
 CODIGO_GUARA = 11
 
-#: O que o Livro de julho produz em Guará. A abertura é zero, então o saldo
-#: individual da filial é este mesmo.
-DO_PERIODO = 2_107_543.31
+#: O que o Livro de julho produz em Guará, já com o DIFAL de SP na conta.
+#: A abertura é zero, então o saldo individual da filial é este mesmo.
+DO_PERIODO = 2_103_633.39
 A_TRANSPORTAR = DO_PERIODO
-#: A linha 014 do registro é menor: ela já traz, na linha 002, o saldo devedor
-#: que Guará recebe de Registro por centralizar SP. O saldo individual da filial
-#: é antes da transferência; o registro é depois.
-RECEBIDO_DE_REGISTRO = 287_113.66
-LINHA_014 = DO_PERIODO - RECEBIDO_DE_REGISTRO
+#: A linha 014 do registro é menor: ela traz na 002 o DIFAL da própria unidade
+#: e o saldo devedor que Guará recebe de Registro e Matriz por centralizar SP.
+#: O saldo individual da filial é antes da transferência; o registro é depois.
+LINHA_002 = 303_470.87
+LINHA_014 = 1_804_072.44
 
 
 @pytest.fixture(scope="module")
@@ -109,7 +109,7 @@ def test_a_linha_014_do_registro_e_a_linha_009_do_mes_seguinte(apuracao, paramet
     registros = reg.montar(apuracao, parametros)
     guara = next(r for r in registros if r.estabelecimento == GUARA)
     assert guara.linha(9).valor == 0.0
-    assert guara.linha(2).valor == pytest.approx(RECEBIDO_DE_REGISTRO, abs=CENTAVO)
+    assert guara.linha(2).valor == pytest.approx(LINHA_002, abs=CENTAVO)
     assert guara.linha(14).valor == pytest.approx(LINHA_014, abs=CENTAVO)
     # 010 = 008 + 009, e 014 = 010 − 004. Sem a 009 o registro não fecharia.
     assert guara.linha(10).valor == pytest.approx(
@@ -149,7 +149,7 @@ def test_a_abertura_reduz_o_que_sai_do_caixa(base_julho, parametros):
     ajustes = AjustesDaApuracao(saldo_credor_anterior={"HINOVE (REGISTRO)": 100_000.0})
     apuracao = apurar(base_julho, parametros, ajustes)
     filial = apuracao.filiais["HINOVE (REGISTRO)"]
-    assert filial.a_recolher == pytest.approx(187_113.66, abs=CENTAVO)
+    assert filial.a_recolher == pytest.approx(199_450.70, abs=CENTAVO)
     assert filial.credor == 0.0
 
     registro = next(
@@ -157,7 +157,7 @@ def test_a_abertura_reduz_o_que_sai_do_caixa(base_julho, parametros):
         if r.estabelecimento == "HINOVE (REGISTRO)"
     )
     assert registro.linha(9).valor == pytest.approx(100_000.0, abs=CENTAVO)
-    assert registro.linha(13).valor == pytest.approx(187_113.66, abs=CENTAVO)
+    assert registro.linha(13).valor == pytest.approx(199_450.70, abs=CENTAVO)
 
 
 def test_o_ajuste_aprovado_prevalece_sobre_o_parametro(base_julho, parametros):
@@ -198,9 +198,7 @@ def test_o_grupo_de_sp_consolida_com_a_abertura(apuracao):
     sp = next(g for g in apuracao.centralizacao if g.uf == "SP")
     assert sp.centralizadora == GUARA
     assert sp.saldo_proprio == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
-    assert sp.saldo_final == pytest.approx(
-        A_TRANSPORTAR - 287_113.66, abs=CENTAVO
-    )
+    assert sp.saldo_final == pytest.approx(LINHA_014, abs=CENTAVO)
 
 
 # -- as saídas -------------------------------------------------------------

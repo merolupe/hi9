@@ -197,8 +197,9 @@ def test_o_ajuste_muda_o_saldo_da_apuracao_e_nao_so_o_registro(reapurado):
     """Se mudasse só o registro, a tela e o livro contariam histórias diferentes."""
     _, apuracao = reapurado
     registro = apuracao.filiais[REGISTRO]
-    assert registro.saldo == pytest.approx(-287_613.66, abs=CENTAVO)
-    assert registro.a_recolher == pytest.approx(287_613.66, abs=CENTAVO)
+    # -299.450,70 do mês (já com o DIFAL de SP) menos os 500,00 do ajuste.
+    assert registro.saldo == pytest.approx(-299_950.70, abs=CENTAVO)
+    assert registro.a_recolher == pytest.approx(299_950.70, abs=CENTAVO)
 
 
 def test_anotar_nao_entra_na_conta_mas_aparece(reapurado):

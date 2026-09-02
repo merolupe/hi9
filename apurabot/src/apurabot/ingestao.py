@@ -406,6 +406,13 @@ def ler_livro_fiscal(caminho: Path | str, aba: str | None = None) -> Livro:
         }
         if all(v is None for v in dados.values()):
             continue                               # linha em branco no fim
+        if dados.get("nro_unico") is None and dados.get("cfop") is None:
+            # Linha de totais do relatório. O extrato da apuração fecha com uma
+            # delas: sem nota, sem CFOP, sem estabelecimento, e com as colunas
+            # numéricas somadas. Ela não é documento, e somá-la duplicaria o
+            # que já está nas linhas — foi o que aconteceu com o DIFAL, que
+            # aparecia inteiro numa filial de nome vazio.
+            continue
         linhas.append(
             LinhaLivro(linha_origem=n, arquivo_origem=caminho.name, dados=dados)
         )
