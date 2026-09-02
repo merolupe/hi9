@@ -60,10 +60,9 @@ valendo.
 
 ## O que falta
 
-A leitura de `ajustes.xlsx` (fecha a Entrega 2). Sem os
-ajustes declarados, as linhas 003 por ajuste, 006, 007 e 009 do registro saem
-marcadas **AGUARDA AJUSTE** — zeradas, nunca inventadas.
-**DIFAL e CIAP estão pausados** por decisão de escopo.
+**DIFAL e CIAP estão pausados** por decisão de escopo. O encadeamento
+automático das competências também: o saldo credor a transportar é calculado e
+exibido, mas passá-lo ao mês seguinte é cadastro em `parametros/saldos.yaml`.
 
 ## Estrutura
 
@@ -77,7 +76,9 @@ parametros/     A regra tributária. Editável e versionada — não é código.
   saldos.yaml          saldo credor de abertura, por competência
 
 src/apurabot/
-  ingestao.py          lê os dois layouts de extração e valida o cabeçalho
+  ingestao.py          lê os layouts de extração — e a própria saída, na volta
+  ajustes.py           os lançamentos que não nascem de documento
+  serie.py             o ano mês a mês, gravado fora do git
   parametros.py        carrega os YAML
   nucleo/carga.py      equalização da carga efetiva
   nucleo/classificacao.py

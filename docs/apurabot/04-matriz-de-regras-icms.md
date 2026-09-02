@@ -356,7 +356,47 @@ documento, não a leitura gerencial.
 Sobrescrever o saldo credor à mão continua possível, mas é exceção registrada, não
 rotina.
 
-### 5.2. A conta gráfica não começa no dia 1º
+### 5.2. Os ajustes: quatro linhas, e o sentido vem da linha
+
+As linhas **002, 003, 006 e 007** do Registro não nascem de documento. São
+decisões da apuração, e só podem chegar declaradas — enquanto não chegam, o
+registro as mostra zeradas e marcadas.
+
+O valor é **sempre positivo**. Quem dá o sentido é a linha escolhida, como no
+próprio Registro, onde nenhuma linha aceita número negativo:
+
+| Linha | Efeito na conta |
+|---|---|
+| **002** Outros Débitos | aumenta o que se deve |
+| **003** Estornos de Créditos | aumenta o que se deve |
+| **006** Outros Créditos | diminui o que se deve |
+| **007** Estornos de Débitos | diminui o que se deve |
+
+Reduzir um estorno que a regra calculou não é lançar negativo na 003: é lançar
+positivo na 006. Admitir as duas formas daria dois jeitos de escrever a mesma
+coisa, e a conferência ficaria mais difícil sem ganhar nada.
+
+**O ajuste entra na conta, não na escrituração.** Crédito bruto, estorno e
+débito continuam sendo o que o Livro sustenta; o ajuste soma por cima, no saldo
+e no registro ao mesmo tempo. Se mudasse só o registro, a tela e o livro
+contariam histórias diferentes do mesmo mês.
+
+**Onde ele é informado depende de ter documento ou não.** O que pertence a uma
+nota vai na linha dela, e aí o estabelecimento e a atividade saem da linha —
+ninguém os digita e ninguém os erra. O que não pertence a nota nenhuma é
+declarado à parte, com o estabelecimento escrito; onde a UF segrega por
+atividade, a atividade também, porque é ela que dimensiona o benefício.
+
+**`ANOTAR` marca sem lançar.** Um ICMS reconhecido como indevido mas tratado
+fora da competência — por anuência, por exemplo — não pode alterar a apuração
+nem desaparecer dela. Fica registrado, com valor e motivo, sob o total do que
+está marcado e não lançado.
+
+**Ajuste pela metade bloqueia.** Valor sem linha, linha sem motivo, lançamento
+sem aprovador: nada disso é aceito nem descartado em silêncio. Descartar
+perderia uma decisão que alguém tomou; completar é o que a regra 4 proíbe.
+
+### 5.3. A conta gráfica não começa no dia 1º
 
 O Livro Fiscal traz os documentos de uma competência e nada mais. A conta
 gráfica, não: o crédito que sobrou no fim de um mês abre o mês seguinte. São as

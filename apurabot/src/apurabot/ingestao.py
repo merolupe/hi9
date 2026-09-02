@@ -86,6 +86,40 @@ ESSENCIAIS = (
     "Espécie do documento", "Produto",
 )
 
+CAMPOS_ESSENCIAIS = frozenset(COLUNAS[c] for c in ESSENCIAIS)
+
+#: Colunas que o próprio Apurabot escreve na BASE TRATADA para o time fiscal
+#: preencher. Não existem em extrato nenhum do Sankhya: só aparecem quando o
+#: arquivo lido é uma saída da ferramenta, devolvida com os ajustes.
+#:
+#: Ver `ajustes.py` para o que cada uma significa.
+COLUNAS_DE_AJUSTE = (
+    "ajuste_linha", "ajuste_valor", "ajuste_motivo",
+    "ajuste_responsavel", "ajuste_aprovador",
+)
+
+#: Todo nome de campo que o leitor reconhece como cabeçalho.
+#:
+#: A BASE TRATADA usa o nome do campo como título de coluna, e não o rótulo do
+#: Sankhya. É o que permite à ferramenta ler a própria saída sem layout novo:
+#: o mesmo leitor serve para o extrato do ERP e para o arquivo devolvido.
+CAMPOS = frozenset(COLUNAS.values()) | frozenset(COLUNAS_DE_AJUSTE)
+
+
+def campos_do_cabecalho(cabecalho: list[str]) -> dict[str, int]:
+    """Onde está cada campo conhecido, pelo rótulo do Sankhya ou pelo campo.
+
+    A primeira ocorrência vence: se o arquivo repetir uma coluna, a da esquerda
+    é a que vale.
+    """
+    indices: dict[str, int] = {}
+    for i, rotulo in enumerate(cabecalho):
+        rotulo = str(rotulo).strip()
+        campo = COLUNAS.get(rotulo) or (rotulo if rotulo in CAMPOS else None)
+        if campo is not None and campo not in indices:
+            indices[campo] = i
+    return indices
+
 
 # Quantas linhas do topo do arquivo são vasculhadas atrás do cabeçalho.
 LINHAS_ATE_O_CABECALHO = 10
@@ -103,7 +137,7 @@ def _linha_do_cabecalho(linhas: list[list[str]]) -> int:
     """
     melhor, nota_melhor = 0, -1
     for i, linha in enumerate(linhas):
-        nota = sum(1 for c in ESSENCIAIS if c in set(linha))
+        nota = len(CAMPOS_ESSENCIAIS & set(campos_do_cabecalho(linha)))
         if nota > nota_melhor:
             melhor, nota_melhor = i, nota
     return melhor
@@ -306,19 +340,20 @@ def _escolher_aba(candidatas: list[tuple[str, list[str], int]]) -> str:
     (2) nome parecido com "livro fiscal"; (3) mais linhas — um recorte nunca
     é maior que o livro de onde saiu.
     """
+    def nota(cab: list[str]) -> int:
+        return len(CAMPOS_ESSENCIAIS & set(campos_do_cabecalho(cab)))
+
     completas = [
         (nome, cab, nlinhas)
         for nome, cab, nlinhas in candidatas
-        if sum(1 for c in ESSENCIAIS if c in set(cab)) == len(ESSENCIAIS)
+        if nota(cab) == len(CAMPOS_ESSENCIAIS)
     ]
     if not completas:
-        melhor_nota = max(
-            (sum(1 for c in ESSENCIAIS if c in set(cab)) for _, cab, _ in candidatas),
-            default=0,
-        )
+        melhor_nota = max((nota(cab) for _, cab, _ in candidatas), default=0)
         raise LayoutInvalido(
             "nenhuma aba do arquivo parece ser o Livro Fiscal — a melhor "
-            f"candidata tem {melhor_nota} de {len(ESSENCIAIS)} colunas essenciais"
+            f"candidata tem {melhor_nota} de {len(CAMPOS_ESSENCIAIS)} colunas "
+            "essenciais"
         )
 
     def prioridade(item: tuple[str, list[str], int]) -> tuple[int, int]:
@@ -349,8 +384,10 @@ def ler_livro_fiscal(caminho: Path | str, aba: str | None = None) -> Livro:
             f"extensão não suportada: {sufixo!r}. Esperado .xlsx, .xlsm ou .xls"
         )
 
-    presentes = set(cabecalho)
-    faltando_essenciais = [c for c in ESSENCIAIS if c not in presentes]
+    indices = campos_do_cabecalho(cabecalho)
+    faltando_essenciais = [
+        c for c in ESSENCIAIS if COLUNAS[c] not in indices
+    ]
     if faltando_essenciais:
         raise LayoutInvalido(
             "o layout do Livro Fiscal mudou — faltam colunas essenciais:\n  "
@@ -359,8 +396,7 @@ def ler_livro_fiscal(caminho: Path | str, aba: str | None = None) -> Livro:
             "docs/apurabot/03-dicionario-livro-fiscal.md"
         )
 
-    indices = {COLUNAS[c]: i for i, c in enumerate(cabecalho) if c in COLUNAS}
-    ausentes = sorted(c for c in COLUNAS if c not in presentes)
+    ausentes = sorted(c for c in COLUNAS if COLUNAS[c] not in indices)
 
     linhas = []
     for n, bruta in enumerate(corpo, start=2):     # linha 1 é o cabeçalho

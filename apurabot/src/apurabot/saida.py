@@ -18,18 +18,70 @@ from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
 from .nucleo.atividade import ORDEM as ATIVIDADES_EM_ORDEM
 from .base_tratada import BaseTratada
 
-CABECALHO_BASE = [
+#: Procedência — o que a ferramenta escreve, não o Livro.
+COLUNAS_DE_PROCEDENCIA = [
     ("arquivo_origem", 22), ("linha_origem", 12), ("competencia", 12),
+]
+
+#: Campos do Livro que abrem a aba: são os que se olha primeiro.
+COLUNAS_EM_DESTAQUE = [
     ("estabelecimento", 30), ("uf_origem", 10), ("uf_destino", 10),
     ("entrada_saida", 13), ("nro_unico", 12), ("numero_nota", 12),
     ("cfop", 8), ("cfop_descricao", 30), ("cst", 10), ("especie", 9),
     ("produto", 12), ("produto_descricao", 38),
     ("valor_contabil", 15), ("base_icms", 15), ("aliquota_icms", 12),
     ("valor_icms", 15),
+]
+
+#: O que o motor concluiu sobre a linha. Na releitura estas colunas são
+#: ignoradas e recalculadas: se alguém as editar, a edição não vale.
+COLUNAS_CALCULADAS = [
     ("carga_bruta", 13), ("carga_efetiva", 13), ("situacao", 22),
     ("categoria", 26), ("regra_carga", 60), ("regra_classificacao", 60),
     ("alerta", 24), ("pendencia", 60),
 ]
+
+#: As colunas que o time fiscal preenche. Ver `ajustes.py`.
+COLUNAS_DE_AJUSTE = [
+    ("ajuste_linha", 14), ("ajuste_valor", 15), ("ajuste_motivo", 46),
+    ("ajuste_responsavel", 20), ("ajuste_aprovador", 20),
+]
+
+
+def _demais_campos_do_livro() -> list[tuple[str, int]]:
+    """Todo campo do Livro que não está em destaque, na ordem do extrato.
+
+    Eles saem porque a conferência precisa deles — parceiro, datas, série,
+    chave, observação, TOP — e porque é o que torna o arquivo devolvido
+    autossuficiente: com o Livro inteiro dentro, realimentar é arrastar um
+    arquivo só.
+    """
+    from .ingestao import COLUNAS
+
+    destaque = {nome for nome, _ in COLUNAS_EM_DESTAQUE}
+    vistos: set[str] = set()
+    colunas = []
+    for campo in COLUNAS.values():
+        if campo in destaque or campo in vistos:
+            continue
+        vistos.add(campo)
+        colunas.append((campo, max(12, min(30, len(campo) + 4))))
+    return colunas
+
+
+CABECALHO_BASE = (
+    COLUNAS_DE_PROCEDENCIA
+    + COLUNAS_EM_DESTAQUE
+    + COLUNAS_CALCULADAS
+    + COLUNAS_DE_AJUSTE
+    + _demais_campos_do_livro()
+)
+
+#: Onde começam as colunas de ajuste (1-based), para pintá-las de outra cor.
+PRIMEIRA_DE_AJUSTE = (
+    len(COLUNAS_DE_PROCEDENCIA) + len(COLUNAS_EM_DESTAQUE)
+    + len(COLUNAS_CALCULADAS) + 1
+)
 
 TITULO = Font(bold=True, color="FFFFFF")
 FUNDO = PatternFill("solid", fgColor="1F3864")
@@ -47,10 +99,19 @@ def _escreve_cabecalho(aba, colunas):
     aba.freeze_panes = "A2"
 
 
+#: Fundo das colunas que o time fiscal preenche — para não se confundirem com
+#: as que a ferramenta escreve.
+FUNDO_DE_AJUSTE = PatternFill("solid", fgColor="7B3F00")
+
+
 def _aba_base(wb, base: BaseTratada) -> None:
     aba = wb.create_sheet("BASE TRATADA")
     _escreve_cabecalho(aba, CABECALHO_BASE)
+    for i in range(PRIMEIRA_DE_AJUSTE, PRIMEIRA_DE_AJUSTE + len(COLUNAS_DE_AJUSTE)):
+        aba.cell(row=1, column=i).fill = FUNDO_DE_AJUSTE
+
     competencia = base.competencia
+    demais = [nome for nome, _ in _demais_campos_do_livro()]
     for t in base.linhas:
         d = t.origem.dados
         aba.append([
@@ -64,8 +125,19 @@ def _aba_base(wb, base: BaseTratada) -> None:
             t.carga.carga_bruta, t.carga.carga, t.carga.situacao.value,
             t.classificacao.categoria, t.carga.regra, t.classificacao.regra,
             "; ".join(t.alertas), "; ".join(t.pendencias),
+            # O que foi informado volta como está: realimentar o arquivo não
+            # pode apagar o ajuste de quem o escreveu.
+            d.get("ajuste_linha"), d.get("ajuste_valor"), d.get("ajuste_motivo"),
+            d.get("ajuste_responsavel"), d.get("ajuste_aprovador"),
+            *(d.get(campo) for campo in demais),
         ])
-    for linha in aba.iter_rows(min_row=2, min_col=16, max_col=19):
+    primeira_moeda = len(COLUNAS_DE_PROCEDENCIA) + 13      # valor_contabil
+    for linha in aba.iter_rows(min_row=2, min_col=primeira_moeda,
+                               max_col=primeira_moeda + 3):
+        for celula in linha:
+            celula.number_format = MOEDA
+    for linha in aba.iter_rows(min_row=2, min_col=PRIMEIRA_DE_AJUSTE + 1,
+                               max_col=PRIMEIRA_DE_AJUSTE + 1):
         for celula in linha:
             celula.number_format = MOEDA
     aba.auto_filter.ref = aba.dimensions
@@ -100,6 +172,8 @@ def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao) -> None:
             "nenhuma atividade — cadastre o CFOP em regimes.yaml, bloco "
             "`atividades`",
         ])
+    for motivo in apuracao.bloqueios_de_ajuste:
+        aba.append(["", "", "", "", "", "", None, f"AJUSTE INCOMPLETO: {motivo}"])
     for linha in aba.iter_rows(min_row=2, min_col=7, max_col=7):
         for celula in linha:
             celula.number_format = MOEDA
@@ -220,6 +294,7 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
     ])
 
     _bloco_saldo_credor(aba, apuracao)
+    _bloco_ajustes(aba, apuracao)
 
     aba.append([])
     aba.append(["Memória do benefício fiscal"])
@@ -305,6 +380,56 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
                 aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
 
 
+def _bloco_ajustes(aba, apuracao: Apuracao) -> None:
+    """A memória dos ajustes: o que entrou, de onde veio e quem aprovou.
+
+    Junta as duas origens numa lista só — a aba AJUSTES é o formulário, esta é
+    a prestação de contas. E traz o que ficou marcado sem ser lançado, que não
+    muda número nenhum mas não pode sumir.
+    """
+    a = apuracao.ajustes
+    aba.append([])
+    aba.append(["Ajustes declarados"])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    if not a.lancamentos:
+        aba.append(["", "Nenhum. As linhas 002, 003, 006 e 007 do registro saem "
+                        "marcadas até alguém assinar a conferência."])
+    else:
+        aba.append(["estabelecimento", "atividade", "linha", "valor", "motivo",
+                    "responsável", "aprovador", "onde foi informado"])
+        for celula in aba[aba.max_row]:
+            celula.font, celula.fill = TITULO, FUNDO
+        primeira = aba.max_row + 1
+        for x in a.lancamentos:
+            aba.append([x.estabelecimento, x.atividade, f"{x.linha:03d}", x.valor,
+                        x.motivo, x.responsavel, x.aprovador, x.onde])
+        for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+                                   min_col=4, max_col=4):
+            for celula in linha:
+                celula.number_format = MOEDA
+
+    if a.anotacoes:
+        aba.append([])
+        aba.append([f"Marcado, não lançado — {len(a.anotacoes)} linha(s)"])
+        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+        aba.append(["", "Não entra na apuração; fica aqui para não se perder."])
+        aba.append(["estabelecimento", "", "", "valor", "motivo", "responsável",
+                    "", "onde foi informado"])
+        for celula in aba[aba.max_row]:
+            celula.font, celula.fill = TITULO, FUNDO
+        primeira = aba.max_row + 1
+        for x in a.anotacoes:
+            aba.append([x.estabelecimento, "", "", x.valor, x.motivo,
+                        x.responsavel, "", x.onde])
+        for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+                                   min_col=4, max_col=4):
+            for celula in linha:
+                celula.number_format = MOEDA
+        aba.append(["", "Total marcado e não lançado", "", a.marcado_nao_lancado])
+        aba.cell(row=aba.max_row, column=4).number_format = MOEDA
+        aba.cell(row=aba.max_row, column=2).font = Font(bold=True)
+
+
 def _bloco_saldo_credor(aba, apuracao: Apuracao) -> None:
     """A conta gráfica atravessa a virada do mês — e a planilha mostra por onde.
 
@@ -346,9 +471,83 @@ def _bloco_saldo_credor(aba, apuracao: Apuracao) -> None:
     ])
 
 
+def _aba_ajustes(wb, apuracao: Apuracao) -> None:
+    """O formulário dos ajustes que não têm documento, e a conferência.
+
+    Duas coisas moram aqui. As **parcelas sem documento** são os lançamentos do
+    Registro que não pertencem a nota nenhuma — o ajuste que tem dono vai na
+    linha dele, na BASE TRATADA, e nem passa por aqui.
+
+    A **conferência** é o que faz a marca `AGUARDA AJUSTE` sumir. Célula vazia
+    diz ao mesmo tempo "não tem ajuste" e "ninguém olhou ainda", e a ferramenta
+    não tem como escolher uma das duas: por isso alguém assina, e assinar sem
+    nenhum ajuste também é resposta.
+    """
+    from .ajustes import ABA, TITULO_CONFERENCIA, TITULO_PARCELAS
+
+    aba = wb.create_sheet(ABA)
+    for coluna, largura in zip("ABCDEFG", (32, 22, 10, 16, 52, 22, 22)):
+        aba.column_dimensions[coluna].width = largura
+
+    aba.append([f"AJUSTES DA APURAÇÃO — competência {apuracao.competencia}"])
+    aba.cell(row=1, column=1).font = Font(bold=True, size=14)
+    for texto in (
+        "Preencha, salve e arraste este mesmo arquivo de volta no Apurabot.",
+        "O valor é sempre positivo: quem dá o sentido é a linha do Registro — "
+        "002 e 003 aumentam o que se deve, 006 e 007 diminuem.",
+        "Use ANOTAR na coluna `linha` para marcar sem lançar (ICMS em "
+        "discussão, por exemplo): não muda a apuração e sai no relatório.",
+        "Ajuste que pertence a uma nota vai na linha dela, na aba BASE "
+        "TRATADA — aqui só o que não tem documento.",
+    ):
+        aba.append(["", texto])
+
+    aba.append([])
+    aba.append([TITULO_PARCELAS])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["estabelecimento", "atividade", "linha", "valor", "motivo",
+                "responsável", "aprovador"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    primeira = aba.max_row + 1
+    for ajuste in apuracao.ajustes.lancamentos + apuracao.ajustes.anotacoes:
+        if ajuste.onde.startswith("BASE TRATADA"):
+            continue                    # esse tem dono; mora na linha dele
+        aba.append([
+            ajuste.estabelecimento, ajuste.atividade,
+            "ANOTAR" if ajuste.anotacao else f"{ajuste.linha:03d}",
+            ajuste.valor, ajuste.motivo, ajuste.responsavel, ajuste.aprovador,
+        ])
+    for _ in range(12):                 # espaço para escrever
+        aba.append([])
+    for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+                               min_col=4, max_col=4):
+        for celula in linha:
+            celula.number_format = MOEDA
+
+    aba.append([TITULO_CONFERENCIA])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["estabelecimento", "conferido por", "conferido em", "observação"])
+    for celula in aba[aba.max_row]:
+        celula.font, celula.fill = TITULO, FUNDO
+    for filial in sorted(
+        apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
+    ):
+        assinada = apuracao.ajustes.conferencia.get(filial.estabelecimento)
+        aba.append([
+            filial.estabelecimento,
+            assinada.por if assinada else None,
+            assinada.em if assinada else None,
+            assinada.observacao if assinada else None,
+        ])
+    aba.append([])
+    aba.append(["", "Estabelecimento com `conferido por` preenchido para de "
+                    "mostrar AGUARDA AJUSTE — inclusive sem nenhum ajuste."])
+
+
 #: Ordem de leitura das abas — da conclusão para o detalhe.
 ORDEM_DAS_ABAS = [
-    "RESUMO", "REGISTRO", "APURAÇÃO EFETIVA", "APURAÇÃO POR FILIAL",
+    "RESUMO", "REGISTRO", "AJUSTES", "APURAÇÃO EFETIVA", "APURAÇÃO POR FILIAL",
     "TRANSFERÊNCIAS", "PENDÊNCIAS", "POR ESTABELECIMENTO E CARGA", "BASE TRATADA",
 ]
 
@@ -377,6 +576,7 @@ def escrever(
     _aba_apuracao(wb, apuracao)
     aba_apuracao_efetiva(wb, apuracao, base.parametros)
     aba_registro(wb, apuracao, base.parametros, ajustes)
+    _aba_ajustes(wb, apuracao)
     aba_transferencias(wb, apuracao)
     _aba_resumo(wb, base)
     _ordenar_abas(wb)

@@ -67,10 +67,10 @@ idêntica.
 
 ---
 
-## Entrega 2 — Motor de ICMS 🟡
+## Entrega 2 — Motor de ICMS ✅
 
-Camadas 5 a 8, por regime. **Falta só** ler os ajustes aprovados de
-`ajustes.xlsx`.
+Camadas 5 a 8, por regime, com os ajustes aprovados lidos do próprio arquivo
+que a ferramenta gera, devolvido preenchido.
 
 ### O que são esses ajustes
 
@@ -105,9 +105,9 @@ e chega ao registro pronta. Competência não declarada continua marcando a linh
 
 ```
 1. exportar o Livro Fiscal do Sankhya
-2. rodar a ferramenta                     → REGISTRO com AGUARDA AJUSTE
-3. preencher ajustes.xlsx com o que foi aprovado
-4. rodar de novo, com --ajustes           → REGISTRO fechado, linha 013 final
+2. rodar a ferramenta            → REGISTRO com AGUARDA AJUSTE
+3. preencher os ajustes no próprio arquivo gerado
+4. arrastar o mesmo arquivo de volta   → REGISTRO fechado, linha 013 final
 5. esse número vai para a GIA e para o EFD
 ```
 
@@ -115,9 +115,15 @@ O passo 3 é o único trabalho humano, e ele é pequeno: são poucos lançamento
 competência. O que a ferramenta acrescenta é que **nenhum deles passa
 despercebido** — sem a declaração, o registro não fecha.
 
-Cada linha de `ajustes.xlsx` traz estabelecimento, atividade, linha do registro,
-valor, descrição, responsável e aprovador — a exigência de rastreabilidade do
-escopo, e o que a decisão nº 4 disciplina.
+**Não há segundo arquivo.** O ajuste é escrito na saída da ferramenta e volta
+por ela: a aba `BASE TRATADA` carrega o extrato inteiro do Sankhya, então o
+arquivo devolvido é autossuficiente. Um arquivo, ida e volta.
+
+O ajuste que pertence a uma nota mora **na linha dela**, nas colunas `ajuste_*`
+— e aí estabelecimento e atividade saem da linha, sem ninguém digitar nem errar.
+O que não pertence a nota nenhuma vai na aba `AJUSTES`, com estabelecimento,
+atividade, linha do registro, valor, motivo, responsável e aprovador — a
+exigência de rastreabilidade do escopo, e o que a decisão nº 4 disciplina.
 
 O estorno é conferido estabelecimento a estabelecimento contra a apuração
 individualizada, **com valor exato em todos os sete**. Onde existe apuração

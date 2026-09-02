@@ -116,12 +116,13 @@ Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
 |---|---|
 | **RESUMO** | Procedência do arquivo, período que o livro cobre, volume, equalização e categorias |
 | **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
+| **AJUSTES** | Formulário: as parcelas sem documento e a conferência de cada estabelecimento |
 | **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → chave da regra → produto, com a operação, o % estornado e o CHECK |
 | **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
 | **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |
 | **PENDÊNCIAS** | O que bloqueia o encerramento — as mesmas que a tela mostra |
 | **POR ESTABELECIMENTO E CARGA** | O recorte por carga efetiva |
-| **BASE TRATADA** | Uma linha por linha do Livro, com a regra aplicada em cada uma |
+| **BASE TRATADA** | Uma linha por linha do Livro — o extrato inteiro, a regra aplicada e as colunas de ajuste |
 
 Três delas respondem a perguntas diferentes sobre o mesmo mês:
 
@@ -142,6 +143,95 @@ em SP, onde é o excedente sobre a carga de saída. Ver
 
 **BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
 efetiva, categoria, regime e a regra aplicada, em texto.
+
+### Os ajustes, e como devolver o arquivo
+
+As linhas **002, 003, 006 e 007** do Registro não vêm de documento: são
+decisões da apuração. Enquanto ninguém as declarar, o `REGISTRO` mostra
+`AGUARDA AJUSTE` — o total sai, mas não é o final.
+
+Declarar é preencher e **devolver o mesmo arquivo**:
+
+```
+1. rode o Livro Fiscal              → sai o Apuracao_AAAA-MM.xlsx
+2. preencha os ajustes nesse arquivo
+3. arraste o próprio arquivo de volta na janela
+4. sai um novo .xlsx, com o registro fechado
+```
+
+Não precisa do Livro original na volta: a `BASE TRATADA` leva o extrato inteiro
+dentro, com todas as colunas do Sankhya. É um arquivo só, ida e volta.
+
+**Onde preencher depende de o ajuste ter documento.**
+
+*Tem documento* — "esta nota foi lançada errada", "esta entrada não devia ter
+crédito". Preencha na **linha da nota**, na aba `BASE TRATADA`, nas cinco
+colunas de cabeçalho marrom:
+
+| Coluna | O que informar |
+|---|---|
+| `ajuste_linha` | `002`, `003`, `006`, `007` — ou `ANOTAR` |
+| `ajuste_valor` | quanto, **sempre positivo** |
+| `ajuste_motivo` | por quê (obrigatório) |
+| `ajuste_responsavel` | quem apurou |
+| `ajuste_aprovador` | quem aprovou |
+
+Estabelecimento e atividade não se digitam: a linha já diz os dois.
+
+*Não tem documento* — uma parcela do Registro que não pertence a nota nenhuma.
+Vai na aba **`AJUSTES`**, bloco `PARCELAS SEM DOCUMENTO`, com o estabelecimento
+escrito. Em MS informe também a atividade, porque é ela que dimensiona o
+benefício.
+
+**O sentido vem da linha, não do sinal:**
+
+| Informou | Efeito |
+|---|---|
+| `002` Outros Débitos | aumenta o que se deve |
+| `003` Estornos de Créditos | aumenta o que se deve |
+| `006` Outros Créditos | diminui o que se deve |
+| `007` Estornos de Débitos | diminui o que se deve |
+
+Para reduzir um estorno que a regra calculou, não lance negativo na `003`:
+lance positivo na `006`, que é como o livro escreve isso.
+
+**`ANOTAR` marca sem lançar.** Serve para "este ICMS é indevido, será tratado
+por anuência": a apuração não muda, e o valor sai em *Marcado, não lançado*,
+com o total, para ficar visível em vez de sumir.
+
+**Ajuste pela metade é recusado** e vira pendência: valor sem linha, linha sem
+motivo, lançamento sem aprovador. Ignorar seria perder uma decisão que alguém
+tomou; completar por conta própria é o que a ferramenta não faz.
+
+### Tirar o `AGUARDA AJUSTE`
+
+Célula vazia diz duas coisas ao mesmo tempo — "não tem ajuste" e "ninguém olhou
+ainda" —, e a ferramenta não escolhe uma. Por isso alguém assina, no bloco
+`CONFERÊNCIA` da aba `AJUSTES`:
+
+| estabelecimento | conferido por | conferido em | observação |
+|---|---|---|---|
+| HINOVE (FILIAL GUARÁ) | Fulano | 05/09/2026 | sem ajustes nesta competência |
+
+É uma linha por estabelecimento, e a ferramenta já traz os nomes preenchidos.
+Assinado, a marca some — **inclusive quando não houve ajuste nenhum**, que é
+justamente a resposta que faltava.
+
+A marca não trava o fechamento: ela avisa que o número ainda não é o final.
+
+### O ano de uma vez só
+
+A janela mostra a tabela do ano, mês a mês, com **saldo** e **a recolher**. O
+mês que você acabou de apurar já vem preenchido; os outros você digita e clica
+em **Salvar o ano**.
+
+As duas colunas existem porque uma não sai da outra: com mais de um
+estabelecimento, o que se recolhe é a soma do que cada um recolhe, e não o saldo
+do grupo com o sinal trocado — filial credora não paga a conta de outra devedora
+fora da centralização.
+
+Fica gravado em `competencias/serie-<ano>.yaml`, que o git ignora: é dado
+fiscal, não parâmetro.
 
 ### O saldo credor, de um mês para o outro
 
@@ -232,7 +322,6 @@ Alterou, é só rodar de novo.
 | | |
 |---|---|
 | **CIAP** e **DIFAL** | Pausados |
-| Relatório de ajustes | Ainda não é lido pela ferramenta |
 | Regra de transferência de SP | Calculada, **não homologada** — o relatório avisa |
 | Encadeamento das competências | O saldo credor a transportar é calculado e exibido; passá-lo para o mês seguinte é cadastro manual em `saldos.yaml` |
 

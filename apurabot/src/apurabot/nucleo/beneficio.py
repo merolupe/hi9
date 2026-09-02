@@ -138,7 +138,7 @@ def calcular(
 
     `ajuste_de_credito` são estornos de crédito da atividade industrial que não
     nascem de documento no Livro Fiscal — a linha 003 do Registro de Apuração.
-    Em 07/2026 foram R$ 3.865,30. Virão de `ajustes.xlsx` na Entrega 2.
+    Em 07/2026 foram R$ 3.865,30, declarados na aba AJUSTES.
     """
     beneficios = params.regimes.get("beneficios_fiscais") or {}
     beneficio = beneficios.get(nome_beneficio)

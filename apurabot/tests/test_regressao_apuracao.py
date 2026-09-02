@@ -129,7 +129,7 @@ from apurabot.nucleo import atividade as ativ            # noqa: E402
 RB = "HINOVE (RIO BRILHANTE)"
 
 # Linha 003 do Registro: "Estorno de créditos para ajuste de apuração do ICMS".
-# Não nasce de documento no Livro Fiscal; na Entrega 2 virá de `ajustes.xlsx`.
+# Não nasce de documento no Livro Fiscal: é declarado na aba AJUSTES.
 AJUSTE_ESTORNO_INDUSTRIAL = 3_865.30
 
 # GIA - Apuração Final, quadros "Débitos de ICMS" e "Créditos de ICMS".
@@ -241,8 +241,9 @@ def test_sem_o_ajuste_o_beneficio_para_no_livro(apuracao):
     """O que o Livro Fiscal sozinho alcança, e o que falta para a GIA.
 
     A diferença de R$ 3.022,85 é o efeito do estorno de créditos da linha 003
-    do Registro — R$ 3.865,30 a menos de crédito industrial. Enquanto
-    `ajustes.xlsx` não existir, é essa a distância entre motor e declaração.
+    do Registro — R$ 3.865,30 a menos de crédito industrial. É a distância
+    entre motor e declaração enquanto o ajuste não for declarado; com ele, os
+    dois fecham (ver `test_ajustes.py`).
     """
     b = apuracao.filiais[RB].beneficio
     assert b.credito_da_parcela_incentivada == pytest.approx(81_847.78, abs=0.01)

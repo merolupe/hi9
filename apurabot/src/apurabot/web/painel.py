@@ -13,6 +13,7 @@ from ..apuracao import Apuracao
 from ..base_tratada import BaseTratada
 from ..conferencia import ROTULO_DA_ATIVIDADE
 from ..nucleo import registro as reg
+from .. import serie as ser
 
 
 def montar(base: BaseTratada, apuracao: Apuracao, registros: list) -> dict[str, Any]:
@@ -33,10 +34,33 @@ def montar(base: BaseTratada, apuracao: Apuracao, registros: list) -> dict[str, 
         "alertas": resumo["alertas"],
         "pode_encerrar": _pode_encerrar(base, apuracao),
         "pendencias": _pendencias(base, apuracao),
+        "ajustes": _ajustes(apuracao),
         "filiais": [_filial(f) for f in _em_ordem(apuracao)],
         "registros": [_registro(r) for r in registros],
         "transferencias": _transferencias(apuracao),
         "beneficios": [_beneficio(f) for f in _em_ordem(apuracao) if f.beneficio],
+        "serie": _serie(apuracao),
+    }
+
+
+def _serie(apuracao: Apuracao) -> dict[str, Any]:
+    """O ano mês a mês: o que está gravado, com a competência de agora pronta."""
+    ano = int(apuracao.competencia[:4])
+    meses = ser.com_a_apuracao(ano, apuracao)
+    return {
+        "ano": ano,
+        "arquivo": str(ser.caminho(ano)),
+        "meses": [
+            {
+                "competencia": m.competencia,
+                "nome": m.nome,
+                "saldo": m.saldo,
+                "a_recolher": m.a_recolher,
+                "observacao": m.observacao,
+                "da_apuracao": m.da_apuracao,
+            }
+            for m in (meses[c] for c in sorted(meses))
+        ],
     }
 
 
@@ -45,7 +69,37 @@ def _em_ordem(apuracao: Apuracao):
 
 
 def _pode_encerrar(base: BaseTratada, apuracao: Apuracao) -> bool:
-    return base.pode_encerrar and not apuracao.sem_regra_de_atividade
+    return (
+        base.pode_encerrar
+        and not apuracao.sem_regra_de_atividade
+        and not apuracao.bloqueios_de_ajuste
+    )
+
+
+def _ajustes(apuracao: Apuracao) -> dict[str, Any]:
+    """Os ajustes declarados, e o que ficou marcado sem ser lançado."""
+    def linha(ajuste) -> dict[str, Any]:
+        return {
+            "estabelecimento": ajuste.estabelecimento,
+            "linha": "" if ajuste.anotacao else f"{ajuste.linha:03d}",
+            "valor": ajuste.valor,
+            "motivo": ajuste.motivo,
+            "onde": ajuste.onde,
+            "quem": " / ".join(x for x in (ajuste.responsavel, ajuste.aprovador) if x),
+        }
+
+    a = apuracao.ajustes
+    return {
+        "lancamentos": [linha(x) for x in a.lancamentos],
+        "anotacoes": [linha(x) for x in a.anotacoes],
+        "marcado_nao_lancado": a.marcado_nao_lancado,
+        "conferidos": sorted(a.conferencia),
+        "aguardando": sorted(
+            f.estabelecimento
+            for f in apuracao.filiais.values()
+            if not a.declarados(f.estabelecimento)
+        ),
+    }
 
 
 def _pendencias(base: BaseTratada, apuracao: Apuracao) -> list[dict[str, Any]]:
@@ -65,6 +119,8 @@ def _pendencias(base: BaseTratada, apuracao: Apuracao) -> list[dict[str, Any]]:
             "estabelecimento": "",
             "detalhe": f"… e mais {restantes} na aba PENDÊNCIAS da planilha.",
         })
+    for motivo in apuracao.bloqueios_de_ajuste:
+        itens.append({"onde": "ajuste", "estabelecimento": "", "detalhe": motivo})
     for filial in apuracao.sem_regra_de_atividade:
         somas = filial.atividades_sem_regra
         itens.append({

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from . import ajustes as aj
 from .ingestao import Livro, ler_livro_fiscal
 from .nucleo.carga import ResultadoCarga, Situacao, equalizar
 from .nucleo.classificacao import ResultadoClassificacao, classificar
@@ -25,6 +26,12 @@ class LinhaTratada:
     origem: Any                      # LinhaLivro
     carga: ResultadoCarga
     classificacao: ResultadoClassificacao
+    #: Ajuste informado nas colunas `ajuste_*`, quando o arquivo lido é uma
+    #: saída da ferramenta devolvida com os ajustes preenchidos.
+    ajuste: aj.Ajuste | None = None
+    #: Por que o ajuste desta linha foi recusado. Vazio quando não há ajuste
+    #: ou quando ele está completo.
+    ajuste_recusado: str = ""
 
     @property
     def relevante(self) -> bool:
@@ -37,6 +44,10 @@ class LinhaTratada:
             motivos.append(f"{self.carga.situacao.value}: {self.carga.regra}")
         if self.relevante and self.classificacao.e_pendencia:
             motivos.append(f"SEM REGRA: {self.classificacao.regra}")
+        if self.ajuste_recusado:
+            # Ignorar um ajuste pela metade seria perder uma decisão que alguém
+            # tomou. Ele bloqueia até ser completado ou apagado.
+            motivos.append(f"AJUSTE INCOMPLETO: {self.ajuste_recusado}")
         return motivos
 
     @property
@@ -149,18 +160,29 @@ def tratar(
     if not isinstance(parametros, Parametros):
         parametros = carregar(parametros)
 
-    linhas = [
-        LinhaTratada(
-            origem=linha,
-            carga=(c := equalizar(linha, parametros)),
-            classificacao=(
-                classificar(linha, parametros)
-                if c.relevante_para_icms
-                else ResultadoClassificacao(
-                    categoria="—", regra="linha fora da apuração de ICMS"
-                )
-            ),
-        )
-        for linha in livro
-    ]
+    linhas = [_tratar_linha(linha, parametros) for linha in livro]
     return BaseTratada(linhas=linhas, livro=livro, parametros=parametros)
+
+
+def _tratar_linha(linha, parametros: Parametros) -> LinhaTratada:
+    carga = equalizar(linha, parametros)
+    tratada = LinhaTratada(
+        origem=linha,
+        carga=carga,
+        classificacao=(
+            classificar(linha, parametros)
+            if carga.relevante_para_icms
+            else ResultadoClassificacao(
+                categoria="—", regra="linha fora da apuração de ICMS"
+            )
+        ),
+    )
+    try:
+        tratada.ajuste = aj.da_linha(
+            linha.dados,
+            estabelecimento=" ".join(str(linha.dados.get("estabelecimento") or "").split()),
+            onde=f"BASE TRATADA, linha {linha.linha_origem}",
+        )
+    except aj.AjusteInvalido as erro:
+        tratada.ajuste_recusado = str(erro)
+    return tratada

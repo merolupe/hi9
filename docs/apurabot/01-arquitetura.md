@@ -70,7 +70,7 @@ exigência central do documento de escopo.
                                            estorno, débito, DIFAL, CIAP, B.F.
 
                           7. AJUSTES       aplica só ajustes APROVADOS
-                             (ajustes.xlsx)
+                             (o próprio .xlsx, devolvido)
 
                           8. APURAÇÃO      saldo individual por estabelecimento
                              POR FILIAL
@@ -120,7 +120,7 @@ rodar duas vezes produz o mesmo resultado.
 | **Rodar Apuração** | Livro Fiscal | Camadas 1–11. É a execução principal. |
 | **Rodar DIFAL** | Livro Fiscal + XMLs | Recalcula o DIFAL das compras de itens fora do processo produtivo usando o ICMS **do XML**, não o do Livro. |
 | **Rodar CIAP** | Base de Bens | Monta o CIAP: índice = saídas tributadas / total de saídas. _Fora do escopo da primeira entrega._ |
-| **Atualizar Ajustes** | `ajustes.xlsx` | Rotula os ajustes manuais e recalcula a apuração sem reimportar nada. |
+| **Atualizar Ajustes** | o `.xlsx` gerado, devolvido preenchido | Lê os ajustes escritos nas linhas e na aba `AJUSTES` e reapura. Não há segundo arquivo: a `BASE TRATADA` leva o extrato inteiro, então a volta é autossuficiente. |
 
 ### 4.1. DIFAL nunca altera o Livro Fiscal
 
@@ -149,6 +149,8 @@ apurabot/
 │   ├── classificacao.yaml
 │   ├── produtos.yaml    cadastro produto → categoria tributária
 │   └── saldos.yaml      saldo credor de abertura, por competência
+├── ajustes.py           o que a apuração decide e o Livro não sabe
+├── serie.py             o ano mês a mês (grava em competencias/, fora do git)
 ├── tests/
 │   ├── unidade/         cada regra isolada
 │   └── regressao/       Junho e Julho/2026 como referência
@@ -157,8 +159,8 @@ apurabot/
 competencias/            (fora do git)
 └── 2026-07/
     ├── entrada/         livro_fiscal.xlsx · xml_entradas.xlsx · base_bens.xlsx
-    ├── ajustes.xlsx     ajustes manuais com justificativa e aprovador
-    ├── saida/           Apuracao_2026-07.xlsx
+    ├── saida/           Apuracao_2026-07.xlsx (ida e volta: os ajustes vão nele)
+    ├── serie-2026.yaml  o ano mês a mês, preenchido pela janela
     └── execucao.json    versão, data, usuário, hash dos arquivos de entrada
 ```
 
