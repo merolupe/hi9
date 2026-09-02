@@ -239,3 +239,40 @@ passa da 011. Nenhuma competência observada tem Rio Brilhante abrindo o mês co
 saldo credor, então a hipótese não foi testada contra documento.
 
 **Padrão assumido:** fica fora do cálculo e abate só a dedução.
+
+## 15. 🟡 Crédito outorgado de MS — o controle não está na ferramenta
+
+O benefício de Rio Brilhante tem um **estoque** de crédito outorgado, controlado
+à parte pelo time fiscal sob o código de ajuste **MS090004** — "Apropriação de
+crédito outorgado com o fim de abatimento de débitos". O controle é uma conta
+corrente:
+
+```
+saldo anterior  +  recebido por transferência  −  utilizado no período
+                                              =  saldo a transportar
+```
+
+Em 07/2026: 91.845,01 + 62.720,00 − 68.473,36 = **86.091,65** a transportar.
+
+Os créditos recebidos por transferência vêm de nota de ICMS emitida pela
+ADECOAGRO, dimensionada em **30% do saldo devedor da apuração centralizada de
+Rio Brilhante e Corumbá**.
+
+**Julho não serve de referência para esse percentual.** A competência usou mais
+do que os 30% de propósito, para abater débito e evitar a saída de caixa —
+decisão da Gerência Fiscal/Tributária, não desvio de regra. Reconciliar a base
+dos 30% contra julho leva a conclusão errada.
+
+**O que falta:**
+
+1. **A base e a competência dos 30%.** Se o percentual incide sobre o saldo
+   devedor do mês corrente ou do anterior — a nota chega depois do fechamento —
+   ainda não foi confirmado.
+2. **Onde o estoque mora.** Ele atravessa a competência, como o saldo credor, e
+   hoje não existe na ferramenta. O lugar natural é `parametros/saldos.yaml`
+   ganhar um bloco próprio, com o utilizado saindo calculado — é a linha 012 do
+   Registro, limitada ao que o estoque tem.
+
+**Padrão assumido:** nenhum. O crédito outorgado entra hoje como ajuste
+declarado na aba `AJUSTES`, com o valor que o time fiscal informar. A ferramenta
+não controla o estoque nem confere se o utilizado cabe nele.
