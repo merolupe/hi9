@@ -10,9 +10,11 @@ Centralização de SP e DIFAL ficam para as entregas seguintes.
 from __future__ import annotations
 
 import collections
+import copy
 from dataclasses import dataclass, field
 from typing import Any
 
+from . import ajustes as aj
 from .base_tratada import BaseTratada
 from .nucleo import atividade as ativ
 from .nucleo import centralizacao as centr
@@ -20,6 +22,21 @@ from .nucleo.beneficio import ResultadoBeneficio
 from .nucleo.beneficio import calcular as calcular_beneficio
 from .nucleo.estorno import ResultadoEstorno, calcular
 from .parametros import Parametros
+
+
+def de_declarados(declarados: aj.Declarados) -> AjustesDaApuracao:
+    """Converte o que a aba AJUSTES trouxe no que a apuração consome."""
+    ajustes = AjustesDaApuracao()
+    for parcela in declarados.parcelas:
+        ajustes.somar(parcela)
+    ajustes.conferencia = dict(declarados.conferencia)
+    ajustes.recusados = list(declarados.erros)
+    return ajustes
+
+
+def ler_ajustes(caminho) -> AjustesDaApuracao:
+    """Os ajustes da aba AJUSTES de um arquivo devolvido pelo time fiscal."""
+    return de_declarados(aj.ler_aba(caminho))
 
 
 def mes_vizinho(competencia: str, passo: int) -> str:
@@ -45,7 +62,9 @@ class AjustesDaApuracao:
     débitos e o saldo credor do período anterior. Nenhum deles pode ser deduzido
     do Livro — são decisões da apuração, aprovadas pelo time fiscal.
 
-    Hoje vêm de quem chama a apuração; na Entrega 2 virão de `ajustes.xlsx`.
+    Chegam por duas portas, que somam na mesma linha do Registro: as colunas
+    `ajuste_*` da BASE TRATADA, quando o ajuste pertence a um documento, e a aba
+    AJUSTES, quando não pertence a nenhum. Ver `ajustes.py`.
     """
 
     # {estabelecimento: {atividade: valor}}
@@ -56,6 +75,35 @@ class AjustesDaApuracao:
 
     # {estabelecimento: valor} — não se reparte por atividade.
     saldo_credor_anterior: dict[str, float] = field(default_factory=dict)
+
+    #: Todo lançamento aceito, na ordem em que foi lido. É a memória de quem
+    #: mudou o Registro, por quê e com aprovação de quem.
+    lancamentos: list[aj.Ajuste] = field(default_factory=list)
+    #: Marcado sem lançar. Não muda o Registro — e não pode sumir por isso.
+    anotacoes: list[aj.Ajuste] = field(default_factory=list)
+    #: Quem assinou a conferência de cada estabelecimento.
+    conferencia: dict[str, aj.Conferencia] = field(default_factory=dict)
+    #: Ajuste informado pela metade, recusado com o motivo.
+    recusados: list[str] = field(default_factory=list)
+
+    def somar(self, ajuste: aj.Ajuste, atividade: str = "") -> None:
+        """Lança um ajuste já validado na linha do Registro que ele escolheu.
+
+        Anotação não entra em linha nenhuma: fica guardada para o relatório.
+        """
+        if ajuste.anotacao:
+            self.anotacoes.append(ajuste)
+            return
+        if atividade:
+            ajuste.atividade = atividade
+        mapa = getattr(self, ajuste.campo).setdefault(ajuste.estabelecimento, {})
+        mapa[ajuste.atividade] = mapa.get(ajuste.atividade, 0.0) + ajuste.valor
+        self.lancamentos.append(ajuste)
+
+    @property
+    def marcado_nao_lancado(self) -> float:
+        """Quanto está marcado como indevido e ainda não estornado."""
+        return sum(a.valor for a in self.anotacoes)
 
     #: Campos que alimentam linhas do Registro de Apuração e por isso precisam
     #: ser declarados antes de o registro fechar.
@@ -78,7 +126,14 @@ class AjustesDaApuracao:
 
         Enquanto não houver, o registro sai com as linhas de ajuste zeradas e
         marcadas — nunca preenchidas por conta própria.
+
+        A conferência assinada é a resposta limpa, e vale mesmo sem ajuste
+        nenhum: célula vazia diz ao mesmo tempo "não tem" e "ninguém olhou", e
+        a ferramenta não pode escolher uma. Um lançamento também conta — quem
+        lançou, olhou.
         """
+        if estabelecimento in self.conferencia:
+            return True
         return any(
             estabelecimento in getattr(self, campo)
             for campo in self.CAMPOS_DO_REGISTRO
@@ -125,6 +180,11 @@ class ApuracaoFilial:
     #: Linha 009 do Registro — o crédito que veio do mês anterior. Não nasce do
     #: Livro Fiscal: vem declarado em `parametros/saldos.yaml`.
     saldo_credor_anterior: float = 0.0
+    #: Efeito líquido dos ajustes declarados sobre a conta, no sinal do caixa:
+    #: as linhas 006 e 007 somam, as 002 e 003 subtraem. Não inclui o débito
+    #: recebido por centralização, que é consequência da apuração e não parte
+    #: dela — ele aparece na linha 002 do Registro e no saldo do grupo.
+    ajustes_da_conta: float = 0.0
     credito_bruto: float = 0.0
     credito_mantido: float = 0.0
     estorno: float = 0.0
@@ -168,14 +228,17 @@ class ApuracaoFilial:
 
         A conta abre com o saldo credor do mês anterior — a linha 009 do
         registro —, porque a conta gráfica é contínua: o crédito que sobrou não
-        se perde na virada do mês.
+        se perde na virada do mês. E fecha com os ajustes declarados, que são
+        decisão da apuração tanto quanto o estorno que a regra calcula.
 
-        Sem DIFAL e sem os demais ajustes que não nascem do Livro Fiscal.
+        Sem DIFAL, e sem o débito recebido por centralização: esse é
+        consequência da apuração, não parte dela.
         """
         return (
             self.credito_mantido
             + self.credito_presumido
             + self.saldo_credor_anterior
+            + self.ajustes_da_conta
             - self.debito
         )
 
@@ -225,6 +288,11 @@ class Apuracao:
     #: Competência não declarada não é competência que abre em zero: enquanto
     #: ninguém disser o que veio do mês anterior, a linha 009 sai marcada.
     saldos_declarados: bool = False
+    #: Os ajustes que de fato valeram: os que chegaram de fora somados aos que
+    #: vieram escritos nas linhas do Livro. É esta a versão que o Registro usa.
+    ajustes: AjustesDaApuracao = field(default_factory=lambda: AjustesDaApuracao())
+    #: Parcela da aba AJUSTES sem atividade, onde a UF exige a segregação.
+    ajustes_sem_atividade: list[aj.Ajuste] = field(default_factory=list)
 
     @property
     def competencia(self) -> str:
@@ -251,6 +319,7 @@ class Apuracao:
             t.debito += f.debito
             t.linhas += f.linhas
             t.saldo_credor_anterior += f.saldo_credor_anterior
+            t.ajustes_da_conta += f.ajustes_da_conta
             t.presumido_consolidado += f.credito_presumido
         return t
 
@@ -282,6 +351,28 @@ class Apuracao:
         return centr.debito_recebido_por(self.centralizacao, estabelecimento)
 
     @property
+    def bloqueios_de_ajuste(self) -> list[str]:
+        """Ajustes que não dá para aceitar como estão.
+
+        Ignorar um ajuste pela metade seria perder uma decisão que alguém
+        tomou; completá-lo por conta própria é o que a regra 4 proíbe. Então
+        ele bloqueia até ser corrigido ou apagado.
+        """
+        motivos = list(self.ajustes.recusados)
+        for ajuste in self.ajustes_sem_atividade:
+            motivos.append(
+                f"{ajuste.onde}: {ajuste.estabelecimento} segrega por atividade "
+                "— informe a atividade da parcela (industrial, comercial…)"
+            )
+        for ajuste in self.ajustes.lancamentos + self.ajustes.anotacoes:
+            if ajuste.estabelecimento not in self.filiais:
+                motivos.append(
+                    f"{ajuste.onde}: {ajuste.estabelecimento!r} não apurou nada "
+                    "nesta competência — confira o nome do estabelecimento"
+                )
+        return motivos
+
+    @property
     def sem_regra_de_atividade(self) -> list[ApuracaoFilial]:
         """Filiais com linha que não casou com nenhuma atividade.
 
@@ -297,7 +388,9 @@ def apurar(
     ajustes: AjustesDaApuracao | None = None,
 ) -> Apuracao:
     params = parametros or base.parametros
-    ajustes = ajustes or AjustesDaApuracao()
+    # Cópia: a apuração acrescenta os ajustes escritos nas linhas do Livro, e
+    # quem chamou não pode ver o próprio objeto crescer a cada rodada.
+    ajustes = copy.deepcopy(ajustes) if ajustes is not None else AjustesDaApuracao()
 
     cadastro = {
         " ".join(str(f["nome"]).split()).casefold(): f
@@ -338,6 +431,7 @@ def apurar(
                 apurada.atividade = classificada.atividade
                 apurada.destino = classificada.destino
 
+
         if resultado.credito_bruto:
             carga = tratada.carga.carga if tratada.carga.carga is not None else "CIAP"
             alvo = filial.por_carga[carga]
@@ -361,16 +455,78 @@ def apurar(
             ),
         )
 
+    # Os ajustes escritos nas linhas do Livro. Fora do laço de movimento de
+    # propósito: uma linha pode não ter ICMS nenhum e ainda assim merecer
+    # ajuste — "esta nota devia ter tido débito e não teve" é disso que trata a
+    # linha 002 do Registro.
+    _ajustes_das_linhas(base, filiais, params, ajustes)
+
     # Abertura da conta gráfica — a linha 009. Vem antes da centralização
     # porque muda o saldo que cada estabelecimento leva para o grupo.
     abertura = _abertura(base, params, ajustes, filiais)
 
-    apuracao = Apuracao(filiais=filiais, base=base, saldos_declarados=abertura)
+    # Os ajustes declarados, pelo mesmo motivo: o estabelecimento leva ao grupo
+    # o saldo que de fato tem.
+    for chave, filial in filiais.items():
+        filial.ajustes_da_conta = (
+            ajustes.total("outros_creditos", chave)
+            + ajustes.total("estorno_de_debito", chave)
+            - ajustes.total("outros_debitos", chave)
+            - ajustes.total("estorno_de_credito", chave)
+        )
+
+    apuracao = Apuracao(
+        filiais=filiais, base=base, saldos_declarados=abertura, ajustes=ajustes,
+        ajustes_sem_atividade=_sem_atividade(ajustes, filiais),
+    )
 
     # Camada 9 — centralização. Vem por último porque opera sobre o saldo já
     # apurado de cada estabelecimento.
     apuracao.centralizacao = centr.calcular(apuracao.saldos, params)
     return apuracao
+
+
+def _ajustes_das_linhas(
+    base: BaseTratada,
+    filiais: dict[str, ApuracaoFilial],
+    params: Parametros,
+    ajustes: AjustesDaApuracao,
+) -> None:
+    """Recolhe o que foi escrito nas colunas `ajuste_*` da BASE TRATADA.
+
+    Nem o estabelecimento nem a atividade precisam ser digitados: a linha já
+    diz os dois. A atividade sai do CFOP pela mesma classificação que a
+    apuração usa — o ajuste de uma linha industrial é industrial.
+    """
+    for tratada in base.linhas:
+        ajuste = tratada.ajuste
+        if ajuste is None:
+            continue
+        filial = filiais.get(ajuste.estabelecimento)
+        atividade = ""
+        if filial is not None and filial.segrega_por_atividade:
+            mapa = ativ.mapa_da_uf(filial.uf, params)
+            if mapa is not None:
+                atividade = ativ.classificar(tratada.origem, mapa).atividade
+        ajustes.somar(ajuste, atividade=atividade)
+
+
+def _sem_atividade(
+    ajustes: AjustesDaApuracao, filiais: dict[str, ApuracaoFilial]
+) -> list[aj.Ajuste]:
+    """Parcelas sem documento que não disseram a atividade onde ela importa.
+
+    Onde a UF segrega — hoje MS —, é a atividade que dimensiona o benefício.
+    Uma parcela lançada sem ela mudaria o incentivo sem que ninguém tivesse
+    decidido. Nas demais UFs a atividade não existe, e não faz falta.
+    """
+    return [
+        ajuste
+        for ajuste in ajustes.lancamentos
+        if not ajuste.atividade
+        and (filial := filiais.get(ajuste.estabelecimento)) is not None
+        and filial.segrega_por_atividade
+    ]
 
 
 def _abertura(

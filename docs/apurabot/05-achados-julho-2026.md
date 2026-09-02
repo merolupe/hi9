@@ -236,7 +236,8 @@ se ancorar no documento oficial:
 
 R$ 3.865,30 de estorno de crédito da atividade industrial que **não nasce de
 documento no Livro Fiscal** — é a linha 003 do Registro de Apuração. Entra no
-motor como lançamento explícito, e passará a vir de `ajustes.xlsx` na Entrega 2.
+motor como lançamento explícito, declarado na aba `AJUSTES` do arquivo que a
+ferramenta gera.
 
 Sem ele o motor para em R$ 258.409,05 de benefício, contra os R$ 261.431,90
 declarados. A diferença de R$ 3.022,85 está medida em teste.

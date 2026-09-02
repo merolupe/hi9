@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .apuracao import Apuracao, apurar
+from .apuracao import Apuracao, apurar, ler_ajustes
 from .base_tratada import BaseTratada, tratar
 from .conferencia import ROTULO_DA_ATIVIDADE
 from .erros import FALTA_DE_PARAMETRO, ONDE_CADASTRAR
@@ -65,7 +65,8 @@ def _cabecalho(base: BaseTratada) -> dict:
 def _pendencias(base: BaseTratada, apuracao: Apuracao | None) -> int:
     da_base = base.com_pendencia
     sem_atividade = apuracao.sem_regra_de_atividade if apuracao else []
-    total = len(da_base) + len(sem_atividade)
+    de_ajuste = apuracao.bloqueios_de_ajuste if apuracao else []
+    total = len(da_base) + len(sem_atividade) + len(de_ajuste)
 
     if not total:
         _titulo("Encerramento liberado")
@@ -80,6 +81,8 @@ def _pendencias(base: BaseTratada, apuracao: Apuracao | None) -> int:
     for f in sem_atividade:
         somas = f.atividades_sem_regra
         print(f"  {f.estabelecimento}: {somas.linhas} linha(s) sem atividade definida")
+    for motivo in de_ajuste:
+        print(f"  {motivo}")
     return total
 
 
@@ -137,6 +140,26 @@ def _apuracao(apuracao: Apuracao) -> None:
             print(f"  {instrucao}")
 
 
+def _ajustes(apuracao: Apuracao) -> None:
+    """O que foi declarado e o que ficou só marcado."""
+    a = apuracao.ajustes
+    if a.lancamentos:
+        _titulo("Ajustes declarados")
+        for ajuste in a.lancamentos:
+            print(f"  {ajuste}")
+            print(f"      {ajuste.onde} · {ajuste.responsavel} / {ajuste.aprovador}")
+    if a.anotacoes:
+        _titulo(f"Marcado, não lançado — {reais(a.marcado_nao_lancado)}")
+        print("  Não entra na apuração; fica visível para não se perder.")
+        for ajuste in a.anotacoes:
+            print(f"  {ajuste}")
+            print(f"      {ajuste.onde} · {ajuste.responsavel}")
+    if not a.lancamentos and not a.anotacoes:
+        _titulo("Ajustes")
+        print("  Nenhum declarado. As linhas 002, 003, 006 e 007 do registro")
+        print("  saem marcadas até alguém assinar a conferência na aba AJUSTES.")
+
+
 def _saldo_credor(apuracao: Apuracao) -> None:
     """A conta gráfica não começa do zero — e não termina no fim do mês."""
     com_saldo = [
@@ -177,12 +200,15 @@ def _comando_apurar(args: argparse.Namespace) -> int:
 
     resumo = _cabecalho(base)
     try:
-        apuracao = apurar(base)
+        # Se o arquivo é uma saída da ferramenta devolvida com os ajustes
+        # preenchidos, eles entram aqui. Se não, `ler_ajustes` devolve vazio.
+        apuracao = apurar(base, ajustes=ler_ajustes(args.livro))
     except FALTA_DE_PARAMETRO as erro:
         print(f"\nFalta cadastrar uma regra:\n\n{erro}\n", file=sys.stderr)
         print(f"{ONDE_CADASTRAR}\n", file=sys.stderr)
         return 2
     _apuracao(apuracao)
+    _ajustes(apuracao)
     pendentes = _pendencias(base, apuracao)
 
     destino = Path(args.saida) / f"Apuracao_{resumo['competencia']}.xlsx"

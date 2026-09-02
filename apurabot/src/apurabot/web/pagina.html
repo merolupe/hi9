@@ -122,6 +122,15 @@ button{
 .secundario-btn{background:transparent; color:var(--suave); border-color:var(--borda)}
 .secundario-btn:hover{color:var(--texto); border-color:var(--suave)}
 .acoes{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:22px}
+input.celula{
+  font:inherit; width:100%; box-sizing:border-box; text-align:right;
+  padding:6px 8px; border-radius:7px; border:1px solid var(--borda);
+  background:var(--fundo); color:var(--texto);
+}
+input.celula.texto{text-align:left}
+input.celula:focus{outline:2px solid var(--marca); outline-offset:-1px}
+tr.desta-apuracao input.celula{background:var(--ok-fundo); font-weight:600}
+.aviso-serie{font-size:13px; color:var(--suave); margin:12px 0 0}
 .rodape{color:var(--suave); font-size:13px; margin-top:34px; text-align:center}
 code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
 </style>
@@ -255,9 +264,11 @@ function desenhar(d){
     ${ficha("Alertas", inteiro.format(d.alertas))}
   </div></section>`);
 
+  partes.push(serieDoAno(d.serie));
   if (d.pendencias.length) partes.push(pendencias(d.pendencias));
   partes.push(porFilial(d.filiais));
   partes.push(saldoCredor(d));
+  partes.push(ajustes(d.ajustes));
   partes.push(registros(d.registros));
   if (d.transferencias.length) partes.push(transferencias(d.transferencias));
   if (d.beneficios.length) partes.push(beneficios(d.beneficios));
@@ -320,6 +331,115 @@ function porFilial(filiais){
       <strong>A recolher</strong> repete em positivo. O saldo já abre com o
       crédito que veio do mês anterior; os demais ajustes aprovados ainda não
       entraram — veja o registro abaixo.</p></section>`;
+}
+
+// O ano mês a mês. A apuração enxerga um mês; quem responde pela empresa
+// precisa do ano — e os meses que a ferramenta ainda não apurou são digitados.
+let SERIE = null;
+
+function serieDoAno(s){
+  if (!s) return "";
+  SERIE = s;
+  const linhas = s.meses.map(m => `
+    <tr class="${m.da_apuracao ? "desta-apuracao" : ""}" data-competencia="${esc(m.competencia)}">
+      <td style="text-align:left; text-transform:capitalize">${esc(m.nome)}
+        ${m.da_apuracao ? '<span class="etiqueta">desta apuração</span>' : ""}</td>
+      <td><input class="celula" data-campo="saldo" value="${m.saldo === null ? "" : n.format(m.saldo)}"></td>
+      <td><input class="celula" data-campo="a_recolher" value="${m.a_recolher === null ? "" : n.format(m.a_recolher)}"></td>
+      <td><input class="celula texto" data-campo="observacao" value="${esc(m.observacao)}"></td>
+    </tr>`).join("");
+  return `<section><h2>O ano de ${s.ano}</h2>
+    <div class="rolagem"><table>
+      <thead><tr><th style="text-align:left">Mês</th><th>Saldo</th>
+        <th>A recolher</th>
+        <th style="text-align:left">Observação</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div>
+    <div class="acoes" style="margin:16px 0 0">
+      <button class="principal-btn" onclick="salvarSerie()">Salvar o ano</button>
+      <span id="serie-recado" style="align-self:center; font-size:13.5px;
+            color:var(--suave)"></span>
+    </div>
+    <p class="aviso-serie"><strong>Saldo positivo é credor.</strong>
+      "A recolher" é a soma do que cada estabelecimento recolhe — não é o saldo
+      com o sinal trocado, porque uma filial credora não paga a conta de outra
+      devedora fora da centralização. O mês desta apuração já vem preenchido;
+      os demais são seus. Fica gravado em <code>${esc(s.arquivo)}</code>.</p>
+  </section>`;
+}
+
+async function salvarSerie(){
+  const recado = $("serie-recado");
+  const meses = [...document.querySelectorAll("tr[data-competencia]")].map(tr => {
+    const item = {competencia: tr.dataset.competencia};
+    tr.querySelectorAll("input.celula").forEach(i => item[i.dataset.campo] = i.value);
+    return item;
+  });
+  recado.textContent = "Gravando…";
+  try {
+    const r = await fetch(`/serie?chave=${encodeURIComponent(CHAVE)}`, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ano: SERIE.ano, meses}),
+    });
+    const dados = await r.json();
+    if (!r.ok) throw new Error(dados.erro || "não deu para gravar");
+    recado.textContent = "Gravado.";
+  } catch (erro) {
+    recado.textContent = erro.message;
+  }
+}
+
+// Os ajustes: o que a apuração decide e o Livro não sabe. Chegam pelas colunas
+// da BASE TRATADA, quando têm dono, e pela aba AJUSTES, quando não têm.
+function ajustes(a){
+  if (!a) return "";
+  const partes = [];
+
+  if (a.lancamentos.length){
+    const linhas = a.lancamentos.map(x => `<tr>
+        <td style="text-align:left">${esc(x.estabelecimento)}</td>
+        <td>${esc(x.linha)}</td><td>${moeda(x.valor)}</td>
+        <td style="text-align:left; white-space:normal">${esc(x.motivo)}</td>
+        <td style="text-align:left">${esc(x.onde)}</td>
+        <td style="text-align:left">${esc(x.quem)}</td>
+      </tr>`).join("");
+    partes.push(`<div class="rolagem"><table>
+      <thead><tr><th style="text-align:left">Estabelecimento</th><th>Linha</th>
+        <th>Valor</th><th style="text-align:left">Motivo</th>
+        <th style="text-align:left">Onde</th>
+        <th style="text-align:left">Responsável / aprovador</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div>`);
+  } else {
+    partes.push(`<p style="font-size:13.5px; color:var(--suave); margin:0">
+      Nenhum ajuste declarado nesta competência.</p>`);
+  }
+
+  if (a.anotacoes.length){
+    const linhas = a.anotacoes.map(x => `<tr>
+        <td style="text-align:left">${esc(x.estabelecimento)}</td>
+        <td>${moeda(x.valor)}</td>
+        <td style="text-align:left; white-space:normal">${esc(x.motivo)}</td>
+        <td style="text-align:left">${esc(x.onde)}</td>
+      </tr>`).join("");
+    partes.push(`<h3 style="font-size:15px; margin:22px 0 8px">
+        Marcado, não lançado — ${moeda(a.marcado_nao_lancado)}</h3>
+      <p style="font-size:13px; color:var(--suave); margin:0 0 10px">
+        Não entra na apuração. Fica aqui para não se perder.</p>
+      <div class="rolagem"><table>
+        <thead><tr><th style="text-align:left">Estabelecimento</th><th>Valor</th>
+          <th style="text-align:left">Motivo</th>
+          <th style="text-align:left">Onde</th></tr></thead>
+        <tbody>${linhas}</tbody></table></div>`);
+  }
+
+  if (a.aguardando.length){
+    partes.push(`<p style="font-size:13px; color:var(--suave); margin:14px 0 0">
+      Ainda sem conferência assinada:
+      <strong>${a.aguardando.map(esc).join(" · ")}</strong>.
+      Assine na aba <code>AJUSTES</code> da planilha — assinar sem nenhum
+      ajuste também é resposta, e é o que tira a marca do registro.</p>`);
+  }
+
+  return `<section><h2>Ajustes</h2>${partes.join("")}</section>`;
 }
 
 // A conta gráfica não começa nem termina no mês: o crédito que sobra atravessa

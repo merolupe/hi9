@@ -143,7 +143,13 @@ class Registro:
 # --------------------------------------------------------------------------
 
 def montar(apuracao, params: Parametros, ajustes=None) -> list[Registro]:
-    """Um registro por estabelecimento, na ordem em que a apuração os lista."""
+    """Um registro por estabelecimento, na ordem em que a apuração os lista.
+
+    Sem `ajustes`, valem os que a apuração concluiu — os que chegaram de fora
+    mais os que vinham escritos nas linhas do Livro. Passar outros sobrepõe os
+    dois, e serve para experimentar um cenário sem reapurar.
+    """
+    ajustes = ajustes if ajustes is not None else getattr(apuracao, "ajustes", None)
     cadastro = {
         " ".join(str(f["nome"]).split()): f
         for f in params.filiais.get("filiais") or []

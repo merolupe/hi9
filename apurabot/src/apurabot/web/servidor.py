@@ -35,12 +35,13 @@ import webbrowser
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from ..apuracao import apurar
+from ..apuracao import apurar, ler_ajustes
 from ..base_tratada import tratar
 from ..ingestao import LayoutInvalido
 from ..erros import FALTA_DE_PARAMETRO, ONDE_CADASTRAR
 from ..nucleo import registro as reg
 from ..saida import escrever
+from .. import serie as ser
 from . import painel
 
 PAGINA = Path(__file__).resolve().parent / "pagina.html"
@@ -115,12 +116,43 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         rota = urlparse(self.path)
-        if rota.path != "/apurar":
+        if rota.path not in ("/apurar", "/serie"):
             self._enviar(404, "text/plain; charset=utf-8", b"nao encontrado")
             return
         if not self._autorizado(rota):
             return
+        if rota.path == "/serie":
+            self._gravar_serie()
+            return
         self._apurar(parse_qs(rota.query))
+
+    # -- série do ano ------------------------------------------------------
+
+    def _gravar_serie(self) -> None:
+        """Grava o que a pessoa preencheu na tabela do ano.
+
+        O arquivo fica em `competencias/`, que o git ignora: é dado fiscal da
+        empresa, não parâmetro. Sobrevive ao encerramento da janela — a pasta
+        temporária, não.
+        """
+        try:
+            tamanho = int(self.headers.get("Content-Length") or 0)
+            corpo = json.loads(self.rfile.read(tamanho) or b"{}")
+            ano = int(corpo.get("ano"))
+        except (ValueError, TypeError, json.JSONDecodeError):
+            self._json(400, {"erro": "não entendi o que a tabela mandou."})
+            return
+        try:
+            arquivo = ser.gravar(ano, ser.de_dados(ano, corpo.get("meses")))
+        except OSError as erro:
+            self._json(400, {"erro": (
+                f"não consegui gravar a série: {erro}\n\n"
+                "A pasta do Apurabot precisa ser gravável — se ela estiver em "
+                "Arquivos de Programas ou numa unidade de rede só de leitura, "
+                "mova a pasta para o seu usuário e abra de novo."
+            )})
+            return
+        self._json(200, {"ok": True, "arquivo": str(arquivo)})
 
     # -- guarda ------------------------------------------------------------
 
@@ -183,7 +215,10 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
 
     def _processar(self, entrada: Path, nome_original: str) -> dict:
         base = tratar(entrada)
-        apuracao = apurar(base)
+        # O arquivo pode ser o Livro do Sankhya ou uma saída da ferramenta
+        # devolvida com os ajustes preenchidos. Nos dois casos o caminho é o
+        # mesmo: quando não há aba AJUSTES, `ler_ajustes` devolve vazio.
+        apuracao = apurar(base, ajustes=ler_ajustes(entrada))
         registros = reg.montar(apuracao, base.parametros)
         if len(registros) > 1:
             registros = registros + [reg.totalizador(registros, base.competencia)]
