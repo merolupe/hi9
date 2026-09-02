@@ -36,3 +36,21 @@ saldos_credores:
       R$ 455.859,54 na linha 006 contra um saldo devedor de igual valor.
       Nenhum estabelecimento do grupo abriu julho com saldo credor.
     por_estabelecimento: {}
+
+  - competencia: "2026-08"
+    homologado: true
+    origem: >
+      Linha 014 do Registro de Apuração de 07/2026. Guará: R$ 2.215.164,28, o
+      valor que o Registro emitido pelo ERP declara a transportar. Londrina:
+      R$ 13.882,40, o saldo credor que a apuração de julho fechou — PR difere a
+      saída e o crédito se acumula (decisão nº 1). Os demais estabelecimentos
+      fecharam julho devedores e recolheram, então abrem agosto zerados.
+    pendencia: >
+      Sobre Guará, o motor apura R$ 2.107.543,31 para julho, R$ 107.620,97 a
+      menos que o documento. A diferença é ajuste da competência de julho —
+      linha 002, 006 ou 007 — ainda não declarado. A abertura de agosto segue o
+      documento, que é o que a lei transporta; quando o ajuste de julho for
+      declarado, os dois passam a fechar sozinhos. Ver decisão pendente nº 14.
+    por_estabelecimento:
+      11: 2215164.28          # HINOVE (FILIAL GUARÁ)
+      7: 13882.40             # HINOVE (LONDRINA)

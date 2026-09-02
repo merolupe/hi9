@@ -26,10 +26,15 @@ CENTAVO = 0.005
 GUARA = "HINOVE (FILIAL GUARÁ)"
 CODIGO_GUARA = 11
 
-#: O que o Livro de julho produz em Guará, e o que ele transporta — os dois
-#: iguais, porque a abertura é zero.
+#: O que o Livro de julho produz em Guará. A abertura é zero, então o saldo
+#: individual da filial é este mesmo.
 DO_PERIODO = 2_107_543.31
 A_TRANSPORTAR = DO_PERIODO
+#: A linha 014 do registro é menor: ela já traz, na linha 002, o saldo devedor
+#: que Guará recebe de Registro por centralizar SP. O saldo individual da filial
+#: é antes da transferência; o registro é depois.
+RECEBIDO_DE_REGISTRO = 287_113.66
+LINHA_014 = DO_PERIODO - RECEBIDO_DE_REGISTRO
 
 
 @pytest.fixture(scope="module")
@@ -104,7 +109,8 @@ def test_a_linha_014_do_registro_e_a_linha_009_do_mes_seguinte(apuracao, paramet
     registros = reg.montar(apuracao, parametros)
     guara = next(r for r in registros if r.estabelecimento == GUARA)
     assert guara.linha(9).valor == 0.0
-    assert guara.linha(14).valor == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
+    assert guara.linha(2).valor == pytest.approx(RECEBIDO_DE_REGISTRO, abs=CENTAVO)
+    assert guara.linha(14).valor == pytest.approx(LINHA_014, abs=CENTAVO)
     # 010 = 008 + 009, e 014 = 010 − 004. Sem a 009 o registro não fecharia.
     assert guara.linha(10).valor == pytest.approx(
         guara.linha(8).valor + guara.linha(9).valor, abs=CENTAVO
@@ -176,7 +182,7 @@ def test_competencia_sem_declaracao_marca_a_linha_009(base_julho, sem_declaracao
     registros = reg.montar(apuracao, sem_declaracao)
     guara = next(r for r in registros if r.estabelecimento == GUARA)
     assert guara.linha(9).aguarda_ajuste
-    assert guara.linha(14).valor == pytest.approx(DO_PERIODO, abs=CENTAVO)
+    assert guara.linha(14).valor == pytest.approx(LINHA_014, abs=CENTAVO)
 
 
 def test_com_a_declaracao_a_linha_009_para_de_esperar(apuracao, parametros):

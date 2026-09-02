@@ -9,17 +9,19 @@
 
 ---
 
-## 1. 🟡 PR — mantém 100% ou não credita?
+## 1. 🟢 PR — mantém 100% e acumula o saldo credor
 
-*Pontos de Atenção* diz "Créditos PR mantêm 100% s/ saídas diferidas", e a aba
-ESTORNO mostra Londrina com crédito de frete marcado como mantido — mas o
-totalizador da mesma aba zera o crédito mantido de Londrina, e no resultado final
-PR aparece só com o saldo credor anterior.
+*Pontos de Atenção* dizia "Créditos PR mantêm 100% s/ saídas diferidas", e a aba
+ESTORNO mostrava Londrina com crédito de frete marcado como mantido — mas sem
+saída tributada não havia contra o que confrontar.
 
-**Pergunta:** o crédito de PR é mantido e acumulado como saldo credor, ou é
-estornado?
+**Respondida em 02/09/2026 pela Gerência Fiscal/Tributária: mantém 100%, e o
+saldo credor se acumula.** É o que `regimes.yaml` já fazia; o que faltava era a
+confirmação de que o crédito não se perde por falta de débito.
 
-**Padrão assumido:** mantido e acumulado, conforme *Pontos de Atenção*.
+Deixou de ser irrelevante: Londrina saiu de R$ 13.882,40 em 07/2026 para
+R$ 38.384,29 em 08/2026, e o saldo transportado de agosto é a soma dos dois —
+R$ 52.266,69.
 
 ## 2. 🟢 Itens fora do processo produtivo para o DIFAL
 
@@ -64,16 +66,20 @@ cargas a mais de 1,5 ponto de qualquer degrau, sem bloquear o fechamento.
 **Padrão assumido:** manter 2,5 — apertar sem combinar geraria pendências novas
 no primeiro fechamento.
 
-## 6. 🟡 Corumbá — a segregação por atividade não tem documento
+## 6. 🟢 Corumbá — a segregação existe para o benefício, não para a GIA
 
-O mapa de atividades de MS foi conferido contra os documentos de **Rio
-Brilhante**. Corumbá usa o mesmo mapa, porque a UF é a mesma e a GIA de MS é a
-mesma — mas não há GIA de Corumbá que confirme a segregação dela.
+A segregação por atividade é homologada contra a GIA de Rio Brilhante. Corumbá
+usa o mesmo mapa porque a UF é a mesma, mas não havia GIA de Corumbá para
+conferir.
 
-**Pergunta:** Corumbá também declara GIA segregada por atividade? Se sim, é
-possível enviar uma para fechar a conferência?
+**Respondida em 02/09/2026: as duas GIAs estão dispensadas.** A segregação é
+feita apenas para dimensionar o benefício fiscal, e o benefício é só de Rio
+Brilhante — cujo mapa está conferido ao centavo contra a GIA retificadora de
+25/08/2026.
 
-**Padrão assumido:** aplicar o mesmo mapa e marcar como não conferido.
+Em Corumbá a segregação continua saindo, porque o mapa é da UF e a ferramenta
+não classifica por estabelecimento. Ela é informativa: não dimensiona benefício
+nenhum e não alimenta declaração nenhuma.
 
 ## 7. 🟡 MS — o que acontece quando o centralizado tem saldo credor?
 
@@ -109,17 +115,19 @@ produto ou do fornecedor?
 **Padrão assumido:** cadastro por produto. O cadastro já aceita a chave por
 produto + fornecedor, então mudar é editar o parâmetro.
 
-## 9. 🟡 CFOP 2152 — o crédito é sempre indevido?
+## 9. 🟢 CFOP 2152 — o crédito é sempre indevido
 
-O crédito de transferência interestadual recebida (CFOP 2152) não é apropriado
-nem estornado: fica em parcela própria (ver `04-matriz-de-regras-icms.md`,
-item 4.2).
+A transferência interestadual para comercialização chega em Corumbá com ICMS
+destacado, e a saída correspondente de Guará sai com débito. Depois da ADC 49 a
+transferência entre estabelecimentos do mesmo titular não gera imposto, então o
+crédito da entrada é indevido.
 
-**Pergunta:** isso vale para toda transferência interestadual recebida, ou foi
-específico de uma operação?
+**Respondida em 02/09/2026: é sempre indevido** — e a operação **não deveria
+acontecer**. O destaque será parametrizado na origem para deixar de sair.
 
-**Padrão assumido:** vale sempre, com a regra marcada `homologado: false` em
-`regimes.yaml`.
+O motor já tratava assim, separando o crédito indevido do estorno por regra:
+R$ 14.424,02 em 07/2026 e R$ 2.560,56 em 08/2026. A queda é consistente com a
+correção estar em andamento.
 
 ## 10. 🟢 MICROBIO e HINOVE FERTILIZANTES ESPECIAIS
 
@@ -129,38 +137,32 @@ Os dois carregam saldo credor próprio.
 
 **Padrão assumido:** fora do escopo — não estão em `filiais.yaml`.
 
-## 11. 🟡 SP — como o centralizado transfere para Guará?
+## 11. 🟢 SP — lançamento fecha o mês, a NF-e vem depois
 
-A centralização está calculada, mas o parâmetro descreve SP com um desenho que
-o Registro de Apuração de 06/2026 da Filial Guará contradiz em dois pontos.
-
-**O que o documento mostra.** Guará recebeu, no mesmo mês, os dois sentidos, e
-por lançamento de apuração — não por NF-e:
+**Respondida em 02/09/2026**, sobre o Registro de Apuração de 06/2026 da Filial
+Guará, que mostra os dois sentidos chegando à centralizadora como lançamento:
 
 | Linha | Valor | Redação no documento |
 |---|---|---|
 | 006 Outros Créditos | 455.859,54 | recebimento de saldo credor — estabelecimento centralizador |
 | 002 Outros Débitos | 1.022,71 | recebimento de saldo devedor — estabelecimento centralizador |
 
-É a mesma redação que MS usa. E o valor da linha 006 é **exatamente** o saldo
-devedor que Guará tinha: o mês fecha com 011 e 014 em zero. Isso confirma a
-regra do teto — o crédito transferido para a centralizadora para no saldo
-devedor dela, e o excedente fica onde está.
+**O mecanismo é o lançamento de ajuste, e a NF-e continua sendo emitida.** Não
+são alternativas: a nota nasce do resultado da apuração e não retroage, então
+sai depois do fechamento e vai escriturada na competência seguinte. Quem fecha
+a competência é o lançamento. Por isso `emite_nfe` é campo próprio em
+`filiais.yaml`, e não o contrário de `mecanismo`.
 
-**O que ainda falta decidir:**
+**O crédito transferido tem teto: o saldo devedor da centralizadora.** O
+documento evidencia — a linha 006 trouxe exatamente o saldo devedor de Guará, e
+o mês fechou com as linhas 011 e 014 em zero. O que passa do teto fica onde
+está. O saldo devedor não tem teto: a centralizadora assume a dívida do grupo
+para recolher de uma vez só.
 
-1. **O mecanismo muda no parâmetro?** `filiais.yaml` traz `mecanismo: nfe` para
-   SP, e a aba TRANSFERÊNCIAS instrui a emitir NF-e. O documento aponta para
-   `ajuste_de_apuracao`. Se for esse o caso, a instrução emitida hoje está
-   errada, e os CFOP 5601/5602/5605 do parâmetro deixam de fazer sentido.
-2. **O que acontece quando a centralizadora está credora e o centralizado
-   devedor** — que é justamente o caso de julho, o inverso do de junho. Guará
-   fecha credor em 2,1 milhões e Registro deve 287.113,66. Não transfere nada,
-   porque não há saldo devedor a compensar? Ou Guará manda crédito para
-   Registro até o valor que ele deve?
-
-**Padrão assumido:** `saldo_integral` por `nfe`, marcado `homologado: false` em
-`filiais.yaml`. O relatório avisa que o resultado é rascunho.
+**Fica em aberto uma ponta:** com dois centralizados credores e dívida para um
+só, o teto se esgota na ordem do cadastro — hoje é o primeiro do arquivo que
+transfere. Nenhuma competência observada chegou aí. Quando chegar, a ordem tem
+que ser decidida em vez de herdada.
 
 ## 12. 🟡 Local de expedição — qual relatório e como cruzar?
 

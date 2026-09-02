@@ -72,11 +72,65 @@ def test_estabelecimento_sem_movimento_fica_de_fora(parametros):
 # -- o que se transfere ----------------------------------------------------
 
 def test_saldo_integral_transfere_devedor_e_credor(parametros):
+    """A centralizadora devendo 4.000, o crédito de 4.000 cabe inteiro."""
     p = com_regra(parametros, transfere=SALDO_INTEGRAL)
-    r = grupo_de({GUARA: 0.0, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
+    r = grupo_de({GUARA: -4_000.00, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
     por_origem = {t.origem: t.valor_transferido for t in r.transferencias}
     assert por_origem[REGISTRO] == pytest.approx(-10_000.00, abs=CENTAVO)
     assert por_origem[MATRIZ] == pytest.approx(4_000.00, abs=CENTAVO)
+
+
+# -- o teto: o crédito para no saldo devedor de quem recebe ----------------
+
+def test_o_credito_para_no_saldo_devedor_da_centralizadora(parametros):
+    """A transferência existe para compensar. O que passa disso fica onde está.
+
+    É o que o Registro de Apuração mostra na competência observada: a
+    centralizadora recebeu exatamente o crédito de que precisava para zerar, e
+    o mês fechou com as linhas 011 e 014 em zero.
+    """
+    p = com_regra(parametros, transfere=SALDO_INTEGRAL)
+    r = grupo_de({GUARA: -100_000.00, REGISTRO: 250_000.00}, p)
+    t_ = next(t for t in r.transferencias if t.origem == REGISTRO)
+    assert t_.valor_transferido == pytest.approx(100_000.00, abs=CENTAVO)
+    assert t_.retido_pelo_teto == pytest.approx(150_000.00, abs=CENTAVO)
+    assert t_.saldo_residual == pytest.approx(150_000.00, abs=CENTAVO)
+    assert r.saldo_final == 0.0
+    assert "fica onde está" in t_.instrucao
+
+
+def test_o_teto_e_do_grupo_e_nao_de_cada_estabelecimento(parametros):
+    """Com dois credores e uma dívida só, o teto se esgota entre os dois."""
+    p = com_regra(parametros, transfere=SALDO_INTEGRAL)
+    r = grupo_de({GUARA: -100_000.00, REGISTRO: 250_000.00, MATRIZ: 40_000.00}, p)
+    assert r.total_recebido == pytest.approx(100_000.00, abs=CENTAVO)
+    assert r.saldo_final == 0.0
+    assert sum(t.retido_pelo_teto for t in r.transferencias) == pytest.approx(
+        190_000.00, abs=CENTAVO
+    )
+
+
+def test_sem_saldo_devedor_na_centralizadora_o_credito_nao_se_move(parametros):
+    p = com_regra(parametros, transfere=SALDO_INTEGRAL)
+    r = grupo_de({GUARA: 2_000_000.00, REGISTRO: 250_000.00}, p)
+    t_ = next(t for t in r.transferencias if t.origem == REGISTRO)
+    assert t_.valor_transferido == 0.0
+    assert t_.retido_pelo_teto == pytest.approx(250_000.00, abs=CENTAVO)
+    assert "não fechou com saldo devedor a compensar" in t_.instrucao
+
+
+def test_o_saldo_devedor_nao_tem_teto(parametros):
+    """A centralizadora assume a dívida do grupo mesmo estando credora.
+
+    É o caso de agosto: Guará credor recebe o saldo devedor de Registro, e o
+    crédito dele absorve a dívida — o grupo recolhe menos por causa disso.
+    """
+    p = com_regra(parametros, transfere=SALDO_INTEGRAL)
+    r = grupo_de({GUARA: 2_000_000.00, REGISTRO: -201_505.74}, p)
+    t_ = next(t for t in r.transferencias if t.origem == REGISTRO)
+    assert t_.valor_transferido == pytest.approx(-201_505.74, abs=CENTAVO)
+    assert t_.retido_pelo_teto == 0.0
+    assert r.saldo_final == pytest.approx(1_798_494.26, abs=CENTAVO)
 
 
 def test_saldo_devedor_deixa_o_credor_no_estabelecimento(parametros):
@@ -93,7 +147,7 @@ def test_saldo_devedor_deixa_o_credor_no_estabelecimento(parametros):
 
 def test_saldo_credor_deixa_o_devedor_no_estabelecimento(parametros):
     p = com_regra(parametros, transfere=SALDO_CREDOR)
-    r = grupo_de({GUARA: 0.0, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
+    r = grupo_de({GUARA: -4_000.00, REGISTRO: -10_000.00, MATRIZ: 4_000.00}, p)
     por_origem = {t.origem: t for t in r.transferencias}
     assert por_origem[REGISTRO].valor_transferido == 0.0
     assert por_origem[MATRIZ].valor_transferido == pytest.approx(4_000.00, abs=CENTAVO)
@@ -132,18 +186,26 @@ def test_sem_saldo_a_transferir_nao_ha_instrucao(parametros):
     assert r.instrucoes == []
 
 
-def test_a_instrucao_de_sp_pede_nfe_com_o_cfop_parametrizado(parametros):
+def test_sp_fecha_por_lancamento_e_a_nfe_vem_depois(parametros):
+    """As duas coisas, e nessa ordem.
+
+    O Registro de Apuração mostra a transferência chegando como lançamento —
+    linha 002 ou 006, com a mesma redação que MS usa. A NF-e continua sendo
+    emitida, só que **depois** do fechamento: ela nasce do resultado da
+    apuração e não retroage, então vai escriturada na competência seguinte.
+    """
     r = grupo_de({GUARA: 0.0, REGISTRO: -1_000.00}, parametros)
-    assert r.mecanismo == NFE
-    assert "NF-e" in r.instrucoes[0]
-    assert "5601" in r.instrucoes[0]
+    assert r.mecanismo == AJUSTE_DE_APURACAO
+    instrucao = r.instrucoes[0]
+    assert "lançamento de ajuste no Registro de Apuração" in instrucao
+    assert "NF-e" in instrucao and "5601" in instrucao
+    assert "escriturada na competência seguinte" in instrucao
 
 
-def test_a_regra_de_sp_ainda_nao_esta_homologada(parametros):
-    """Enquanto o fiscal não confirmar, o relatório diz que a regra é rascunho."""
+def test_a_regra_de_sp_esta_homologada(parametros):
     r = grupo_de({GUARA: 0.0}, parametros)
-    assert r.homologado is False
-    assert "NÃO HOMOLOGADA" in " ".join(r.memoria)
+    assert r.homologado is True
+    assert "NÃO HOMOLOGADA" not in " ".join(r.memoria)
 
 
 # -- MS: a transferência é lançamento, não documento ------------------------
@@ -165,11 +227,12 @@ def test_a_instrucao_de_ms_nao_pede_nfe(parametros):
     assert "Registro de Apuração" in r.instrucoes[0]
 
 
-def test_so_o_ajuste_de_apuracao_alimenta_a_linha_002(parametros):
-    """A linha 002 do registro é o recebimento por lançamento, não por NF-e.
+def test_as_duas_ufs_alimentam_a_linha_002_por_lancamento(parametros):
+    """SP e MS recebem o saldo devedor do centralizado do mesmo jeito.
 
-    Onde a transferência tem documento próprio, ela não vira ajuste na conta
-    gráfica da centralizadora — entra pela escrituração da nota.
+    Era só MS enquanto SP estava desenhada como NF-e. O Registro de Apuração de
+    Guará mostra "recebimento de saldo devedor — estabelecimento centralizador"
+    na linha 002, exatamente como o de Rio Brilhante.
     """
     resultados = calcular(
         {GUARA: 100.00, REGISTRO: -10_000.00,
@@ -181,7 +244,9 @@ def test_so_o_ajuste_de_apuracao_alimenta_a_linha_002(parametros):
     assert debito_recebido_por(resultados, RIO_BRILHANTE) == pytest.approx(
         99_412.10, abs=CENTAVO
     )
-    assert debito_recebido_por(resultados, GUARA) == 0.0
+    assert debito_recebido_por(resultados, GUARA) == pytest.approx(
+        10_000.00, abs=CENTAVO
+    )
 
 
 def test_a_convencao_de_sinal_e_a_do_caixa(parametros):
