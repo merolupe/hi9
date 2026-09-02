@@ -8,7 +8,6 @@ import pytest
 from apurabot.nucleo.centralizacao import (
     AJUSTE_DE_APURACAO,
     CentralizacaoDesconhecida,
-    NFE,
     SALDO_CREDOR,
     SALDO_DEVEDOR,
     SALDO_INTEGRAL,
