@@ -160,3 +160,37 @@ def test_frete_de_venda_em_ms_e_comercial_nos_dois_meses(parametros):
         assert classificar(linha(**campos, data_movimento=data), mapa).atividade == (
             COMERCIAL
         )
+
+
+def test_almoxarifado_e_venda_conjunta_sao_despesa(parametros):
+    """As duas descrições que o critério "(Custo)" não marca.
+
+    Respondidas em 03/09/2026: são despesa, e portanto comerciais. Já caíam em
+    comercial pela atividade do CFOP — o que muda é que agora estão no
+    parâmetro como regra, e não por coincidência.
+    """
+    mapa = mapa_da_uf("MS", parametros)
+    for descricao in (
+        "Fretes sobre Compras (Almoxarifado)",
+        "Fretes sobre Transf/ Retorno - Venda conjunta",
+    ):
+        campos = dict(FRETE_TRANSFERENCIA, produto_descricao=descricao)
+        for data in (dt.date(2026, 7, 14), dt.date(2026, 8, 14)):
+            resultado = classificar(linha(**campos, data_movimento=data), mapa)
+            assert resultado.atividade == COMERCIAL, (descricao, data)
+            assert "descrição contém" in resultado.regra, descricao
+
+
+def test_venda_conjunta_nao_cai_na_regra_do_frete_de_transferencia(parametros):
+    """A ordem da lista importa: despesa é avaliada antes de custo.
+
+    "Fretes sobre Transf/ Retorno - Venda conjunta" e "Fretes sobre Transf/
+    Remessa/ Retorno (Custo)" começam parecido. Se a regra de custo viesse
+    primeiro e alguém afrouxasse o texto dela, a venda conjunta iria parar em
+    industrial de agosto em diante — e ninguém veria.
+    """
+    mapa = mapa_da_uf("MS", parametros)
+    ordem = [r["contem"] for r in mapa["por_descricao"]]
+    assert ordem.index("Fretes sobre Transf/ Retorno - Venda conjunta") < ordem.index(
+        "Fretes sobre Transf/ Remessa/ Retorno"
+    )

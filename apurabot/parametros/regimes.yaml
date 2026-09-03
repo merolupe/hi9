@@ -211,12 +211,20 @@ atividades:
     #   Fretes sobre Transf/ Remessa/ Retorno (Custo) ... custo    → industrial
     #   Fretes sobre Vendas ............................. despesa  → comercial
     #
-    # Duas descrições que aparecem no Livro ficaram DE FORA de propósito, porque
-    # o critério não as resolve sozinho e a regra 4 do repositório proíbe
-    # adivinhar: "Fretes sobre Compras (Almoxarifado)", que é uso e consumo, e
-    # "Fretes sobre Transf/ Retorno - Venda conjunta", que não traz "(Custo)".
-    # As duas seguem pela atividade do CFOP. Ver decisão pendente nº 17.
+    #   Fretes sobre Compras (Almoxarifado) ............ despesa  → comercial
+    #   Fretes sobre Transf/ Retorno - Venda conjunta .. despesa  → comercial
+    #
+    # As duas últimas foram respondidas em 03/09/2026: são DESPESA, não custo.
+    # Ficam antes das regras de custo na lista porque a ordem é a de avaliação,
+    # e "Transf/ Retorno - Venda conjunta" não pode cair na regra genérica de
+    # transferência. Ver decisão pendente nº 17, respondida.
     por_descricao:
+      # --- despesa: comercial ---
+      - contem: Fretes sobre Compras (Almoxarifado)
+        atividade: comercial
+      - contem: Fretes sobre Transf/ Retorno - Venda conjunta
+        atividade: comercial
+      # --- custo: industrial ---
       - contem: Fretes sobre Compra de Insumos
         atividade: industrial
         cfop: [1352, 2352, 1353, 2353]
@@ -229,8 +237,10 @@ atividades:
         # que a regressão de julho fecha. Aplicar o critério novo para trás
         # mudaria o que já foi declarado: R$ 4.355,07 de crédito sairiam do
         # comercial para o industrial, o estorno industrial subiria
-        # R$ 1.866,58 e o benefício cairia R$ 1.946,12. Se julho for
-        # retificado, é só apagar esta linha de vigência.
+        # R$ 1.866,58 e o benefício cairia R$ 1.946,12.
+        #
+        # RESPONDIDO em 03/09/2026 pela Gerência Fiscal/Tributária: julho NÃO
+        # é retificado. A vigência fica.
       - contem: Fretes sobre Vendas
         atividade: comercial
         cfop: [1352, 2352, 1353, 2353]
