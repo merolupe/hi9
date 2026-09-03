@@ -287,7 +287,7 @@ dos 30% contra julho leva a conclusão errada.
 declarado na aba `AJUSTES`, com o valor que o time fiscal informar. A ferramenta
 não controla o estoque nem confere se o utilizado cabe nele.
 
-## 17. 🟡 MS — as duas descrições de frete que o critério não resolve
+## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 
 O critério de classificação de frete em MS foi confirmado em 03/09/2026:
 **frete que entra como custo é produção; frete de venda, que é despesa, é
@@ -300,19 +300,19 @@ e é isso que `regimes.yaml` lê:
 | Fretes sobre Transf/ Remessa/ Retorno (Custo) | custo | industrial |
 | Fretes sobre Vendas | despesa | comercial |
 
-Duas descrições que aparecem no Livro **ficaram de fora de propósito**, porque o
-critério não as resolve sozinho:
+Duas descrições ficaram em aberto na primeira rodada, porque o critério não as
+resolvia sozinho. **Respondidas em 03/09/2026 pela Gerência Fiscal/Tributária:
+as duas são despesa, e portanto comerciais.**
 
-1. **Fretes sobre Compras (Almoxarifado)** — é compra, mas de uso e consumo, não
-   de insumo. Não é custo de produção nem despesa de venda.
-2. **Fretes sobre Transf/ Retorno - Venda conjunta** — é transferência, mas a
-   descrição não traz "(Custo)" e o nome aponta para venda.
+| Descrição no Livro | Natureza | Atividade |
+|---|---|---|
+| Fretes sobre Compras (Almoxarifado) | despesa | comercial |
+| Fretes sobre Transf/ Retorno - Venda conjunta | despesa | comercial |
 
-**Pergunta:** as duas são produção, comercial, ou prestacional/outras?
-
-**Padrão assumido:** as duas seguem a atividade do CFOP, que hoje as leva para
-comercial. Nenhuma delas foi classificada por adivinhação — só não foi
-sobrescrita.
+As duas já caíam em comercial pela atividade do CFOP, então **nenhum número
+mudou**. O que mudou é que agora elas estão no parâmetro como regra explícita,
+e não por coincidência do CFOP. Elas vêm antes das regras de custo na lista,
+porque a ordem é a de avaliação.
 
 ### Vigência: a regra vale de 08/2026 em diante
 
@@ -329,7 +329,5 @@ Aplicá-la para trás mudaria o que julho já declarou:
 | Crédito da parcela incentivada | 77.982,48 | 80.470,97 | +2.488,49 |
 | **Benefício (linha 012)** | **258.409,05** | **256.462,93** | **−1.946,12** |
 
-**Pergunta:** julho deve ser retificado com o critério novo?
-
-**Padrão assumido:** não. Julho fica como foi declarado. Se a resposta for sim,
-é apagar a linha `vigencia_inicio` da regra em `regimes.yaml`.
+**Respondido em 03/09/2026: julho NÃO é retificado.** Fica como foi declarado, e
+a vigência da regra permanece em `regimes.yaml`.

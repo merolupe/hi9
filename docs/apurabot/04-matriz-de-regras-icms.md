@@ -251,19 +251,22 @@ O critério que separa os fretes em MS é **custo × despesa**, e não o CFOP:
 | Fretes sobre Compra de Insumos (Custo) | custo | industrial |
 | Fretes sobre Transf/ Remessa/ Retorno (Custo) | custo | industrial |
 | Fretes sobre Vendas | despesa | comercial |
+| Fretes sobre Compras (Almoxarifado) | despesa | comercial |
+| Fretes sobre Transf/ Retorno - Venda conjunta | despesa | comercial |
 
 A própria descrição do Sankhya marca o custo com "(Custo)" no fim, e é isso que
-`parametros/regimes.yaml` lê, no bloco `atividades.ms.por_descricao`.
+`parametros/regimes.yaml` lê, no bloco `atividades.ms.por_descricao`. As duas
+últimas não trazem a marca e foram respondidas item a item pela Gerência
+Fiscal/Tributária em 03/09/2026.
 
 > **A regra do frete de transferência vale de 08/2026 em diante.** A GIA de
 > 07/2026 de Rio Brilhante o classificou como comercial, e é contra ela que a
 > regressão de julho fecha. Por isso a regra carrega `vigencia_inicio` — regra 3
 > do repositório. Ver decisão pendente nº 17, com o efeito de retificar julho.
 
-Duas descrições ficaram **de fora de propósito** — "Fretes sobre Compras
-(Almoxarifado)" e "Fretes sobre Transf/ Retorno - Venda conjunta" —, porque o
-critério não as resolve. Elas seguem a atividade do CFOP até o time fiscal
-decidir. Também na decisão pendente nº 17.
+A ordem da lista é a ordem de avaliação: as regras de despesa vêm antes das de
+custo, para que "Transf/ Retorno - Venda conjunta" não caia na regra genérica
+de transferência.
 
 O corte **intra/inter** vem do primeiro dígito do CFOP: 5 é interno, 6 é
 interestadual, 7 é exterior.

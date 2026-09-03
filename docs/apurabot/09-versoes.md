@@ -27,7 +27,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.16 | 01/09/2026 | Saldo credor de abertura: a conta gráfica atravessa a virada do mês |
 | 0.1.17 | 02/09/2026 | Ajustes declarados pelo próprio arquivo; painel do ano |
 | 0.1.18 | 02/09/2026 | Centralização de SP homologada, DIFAL na conta gráfica e CFOP 2923 comercial |
-| **0.1.19** | **03/09/2026** | **A rodada de agosto: conferência por carga efetiva, percentual da regra, totais em fórmula, frete de custo em MS** |
+| 0.1.19 | 03/09/2026 | A rodada de agosto: conferência por carga efetiva, percentual da regra, totais em fórmula, frete de custo em MS |
+| **0.1.20** | **03/09/2026** | **Decisão nº 17 respondida: almoxarifado e venda conjunta são despesa; julho não é retificado** |
 
 ## 0.1.19 — o que mudou, em detalhe
 
@@ -59,3 +60,14 @@ nº 17.
 
 **O painel do ano foi para o fim da página**, e um respiro entre os blocos da
 `APURAÇÃO EFETIVA`.
+
+## 0.1.20 — a decisão nº 17, respondida
+
+**"Fretes sobre Compras (Almoxarifado)" e "Fretes sobre Transf/ Retorno - Venda
+conjunta" são despesa, e portanto comerciais.** As duas já caíam em comercial
+pela atividade do CFOP, então **nenhum número mudou** — o que mudou é que agora
+elas estão no parâmetro como regra explícita. Vêm antes das regras de custo na
+lista, porque a ordem é a de avaliação.
+
+**Julho não é retificado.** A vigência da regra do frete de transferência fica
+em 2026-08-01. O que julho declarou permanece.
