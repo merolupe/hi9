@@ -198,8 +198,14 @@ def test_o_ajuste_muda_o_saldo_da_apuracao_e_nao_so_o_registro(reapurado):
     _, apuracao = reapurado
     registro = apuracao.filiais[REGISTRO]
     # -299.450,70 do mês (já com o DIFAL de SP) menos os 500,00 do ajuste.
-    assert registro.saldo == pytest.approx(-299_950.70, abs=CENTAVO)
-    assert registro.a_recolher == pytest.approx(299_950.70, abs=CENTAVO)
+    assert registro.saldo_individual == pytest.approx(-299_950.70, abs=CENTAVO)
+    # O saldo final é zero: Registro é centralizado em SP e transfere tudo
+    # para Guará. O ajuste mudou o que ele transfere, não o que ele recolhe.
+    assert registro.saldo == 0.0
+    assert registro.a_recolher == 0.0
+    assert registro.efeito_da_centralizacao == pytest.approx(
+        299_950.70, abs=CENTAVO
+    )
 
 
 def test_anotar_nao_entra_na_conta_mas_aparece(reapurado):

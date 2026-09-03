@@ -280,14 +280,15 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         "TOTAL", "", "", total.linhas, total.credito_bruto, total.estorno,
         total.credito_indevido, total.credito_mantido, total.debito,
         total.credito_presumido, total.difal, total.saldo_credor_anterior,
-        total.saldo, total.a_recolher, "OK" if total.confere else "DIVERGE",
+        total.saldo, apuracao.a_recolher, "OK" if total.confere else "DIVERGE",
     ])
     # O TOTAL soma as filiais na própria planilha, em vez de repetir o número
-    # que o motor calculou. "A recolher" fica de fora da soma pela mesma razão
-    # de sempre: filial credora não paga a conta de outra devedora.
+    # que o motor calculou — inclusive "a recolher", que é a soma do que cada
+    # uma paga e não o saldo do grupo com o sinal trocado: filial credora não
+    # paga a conta de outra devedora fora da centralização.
     linha = aba.max_row
     if ultima >= primeira:
-        for coluna in range(4, 14):
+        for coluna in range(4, 15):
             letra = get_column_letter(coluna)
             aba.cell(row=linha, column=coluna).value = (
                 f"=SUM({letra}{primeira}:{letra}{ultima})"
@@ -301,8 +302,12 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
     aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
     aba.append([
         "Saldo na convenção de caixa: positivo é credor — crédito a transportar "
-        "—, negativo é devedor. \"A recolher\" é o que sai do caixa. O saldo já "
-        "abre com o crédito do mês anterior."
+        "—, negativo é devedor. \"A recolher\" é o que sai do caixa, e o TOTAL "
+        "dela é a soma das filiais, não o saldo do grupo com o sinal trocado. "
+        "O saldo é o FINAL, o mesmo que o Registro de cada estabelecimento "
+        "fecha: já abre com o crédito do mês anterior e já traz o efeito da "
+        "centralização. O saldo antes de centralizar está no bloco de "
+        "Centralização, mais abaixo."
     ])
 
     _bloco_saldo_credor(aba, apuracao)

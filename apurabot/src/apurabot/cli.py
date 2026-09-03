@@ -98,8 +98,14 @@ def _apuracao(apuracao: Apuracao) -> None:
             f"{reais(f.debito):>14}{reais(f.saldo):>16}{reais(f.a_recolher):>14}"
         )
     print(
-        "\n  Saldo positivo é credor; negativo sai do caixa."
-        " O saldo já abre com o crédito do mês anterior."
+        f"  {'TOTAL':<36}{'':>14}{'':>14}"
+        f"{reais(apuracao.total.saldo):>16}{reais(apuracao.a_recolher):>14}"
+    )
+    print(
+        "\n  Saldo positivo é credor; negativo sai do caixa. É o saldo FINAL —"
+        " o mesmo que o\n  Registro de cada estabelecimento fecha: já com o"
+        " crédito do mês anterior e já\n  com o efeito da centralização."
+        " \"A recolher\" do TOTAL é a soma das filiais."
     )
 
     _saldo_credor(apuracao)

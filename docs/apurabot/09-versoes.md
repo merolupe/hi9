@@ -30,7 +30,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.19 | 03/09/2026 | A rodada de agosto: conferência por carga efetiva, percentual da regra, totais em fórmula, frete de custo em MS |
 | 0.1.20 | 03/09/2026 | Decisão nº 17 respondida: almoxarifado e venda conjunta são despesa; julho não é retificado |
 | 0.1.21 | 03/09/2026 | A conferência enxuta: uma coluna de percentual, sem CHECK, categoria com nome legível |
-| **0.1.22** | **03/09/2026** | **A centralização passa a lançar as duas pontas: quem transfere zera o próprio Registro** |
+| 0.1.22 | 03/09/2026 | A centralização passa a lançar as duas pontas: quem transfere zera o próprio Registro |
+| **0.1.23** | **03/09/2026** | **O saldo mostrado passa a ser o final, o mesmo do Registro, em todo lugar** |
 
 ## 0.1.19 — o que mudou, em detalhe
 
@@ -127,3 +128,28 @@ Registro de 06/2026 de Guará mostra, com 455.859,54 recebidos.
 **As linhas 011 a 014 saem arredondadas ao centavo.** O documento fiscal não
 tem casa abaixo dela, e quem transferia o saldo inteiro fechava em 4,6e-10 em
 vez de zero.
+
+## 0.1.23 — um saldo só, o do Registro
+
+O mesmo estabelecimento tinha **dois saldos diferentes** no mesmo arquivo:
+
+```
+tabela APURAÇÃO POR FILIAL   Guará  1.980.927,86
+Registro de Guará, linha 014        1.770.946,71
+```
+
+O primeiro era o saldo individual, antes de receber a centralização; o segundo,
+o final. O bloco "Saldo credor" prometia ser a linha 014, mostrava o individual
+— e mandava cadastrá-lo em `saldos.yaml`. Cadastrar o número errado abriria
+setembro com R$ 209.981,15 de crédito que não existe.
+
+**Agora `filial.saldo` é o final**, o mesmo que o Registro daquele
+estabelecimento fecha. Registro-SP e Corumbá aparecem em 0,00, como nos
+documentos deles; Rio Brilhante em −460.870,70; Guará em 1.770.946,71.
+
+O saldo antes de centralizar continua acessível como `saldo_individual` e
+aparece no bloco de Centralização, onde faz sentido: "Saldo próprio da
+centralizadora", "HINOVE (REGISTRO): saldo −209.981,15 → transfere".
+
+**O TOTAL "a recolher" passou a somar as filiais.** Saía 0,00 porque calculava
+`max(−saldo do grupo, 0)`, e o grupo é credor. O caixa de agosto é R$ 460.870,70.
