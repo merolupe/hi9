@@ -28,7 +28,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.17 | 02/09/2026 | Ajustes declarados pelo próprio arquivo; painel do ano |
 | 0.1.18 | 02/09/2026 | Centralização de SP homologada, DIFAL na conta gráfica e CFOP 2923 comercial |
 | 0.1.19 | 03/09/2026 | A rodada de agosto: conferência por carga efetiva, percentual da regra, totais em fórmula, frete de custo em MS |
-| **0.1.20** | **03/09/2026** | **Decisão nº 17 respondida: almoxarifado e venda conjunta são despesa; julho não é retificado** |
+| 0.1.20 | 03/09/2026 | Decisão nº 17 respondida: almoxarifado e venda conjunta são despesa; julho não é retificado |
+| **0.1.21** | **03/09/2026** | **A conferência enxuta: uma coluna de percentual, sem CHECK, categoria com nome legível** |
 
 ## 0.1.19 — o que mudou, em detalhe
 
@@ -71,3 +72,27 @@ lista, porque a ordem é a de avaliação.
 
 **Julho não é retificado.** A vigência da regra do frete de transferência fica
 em 2026-08-01. O que julho declarou permanece.
+
+## 0.1.21 — a conferência enxuta
+
+**Uma coluna de percentual, não duas.** Ficou `% do crédito estornado` =
+`ICMS a estornar ÷ Vlr. ICMS`. A `% da regra` saiu: ela ficava vazia nas linhas
+de CFOP que misturam cargas — em Guará, 6 dos 17 CFOPs —, e meia coluna
+preenchida confunde mais do que informa. O nominal da regra continua em
+`04-matriz-de-regras-icms.md`, item 3.1.
+
+**A coluna CHECK saiu.** A identidade que ela mostrava — `a estornar +
+a apropriar = crédito` — é garantida por teste no motor, em todas as linhas de
+todos os estabelecimentos. Não precisa de uma célula que alguém confira. Linha
+que não fechar sai inteira em vermelho.
+
+**A carga efetiva do complemento de ICMS aparece.** No bloco `CRÉDITOS` a carga
+de cada classificação é a média ponderada pelo valor contábil; o complemento
+não tem contábil, só base e imposto, e a célula saía vazia. Agora a ponderação
+cai para o ICMS quando não há contábil — o complemento mostra os 4% que sempre
+teve.
+
+**A operação vem com nome de gente.** `frete_transferencia` na conferência é
+"Frete de Transferência"; `materia_prima` é "Matéria-Prima". A `BASE TRATADA`
+continua com o nome interno de propósito — é por ele que a ferramenta relê o
+próprio arquivo.

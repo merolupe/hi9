@@ -151,23 +151,30 @@ nominal enquanto o crédito é o do documento. Uma entrada equalizada em 7% cuja
 carga real é 6,77% estorna 3 pontos sobre o contábil, o que dá 44,3% do
 crédito, e não os 42,9% que `1 − 4/7` sugeriria.
 
-Por isso a aba `APURAÇÃO EFETIVA` traz **duas colunas de percentual**, e não uma:
+Por isso a aba `APURAÇÃO EFETIVA` traz **uma** coluna de percentual, e ela é
+descritiva: `% do crédito estornado` = `ICMS a estornar ÷ Vlr. ICMS`.
 
-| Coluna | O que é | SP | MS |
-|---|---|---|---|
-| **% da regra** | o nominal, antes de encontrar o documento | `(carga − 4%) ÷ carga` | `1 − 4 ÷ alíquota` |
-| **% efetivo** | o que saiu: `ICMS a estornar ÷ crédito` | quebrado | igual ao nominal |
+| | SP | MS |
+|---|---|---|
+| Nominal da regra | `(carga − 4%) ÷ carga` | `1 − 4 ÷ alíquota` |
+| `% do crédito estornado` | **passa do nominal** | igual ao nominal |
 
-Em MS as duas coincidem, porque a regra devolve literalmente uma fração do
+Em MS os dois coincidem, porque a regra devolve literalmente uma fração do
 crédito. Em SP não: o estorno incide sobre o contábil e o crédito veio da base
-de ICMS, que é menor, então o efetivo passa do nominal na razão contábil ÷ base.
-Uma entrada equalizada em 12% com contábil 862.582,30 e base 814.253,03 estorna
-69.006,58, que são 70,62% do crédito e não os 66,67% da regra.
+de ICMS, que é menor, então o percentual passa do nominal na razão
+contábil ÷ base. Uma entrada equalizada em 12% com contábil 862.582,30 e base
+814.253,03 estorna 69.006,58, que são 70,62% do crédito e não os 66,67% da
+regra.
+
+O nominal não vira coluna. Onde o grupo mistura cargas — uma linha de CFOP com
+4%, 12% e 18% — não existe um nominal só, e a célula sairia vazia em parte das
+linhas. Um percentual que às vezes existe e às vezes não confunde mais do que
+informa.
 
 **O agrupamento é sempre pela carga efetiva equalizada**, nos dois regimes. É a
 grandeza que o documento traz depois da equalização e é por ela que a
-conferência manual olha. A alíquota continua sendo a chave do cálculo em MS —
-ela aparece no `% da regra`, não no agrupamento.
+conferência manual olha. A alíquota continua sendo a chave do cálculo em MS, e
+está na `BASE TRATADA`.
 
 ---
 

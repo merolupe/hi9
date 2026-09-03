@@ -209,18 +209,17 @@ abas nesta ordem:
 |---|---|
 | **RESUMO** | competência, arquivo e o SHA-256 do que foi lido |
 | **REGISTRO** | o mesmo da tela, com o detalhe por CFOP que a tela resume |
-| **APURAÇÃO EFETIVA** | a coluna **CHECK** — tem que ser **zero em todas as linhas** |
+| **APURAÇÃO EFETIVA** | nenhuma linha em vermelho |
 | **APURAÇÃO POR FILIAL** | a memória do benefício, passo a passo |
 | **TRANSFERÊNCIAS** | o mesmo da tela, em tabela |
 | **PENDÊNCIAS** | vazia, se a faixa estava verde |
 | **POR ESTABELECIMENTO E CARGA** | o recorte por carga efetiva |
 | **BASE TRATADA** | uma linha por linha do Livro, com a regra aplicada em texto |
 
-**O teste mais importante da planilha:** na aba `APURAÇÃO EFETIVA`, use o filtro
-na coluna **CHECK** e procure qualquer valor diferente de zero. Não pode haver
-nenhum — o CHECK é `ICMS a estornar + ICMS a apropriar − ICMS creditado`, e
-valor diferente de zero é erro de motor, não de escrituração. Se achar, anote a
-linha inteira.
+**O teste mais importante da planilha:** na aba `APURAÇÃO EFETIVA`, procure
+qualquer linha em vermelho. Não pode haver nenhuma. O vermelho marca a linha em
+que `ICMS a estornar + ICMS a apropriar` não fecha o `Vlr. ICMS` — erro de
+motor, não de escrituração. Se achar, anote a linha inteira.
 
 **Compare com a sua planilha manual.** A `APURAÇÃO EFETIVA` foi montada no
 formato que vocês usam — **uma linha por produto, não por documento**, como a
@@ -232,18 +231,22 @@ BC, 469.903,05 de ICMS, 331.236,11 de estorno e 138.666,94 a apropriar.
 grandeza que o documento traz depois da equalização, e é por ela que a
 conferência manual olha nos dois estados.
 
-**As duas colunas de percentual** respondem a perguntas diferentes:
-
-- **% da regra** é o nominal — 66,67% para a carga de 12%, 77,78% para a de 18%.
-  Sai do parâmetro do regime, e é o número que se confere de cabeça.
-- **% efetivo** é `ICMS a estornar ÷ crédito`. Em MS bate com o nominal; em SP
-  passa dele, porque o estorno incide sobre o valor contábil e o crédito veio da
-  base de ICMS, que é menor.
+**`% do crédito estornado`** é `ICMS a estornar ÷ Vlr. ICMS`. Em MS bate com o
+nominal da regra (`1 − 4/alíquota`); em SP passa dele, porque o estorno incide
+sobre o valor contábil e o crédito veio da base de ICMS, que é menor. Uma
+entrada de 12% com contábil maior que a base estorna 70,6% e não os 66,7% que a
+regra sugere — ver [04 — Matriz de regras](04-matriz-de-regras-icms.md),
+item 3.1.
 
 **Os totais são fórmula.** Clique em qualquer linha de subtotal, de CFOP ou de
 TOTAL: a barra mostra um `SUM` das linhas que a compõem, não um número colado.
-As colunas *ICMS a apropriar*, *% efetivo* e *CHECK* também são fórmula em todas
-as linhas. Mexa numa linha e a planilha recalcula.
+As colunas *% do crédito estornado* e *ICMS a apropriar* também são fórmula em
+todas as linhas. Mexa numa linha e a planilha recalcula.
+
+**A operação vem com nome de gente.** `frete_transferencia` na `BASE TRATADA`
+aparece como "Frete de Transferência" na conferência. A base fica com o nome
+interno de propósito: é por ele que a ferramenta relê o próprio arquivo quando
+você devolve os ajustes.
 
 ---
 

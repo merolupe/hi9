@@ -7,4 +7,4 @@ from ._dependencias import preparar as _preparar
 
 _preparar()
 
-__version__ = "0.1.20"
+__version__ = "0.1.21"
