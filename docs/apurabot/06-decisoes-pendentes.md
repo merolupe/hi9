@@ -115,6 +115,15 @@ produto ou do fornecedor?
 **Padrão assumido:** cadastro por produto. O cadastro já aceita a chave por
 produto + fornecedor, então mudar é editar o parâmetro.
 
+**Um item saiu da lista em 03/09/2026.** O ÁCIDO FOSFÓRICO RAFINADO (130030002)
+passou a `materia_prima`: a Gerência Fiscal/Tributária confirmou que é
+matéria-prima enquadrada, e que a classificação anterior veio de julho, onde
+algumas notas chegaram com ICMS incorreto. Como o produto entra com base
+reduzida — carga efetiva de 4% —, a troca não muda o valor de nenhuma
+competência apurada; muda o enquadramento, que passa a valer se ele algum dia
+entrar acima de 4%. Continuam em aberto MAX OIL MT (132010068) e NBPT BLUE 20%
+(132010008).
+
 ## 9. 🟢 CFOP 2152 — o crédito é sempre indevido
 
 A transferência interestadual para comercialização chega em Corumbá com ICMS
@@ -277,3 +286,50 @@ dos 30% contra julho leva a conclusão errada.
 **Padrão assumido:** nenhum. O crédito outorgado entra hoje como ajuste
 declarado na aba `AJUSTES`, com o valor que o time fiscal informar. A ferramenta
 não controla o estoque nem confere se o utilizado cabe nele.
+
+## 17. 🟡 MS — as duas descrições de frete que o critério não resolve
+
+O critério de classificação de frete em MS foi confirmado em 03/09/2026:
+**frete que entra como custo é produção; frete de venda, que é despesa, é
+comercial**. A descrição do CT-e no Sankhya marca o custo com "(Custo)" no fim,
+e é isso que `regimes.yaml` lê:
+
+| Descrição no Livro | Critério | Atividade |
+|---|---|---|
+| Fretes sobre Compra de Insumos (Custo) | custo | industrial |
+| Fretes sobre Transf/ Remessa/ Retorno (Custo) | custo | industrial |
+| Fretes sobre Vendas | despesa | comercial |
+
+Duas descrições que aparecem no Livro **ficaram de fora de propósito**, porque o
+critério não as resolve sozinho:
+
+1. **Fretes sobre Compras (Almoxarifado)** — é compra, mas de uso e consumo, não
+   de insumo. Não é custo de produção nem despesa de venda.
+2. **Fretes sobre Transf/ Retorno - Venda conjunta** — é transferência, mas a
+   descrição não traz "(Custo)" e o nome aponta para venda.
+
+**Pergunta:** as duas são produção, comercial, ou prestacional/outras?
+
+**Padrão assumido:** as duas seguem a atividade do CFOP, que hoje as leva para
+comercial. Nenhuma delas foi classificada por adivinhação — só não foi
+sobrescrita.
+
+### Vigência: a regra vale de 08/2026 em diante
+
+A GIA de 07/2026 de Rio Brilhante classificou o frete de transferência como
+**comercial**, e é contra ela que a regressão de julho fecha. Por isso a regra
+nova tem `vigencia_inicio: 2026-08-01` no parâmetro — regra 3 do repositório.
+
+Aplicá-la para trás mudaria o que julho já declarou:
+
+| | GIA de 07/2026 | com o critério novo | diferença |
+|---|---|---|---|
+| Crédito industrial | 327.834,95 | 332.190,02 | +4.355,07 |
+| Estorno industrial | 245.987,17 | 247.853,75 | +1.866,58 |
+| Crédito da parcela incentivada | 77.982,48 | 80.470,97 | +2.488,49 |
+| **Benefício (linha 012)** | **258.409,05** | **256.462,93** | **−1.946,12** |
+
+**Pergunta:** julho deve ser retificado com o critério novo?
+
+**Padrão assumido:** não. Julho fica como foi declarado. Se a resposta for sim,
+é apagar a linha `vigencia_inicio` da regra em `regimes.yaml`.

@@ -76,7 +76,9 @@ def _moeda(aba, linha: int, colunas: range) -> None:
 
 
 def _vazio(aba) -> None:
-    aba.append([])
+    # `append([])` não avança a linha no openpyxl; `append([None])` avança e
+    # não escreve nada. É o que dá o respiro entre os blocos.
+    aba.append([None])
 
 
 # --------------------------------------------------------------------------
@@ -96,42 +98,60 @@ def _vazio(aba) -> None:
 # quer conferir.
 
 COLUNAS_EFETIVA = [
-    "CFOP", "Descrição", "{chave}", "Produto",
-    "Vlr. contábil", "BC ICMS", "Vlr. ICMS",
-    "Operação", "% do crédito estornado", "ICMS a estornar", "ICMS a apropriar",
-    "CHECK",
+    "CFOP", "Descrição", "Carga efetiva", "Produto",
+    "Vlr. contábil", "BC ICMS", "Vlr. ICMS", "Operação",
+    "% da regra", "% efetivo", "ICMS a estornar", "ICMS a apropriar", "CHECK",
 ]
+
+#: Colunas por letra, para montar as fórmulas.
+COL_CONTABIL, COL_BASE, COL_ICMS = 5, 6, 7
+COL_REGRA, COL_EFETIVO = 9, 10
+COL_ESTORNAR, COL_APROPRIAR, COL_CHECK = 11, 12, 13
+LETRA = {COL_CONTABIL: "E", COL_BASE: "F", COL_ICMS: "G", COL_ESTORNAR: "K"}
 
 #: Fórmulas de estorno, como aparecem em `regimes.yaml`.
 PROPORCIONAL = "proporcional_parcela_nao_tributada"
 EXCEDENTE = "excedente_sobre_carga_saida"
 
-#: O que comanda o estorno em cada fórmula — é por isso que a conferência
-#: agrupa, porque é a chave da regra. Onde a fórmula não é conhecida, a carga
-#: efetiva serve: ela é o que o documento traz.
-CHAVE_DA_REGRA = {
-    PROPORCIONAL: ("aliquota_icms", "Alíquota"),
-    EXCEDENTE: ("carga", "Carga efetiva"),
+#: Onde cada regime guarda a carga de referência — os 4% que equilibram.
+REFERENCIA_DO_REGIME = {
+    EXCEDENTE: "carga_saida_referencia",
+    PROPORCIONAL: "carga_de_referencia",
 }
-CHAVE_PADRAO = ("carga", "Carga efetiva")
 
 
-def _chave_do_regime(filial, params) -> tuple[str, str]:
-    regime = (params.regimes.get("regimes") or {}).get(filial.regime) or {}
-    return CHAVE_DA_REGRA.get(regime.get("formula_estorno"), CHAVE_PADRAO)
+def _regime_da_filial(filial, params) -> dict:
+    return (params.regimes.get("regimes") or {}).get(filial.regime) or {}
 
 
-def _valor_da_chave(apurada: LinhaApurada, chave: str) -> float | None:
-    """Zero é um valor — o CIAP e o complemento entram com alíquota 0."""
-    if chave == "carga":
-        return apurada.tratada.carga.carga
-    bruto = apurada.tratada.origem.dados.get(chave)
-    if bruto in (None, ""):
+def _percentual_nominal(apurada: LinhaApurada, regime: dict) -> float | None:
+    """O percentual que a REGRA manda estornar, antes de encontrar o documento.
+
+    É o número redondo que o time fiscal usa para conferir — 66,67% para a
+    carga de 12%, 77,78% para a de 18% — e não a razão entre o estorno apurado
+    e o crédito, que sai quebrada porque em SP a base do estorno é o valor
+    contábil e o crédito veio da base de ICMS, que é menor.
+
+    Quem quiser a razão tem a coluna `% efetivo` ao lado.
+    """
+    formula = regime.get("formula_estorno")
+    chave = REFERENCIA_DO_REGIME.get(formula)
+    if chave is None:
         return None
-    try:
-        return float(bruto)
-    except (TypeError, ValueError):
+    referencia = _numero(regime.get(chave))
+
+    if formula == EXCEDENTE:
+        carga = apurada.tratada.carga.carga
+        if not carga:
+            return None
+        return max(carga - referencia, 0.0) / carga
+
+    # Proporcional: a parcela não tributada é 1 − referência ÷ alíquota, e a
+    # chave é a ALÍQUOTA — mesmo que a conferência agrupe por carga efetiva.
+    aliquota = _numero(apurada.tratada.origem.dados.get("aliquota_icms"))
+    if not aliquota:
         return None
+    return max(1.0 - referencia / aliquota, 0.0)
 
 
 def _rotulo_atividade(apurada: LinhaApurada) -> str:
@@ -145,14 +165,16 @@ def _rotulo_atividade(apurada: LinhaApurada) -> str:
 class Somas:
     """Acumulador de um grupo da conferência."""
 
-    __slots__ = ("contabil", "base", "icms", "estornar", "apropriar", "documentos")
+    __slots__ = ("contabil", "base", "icms", "estornar", "apropriar",
+                 "documentos", "nominais")
 
     def __init__(self) -> None:
         self.contabil = self.base = self.icms = 0.0
         self.estornar = self.apropriar = 0.0
         self.documentos = 0
+        self.nominais: set = set()
 
-    def somar(self, apurada: LinhaApurada) -> None:
+    def somar(self, apurada: LinhaApurada, nominal: float | None) -> None:
         dados = apurada.tratada.origem.dados
         self.contabil += _numero(dados.get("valor_contabil"))
         self.base += _numero(dados.get("base_icms"))
@@ -160,10 +182,26 @@ class Somas:
         self.estornar += apurada.credito_a_estornar
         self.apropriar += apurada.credito_a_apropriar
         self.documentos += 1
+        if nominal is not None:
+            self.nominais.add(round(nominal, 6))
+
+    def absorver(self, outra: "Somas") -> None:
+        self.contabil += outra.contabil
+        self.base += outra.base
+        self.icms += outra.icms
+        self.estornar += outra.estornar
+        self.apropriar += outra.apropriar
+        self.documentos += outra.documentos
+        self.nominais |= outra.nominais
+
+    @property
+    def nominal(self) -> float | None:
+        """O percentual da regra, quando o grupo inteiro tem um só."""
+        return next(iter(self.nominais)) if len(self.nominais) == 1 else None
 
     @property
     def percentual(self) -> float | None:
-        """Quanto do crédito a regra mandou estornar."""
+        """Quanto do crédito a regra mandou estornar, de fato."""
         return (self.estornar / self.icms) if self.icms else None
 
     @property
@@ -181,14 +219,16 @@ def _numero(valor) -> float:
 def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
     """Conferência do crédito, do estorno e da apropriação, por CFOP e produto."""
     aba = wb.create_sheet("APURAÇÃO EFETIVA")
-    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 16, 12, 16, 16, 11])
+    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 18, 11, 11, 16, 16, 11])
 
     aba.append(["APURAÇÃO EFETIVA — crédito, estorno e apropriação por CFOP e produto"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
     aba.append([
         "Um bloco por estabelecimento, agregado como na apuração manual: uma "
-        "linha por produto, não por documento. CHECK = a estornar + a apropriar "
-        "− ICMS creditado; valor diferente de zero é erro de motor."
+        "linha por produto, não por documento. `% da regra` é o percentual "
+        "nominal que a regra manda estornar; `% efetivo` é o que saiu sobre o "
+        "crédito. CHECK = a estornar + a apropriar − ICMS creditado; valor "
+        "diferente de zero é erro de motor."
     ])
 
     for filial in sorted(
@@ -200,8 +240,10 @@ def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
 
 
 def _bloco_efetiva(aba, filial, params) -> None:
-    chave, rotulo = _chave_do_regime(filial, params)
+    regime = _regime_da_filial(filial, params)
 
+    # Respiro entre estabelecimentos — os blocos ficavam colados.
+    _vazio(aba)
     _vazio(aba)
     _titulo(
         aba,
@@ -214,38 +256,50 @@ def _bloco_efetiva(aba, filial, params) -> None:
         _blocos_de_fechamento(aba, filial)
         return
 
-    _cabecalho(aba, [c.format(chave=rotulo) for c in COLUNAS_EFETIVA])
+    _cabecalho(aba, COLUNAS_EFETIVA)
 
-    # CFOP → chave da regra → produto × operação, somando em cada nível.
+    # CFOP → CARGA EFETIVA EQUALIZADA → produto × operação, somando em cada
+    # nível. A carga é a chave nos dois regimes: é a grandeza que o documento
+    # traz depois da equalização, e é por ela que a conferência manual olha.
     arvore: dict = {}
     for apurada in entradas:
         cfop = apurada.tratada.origem.cfop_int
-        valor = _valor_da_chave(apurada, chave)
+        carga = apurada.tratada.carga.carga
         produto = (_nome_do_produto(apurada), _rotulo_atividade(apurada))
-        por_cfop = arvore.setdefault(cfop, {"descricao": "", "chaves": {}})
+        por_cfop = arvore.setdefault(cfop, {"descricao": "", "cargas": {}})
         por_cfop["descricao"] = por_cfop["descricao"] or _descricao_cfop(apurada)
-        por_chave = por_cfop["chaves"].setdefault(valor, {})
-        por_chave.setdefault(produto, Somas()).somar(apurada)
+        por_carga = por_cfop["cargas"].setdefault(carga, {})
+        por_carga.setdefault(produto, Somas()).somar(
+            apurada, _percentual_nominal(apurada, regime)
+        )
 
-    geral = Somas()
+    geral, linhas_de_cfop = Somas(), []
     for cfop in sorted(arvore, key=lambda c: (c is None, c or 0)):
         ramo = arvore[cfop]
-        do_cfop = _agregar(ramo["chaves"].values())
-        _linha_de_grupo(aba, do_cfop, nivel=0,
-                        chave=cfop if cfop is not None else "(sem CFOP)",
-                        descricao=ramo["descricao"])
-        for valor in sorted(ramo["chaves"], key=lambda v: (v is None, v or 0)):
-            produtos = ramo["chaves"][valor]
-            _linha_de_grupo(aba, _agregar([produtos]), nivel=1,
-                            valor_da_chave=valor)
-            for (produto, operacao) in sorted(
-                produtos, key=lambda p: (p[0].casefold(), p[1])
-            ):
-                _linha_de_produto(aba, produtos[(produto, operacao)],
-                                  valor, produto, operacao)
-        geral = _agregar([{"": do_cfop}], inicial=geral)
+        do_cfop = _agregar(ramo["cargas"].values())
+        linha_cfop = _linha_de_grupo(
+            aba, do_cfop, nivel=0,
+            chave=cfop if cfop is not None else "(sem CFOP)",
+            descricao=ramo["descricao"],
+        )
+        linhas_de_carga = []
+        for carga in sorted(ramo["cargas"], key=lambda v: (v is None, v or 0)):
+            produtos = ramo["cargas"][carga]
+            linha_carga = _linha_de_grupo(
+                aba, _agregar([produtos]), nivel=1, valor_da_chave=carga
+            )
+            folhas = [
+                _linha_de_produto(aba, produtos[chave], carga, *chave)
+                for chave in sorted(produtos, key=lambda p: (p[0].casefold(), p[1]))
+            ]
+            _somatorio(aba, linha_carga, folhas)
+            linhas_de_carga.append(linha_carga)
+        _somatorio(aba, linha_cfop, linhas_de_carga)
+        linhas_de_cfop.append(linha_cfop)
+        geral.absorver(do_cfop)
 
-    _linha_de_grupo(aba, geral, nivel=0, chave="TOTAL", negrito=True)
+    linha_total = _linha_de_grupo(aba, geral, nivel=0, chave="TOTAL", negrito=True)
+    _somatorio(aba, linha_total, linhas_de_cfop)
     _blocos_de_fechamento(aba, filial)
 
 
@@ -253,12 +307,7 @@ def _agregar(grupos, inicial: Somas | None = None) -> Somas:
     total = inicial or Somas()
     for grupo in grupos:
         for parcial in grupo.values():
-            total.contabil += parcial.contabil
-            total.base += parcial.base
-            total.icms += parcial.icms
-            total.estornar += parcial.estornar
-            total.apropriar += parcial.apropriar
-            total.documentos += parcial.documentos
+            total.absorver(parcial)
     return total
 
 
@@ -274,103 +323,178 @@ def _percentual(valor: float | None) -> str:
     return "" if valor is None else f"{valor:g}%"
 
 
+def _somatorio(aba, linha: int, filhas: list[int]) -> None:
+    """Troca os valores colados do grupo por SOMA das linhas que o compõem.
+
+    O motor continua sendo quem calcula; a planilha passa a mostrar de onde
+    cada total veio, e recalcula sozinha se alguém mexer numa linha.
+    """
+    if not filhas:
+        return
+    contiguas = filhas == list(range(filhas[0], filhas[-1] + 1))
+    for coluna, letra in LETRA.items():
+        alvo = (
+            f"{letra}{filhas[0]}:{letra}{filhas[-1]}" if contiguas
+            else ",".join(f"{letra}{f}" for f in filhas)
+        )
+        aba.cell(row=linha, column=coluna).value = f"=SUM({alvo})"
+
+
+def _derivadas(aba, linha: int) -> None:
+    """As três colunas que são identidade, não regra — vão como fórmula.
+
+    a apropriar = crédito − a estornar
+    % efetivo   = a estornar ÷ crédito
+    CHECK       = a estornar + a apropriar − crédito
+    """
+    aba.cell(row=linha, column=COL_APROPRIAR).value = f"=G{linha}-K{linha}"
+    aba.cell(row=linha, column=COL_EFETIVO).value = (
+        f'=IF(G{linha}=0,"",K{linha}/G{linha})'
+    )
+    aba.cell(row=linha, column=COL_CHECK).value = (
+        f"=ROUND(K{linha}+L{linha}-G{linha},2)"
+    )
+
+
+def _formatos_da_linha(aba, linha: int) -> None:
+    _moeda(aba, linha, range(COL_CONTABIL, COL_ICMS + 1))
+    _moeda(aba, linha, range(COL_ESTORNAR, COL_APROPRIAR + 1))
+    aba.cell(row=linha, column=COL_CHECK).number_format = MOEDA
+    for coluna in (COL_REGRA, COL_EFETIVO):
+        aba.cell(row=linha, column=coluna).number_format = PERCENTUAL
+
+
 def _linha_de_grupo(
     aba, somas: Somas, *, nivel: int, chave=None, descricao: str = "",
     valor_da_chave: float | None = None, negrito: bool = False,
-) -> None:
+) -> int:
     aba.append([
         chave if nivel == 0 else "", descricao,
         _percentual(valor_da_chave) if nivel else "", "",
-        somas.contabil, somas.base, somas.icms, "", somas.percentual,
-        somas.estornar, somas.apropriar, somas.check,
+        somas.contabil, somas.base, somas.icms, "",
+        somas.nominal, None, somas.estornar, None, None,
     ])
     linha = aba.max_row
-    _moeda(aba, linha, range(5, 8))
-    _moeda(aba, linha, range(10, 13))
-    aba.cell(row=linha, column=9).number_format = PERCENTUAL
+    _derivadas(aba, linha)
+    _formatos_da_linha(aba, linha)
     for celula in aba[linha]:
         celula.font = Font(bold=True)
         if nivel == 0 and not negrito:
             celula.fill = FUNDO_CLARO
     if nivel:
         aba.row_dimensions[linha].outlineLevel = 1
+    return linha
 
 
 def _linha_de_produto(
     aba, somas: Somas, valor_da_chave: float | None, produto: str, operacao: str
-) -> None:
+) -> int:
     aba.append([
         "", "", _percentual(valor_da_chave), produto,
-        somas.contabil, somas.base, somas.icms, operacao, somas.percentual,
-        somas.estornar, somas.apropriar, somas.check,
+        somas.contabil, somas.base, somas.icms, operacao,
+        somas.nominal, None, somas.estornar, None, None,
     ])
     linha = aba.max_row
-    _moeda(aba, linha, range(5, 8))
-    _moeda(aba, linha, range(10, 13))
-    aba.cell(row=linha, column=9).number_format = PERCENTUAL
+    _derivadas(aba, linha)
+    _formatos_da_linha(aba, linha)
     aba.row_dimensions[linha].outlineLevel = 2
     if abs(somas.check) >= 0.005:
-        aba.cell(row=linha, column=12).font = VERMELHO
+        aba.cell(row=linha, column=COL_CHECK).font = VERMELHO
+    return linha
 
 
 def _blocos_de_fechamento(aba, filial) -> None:
-    """Créditos e débitos por atividade — o fechamento que a GIA pede."""
+    """Créditos e débitos por classificação — o fechamento que a GIA pede.
+
+    A carga efetiva de cada classificação é a MÉDIA PONDERADA pelo valor
+    contábil das linhas que entraram nela: onde a classificação tem uma carga
+    só, o número sai redondo; onde mistura, o resultado diz onde ela está.
+    """
     por_atividade: dict[str, dict[str, float]] = {}
     for a in filial.apuradas:
         chave = _rotulo_atividade(a)
         alvo = por_atividade.setdefault(
             chave, {"bc_credito": 0.0, "credito": 0.0, "estorno": 0.0,
-                    "bc_debito": 0.0, "debito": 0.0}
+                    "bc_debito": 0.0, "debito": 0.0,
+                    "contabil": 0.0, "contabil_x_carga": 0.0}
         )
         base = _numero(a.tratada.origem.dados.get("base_icms"))
         if a.resultado.credito_bruto:
             alvo["bc_credito"] += base
             alvo["credito"] += a.resultado.credito_bruto
             alvo["estorno"] += a.credito_a_estornar
+            contabil = _numero(a.tratada.origem.dados.get("valor_contabil"))
+            carga = a.tratada.carga.carga
+            if carga is not None:
+                alvo["contabil"] += contabil
+                alvo["contabil_x_carga"] += contabil * carga
         if a.resultado.debito:
             alvo["bc_debito"] += base
             alvo["debito"] += a.resultado.debito
 
     _vazio(aba)
-    _titulo(aba, "CRÉDITOS", 6, fundo=FUNDO_CLARO, fonte=Font(bold=True))
-    _cabecalho(aba, ["", "Atividade", "BC ICMS", "VLR ICMS", "ESTORNO ICMS",
-                     "A APROPRIAR"])
-    soma = [0.0, 0.0, 0.0]
+    _titulo(aba, "CRÉDITOS", 7, fundo=FUNDO_CLARO, fonte=Font(bold=True))
+    _cabecalho(aba, ["", "Classificação", "Carga efetiva", "BC ICMS",
+                     "VLR ICMS", "ESTORNO ICMS", "A APROPRIAR"])
+    primeira, soma = aba.max_row + 1, [0.0, 0.0, 0.0]
     for nome in sorted(por_atividade):
         v = por_atividade[nome]
         if not v["credito"]:
             continue
-        aba.append(["", nome, v["bc_credito"], v["credito"], v["estorno"],
-                    v["credito"] - v["estorno"]])
-        _moeda(aba, aba.max_row, range(3, 7))
+        aba.append(["", nome, _carga_media(v), v["bc_credito"], v["credito"],
+                    v["estorno"]])
+        linha = aba.max_row
+        aba.cell(row=linha, column=7).value = f"=E{linha}-F{linha}"
+        _moeda(aba, linha, range(4, 8))
+        aba.cell(row=linha, column=3).number_format = PERCENTUAL
         soma = [soma[0] + v["bc_credito"], soma[1] + v["credito"],
                 soma[2] + v["estorno"]]
-    aba.append(["", "TOTAL", soma[0], soma[1], soma[2], soma[1] - soma[2]])
-    _moeda(aba, aba.max_row, range(3, 7))
-    for celula in aba[aba.max_row]:
+    aba.append(["", "TOTAL", None, soma[0], soma[1], soma[2]])
+    linha = aba.max_row
+    if linha > primeira:
+        for coluna, letra in ((4, "D"), (5, "E"), (6, "F")):
+            aba.cell(row=linha, column=coluna).value = (
+                f"=SUM({letra}{primeira}:{letra}{linha - 1})"
+            )
+    aba.cell(row=linha, column=7).value = f"=E{linha}-F{linha}"
+    _moeda(aba, linha, range(4, 8))
+    for celula in aba[linha]:
         celula.font = Font(bold=True)
 
     _vazio(aba)
-    _titulo(aba, "DÉBITOS", 6, fundo=FUNDO_CLARO, fonte=Font(bold=True))
-    _cabecalho(aba, ["", "Atividade", "BC ICMS", "VLR ICMS"])
-    soma_debito = [0.0, 0.0]
+    _titulo(aba, "DÉBITOS", 7, fundo=FUNDO_CLARO, fonte=Font(bold=True))
+    _cabecalho(aba, ["", "Classificação", "", "BC ICMS", "VLR ICMS"])
+    primeira, soma_debito = aba.max_row + 1, [0.0, 0.0]
     for nome in sorted(por_atividade):
         v = por_atividade[nome]
         if not v["debito"]:
             continue
-        aba.append(["", nome, v["bc_debito"], v["debito"]])
-        _moeda(aba, aba.max_row, range(3, 5))
+        aba.append(["", nome, None, v["bc_debito"], v["debito"]])
+        _moeda(aba, aba.max_row, range(4, 6))
         soma_debito = [soma_debito[0] + v["bc_debito"], soma_debito[1] + v["debito"]]
-    aba.append(["", "TOTAL", soma_debito[0], soma_debito[1]])
-    _moeda(aba, aba.max_row, range(3, 5))
-    for celula in aba[aba.max_row]:
+    aba.append(["", "TOTAL", None, soma_debito[0], soma_debito[1]])
+    linha = aba.max_row
+    if linha > primeira:
+        for coluna, letra in ((4, "D"), (5, "E")):
+            aba.cell(row=linha, column=coluna).value = (
+                f"=SUM({letra}{primeira}:{letra}{linha - 1})"
+            )
+    _moeda(aba, linha, range(4, 6))
+    for celula in aba[linha]:
         celula.font = Font(bold=True)
 
     if filial.beneficio:
         _vazio(aba)
-        _titulo(aba, "BENEFÍCIO FISCAL", 6, fundo=FUNDO_CLARO, fonte=Font(bold=True))
+        _titulo(aba, "BENEFÍCIO FISCAL", 7, fundo=FUNDO_CLARO, fonte=Font(bold=True))
         for passo in filial.beneficio.memoria:
             aba.append(["", passo])
+
+
+def _carga_media(valores: dict[str, float]) -> float | None:
+    """Carga efetiva do grupo, ponderada pelo valor contábil."""
+    if not valores["contabil"]:
+        return None
+    return valores["contabil_x_carga"] / valores["contabil"] / 100.0
 
 
 # --------------------------------------------------------------------------
@@ -441,21 +565,54 @@ def _bloco_de_valores(aba, bloco: reg.Bloco, verbo: str) -> None:
         aba.append([linha.cfop, linha.descricao, *linha.valores.as_tuple()])
         _moeda(aba, aba.max_row, range(3, 8))
 
+    subtotais = []
     for grupo in bloco.grupos():
         valores = bloco.subtotal(grupo)
         aba.append(["", f"Subtotal {grupo}", *valores.as_tuple()])
+        subtotais.append(aba.max_row)
         _moeda(aba, aba.max_row, range(3, 8))
         for celula in aba[aba.max_row]:
             celula.fill = FUNDO_CLARO
 
     aba.append(["", "TOTAL", *bloco.total.as_tuple()])
-    _moeda(aba, aba.max_row, range(3, 8))
-    for celula in aba[aba.max_row]:
+    linha = aba.max_row
+    # O TOTAL soma os subtotais na própria planilha: quem confere vê de onde
+    # ele veio, e o arquivo recalcula sozinho se alguém mexer numa linha.
+    if subtotais:
+        for coluna in range(3, 8):
+            letra = get_column_letter(coluna)
+            aba.cell(row=linha, column=coluna).value = (
+                f"=SUM({','.join(f'{letra}{n}' for n in subtotais)})"
+            )
+    _moeda(aba, linha, range(3, 8))
+    for celula in aba[linha]:
         celula.font = Font(bold=True)
 
 
 #: Linhas que consolidam as anteriores — vão na coluna "Somas".
 LINHAS_DE_SOMA = {4, 8, 10, 11, 13, 14}
+
+#: As três somas do resumo que são aritmética pura das linhas acima, e por isso
+#: podem ir como fórmula. A coluna de cada parcela vai junto: D é "Valores",
+#: onde a linha comum grava; E é "Somas", onde a linha consolidada grava.
+#:
+#: 011, 013 e 014 ficam de fora de propósito: dependem do SINAL do resultado —
+#: quem apura devedor preenche 011 e 013 e zera 014, quem apura credor faz o
+#: contrário. Isso é decisão do motor, não conta de planilha.
+SOMAS_DO_RESUMO = {
+    4: [("D", 1), ("D", 2), ("D", 3)],
+    8: [("D", 5), ("D", 6), ("D", 7)],
+    10: [("E", 8), ("D", 9)],
+}
+
+
+def _somar_no_resumo(aba, codigo: int, onde: dict[int, int]) -> None:
+    """Troca o valor colado da linha consolidada pela soma das parcelas."""
+    parcelas = SOMAS_DO_RESUMO.get(codigo)
+    if not parcelas or not all(c in onde for _, c in parcelas):
+        return
+    termos = "+".join(f"{letra}{onde[c]}" for letra, c in parcelas)
+    aba.cell(row=onde[codigo], column=5).value = f"={termos}"
 
 
 def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
@@ -472,6 +629,7 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
         ])
         aba.cell(row=aba.max_row, column=2).fill = FUNDO_ATENCAO
 
+    onde: dict[int, int] = {}
     for item in registro.resumo:
         soma = item.codigo in LINHAS_DE_SOMA
         aba.append([
@@ -480,7 +638,8 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
             item.valor if soma else None, "",
             "AGUARDA AJUSTE" if item.aguarda_ajuste else "",
         ])
-        linha = aba.max_row
+        linha = onde[item.codigo] = aba.max_row
+        _somar_no_resumo(aba, item.codigo, onde)
         _moeda(aba, linha, range(3, 6))
         if soma:
             for celula in aba[linha]:

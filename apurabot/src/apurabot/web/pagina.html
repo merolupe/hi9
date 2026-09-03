@@ -264,7 +264,6 @@ function desenhar(d){
     ${ficha("Alertas", inteiro.format(d.alertas))}
   </div></section>`);
 
-  partes.push(serieDoAno(d.serie));
   if (d.pendencias.length) partes.push(pendencias(d.pendencias));
   partes.push(porFilial(d.filiais));
   partes.push(saldoCredor(d));
@@ -273,6 +272,10 @@ function desenhar(d){
   partes.push(registros(d.registros));
   if (d.transferencias.length) partes.push(transferencias(d.transferencias));
   if (d.beneficios.length) partes.push(beneficios(d.beneficios));
+
+  // O ano fica por último: é o painel que ninguém precisa ler para conferir a
+  // competência, e ele empurrava a apuração para baixo da dobra.
+  partes.push(serieDoAno(d.serie));
 
   partes.push(`<section><h2>Procedência</h2>
     <div style="font-size:13.5px; color:var(--suave)">

@@ -13,10 +13,15 @@ calculado.
 Ordem de avaliação: descrição primeiro, CFOP depois. O que não casar em nenhuma
 regra recebe `SEM REGRA` e bloqueia o encerramento da competência.
 
+Uma regra de descrição pode declarar `vigencia_inicio` e `vigencia_fim`: aí é a
+data do movimento do documento que decide se ela se aplica. É o que permite
+mudar a classificação de agosto em diante sem alterar o que julho já declarou.
+
 As listas de CFOP e as finalidades de frete vêm de `parametros/regimes.yaml`.
 """
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
 from typing import Any
 
@@ -73,7 +78,10 @@ def classificar(
     # frete carrega — e é o que ele carrega que define a atividade. Frete de
     # insumo é industrial; frete de venda é comercial, no mesmo CFOP 2352.
     descricao = str(linha.dados.get("produto_descricao") or "").casefold()
+    data = linha.dados.get("data_movimento")
     for regra in mapa.get("por_descricao") or []:
+        if not _vigente(regra, data):
+            continue
         alvos = set(regra.get("cfop") or [])
         if alvos and cfop not in alvos:
             continue
@@ -102,6 +110,35 @@ def classificar(
         ),
         destino=destino,
     )
+
+
+def _vigente(regra: dict[str, Any], data) -> bool:
+    """A regra vale na data do movimento do documento?
+
+    Regra sem vigência declarada vale sempre — é o caso da maioria. Onde há
+    `vigencia_inicio` ou `vigencia_fim`, é a data do documento que decide, para
+    que competência antiga continue reproduzível depois de a regra mudar. É a
+    regra 3 do repositório, e o que separa "a classificação mudou de agosto em
+    diante" de "a apuração de julho passou a dar outro número".
+    """
+    if not isinstance(data, dt.date):
+        return True
+    inicio, fim = _data(regra.get("vigencia_inicio")), _data(regra.get("vigencia_fim"))
+    if inicio and data < inicio:
+        return False
+    if fim and data > fim:
+        return False
+    return True
+
+
+def _data(valor) -> dt.date | None:
+    if isinstance(valor, dt.datetime):
+        return valor.date()
+    if isinstance(valor, dt.date):
+        return valor
+    if isinstance(valor, str) and valor.strip():
+        return dt.date.fromisoformat(valor.strip())
+    return None
 
 
 def _destino(cfop: int | None, mapa: dict[str, Any]) -> str | None:

@@ -1,16 +1,18 @@
 """As abas de conferência: o que elas prometem ao time fiscal."""
 from __future__ import annotations
 
+import re
+
 import openpyxl
 import pytest
 
 from apurabot.apuracao import apurar
 from apurabot.conferencia import (
-    CHAVE_DA_REGRA,
     EXCEDENTE,
     PROPORCIONAL,
     ROTULO_DA_ATIVIDADE,
-    _chave_do_regime,
+    _percentual_nominal,
+    _regime_da_filial,
     _rotulo_atividade,
 )
 from apurabot.nucleo import atividade as ativ
@@ -58,19 +60,51 @@ def test_a_soma_das_linhas_apuradas_e_o_total_da_filial(apuracao):
         )
 
 
-def test_a_conferencia_agrupa_pela_chave_da_regra_de_cada_regime(apuracao, parametros):
-    """Agrupar pela grandeza errada esconde o que se quer conferir.
+def test_a_conferencia_agrupa_sempre_pela_carga_efetiva(planilha):
+    """Os dois regimes agrupam pela carga efetiva equalizada.
 
-    Em MS o estorno é fração da alíquota; em SP é o excedente da carga efetiva
-    sobre a carga de saída. A coluna de agrupamento tem que seguir a regra.
+    Antes MS agrupava pela alíquota, e a mesma aba trazia duas grandezas
+    diferentes na mesma coluna. A carga efetiva é o que o documento traz depois
+    da equalização, e é por ela que a conferência manual olha nos dois estados.
     """
-    rb = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
-    assert _chave_do_regime(rb, parametros) == CHAVE_DA_REGRA[PROPORCIONAL]
-    assert _chave_do_regime(rb, parametros)[1] == "Alíquota"
+    aba = planilha["APURAÇÃO EFETIVA"]
+    cabecalhos = {
+        str(linha[2].value) for linha in aba.iter_rows(max_col=4)
+        if str(linha[0].value or "") == "CFOP"
+    }
+    assert cabecalhos == {"Carga efetiva"}, cabecalhos
 
+
+def test_o_percentual_da_regra_e_o_nominal_de_cada_regime(apuracao, parametros):
+    """`% da regra` é o número redondo, não a razão quebrada do documento.
+
+    Em SP é (carga − 4%) ÷ carga; em MS é 1 − 4 ÷ alíquota. As duas saem do
+    parâmetro do regime, nunca do resultado apurado.
+    """
     guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
-    assert _chave_do_regime(guara, parametros) == CHAVE_DA_REGRA[EXCEDENTE]
-    assert _chave_do_regime(guara, parametros)[1] == "Carga efetiva"
+    regime_sp = _regime_da_filial(guara, parametros)
+    assert regime_sp["formula_estorno"] == EXCEDENTE
+    por_carga = {
+        a.tratada.carga.carga: _percentual_nominal(a, regime_sp)
+        for a in guara.apuradas
+        if a.resultado.credito_bruto and a.tratada.carga.carga
+    }
+    assert por_carga[4.0] == pytest.approx(0.0)
+    assert por_carga[12.0] == pytest.approx(2 / 3)
+    assert por_carga[18.0] == pytest.approx(14 / 18)
+
+    rb = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
+    regime_ms = _regime_da_filial(rb, parametros)
+    assert regime_ms["formula_estorno"] == PROPORCIONAL
+    por_aliquota = {
+        float(a.tratada.origem.dados.get("aliquota_icms") or 0):
+            _percentual_nominal(a, regime_ms)
+        for a in rb.apuradas
+        if a.resultado.credito_bruto
+        and float(a.tratada.origem.dados.get("aliquota_icms") or 0)
+    }
+    assert por_aliquota[7.0] == pytest.approx(1 - 4 / 7)
+    assert por_aliquota[12.0] == pytest.approx(1 - 4 / 12)
 
 
 def test_a_parcela_de_ms_e_a_formula_da_regra(apuracao):
@@ -220,3 +254,122 @@ def test_o_resumo_diz_o_periodo_que_o_livro_cobre(base_julho):
     """Livro fechado ou pré-livro: quem lê o resultado precisa saber até onde vai."""
     assert base_julho.periodo == "01/07/2026 a 31/07/2026"
     assert base_julho.resumo()["periodo"] == base_julho.periodo
+
+
+# -- o que a rodada de agosto pediu -----------------------------------------
+
+def _avaliar(aba, coluna: str, linha: int) -> float:
+    """Avalia as fórmulas que a aba escreve — SUM, subtração e ROUND.
+
+    openpyxl grava fórmula, não resultado: para provar que a planilha entrega
+    o mesmo número que o motor, é preciso resolvê-las. São três formas, todas
+    escritas por `conferencia.py`, e nenhuma delas depende do Excel.
+    """
+    valor = aba[f"{coluna}{linha}"].value
+    if isinstance(valor, (int, float)):
+        return float(valor)
+    if not isinstance(valor, str) or not valor.startswith("="):
+        return 0.0
+
+    achado = re.fullmatch(r"=SUM\((.+)\)", valor)
+    if achado:
+        total = 0.0
+        for parte in achado.group(1).split(","):
+            if ":" in parte:
+                inicio, fim = parte.split(":")
+                total += sum(
+                    _avaliar(aba, inicio[0], n)
+                    for n in range(int(inicio[1:]), int(fim[1:]) + 1)
+                )
+            else:
+                total += _avaliar(aba, parte[0], int(parte[1:]))
+        return total
+
+    achado = re.fullmatch(r"=([A-Z])(\d+)-([A-Z])(\d+)", valor)
+    if achado:
+        a, b, c, d = achado.groups()
+        return _avaliar(aba, a, int(b)) - _avaliar(aba, c, int(d))
+
+    achado = re.fullmatch(r"=ROUND\(([A-Z])(\d+)\+([A-Z])(\d+)-([A-Z])(\d+),2\)", valor)
+    if achado:
+        a, b, c, d, e, f = achado.groups()
+        return round(
+            _avaliar(aba, a, int(b)) + _avaliar(aba, c, int(d))
+            - _avaliar(aba, e, int(f)),
+            2,
+        )
+    raise AssertionError(f"fórmula não reconhecida em {coluna}{linha}: {valor}")
+
+
+@pytest.fixture(scope="module")
+def com_formulas(base_julho, apuracao, tmp_path_factory):
+    """A mesma planilha, lida com as fórmulas em vez do valor calculado."""
+    destino = tmp_path_factory.mktemp("formulas") / "conferencia.xlsx"
+    escrever(base_julho, destino, apuracao)
+    return openpyxl.load_workbook(destino, data_only=False)
+
+
+def test_os_totais_da_aba_sao_formula_e_batem_com_o_motor(com_formulas, apuracao):
+    """Os totais deixaram de ser valor colado: agora somam as próprias linhas.
+
+    Quem confere precisa ver de onde cada total veio, e a planilha precisa
+    recalcular sozinha se alguém mexer numa linha. O que a fórmula resolve tem
+    que ser exatamente o que o motor apurou — é o que este teste prova, filial
+    por filial.
+    """
+    aba = com_formulas["APURAÇÃO EFETIVA"]
+    estabelecimento, conferidas = None, 0
+    for linha in aba.iter_rows(min_col=1, max_col=1):
+        texto = str(linha[0].value or "")
+        if "  —  " in texto:
+            estabelecimento = texto.split("  —  ")[0]
+        if texto != "TOTAL" or estabelecimento is None:
+            continue
+        n = linha[0].row
+        filial = apuracao.filiais[estabelecimento]
+        assert str(aba[f"E{n}"].value).startswith("=SUM("), estabelecimento
+        assert _avaliar(aba, "G", n) == pytest.approx(
+            filial.credito_bruto, abs=CENTAVO
+        ), estabelecimento
+        # A coluna soma o que não vira crédito: estorno da regra mais o
+        # crédito indevido, que fica em parcela própria na apuração.
+        assert _avaliar(aba, "K", n) == pytest.approx(
+            filial.estorno + filial.credito_indevido, abs=CENTAVO
+        ), estabelecimento
+        assert _avaliar(aba, "L", n) == pytest.approx(
+            filial.credito_mantido, abs=CENTAVO
+        ), estabelecimento
+        assert _avaliar(aba, "M", n) == pytest.approx(0.0, abs=CENTAVO)
+        conferidas += 1
+    # Filial sem crédito de entrada não tem tabela — e por isso não tem TOTAL.
+    com_credito = [f for f in apuracao.filiais.values() if f.credito_bruto]
+    assert conferidas == len(com_credito)
+
+
+def test_o_fechamento_traz_a_carga_efetiva_de_cada_classificacao(planilha):
+    """Cada linha do bloco CRÉDITOS diz em que carga aquela classificação está."""
+    aba = planilha["APURAÇÃO EFETIVA"]
+    cabecalhos = [
+        linha for linha in aba.iter_rows(max_col=7, values_only=True)
+        if linha[1] == "Classificação" and linha[2] == "Carga efetiva"
+    ]
+    assert cabecalhos, "o bloco CRÉDITOS não tem a coluna de carga efetiva"
+
+    # Matéria-prima em Guará entra toda a 4%: a média ponderada tem que ser 4%.
+    # Só o bloco CRÉDITOS: o de DÉBITOS não tem coluna de estorno nem de carga.
+    linhas = [
+        linha for linha in aba.iter_rows(max_col=7, values_only=True)
+        if linha[1] == "materia_prima" and linha[4] and linha[5] is not None
+    ]
+    assert linhas
+    assert all(l[2] == pytest.approx(0.04, abs=1e-6) for l in linhas), linhas
+
+
+def test_os_blocos_nao_ficam_colados(planilha, apuracao):
+    """Duas linhas em branco antes de cada estabelecimento."""
+    aba = planilha["APURAÇÃO EFETIVA"]
+    coluna = [linha[0].value for linha in aba.iter_rows(max_col=1)]
+    titulos = [i for i, v in enumerate(coluna) if "  —  " in str(v or "")]
+    assert len(titulos) == len(apuracao.filiais)
+    for i in titulos:
+        assert coluna[i - 1] is None and coluna[i - 2] is None, i

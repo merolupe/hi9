@@ -76,13 +76,19 @@ produtos:
   # ou do fornecedor (motivo 2). Enquanto não se sabe, o cadastro é por produto.
   # Se for do fornecedor, basta passar a entrada para a forma de lista.
   130030002:
-    categoria: produto_quimico
+    categoria: materia_prima
     descricao: ÁCIDO FOSFÓRICO RAFINADO
     fornecedor_observado: ICL ADITIVOS E INGREDIENTES LTDA
+    homologado: true
     observacao: >
-      O mesmo fornecedor também vende item classificado como matéria-prima
-      (HiPhós 21 TQ Granel), então o não enquadramento deste produto não pode
-      ser atribuído ao fornecedor sem confirmação.
+      Corrigido em 03/09/2026 pela Gerência Fiscal/Tributária: é matéria-prima
+      enquadrada. A classificação anterior como produto químico veio de julho,
+      onde algumas notas chegaram com ICMS incorreto e induziram o
+      enquadramento errado. O produto entra com base reduzida — carga efetiva
+      de 4% —, que é o próprio benefício de fertilizante aplicado na origem.
+      Não estorna. Como a carga já é 4%, a correção não muda o valor de nenhuma
+      competência apurada; muda o enquadramento, que passa a estar certo se o
+      produto algum dia entrar acima de 4%.
   132010068:
     categoria: produto_quimico
     descricao: MAX OIL MT - Aditivo Recobrimento Granel

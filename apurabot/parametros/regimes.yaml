@@ -201,10 +201,41 @@ atividades:
     # frete carrega — e é o que ele carrega que define a atividade. Por isso a
     # descrição vence o CFOP quando casa: frete de insumo é industrial e frete
     # de venda é comercial, dentro do mesmo CFOP de serviço de transporte.
+    #
+    # O CRITÉRIO É CUSTO × DESPESA, confirmado pela Gerência Fiscal/Tributária
+    # em 03/09/2026: frete que entra como CUSTO é produção; frete de venda, que
+    # é DESPESA, é comercial. A própria descrição do CT-e no Sankhya marca isso
+    # com "(Custo)" no fim — é o que estas regras leem.
+    #
+    #   Fretes sobre Compra de Insumos (Custo) .......... custo    → industrial
+    #   Fretes sobre Transf/ Remessa/ Retorno (Custo) ... custo    → industrial
+    #   Fretes sobre Vendas ............................. despesa  → comercial
+    #
+    # Duas descrições que aparecem no Livro ficaram DE FORA de propósito, porque
+    # o critério não as resolve sozinho e a regra 4 do repositório proíbe
+    # adivinhar: "Fretes sobre Compras (Almoxarifado)", que é uso e consumo, e
+    # "Fretes sobre Transf/ Retorno - Venda conjunta", que não traz "(Custo)".
+    # As duas seguem pela atividade do CFOP. Ver decisão pendente nº 17.
     por_descricao:
       - contem: Fretes sobre Compra de Insumos
         atividade: industrial
         cfop: [1352, 2352, 1353, 2353]
+      - contem: Fretes sobre Transf/ Remessa/ Retorno
+        atividade: industrial
+        cfop: [1352, 2352, 1353, 2353]
+        vigencia_inicio: 2026-08-01
+        # VIGÊNCIA A PARTIR DE AGOSTO/2026, de propósito. A GIA de 07/2026 de
+        # Rio Brilhante classificou este frete como COMERCIAL, e é contra ela
+        # que a regressão de julho fecha. Aplicar o critério novo para trás
+        # mudaria o que já foi declarado: R$ 4.355,07 de crédito sairiam do
+        # comercial para o industrial, o estorno industrial subiria
+        # R$ 1.866,58 e o benefício cairia R$ 1.946,12. Se julho for
+        # retificado, é só apagar esta linha de vigência.
+      - contem: Fretes sobre Vendas
+        atividade: comercial
+        cfop: [1352, 2352, 1353, 2353]
+        # Sem vigência: é o que a apuração já fazia pelo CFOP. Fica explícito
+        # para o critério custo × despesa aparecer inteiro no parâmetro.
 
     # Os pares intra/inter andam juntos: se 5118 é industrial, 6118 também é.
     # Nada aqui é inferido do comportamento da apuração — cada CFOP está na
