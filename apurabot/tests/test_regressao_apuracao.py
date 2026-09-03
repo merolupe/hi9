@@ -293,8 +293,10 @@ def test_o_saldo_de_corumba_e_o_que_rio_brilhante_recebe_do_centralizador(apurac
     livro da centralizadora é o débito, positivo.
     """
     corumba = apuracao.filiais["HINOVE (CORUMBÁ- MS)"]
-    assert corumba.saldo == pytest.approx(-99_412.10, abs=CENTAVO)
-    assert corumba.a_recolher == pytest.approx(99_412.10, abs=CENTAVO)
+    assert corumba.saldo_individual == pytest.approx(-99_412.10, abs=CENTAVO)
+    # Depois de transferir, o Registro dele fecha em zero — e o saldo também.
+    assert corumba.saldo == 0.0
+    assert corumba.a_recolher == 0.0
     assert corumba.credor == 0.0
 
 
@@ -349,13 +351,18 @@ def test_o_saldo_traz_o_credor_como_positivo(apuracao):
     guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
     # Julho abre com os 1.782,53 da linha 009 do Registro de 07/2026.
     assert guara.saldo_credor_anterior == pytest.approx(1_782.53, abs=CENTAVO)
-    assert guara.saldo == pytest.approx(2_105_415.92, abs=CENTAVO)
-    assert guara.credor == pytest.approx(2_105_415.92, abs=CENTAVO)
+    # O individual é antes de centralizar; o saldo é depois, e é a linha 014.
+    assert guara.saldo_individual == pytest.approx(2_105_415.92, abs=CENTAVO)
+    assert guara.saldo == pytest.approx(1_805_854.97, abs=CENTAVO)
+    assert guara.credor == pytest.approx(1_805_854.97, abs=CENTAVO)
     assert guara.a_recolher == 0.0
 
     registro = apuracao.filiais["HINOVE (REGISTRO)"]
-    assert registro.saldo == pytest.approx(-299_450.70, abs=CENTAVO)
-    assert registro.a_recolher == pytest.approx(299_450.70, abs=CENTAVO)
+    assert registro.saldo_individual == pytest.approx(-299_450.70, abs=CENTAVO)
+    # É esse saldo devedor que vai para Guará: Registro fecha em zero, e o
+    # grupo deve uma vez só. Ver `test_o_grupo_deve_uma_vez_so`.
+    assert registro.saldo == 0.0
+    assert registro.a_recolher == 0.0
 
 
 def test_o_saldo_do_total_e_a_soma_dos_saldos_das_filiais(apuracao):

@@ -189,6 +189,10 @@ class ApuracaoFilial:
     difal_na_conta: float = 0.0
     #: O DIFAL desta UF entra na conta gráfica, ou é guia avulsa?
     difal_na_conta_grafica: bool = False
+    #: O que a centralização move neste estabelecimento, no sinal do caixa.
+    #: Negativo em quem recebe saldo devedor, positivo em quem o transfere.
+    #: Preenchido pela camada 9, depois que todos os saldos estão apurados.
+    efeito_da_centralizacao: float = 0.0
     #: Efeito líquido dos ajustes declarados sobre a conta, no sinal do caixa:
     #: as linhas 006 e 007 somam, as 002 e 003 subtraem. Não inclui o débito
     #: recebido por centralização, que é consequência da apuração e não parte
@@ -229,8 +233,13 @@ class ApuracaoFilial:
         return self.difal - self.difal_na_conta
 
     @property
-    def saldo(self) -> float:
-        """Convenção de caixa: **positivo é credor, negativo é devedor.**
+    def saldo_individual(self) -> float:
+        """O que o estabelecimento apurou sozinho, antes de centralizar.
+
+        É o número que entra na centralização — e só isso. Quem lê o resultado
+        quer o saldo FINAL, que é `saldo`.
+
+        Convenção de caixa: **positivo é credor, negativo é devedor.**
 
         Saldo credor é dinheiro a favor — crédito que se leva para o mês
         seguinte. Saldo devedor sai do caixa. Por isso o sinal é o do efeito
@@ -250,8 +259,7 @@ class ApuracaoFilial:
         unidade que fez a entrada, e é o saldo dela, já com o DIFAL, que vai
         para o grupo.
 
-        Sem o débito recebido por centralização: esse é consequência da
-        apuração, não parte dela.
+        Sem o efeito da centralização: esse vem depois, em `saldo`.
         """
         return (
             self.credito_mantido
@@ -261,6 +269,22 @@ class ApuracaoFilial:
             - self.debito
             - self.difal_na_conta
         )
+
+    @property
+    def saldo(self) -> float:
+        """O saldo FINAL — o mesmo que a linha 014 (ou 013) do Registro.
+
+        É o individual mais o que a centralização move: quem centraliza assume
+        o saldo devedor dos outros, quem é centralizado se desfaz do seu. Um
+        estabelecimento centralizado com saldo integralmente transferido fecha
+        em zero, como o documento dele mostra.
+
+        Este é o número que todo relatório mostra, porque é o que responde as
+        duas perguntas que se faz a uma apuração: quanto sai do caixa e quanto
+        se transporta. O saldo antes de centralizar é `saldo_individual`, e ele
+        aparece no bloco de centralização, onde faz sentido.
+        """
+        return self.saldo_individual + self.efeito_da_centralizacao
 
     @property
     def a_recolher(self) -> float:
@@ -369,8 +393,27 @@ class Apuracao:
 
     @property
     def saldos(self) -> dict[str, float]:
-        """Saldo individual de cada estabelecimento, antes da centralização."""
-        return {f.estabelecimento: f.saldo for f in self.filiais.values()}
+        """Saldo individual de cada estabelecimento, antes da centralização.
+
+        É o que a camada de centralização consome. Depois dela, `filial.saldo`
+        já é o final.
+        """
+        return {f.estabelecimento: f.saldo_individual for f in self.filiais.values()}
+
+    @property
+    def a_recolher(self) -> float:
+        """O que sai do caixa no grupo inteiro.
+
+        É a SOMA do que cada estabelecimento recolhe, não o saldo total com o
+        sinal trocado: filial credora não paga a conta de outra devedora fora
+        da centralização, e por isso os dois números são diferentes.
+        """
+        return sum(f.a_recolher for f in self.filiais.values())
+
+    @property
+    def credor(self) -> float:
+        """O crédito que o grupo transporta — a soma das linhas 014."""
+        return sum(f.credor for f in self.filiais.values())
 
     @property
     def instrucoes_de_centralizacao(self) -> list[str]:
@@ -525,8 +568,14 @@ def apurar(
     )
 
     # Camada 9 — centralização. Vem por último porque opera sobre o saldo já
-    # apurado de cada estabelecimento.
+    # apurado de cada estabelecimento. Depois dela, `filial.saldo` é o final:
+    # o mesmo que o Registro de Apuração daquele estabelecimento fecha.
     apuracao.centralizacao = centr.calcular(apuracao.saldos, params)
+    for nome, filial in filiais.items():
+        lancamentos = apuracao.centralizacao_no_registro(nome)
+        filial.efeito_da_centralizacao = (
+            lancamentos.total_006 - lancamentos.total_002
+        )
     return apuracao
 
 

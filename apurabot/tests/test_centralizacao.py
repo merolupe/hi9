@@ -284,7 +284,7 @@ def test_quem_transfere_tambem_lanca(base_julho, parametros):
 
     corumba = registros["HINOVE (CORUMBÁ- MS)"]
     rb = registros["HINOVE (RIO BRILHANTE)"]
-    transferido = -apuracao.filiais["HINOVE (CORUMBÁ- MS)"].saldo
+    transferido = -apuracao.filiais["HINOVE (CORUMBÁ- MS)"].saldo_individual
 
     # Quem transfere: linha 006, e o documento fecha zerado.
     assert corumba.linha(6).valor == pytest.approx(transferido, abs=0.005)

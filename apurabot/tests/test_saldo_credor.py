@@ -35,15 +35,19 @@ CODIGO_LONDRINA = 7
 
 #: Linha 009 do Registro de 07/2026 de Guará.
 ABERTURA = 1_782.53
-#: O que o Livro de julho produz em Guará, já com o DIFAL de SP na conta.
+#: O que o Livro de julho produz em Guará, já com o DIFAL de SP na conta,
+#: antes de centralizar.
 DO_PERIODO = 2_103_633.39
-#: O saldo individual da filial: o do mês mais a abertura.
-A_TRANSPORTAR = DO_PERIODO + ABERTURA
-#: A linha 014 do registro é menor: ela traz na 002 o DIFAL da própria unidade
-#: e o saldo devedor que Guará recebe de Registro e Matriz por centralizar SP.
-#: O saldo individual da filial é antes da transferência; o registro é depois.
+#: O saldo INDIVIDUAL: o do mês mais a abertura, antes de centralizar.
+INDIVIDUAL = DO_PERIODO + ABERTURA
+#: O saldo devedor que Guará recebe de Registro e Matriz por centralizar SP.
+RECEBIDO = 299_560.95
+#: A linha 002 traz o DIFAL da própria unidade mais o recebido.
 LINHA_002 = 303_470.87
+#: A linha 014 — o saldo FINAL, depois da centralização. É o que `filial.saldo`
+#: devolve e o que todo relatório mostra: INDIVIDUAL − RECEBIDO.
 LINHA_014 = 1_805_854.97
+A_TRANSPORTAR = LINHA_014
 
 #: Linha 009 do Registro de 07/2026 de Londrina.
 ABERTURA_LONDRINA = 327_121.97
@@ -97,8 +101,11 @@ def test_a_abertura_e_indexada_pelo_codigo_da_empresa(base_julho, parametros):
     apuracao = apurar(base_julho, p)
     guara = apuracao.filiais[GUARA]
     assert guara.saldo_credor_anterior == pytest.approx(1_000.0)
-    # E o que abre soma no que se transporta: 014 = 009 + o do período.
-    assert guara.credor == pytest.approx(DO_PERIODO + 1_000.0, abs=CENTAVO)
+    # E o que abre soma no que se transporta: 014 = 009 + o do período,
+    # já descontado o saldo devedor recebido por centralizar SP.
+    assert guara.credor == pytest.approx(
+        DO_PERIODO + 1_000.0 - RECEBIDO, abs=CENTAVO
+    )
 
 
 def test_competencia_nao_declarada_e_diferente_de_declarada_em_zero(parametros):
@@ -120,9 +127,17 @@ def test_a_competencia_vizinha_sai_da_propria_competencia(apuracao):
 def test_guara_abre_julho_com_o_que_o_registro_declara(apuracao):
     guara = apuracao.filiais[GUARA]
     assert guara.saldo_credor_anterior == pytest.approx(ABERTURA, abs=CENTAVO)
-    assert guara.saldo_do_periodo == pytest.approx(DO_PERIODO, abs=CENTAVO)
-    assert guara.credor == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
+
+    # O que o Livro produziu sozinho, antes de centralizar.
+    assert guara.saldo_individual - guara.saldo_credor_anterior == pytest.approx(
+        DO_PERIODO, abs=CENTAVO
+    )
+    assert guara.saldo_individual == pytest.approx(INDIVIDUAL, abs=CENTAVO)
+
+    # E o que ele transporta de fato, depois de absorver SP: a linha 014.
+    assert guara.credor == pytest.approx(LINHA_014, abs=CENTAVO)
     assert guara.a_recolher == 0.0
+    assert guara.efeito_da_centralizacao == pytest.approx(-RECEBIDO, abs=CENTAVO)
 
 
 def test_a_linha_014_do_registro_e_a_linha_009_do_mes_seguinte(apuracao, parametros):
@@ -216,8 +231,10 @@ def test_a_abertura_reduz_o_que_sai_do_caixa(base_julho, parametros):
     ajustes = AjustesDaApuracao(saldo_credor_anterior={"HINOVE (REGISTRO)": 100_000.0})
     apuracao = apurar(base_julho, parametros, ajustes)
     filial = apuracao.filiais["HINOVE (REGISTRO)"]
-    assert filial.a_recolher == pytest.approx(199_450.70, abs=CENTAVO)
+    assert filial.saldo_individual == pytest.approx(-199_450.70, abs=CENTAVO)
     assert filial.credor == 0.0
+    # O saldo final é zero: ele transfere tudo para Guará.
+    assert filial.a_recolher == 0.0
 
     registro = next(
         r for r in reg.montar(apuracao, parametros, ajustes)
@@ -266,7 +283,8 @@ def test_o_grupo_de_sp_consolida_com_a_abertura(apuracao):
     """A abertura é do estabelecimento e chega ao grupo pelo saldo dele."""
     sp = next(g for g in apuracao.centralizacao if g.uf == "SP")
     assert sp.centralizadora == GUARA
-    assert sp.saldo_proprio == pytest.approx(A_TRANSPORTAR, abs=CENTAVO)
+    # `saldo_proprio` da centralização é o INDIVIDUAL, antes de receber.
+    assert sp.saldo_proprio == pytest.approx(INDIVIDUAL, abs=CENTAVO)
     assert sp.saldo_final == pytest.approx(LINHA_014, abs=CENTAVO)
 
 
