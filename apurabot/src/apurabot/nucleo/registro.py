@@ -285,7 +285,10 @@ def _resumo(filial, apuracao, ajustes, params: Parametros) -> list[LinhaResumo]:
     def ajuste(campo: str) -> float:
         return ajustes.total(campo, nome) if ajustes else 0.0
 
-    recebido = apuracao.debito_por_centralizacao(nome)
+    # A centralização tem duas pontas, e as duas são lançadas: quem recebe
+    # assume o saldo na 002 ou na 006, quem transfere se desfaz dele na linha
+    # oposta. Sem a segunda ponta os dois Registros mostram a mesma dívida.
+    centralizacao = apuracao.centralizacao_no_registro(nome)
 
     l001 = LinhaResumo(1, "por Saídas/Prestações com Débito do Imposto", filial.debito)
 
@@ -293,7 +296,8 @@ def _resumo(filial, apuracao, ajustes, params: Parametros) -> list[LinhaResumo]:
     # declarado: vem calculado do Livro, como o débito de saída.
     difal = filial.difal_na_conta
     l002 = LinhaResumo(
-        2, "Outros Débitos", ajuste("outros_debitos") + recebido + difal
+        2, "Outros Débitos",
+        ajuste("outros_debitos") + centralizacao.total_002 + difal,
     )
     if difal:
         l002.discriminacao.append((
@@ -301,13 +305,12 @@ def _resumo(filial, apuracao, ajustes, params: Parametros) -> list[LinhaResumo]:
                  or "Diferencial de alíquota")),
             difal,
         ))
-    if recebido:
-        l002.discriminacao.append(
-            ("Recebimento de saldo devedor — estabelecimento centralizador", recebido)
-        )
+    l002.discriminacao.extend(centralizacao.na_linha_002)
     if ajuste("outros_debitos"):
         l002.discriminacao.append(("Outros débitos declarados", ajuste("outros_debitos")))
-    l002.aguarda_ajuste = not declarados and not recebido and not difal
+    l002.aguarda_ajuste = (
+        not declarados and not centralizacao.total_002 and not difal
+    )
 
     # O crédito indevido é crédito tomado que a regra manda devolver: no livro
     # ele mora na mesma linha do estorno.
@@ -325,8 +328,15 @@ def _resumo(filial, apuracao, ajustes, params: Parametros) -> list[LinhaResumo]:
     l005 = LinhaResumo(
         5, "por Entradas/Aquisições com Crédito do Imposto", filial.credito_bruto
     )
-    l006 = LinhaResumo(6, "Outros Créditos", ajuste("outros_creditos"))
-    l006.aguarda_ajuste = not declarados
+    l006 = LinhaResumo(
+        6, "Outros Créditos", ajuste("outros_creditos") + centralizacao.total_006
+    )
+    l006.discriminacao.extend(centralizacao.na_linha_006)
+    if ajuste("outros_creditos"):
+        l006.discriminacao.append(
+            ("Outros créditos declarados", ajuste("outros_creditos"))
+        )
+    l006.aguarda_ajuste = not declarados and not centralizacao.total_006
     l007 = LinhaResumo(7, "Estornos de Débitos", ajuste("estorno_de_debito"))
     l007.aguarda_ajuste = not declarados
 
@@ -343,17 +353,25 @@ def _resumo(filial, apuracao, ajustes, params: Parametros) -> list[LinhaResumo]:
 
     l010 = LinhaResumo(10, "Total", l008.valor + l009.valor)
 
-    devedor = max(l004.valor - l010.valor, 0.0)
+    # As quatro linhas de fechamento saem arredondadas ao centavo. O documento
+    # fiscal não tem casa abaixo dela, e a subtração de dois números grandes
+    # deixa resíduo de ponto flutuante: quem transfere o saldo inteiro fechava
+    # em 4,6e-10 em vez de zero.
+    devedor = round(max(l004.valor - l010.valor, 0.0), 2)
     l011 = LinhaResumo(11, "SALDO DEVEDOR (Débito menos Crédito)", devedor)
 
-    l012 = LinhaResumo(12, "DEDUÇÕES", min(filial.credito_presumido, devedor))
+    l012 = LinhaResumo(
+        12, "DEDUÇÕES", round(min(filial.credito_presumido, devedor), 2)
+    )
     if filial.beneficio:
         l012.discriminacao.append((filial.beneficio.documento, l012.valor))
 
-    l013 = LinhaResumo(13, "IMPOSTO A RECOLHER", max(l011.valor - l012.valor, 0.0))
+    l013 = LinhaResumo(
+        13, "IMPOSTO A RECOLHER", round(max(l011.valor - l012.valor, 0.0), 2)
+    )
     l014 = LinhaResumo(
         14, "SALDO CREDOR (Crédito menos Débito) a Transportar p/ o Período Seguinte",
-        max(l010.valor - l004.valor, 0.0),
+        round(max(l010.valor - l004.valor, 0.0), 2),
     )
 
     return [l001, l002, l003, l004, l005, l006, l007,

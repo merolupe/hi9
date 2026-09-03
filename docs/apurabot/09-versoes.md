@@ -29,7 +29,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.18 | 02/09/2026 | Centralização de SP homologada, DIFAL na conta gráfica e CFOP 2923 comercial |
 | 0.1.19 | 03/09/2026 | A rodada de agosto: conferência por carga efetiva, percentual da regra, totais em fórmula, frete de custo em MS |
 | 0.1.20 | 03/09/2026 | Decisão nº 17 respondida: almoxarifado e venda conjunta são despesa; julho não é retificado |
-| **0.1.21** | **03/09/2026** | **A conferência enxuta: uma coluna de percentual, sem CHECK, categoria com nome legível** |
+| 0.1.21 | 03/09/2026 | A conferência enxuta: uma coluna de percentual, sem CHECK, categoria com nome legível |
+| **0.1.22** | **03/09/2026** | **A centralização passa a lançar as duas pontas: quem transfere zera o próprio Registro** |
 
 ## 0.1.19 — o que mudou, em detalhe
 
@@ -96,3 +97,33 @@ teve.
 "Frete de Transferência"; `materia_prima` é "Matéria-Prima". A `BASE TRATADA`
 continua com o nome interno de propósito — é por ele que a ferramenta relê o
 próprio arquivo.
+
+## 0.1.22 — a centralização lança as duas pontas
+
+**Quem transfere também lança.** A centralizadora recebia o saldo na linha 002,
+mas o centralizado não se desfazia dele: fechava com a linha 013 devendo o
+mesmo valor que ela já tinha assumido. Quem lesse os dois Registros via o grupo
+pagando duas vezes.
+
+Agora o centralizado lança na linha oposta, com a redação do ERP:
+
+```
+Corumbá   006  45.695,15  Transferência de saldo devedor para
+                          estabelecimento centralizador       →  013 = 0,00
+Rio Brilh 002  45.695,15  Recebimento de saldo devedor —
+                          estabelecimento centralizador       →  013 = 460.870,70
+```
+
+O saldo do grupo não mudou; o que mudou é que ele aparece uma vez só. Em SP,
+Registro passa a fechar em 013 = 0,00 e Guará recebe os 209.981,15 na 002.
+
+A referência é o Registro de 07/2026 de Corumbá, emitido pelo ERP: linha 006 =
+99.412,10, com essa mesma redação, e 013 = 0,00.
+
+**Os dois sentidos.** O lançamento é simétrico: o centralizado que transfere
+saldo credor debita na 002, e a centralizadora o credita na 006 — que é o que o
+Registro de 06/2026 de Guará mostra, com 455.859,54 recebidos.
+
+**As linhas 011 a 014 saem arredondadas ao centavo.** O documento fiscal não
+tem casa abaixo dela, e quem transferia o saldo inteiro fechava em 4,6e-10 em
+vez de zero.

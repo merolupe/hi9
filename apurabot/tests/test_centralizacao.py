@@ -260,3 +260,60 @@ def test_a_convencao_de_sinal_e_a_do_caixa(parametros):
     assert por_origem[MATRIZ].saldo_individual > 0, "credor é positivo"
     assert "devedor" in por_origem[REGISTRO].instrucao
     assert "credor" in por_origem[MATRIZ].instrucao
+
+
+# -- as duas pontas do lançamento -------------------------------------------
+
+def test_quem_transfere_tambem_lanca(base_julho, parametros):
+    """A transferência aparece nos DOIS Registros, em linhas opostas.
+
+    Antes só a centralizadora lançava. O centralizado fechava devendo o mesmo
+    valor que ela já tinha assumido, e quem lesse os dois documentos via o
+    grupo pagando duas vezes — foi o que o Registro de Corumbá de 08/2026
+    mostrou.
+
+    O Registro de 07/2026 de Corumbá, emitido pelo ERP, traz a linha que
+    faltava: 006 = 99.412,10, "Transferência de saldo devedor para
+    estabelecimento centralizador", e fecha em 013 = 0,00.
+    """
+    from apurabot.apuracao import apurar
+    from apurabot.nucleo import registro as reg
+
+    apuracao = apurar(base_julho, parametros)
+    registros = {r.estabelecimento: r for r in reg.montar(apuracao, parametros)}
+
+    corumba = registros["HINOVE (CORUMBÁ- MS)"]
+    rb = registros["HINOVE (RIO BRILHANTE)"]
+    transferido = -apuracao.filiais["HINOVE (CORUMBÁ- MS)"].saldo
+
+    # Quem transfere: linha 006, e o documento fecha zerado.
+    assert corumba.linha(6).valor == pytest.approx(transferido, abs=0.005)
+    assert corumba.linha(13).valor == pytest.approx(0.0, abs=0.005)
+    assert any(
+        "Transferência de saldo devedor" in descricao
+        for descricao, _ in corumba.linha(6).discriminacao
+    ), corumba.linha(6).discriminacao
+
+    # Quem recebe: linha 002, com o mesmo valor.
+    assert rb.linha(2).valor >= transferido - 0.005
+    assert any(
+        "Recebimento de saldo devedor" in descricao
+        for descricao, _ in rb.linha(2).discriminacao
+    ), rb.linha(2).discriminacao
+
+
+def test_o_grupo_deve_uma_vez_so(base_julho, parametros):
+    """Somando os 013 de um grupo, o total é o do grupo — não o dobro."""
+    from apurabot.apuracao import apurar
+    from apurabot.nucleo import registro as reg
+
+    apuracao = apurar(base_julho, parametros)
+    registros = {r.estabelecimento: r for r in reg.montar(apuracao, parametros)}
+    for resultado in apuracao.centralizacao:
+        nomes = [resultado.centralizadora] + [
+            t.origem for t in resultado.transferencias
+        ]
+        soma = sum(registros[n].linha(13).valor for n in nomes if n in registros)
+        assert soma == pytest.approx(
+            max(-resultado.saldo_final, 0.0), abs=0.01
+        ), resultado.uf

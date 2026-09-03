@@ -206,8 +206,12 @@ def test_a_abertura_reduz_o_que_sai_do_caixa(base_julho, parametros):
     """Num estabelecimento devedor, o crédito de abertura abate o imposto.
 
     Registro fecha julho devendo 287.113,66. Com uma abertura hipotética de
-    100.000,00 o que sai do caixa cai na mesma medida — e a linha 013 do
-    registro acompanha.
+    100.000,00 o saldo da filial cai na mesma medida.
+
+    A linha 013 do Registro dele é outra coisa: Registro é centralizado em SP,
+    então o que sobra depois da abertura vai para Guará na linha 006, e o
+    documento fecha em zero. O saldo da FILIAL é antes de centralizar; a linha
+    013 do REGISTRO é depois.
     """
     ajustes = AjustesDaApuracao(saldo_credor_anterior={"HINOVE (REGISTRO)": 100_000.0})
     apuracao = apurar(base_julho, parametros, ajustes)
@@ -220,7 +224,8 @@ def test_a_abertura_reduz_o_que_sai_do_caixa(base_julho, parametros):
         if r.estabelecimento == "HINOVE (REGISTRO)"
     )
     assert registro.linha(9).valor == pytest.approx(100_000.0, abs=CENTAVO)
-    assert registro.linha(13).valor == pytest.approx(199_450.70, abs=CENTAVO)
+    assert registro.linha(6).valor == pytest.approx(199_450.70, abs=CENTAVO)
+    assert registro.linha(13).valor == pytest.approx(0.0, abs=CENTAVO)
 
 
 def test_o_ajuste_aprovado_prevalece_sobre_o_parametro(base_julho, parametros):
