@@ -36,7 +36,7 @@ entrega a apuração em `.xlsx`, com a memória de cálculo linha a linha.
 |---|---|
 | RESUMO | Procedência, volume, situação da equalização e categorias |
 | REGISTRO | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por filial e o totalizador do grupo |
-| APURAÇÃO EFETIVA | CFOP → alíquota → produto, com operação, parcela não tributada, ICMS a estornar, a apropriar e o CHECK |
+| APURAÇÃO EFETIVA | CFOP → carga efetiva → produto, com operação, % da regra, % efetivo, ICMS a estornar, a apropriar e o CHECK |
 | APURAÇÃO POR FILIAL | Crédito bruto, estorno, crédito indevido, mantido, débito e saldo — mais a memória do benefício, o FADEFE e a segregação por atividade |
 | TRANSFERÊNCIAS | O que transferir para a centralizadora depois de fechar a competência |
 | PENDÊNCIAS | O que bloqueia o encerramento da competência |

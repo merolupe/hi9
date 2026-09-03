@@ -113,3 +113,50 @@ def test_o_registro_traz_o_cabecalho_cadastrado(base_julho, parametros):
     registros = reg.montar(apurar(base_julho, parametros), parametros)
     for r in registros:
         assert r.cnpj and r.inscricao_estadual, r.estabelecimento
+
+
+# -- o frete de custo em MS, de agosto em diante ----------------------------
+#
+# Critério confirmado pela Gerência Fiscal/Tributária em 03/09/2026: em MS,
+# frete que entra como CUSTO é produção; frete de venda, que é DESPESA, é
+# comercial. A GIA de 07/2026 classificou o frete de transferência como
+# comercial, então a regra nova vale de 08/2026 em diante — e julho continua
+# reproduzindo o que foi declarado.
+
+FRETE_TRANSFERENCIA = dict(
+    cfop=2352,
+    produto="700000002",
+    produto_descricao="Fretes sobre Transf/ Remessa/ Retorno (Custo)",
+    valor_contabil=27_553.05, base_icms=27_553.05,
+    aliquota_icms=7.0, valor_icms=1_928.72,
+)
+
+import datetime as dt  # noqa: E402  (perto de quem usa)
+
+
+def test_frete_de_transferencia_em_ms_e_producao_de_agosto_em_diante(parametros):
+    mapa = mapa_da_uf("MS", parametros)
+    agosto = linha(**FRETE_TRANSFERENCIA, data_movimento=dt.date(2026, 8, 14))
+    assert classificar(agosto, mapa).atividade == INDUSTRIAL
+
+
+def test_em_julho_o_mesmo_frete_continua_comercial(parametros):
+    """Regra 3 do repositório: competência antiga não muda de número sozinha.
+
+    Se esta classificação mudasse para trás, o estorno industrial de julho
+    subiria R$ 1.866,58 e o benefício de Rio Brilhante cairia R$ 1.946,12
+    contra a GIA já declarada.
+    """
+    mapa = mapa_da_uf("MS", parametros)
+    julho = linha(**FRETE_TRANSFERENCIA, data_movimento=dt.date(2026, 7, 14))
+    assert classificar(julho, mapa).atividade == COMERCIAL
+
+
+def test_frete_de_venda_em_ms_e_comercial_nos_dois_meses(parametros):
+    """A outra ponta do critério: despesa é comercial, e sempre foi."""
+    mapa = mapa_da_uf("MS", parametros)
+    campos = dict(FRETE_TRANSFERENCIA, produto_descricao="Fretes sobre Vendas")
+    for data in (dt.date(2026, 7, 14), dt.date(2026, 8, 14)):
+        assert classificar(linha(**campos, data_movimento=data), mapa).atividade == (
+            COMERCIAL
+        )

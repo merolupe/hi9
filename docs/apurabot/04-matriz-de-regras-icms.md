@@ -63,6 +63,13 @@ Uma matéria-prima deixa de se enquadrar por dois motivos:
 > Fiscal**. É informação cadastral que o time fiscal detém, e é por isso que ela
 > vive num parâmetro e não numa heurística.
 
+**Um sinal prático:** entrada com base de cálculo reduzida que resulta em carga
+efetiva de 4% é o próprio benefício de fertilizante já aplicado na origem — o
+que aponta para `materia_prima`. Foi assim que o ÁCIDO FOSFÓRICO RAFINADO se
+mostrou mal classificado (ver decisão pendente nº 8). O sinal não decide
+sozinho, mas vale como conferência: produto químico de verdade entra acima de
+4%, e é lá que a categoria muda o valor do estorno.
+
 ### 2.2. Demais categorias
 
 | Categoria | O que é | Como o motor a reconhece |
@@ -144,10 +151,23 @@ nominal enquanto o crédito é o do documento. Uma entrada equalizada em 7% cuja
 carga real é 6,77% estorna 3 pontos sobre o contábil, o que dá 44,3% do
 crédito, e não os 42,9% que `1 − 4/7` sugeriria.
 
-Por isso a conferência agrupa **pela chave da regra de cada regime** — alíquota
-em MS, carga efetiva em SP — e nomeia a coluna de percentual de forma
-descritiva, "% do crédito estornado", nunca como parâmetro de uma regra que só
-existe em uma das UFs.
+Por isso a aba `APURAÇÃO EFETIVA` traz **duas colunas de percentual**, e não uma:
+
+| Coluna | O que é | SP | MS |
+|---|---|---|---|
+| **% da regra** | o nominal, antes de encontrar o documento | `(carga − 4%) ÷ carga` | `1 − 4 ÷ alíquota` |
+| **% efetivo** | o que saiu: `ICMS a estornar ÷ crédito` | quebrado | igual ao nominal |
+
+Em MS as duas coincidem, porque a regra devolve literalmente uma fração do
+crédito. Em SP não: o estorno incide sobre o contábil e o crédito veio da base
+de ICMS, que é menor, então o efetivo passa do nominal na razão contábil ÷ base.
+Uma entrada equalizada em 12% com contábil 862.582,30 e base 814.253,03 estorna
+69.006,58, que são 70,62% do crédito e não os 66,67% da regra.
+
+**O agrupamento é sempre pela carga efetiva equalizada**, nos dois regimes. É a
+grandeza que o documento traz depois da equalização e é por ela que a
+conferência manual olha. A alíquota continua sendo a chave do cálculo em MS —
+ela aparece no `% da regra`, não no agrupamento.
 
 ---
 
@@ -218,9 +238,32 @@ decide. Por isso a **descrição vence o CFOP** quando casa.
 
 | Atividade | Débito | Crédito |
 |---|---|---|
-| Industrial | CFOP de venda de produção do estabelecimento (5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122) | CFOP de compra para industrialização (1101, 2101, 3101, …), transferência para industrialização (1151, 2151, 3151) e frete de insumo |
-| Comercial | CFOP de venda de mercadoria de terceiros, remessa e retorno (5102, 6102, 5905, 6905, 5934, 6934, …) | CFOP de compra para comercialização (1102, 2102, 3102, …), transferência para comercialização (1152, 2152, 3152), fretes de venda e transferência |
+| Industrial | CFOP de venda de produção do estabelecimento (5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122) | CFOP de compra para industrialização (1101, 2101, 3101, …), transferência para industrialização (1151, 2151, 3151) e frete de custo |
+| Comercial | CFOP de venda de mercadoria de terceiros, remessa e retorno (5102, 6102, 5905, 6905, 5934, 6934, …) | CFOP de compra para comercialização (1102, 2102, 3102, …), transferência para comercialização (1152, 2152, 3152) e frete de venda |
 | Prestacional/Outras | Bonificação, doação, brinde e outras saídas (5910, 6910, 5949, 6949) | CIAP (1604, 2604) |
+
+#### O frete: custo é produção, despesa é comercial
+
+O critério que separa os fretes em MS é **custo × despesa**, e não o CFOP:
+
+| Descrição do CT-e | Natureza | Atividade |
+|---|---|---|
+| Fretes sobre Compra de Insumos (Custo) | custo | industrial |
+| Fretes sobre Transf/ Remessa/ Retorno (Custo) | custo | industrial |
+| Fretes sobre Vendas | despesa | comercial |
+
+A própria descrição do Sankhya marca o custo com "(Custo)" no fim, e é isso que
+`parametros/regimes.yaml` lê, no bloco `atividades.ms.por_descricao`.
+
+> **A regra do frete de transferência vale de 08/2026 em diante.** A GIA de
+> 07/2026 de Rio Brilhante o classificou como comercial, e é contra ela que a
+> regressão de julho fecha. Por isso a regra carrega `vigencia_inicio` — regra 3
+> do repositório. Ver decisão pendente nº 17, com o efeito de retificar julho.
+
+Duas descrições ficaram **de fora de propósito** — "Fretes sobre Compras
+(Almoxarifado)" e "Fretes sobre Transf/ Retorno - Venda conjunta" —, porque o
+critério não as resolve. Elas seguem a atividade do CFOP até o time fiscal
+decidir. Também na decisão pendente nº 17.
 
 O corte **intra/inter** vem do primeiro dígito do CFOP: 5 é interno, 6 é
 interestadual, 7 é exterior.

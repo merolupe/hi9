@@ -228,9 +228,22 @@ tabela dinâmica. Em Julho/2026, Rio Brilhante sai com os mesmos onze produtos d
 planilha manual e o mesmo Total Geral: 9.341.752,63 de contábil, 3.325.593,93 de
 BC, 469.903,05 de ICMS, 331.236,11 de estorno e 138.666,94 a apropriar.
 
-**Repare que a terceira coluna muda de nome** entre os blocos: **Alíquota** nos
-de MS, **Carga efetiva** nos de SP. Não é inconsistência — é a chave da regra de
-cada regime, e agrupar pela grandeza errada esconderia o que se quer conferir.
+**A terceira coluna é Carga efetiva em todos os blocos**, de MS e de SP. É a
+grandeza que o documento traz depois da equalização, e é por ela que a
+conferência manual olha nos dois estados.
+
+**As duas colunas de percentual** respondem a perguntas diferentes:
+
+- **% da regra** é o nominal — 66,67% para a carga de 12%, 77,78% para a de 18%.
+  Sai do parâmetro do regime, e é o número que se confere de cabeça.
+- **% efetivo** é `ICMS a estornar ÷ crédito`. Em MS bate com o nominal; em SP
+  passa dele, porque o estorno incide sobre o valor contábil e o crédito veio da
+  base de ICMS, que é menor.
+
+**Os totais são fórmula.** Clique em qualquer linha de subtotal, de CFOP ou de
+TOTAL: a barra mostra um `SUM` das linhas que a compõem, não um número colado.
+As colunas *ICMS a apropriar*, *% efetivo* e *CHECK* também são fórmula em todas
+as linhas. Mexa numa linha e a planilha recalcula.
 
 ---
 
