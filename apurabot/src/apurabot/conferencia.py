@@ -34,6 +34,57 @@ VERDE = Font(bold=True, color="1E7B34")
 
 ROTULO_SEM_ATIVIDADE = "(não segregada)"
 
+#: Como a categoria da operação aparece na conferência. O nome interno é
+#: `frete_transferencia`; quem lê a planilha lê "Frete de Transferência".
+#: A BASE TRATADA continua com o nome interno de propósito — é por ele que a
+#: ferramenta relê o próprio arquivo.
+ROTULO_DA_CATEGORIA = {
+    "ativo_imobilizado": "Ativo Imobilizado",
+    "ciap": "CIAP",
+    "complemento_icms": "Complemento de ICMS",
+    "complemento_preco": "Complemento de Preço",
+    "devolucao_compra": "Devolução de Compra",
+    "devolucao_uso_consumo": "Devolução de Uso e Consumo",
+    "devolucao_venda": "Devolução de Venda",
+    "embalagem": "Embalagem",
+    "frete_compra": "Frete de Compra",
+    "frete_compra_revenda": "Frete de Compra para Revenda",
+    "frete_transferencia": "Frete de Transferência",
+    "frete_venda": "Frete de Venda",
+    "industrializacao_terceiros": "Industrialização por Terceiros",
+    "insumo_energetico": "Insumo Energético",
+    "materia_prima": "Matéria-Prima",
+    "produto_acabado": "Produto Acabado",
+    "produto_quimico": "Produto Químico",
+    "quebra": "Quebra",
+    "retorno_industrializacao": "Retorno de Industrialização",
+    "revenda": "Revenda",
+    "uso_consumo": "Uso e Consumo",
+}
+
+#: Palavras que ficam em minúscula no meio do rótulo gerado automaticamente.
+LIGACOES = {"de", "da", "do", "das", "dos", "e", "por", "para", "em", "a"}
+
+
+def rotulo_da_categoria(categoria: str) -> str:
+    """O nome de exibição de uma categoria.
+
+    Categoria nova que ainda não está no mapa não fica com cara de código: o
+    nome interno é quebrado nos underscores e capitalizado, com as ligações em
+    minúscula. Cadastrar no mapa continua sendo melhor, porque acento e
+    hífen só saem certos lá.
+    """
+    nome = str(categoria or "").strip()
+    if not nome:
+        return ""
+    if nome in ROTULO_DA_CATEGORIA:
+        return ROTULO_DA_CATEGORIA[nome]
+    palavras = nome.split("_")
+    return " ".join(
+        p if i and p in LIGACOES else p.capitalize()
+        for i, p in enumerate(palavras)
+    )
+
 #: Como a atividade aparece na conferência — os nomes que o time fiscal usa.
 ROTULO_DA_ATIVIDADE = {
     ativ.INDUSTRIAL: "Produção",
@@ -100,81 +151,41 @@ def _vazio(aba) -> None:
 COLUNAS_EFETIVA = [
     "CFOP", "Descrição", "Carga efetiva", "Produto",
     "Vlr. contábil", "BC ICMS", "Vlr. ICMS", "Operação",
-    "% da regra", "% efetivo", "ICMS a estornar", "ICMS a apropriar", "CHECK",
+    "% do crédito estornado", "ICMS a estornar", "ICMS a apropriar",
 ]
 
 #: Colunas por letra, para montar as fórmulas.
 COL_CONTABIL, COL_BASE, COL_ICMS = 5, 6, 7
-COL_REGRA, COL_EFETIVO = 9, 10
-COL_ESTORNAR, COL_APROPRIAR, COL_CHECK = 11, 12, 13
-LETRA = {COL_CONTABIL: "E", COL_BASE: "F", COL_ICMS: "G", COL_ESTORNAR: "K"}
+COL_PERCENTUAL, COL_ESTORNAR, COL_APROPRIAR = 9, 10, 11
+LETRA = {COL_CONTABIL: "E", COL_BASE: "F", COL_ICMS: "G", COL_ESTORNAR: "J"}
 
 #: Fórmulas de estorno, como aparecem em `regimes.yaml`.
 PROPORCIONAL = "proporcional_parcela_nao_tributada"
 EXCEDENTE = "excedente_sobre_carga_saida"
-
-#: Onde cada regime guarda a carga de referência — os 4% que equilibram.
-REFERENCIA_DO_REGIME = {
-    EXCEDENTE: "carga_saida_referencia",
-    PROPORCIONAL: "carga_de_referencia",
-}
-
-
-def _regime_da_filial(filial, params) -> dict:
-    return (params.regimes.get("regimes") or {}).get(filial.regime) or {}
-
-
-def _percentual_nominal(apurada: LinhaApurada, regime: dict) -> float | None:
-    """O percentual que a REGRA manda estornar, antes de encontrar o documento.
-
-    É o número redondo que o time fiscal usa para conferir — 66,67% para a
-    carga de 12%, 77,78% para a de 18% — e não a razão entre o estorno apurado
-    e o crédito, que sai quebrada porque em SP a base do estorno é o valor
-    contábil e o crédito veio da base de ICMS, que é menor.
-
-    Quem quiser a razão tem a coluna `% efetivo` ao lado.
-    """
-    formula = regime.get("formula_estorno")
-    chave = REFERENCIA_DO_REGIME.get(formula)
-    if chave is None:
-        return None
-    referencia = _numero(regime.get(chave))
-
-    if formula == EXCEDENTE:
-        carga = apurada.tratada.carga.carga
-        if not carga:
-            return None
-        return max(carga - referencia, 0.0) / carga
-
-    # Proporcional: a parcela não tributada é 1 − referência ÷ alíquota, e a
-    # chave é a ALÍQUOTA — mesmo que a conferência agrupe por carga efetiva.
-    aliquota = _numero(apurada.tratada.origem.dados.get("aliquota_icms"))
-    if not aliquota:
-        return None
-    return max(1.0 - referencia / aliquota, 0.0)
 
 
 def _rotulo_atividade(apurada: LinhaApurada) -> str:
     if not apurada.atividade:
         # A UF não segrega por atividade: mostra a categoria da equalização,
         # que é o corte que faz sentido ali.
-        return apurada.tratada.classificacao.categoria or ROTULO_SEM_ATIVIDADE
+        return (
+            rotulo_da_categoria(apurada.tratada.classificacao.categoria)
+            or ROTULO_SEM_ATIVIDADE
+        )
     return ROTULO_DA_ATIVIDADE.get(apurada.atividade, apurada.atividade)
 
 
 class Somas:
     """Acumulador de um grupo da conferência."""
 
-    __slots__ = ("contabil", "base", "icms", "estornar", "apropriar",
-                 "documentos", "nominais")
+    __slots__ = ("contabil", "base", "icms", "estornar", "apropriar", "documentos")
 
     def __init__(self) -> None:
         self.contabil = self.base = self.icms = 0.0
         self.estornar = self.apropriar = 0.0
         self.documentos = 0
-        self.nominais: set = set()
 
-    def somar(self, apurada: LinhaApurada, nominal: float | None) -> None:
+    def somar(self, apurada: LinhaApurada) -> None:
         dados = apurada.tratada.origem.dados
         self.contabil += _numero(dados.get("valor_contabil"))
         self.base += _numero(dados.get("base_icms"))
@@ -182,8 +193,6 @@ class Somas:
         self.estornar += apurada.credito_a_estornar
         self.apropriar += apurada.credito_a_apropriar
         self.documentos += 1
-        if nominal is not None:
-            self.nominais.add(round(nominal, 6))
 
     def absorver(self, outra: "Somas") -> None:
         self.contabil += outra.contabil
@@ -192,12 +201,6 @@ class Somas:
         self.estornar += outra.estornar
         self.apropriar += outra.apropriar
         self.documentos += outra.documentos
-        self.nominais |= outra.nominais
-
-    @property
-    def nominal(self) -> float | None:
-        """O percentual da regra, quando o grupo inteiro tem um só."""
-        return next(iter(self.nominais)) if len(self.nominais) == 1 else None
 
     @property
     def percentual(self) -> float | None:
@@ -205,8 +208,14 @@ class Somas:
         return (self.estornar / self.icms) if self.icms else None
 
     @property
-    def check(self) -> float:
-        return round(self.estornar + self.apropriar - self.icms, 2) + 0.0
+    def fecha(self) -> bool:
+        """a estornar + a apropriar = crédito. Identidade do motor.
+
+        Não vira coluna na planilha: quem garante isso é o teste de regressão,
+        não uma célula que o leitor precisa conferir. Aqui serve só para pintar
+        de vermelho a linha que não fechar.
+        """
+        return abs(self.estornar + self.apropriar - self.icms) < 0.005
 
 
 def _numero(valor) -> float:
@@ -219,29 +228,26 @@ def _numero(valor) -> float:
 def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
     """Conferência do crédito, do estorno e da apropriação, por CFOP e produto."""
     aba = wb.create_sheet("APURAÇÃO EFETIVA")
-    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 18, 11, 11, 16, 16, 11])
+    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 26, 14, 16, 16])
 
     aba.append(["APURAÇÃO EFETIVA — crédito, estorno e apropriação por CFOP e produto"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
     aba.append([
         "Um bloco por estabelecimento, agregado como na apuração manual: uma "
-        "linha por produto, não por documento. `% da regra` é o percentual "
-        "nominal que a regra manda estornar; `% efetivo` é o que saiu sobre o "
-        "crédito. CHECK = a estornar + a apropriar − ICMS creditado; valor "
-        "diferente de zero é erro de motor."
+        "linha por produto, não por documento. `% do crédito estornado` é "
+        "`ICMS a estornar ÷ Vlr. ICMS`. Linha em vermelho é erro de motor: o "
+        "estorno mais a apropriação não fecham o crédito."
     ])
 
     for filial in sorted(
         apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
     ):
-        _bloco_efetiva(aba, filial, params)
+        _bloco_efetiva(aba, filial)
 
     aba.freeze_panes = "A3"
 
 
-def _bloco_efetiva(aba, filial, params) -> None:
-    regime = _regime_da_filial(filial, params)
-
+def _bloco_efetiva(aba, filial) -> None:
     # Respiro entre estabelecimentos — os blocos ficavam colados.
     _vazio(aba)
     _vazio(aba)
@@ -269,9 +275,7 @@ def _bloco_efetiva(aba, filial, params) -> None:
         por_cfop = arvore.setdefault(cfop, {"descricao": "", "cargas": {}})
         por_cfop["descricao"] = por_cfop["descricao"] or _descricao_cfop(apurada)
         por_carga = por_cfop["cargas"].setdefault(carga, {})
-        por_carga.setdefault(produto, Somas()).somar(
-            apurada, _percentual_nominal(apurada, regime)
-        )
+        por_carga.setdefault(produto, Somas()).somar(apurada)
 
     geral, linhas_de_cfop = Somas(), []
     for cfop in sorted(arvore, key=lambda c: (c is None, c or 0)):
@@ -341,27 +345,21 @@ def _somatorio(aba, linha: int, filhas: list[int]) -> None:
 
 
 def _derivadas(aba, linha: int) -> None:
-    """As três colunas que são identidade, não regra — vão como fórmula.
+    """As duas colunas que são identidade, não regra — vão como fórmula.
 
-    a apropriar = crédito − a estornar
-    % efetivo   = a estornar ÷ crédito
-    CHECK       = a estornar + a apropriar − crédito
+    % do crédito estornado = a estornar ÷ crédito
+    ICMS a apropriar       = crédito − a estornar
     """
-    aba.cell(row=linha, column=COL_APROPRIAR).value = f"=G{linha}-K{linha}"
-    aba.cell(row=linha, column=COL_EFETIVO).value = (
-        f'=IF(G{linha}=0,"",K{linha}/G{linha})'
+    aba.cell(row=linha, column=COL_PERCENTUAL).value = (
+        f'=IF(G{linha}=0,"",J{linha}/G{linha})'
     )
-    aba.cell(row=linha, column=COL_CHECK).value = (
-        f"=ROUND(K{linha}+L{linha}-G{linha},2)"
-    )
+    aba.cell(row=linha, column=COL_APROPRIAR).value = f"=G{linha}-J{linha}"
 
 
 def _formatos_da_linha(aba, linha: int) -> None:
     _moeda(aba, linha, range(COL_CONTABIL, COL_ICMS + 1))
     _moeda(aba, linha, range(COL_ESTORNAR, COL_APROPRIAR + 1))
-    aba.cell(row=linha, column=COL_CHECK).number_format = MOEDA
-    for coluna in (COL_REGRA, COL_EFETIVO):
-        aba.cell(row=linha, column=coluna).number_format = PERCENTUAL
+    aba.cell(row=linha, column=COL_PERCENTUAL).number_format = PERCENTUAL
 
 
 def _linha_de_grupo(
@@ -372,7 +370,7 @@ def _linha_de_grupo(
         chave if nivel == 0 else "", descricao,
         _percentual(valor_da_chave) if nivel else "", "",
         somas.contabil, somas.base, somas.icms, "",
-        somas.nominal, None, somas.estornar, None, None,
+        None, somas.estornar, None,
     ])
     linha = aba.max_row
     _derivadas(aba, linha)
@@ -392,14 +390,16 @@ def _linha_de_produto(
     aba.append([
         "", "", _percentual(valor_da_chave), produto,
         somas.contabil, somas.base, somas.icms, operacao,
-        somas.nominal, None, somas.estornar, None, None,
+        None, somas.estornar, None,
     ])
     linha = aba.max_row
     _derivadas(aba, linha)
     _formatos_da_linha(aba, linha)
     aba.row_dimensions[linha].outlineLevel = 2
-    if abs(somas.check) >= 0.005:
-        aba.cell(row=linha, column=COL_CHECK).font = VERMELHO
+    if not somas.fecha:
+        # A identidade quebrou. Sem coluna de CHECK, o aviso é a própria linha.
+        for celula in aba[linha]:
+            celula.font = VERMELHO
     return linha
 
 
@@ -416,7 +416,8 @@ def _blocos_de_fechamento(aba, filial) -> None:
         alvo = por_atividade.setdefault(
             chave, {"bc_credito": 0.0, "credito": 0.0, "estorno": 0.0,
                     "bc_debito": 0.0, "debito": 0.0,
-                    "contabil": 0.0, "contabil_x_carga": 0.0}
+                    "contabil": 0.0, "contabil_x_carga": 0.0,
+                    "icms_x_carga": 0.0}
         )
         base = _numero(a.tratada.origem.dados.get("base_icms"))
         if a.resultado.credito_bruto:
@@ -428,6 +429,7 @@ def _blocos_de_fechamento(aba, filial) -> None:
             if carga is not None:
                 alvo["contabil"] += contabil
                 alvo["contabil_x_carga"] += contabil * carga
+                alvo["icms_x_carga"] += a.resultado.credito_bruto * carga
         if a.resultado.debito:
             alvo["bc_debito"] += base
             alvo["debito"] += a.resultado.debito
@@ -491,10 +493,18 @@ def _blocos_de_fechamento(aba, filial) -> None:
 
 
 def _carga_media(valores: dict[str, float]) -> float | None:
-    """Carga efetiva do grupo, ponderada pelo valor contábil."""
-    if not valores["contabil"]:
-        return None
-    return valores["contabil_x_carga"] / valores["contabil"] / 100.0
+    """Carga efetiva do grupo, ponderada pelo valor contábil.
+
+    Quando o grupo inteiro não tem valor contábil, a ponderação cai para o
+    ICMS. É o caso do complemento de ICMS, que só traz base e imposto — a
+    carga dele existe (equalizada como qualquer outra), e ponderar pelo
+    contábil deixava a célula vazia como se o dado não existisse.
+    """
+    if valores["contabil"]:
+        return valores["contabil_x_carga"] / valores["contabil"] / 100.0
+    if valores["credito"]:
+        return valores["icms_x_carga"] / valores["credito"] / 100.0
+    return None
 
 
 # --------------------------------------------------------------------------

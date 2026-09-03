@@ -310,10 +310,11 @@ o registro emitido pelo ERP **ao centavo, nas cinco colunas e nos três grupos d
 procedência**. O resumo é apuração, e traz marcado o que depende de ajuste.
 
 **`APURAÇÃO EFETIVA`** — a conferência que o time fiscal montava à mão: CFOP →
-alíquota → produto, com a operação, a alíquota de entrada, a parcela não
-tributada, o ICMS a estornar, o ICMS a apropriar e a coluna **CHECK**. O CHECK é
-`a estornar + a apropriar − ICMS creditado`, e o teste exige que feche em todas
-as linhas de todos os estabelecimentos.
+carga efetiva → produto, com a operação, o percentual do crédito estornado, o
+ICMS a estornar e o ICMS a apropriar. A identidade `a estornar + a apropriar =
+ICMS creditado` é exigida por teste em todas as linhas de todos os
+estabelecimentos; a planilha não gasta uma coluna com ela, e pinta de vermelho a
+linha que não fechar.
 
 **`TRANSFERÊNCIAS`** — o que emitir depois de fechar a competência.
 

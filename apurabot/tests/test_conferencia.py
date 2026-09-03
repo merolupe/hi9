@@ -8,12 +8,10 @@ import pytest
 
 from apurabot.apuracao import apurar
 from apurabot.conferencia import (
-    EXCEDENTE,
-    PROPORCIONAL,
     ROTULO_DA_ATIVIDADE,
-    _percentual_nominal,
-    _regime_da_filial,
+    ROTULO_DA_CATEGORIA,
     _rotulo_atividade,
+    rotulo_da_categoria,
 )
 from apurabot.nucleo import atividade as ativ
 from apurabot.saida import ORDEM_DAS_ABAS, escrever
@@ -75,36 +73,25 @@ def test_a_conferencia_agrupa_sempre_pela_carga_efetiva(planilha):
     assert cabecalhos == {"Carga efetiva"}, cabecalhos
 
 
-def test_o_percentual_da_regra_e_o_nominal_de_cada_regime(apuracao, parametros):
-    """`% da regra` é o número redondo, não a razão quebrada do documento.
+def test_a_aba_tem_uma_coluna_de_percentual_e_nenhum_check(planilha):
+    """Uma coluna de percentual, sempre preenchida. Sem coluna de CHECK.
 
-    Em SP é (carga − 4%) ÷ carga; em MS é 1 − 4 ÷ alíquota. As duas saem do
-    parâmetro do regime, nunca do resultado apurado.
+    A `% da regra` saía vazia nas linhas de CFOP que misturam cargas, porque
+    ali não existe um nominal só. Meia coluna preenchida confunde mais do que
+    informa. O CHECK saiu porque a identidade que ele mostrava é garantida por
+    `test_toda_linha_apurada_fecha_o_check`, no motor — não por uma célula que
+    alguém precise conferir.
     """
-    guara = apuracao.filiais["HINOVE (FILIAL GUARÁ)"]
-    regime_sp = _regime_da_filial(guara, parametros)
-    assert regime_sp["formula_estorno"] == EXCEDENTE
-    por_carga = {
-        a.tratada.carga.carga: _percentual_nominal(a, regime_sp)
-        for a in guara.apuradas
-        if a.resultado.credito_bruto and a.tratada.carga.carga
-    }
-    assert por_carga[4.0] == pytest.approx(0.0)
-    assert por_carga[12.0] == pytest.approx(2 / 3)
-    assert por_carga[18.0] == pytest.approx(14 / 18)
-
-    rb = apuracao.filiais["HINOVE (RIO BRILHANTE)"]
-    regime_ms = _regime_da_filial(rb, parametros)
-    assert regime_ms["formula_estorno"] == PROPORCIONAL
-    por_aliquota = {
-        float(a.tratada.origem.dados.get("aliquota_icms") or 0):
-            _percentual_nominal(a, regime_ms)
-        for a in rb.apuradas
-        if a.resultado.credito_bruto
-        and float(a.tratada.origem.dados.get("aliquota_icms") or 0)
-    }
-    assert por_aliquota[7.0] == pytest.approx(1 - 4 / 7)
-    assert por_aliquota[12.0] == pytest.approx(1 - 4 / 12)
+    aba = planilha["APURAÇÃO EFETIVA"]
+    cabecalhos = [
+        linha for linha in aba.iter_rows(max_col=11, values_only=True)
+        if str(linha[0] or "") == "CFOP"
+    ]
+    assert cabecalhos
+    for linha in cabecalhos:
+        assert "CHECK" not in linha
+        percentuais = [c for c in linha if "%" in str(c or "")]
+        assert percentuais == ["% do crédito estornado"], linha
 
 
 def test_a_parcela_de_ms_e_a_formula_da_regra(apuracao):
@@ -165,6 +152,28 @@ def test_onde_a_uf_nao_segrega_o_rotulo_e_a_categoria_da_equalizacao(apuracao):
     rotulos = {_rotulo_atividade(a) for a in guara.apuradas}
     assert rotulos
     assert not rotulos & set(ROTULO_DA_ATIVIDADE.values())
+    # Nome de gente, não nome de campo.
+    assert "Matéria-Prima" in rotulos
+    assert not any("_" in r for r in rotulos), rotulos
+
+
+def test_a_categoria_sai_com_nome_legivel(apuracao):
+    """`frete_transferencia` na base, "Frete de Transferência" na conferência."""
+    assert rotulo_da_categoria("frete_transferencia") == "Frete de Transferência"
+    assert rotulo_da_categoria("materia_prima") == "Matéria-Prima"
+    assert rotulo_da_categoria("ciap") == "CIAP"
+    assert rotulo_da_categoria("") == ""
+
+    # Categoria fora do mapa não sai com cara de código.
+    assert rotulo_da_categoria("credito_de_teste") == "Credito de Teste"
+
+    # Toda categoria que a competência produz tem rótulo cadastrado.
+    usadas = {
+        a.tratada.classificacao.categoria
+        for f in apuracao.filiais.values() for a in f.apuradas
+        if a.tratada.classificacao.categoria
+    }
+    assert usadas <= set(ROTULO_DA_CATEGORIA), usadas - set(ROTULO_DA_CATEGORIA)
 
 
 # -- a planilha -------------------------------------------------------------
@@ -290,14 +299,6 @@ def _avaliar(aba, coluna: str, linha: int) -> float:
         a, b, c, d = achado.groups()
         return _avaliar(aba, a, int(b)) - _avaliar(aba, c, int(d))
 
-    achado = re.fullmatch(r"=ROUND\(([A-Z])(\d+)\+([A-Z])(\d+)-([A-Z])(\d+),2\)", valor)
-    if achado:
-        a, b, c, d, e, f = achado.groups()
-        return round(
-            _avaliar(aba, a, int(b)) + _avaliar(aba, c, int(d))
-            - _avaliar(aba, e, int(f)),
-            2,
-        )
     raise AssertionError(f"fórmula não reconhecida em {coluna}{linha}: {valor}")
 
 
@@ -333,13 +334,17 @@ def test_os_totais_da_aba_sao_formula_e_batem_com_o_motor(com_formulas, apuracao
         ), estabelecimento
         # A coluna soma o que não vira crédito: estorno da regra mais o
         # crédito indevido, que fica em parcela própria na apuração.
-        assert _avaliar(aba, "K", n) == pytest.approx(
+        assert _avaliar(aba, "J", n) == pytest.approx(
             filial.estorno + filial.credito_indevido, abs=CENTAVO
         ), estabelecimento
-        assert _avaliar(aba, "L", n) == pytest.approx(
+        assert _avaliar(aba, "K", n) == pytest.approx(
             filial.credito_mantido, abs=CENTAVO
         ), estabelecimento
-        assert _avaliar(aba, "M", n) == pytest.approx(0.0, abs=CENTAVO)
+        # A identidade que a coluna CHECK mostrava, conferida aqui em vez de
+        # ocupar uma célula na planilha.
+        assert _avaliar(aba, "J", n) + _avaliar(aba, "K", n) == pytest.approx(
+            _avaliar(aba, "G", n), abs=CENTAVO
+        ), estabelecimento
         conferidas += 1
     # Filial sem crédito de entrada não tem tabela — e por isso não tem TOTAL.
     com_credito = [f for f in apuracao.filiais.values() if f.credito_bruto]
@@ -359,7 +364,7 @@ def test_o_fechamento_traz_a_carga_efetiva_de_cada_classificacao(planilha):
     # Só o bloco CRÉDITOS: o de DÉBITOS não tem coluna de estorno nem de carga.
     linhas = [
         linha for linha in aba.iter_rows(max_col=7, values_only=True)
-        if linha[1] == "materia_prima" and linha[4] and linha[5] is not None
+        if linha[1] == "Matéria-Prima" and linha[4] and linha[5] is not None
     ]
     assert linhas
     assert all(l[2] == pytest.approx(0.04, abs=1e-6) for l in linhas), linhas

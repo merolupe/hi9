@@ -117,7 +117,7 @@ Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
 | **RESUMO** | Procedência do arquivo, período que o livro cobre, volume, equalização e categorias |
 | **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
 | **AJUSTES** | Formulário: as parcelas sem documento e a conferência de cada estabelecimento |
-| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → carga efetiva → produto, com a operação, o % da regra, o % efetivo e o CHECK |
+| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → carga efetiva → produto, com a operação e o % do crédito estornado |
 | **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
 | **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |
 | **PENDÊNCIAS** | O que bloqueia o encerramento — as mesmas que a tela mostra |
@@ -132,13 +132,12 @@ Linhas do resumo marcadas `AGUARDA AJUSTE` dependem de lançamento aprovado que
 não nasce do Livro Fiscal.
 
 **APURAÇÃO EFETIVA** — *por que deu isso?* Uma linha por produto, como na
-apuração manual: não é o Livro repetido, é o Livro somado. A coluna **CHECK** é
-`a estornar + a apropriar − ICMS creditado`: qualquer valor diferente de zero,
-em vermelho, é erro do motor.
+apuração manual: não é o Livro repetido, é o Livro somado. Linha inteira em
+vermelho é erro do motor: o estorno mais a apropriação não fecharam o crédito.
 
-A terceira coluna muda de nome conforme o regime, porque cada um tem a sua
-chave: **Alíquota** em MS, onde o estorno é `1 − 4/alíquota`; **Carga efetiva**
-em SP, onde é o excedente sobre a carga de saída. Ver
+A terceira coluna é **Carga efetiva** nos dois regimes — é a grandeza que o
+documento traz depois da equalização. A alíquota continua sendo a chave do
+cálculo em MS; ela está na `BASE TRATADA`. Ver
 [04 — Matriz de regras](04-matriz-de-regras-icms.md), item 3.1.
 
 **BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
