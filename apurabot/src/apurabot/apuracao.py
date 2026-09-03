@@ -381,6 +381,17 @@ class Apuracao:
         """Débito que o estabelecimento assume por centralizar — linha 002."""
         return centr.debito_recebido_por(self.centralizacao, estabelecimento)
 
+    def centralizacao_no_registro(
+        self, estabelecimento: str
+    ) -> centr.LancamentosDeCentralizacao:
+        """O que a centralização lança no Registro deste estabelecimento.
+
+        As duas pontas: o que ele recebe por centralizar e o que ele transfere
+        por ser centralizado. Sem a segunda, o Registro de quem transfere fecha
+        devendo o que já foi assumido pela centralizadora.
+        """
+        return centr.lancamentos_de(self.centralizacao, estabelecimento)
+
     @property
     def bloqueios_de_ajuste(self) -> list[str]:
         """Ajustes que não dá para aceitar como estão.

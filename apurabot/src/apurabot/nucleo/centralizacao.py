@@ -187,30 +187,117 @@ def regras(params: Parametros) -> dict[str, dict[str, Any]]:
     return params.filiais.get("regras_de_centralizacao") or {}
 
 
+#: Redação de cada lançamento de centralização, como o ERP a escreve no
+#: Registro de Apuração. As quatro combinações de lado e sentido.
+REDACAO = {
+    "recebe_debito": "Recebimento de saldo devedor — estabelecimento centralizador",
+    "recebe_credito": "Recebimento de saldo credor — estabelecimento centralizador",
+    "transfere_debito": (
+        "Transferência de saldo devedor para estabelecimento centralizador"
+    ),
+    "transfere_credito": (
+        "Transferência de saldo credor para estabelecimento centralizador"
+    ),
+}
+
+
+@dataclass(frozen=True)
+class LancamentosDeCentralizacao:
+    """O que a centralização lança no Registro de UM estabelecimento.
+
+    A transferência tem duas pontas, e **as duas são lançadas**: quem recebe
+    assume o saldo, quem transfere se desfaz dele. Sem a segunda, os dois
+    Registros mostram a mesma dívida e o grupo aparece pagando duas vezes.
+
+    Todos os valores são **positivos**, porque no livro nenhuma linha aceita
+    número negativo: a convenção de caixa da apuração é trocada pela da conta
+    gráfica, e quem dá o sentido é a linha.
+
+        002  recebe_debito       transfere_credito
+        006  recebe_credito      transfere_debito
+    """
+
+    recebe_debito: float = 0.0
+    recebe_credito: float = 0.0
+    transfere_debito: float = 0.0
+    transfere_credito: float = 0.0
+
+    @property
+    def na_linha_002(self) -> list[tuple[str, float]]:
+        return [
+            (REDACAO[campo], valor)
+            for campo, valor in (
+                ("recebe_debito", self.recebe_debito),
+                ("transfere_credito", self.transfere_credito),
+            )
+            if valor
+        ]
+
+    @property
+    def na_linha_006(self) -> list[tuple[str, float]]:
+        return [
+            (REDACAO[campo], valor)
+            for campo, valor in (
+                ("recebe_credito", self.recebe_credito),
+                ("transfere_debito", self.transfere_debito),
+            )
+            if valor
+        ]
+
+    @property
+    def total_002(self) -> float:
+        return self.recebe_debito + self.transfere_credito
+
+    @property
+    def total_006(self) -> float:
+        return self.recebe_credito + self.transfere_debito
+
+    def __bool__(self) -> bool:
+        return bool(self.total_002 or self.total_006)
+
+
+def lancamentos_de(
+    resultados: list[ResultadoCentralizacao], estabelecimento: str
+) -> LancamentosDeCentralizacao:
+    """Os lançamentos de centralização de um estabelecimento, nos dois papéis.
+
+    Só onde o mecanismo da UF é o ajuste de apuração: quando a transferência é
+    documentada por NF-e, ela não vira linha do resumo.
+    """
+    recebe_debito = recebe_credito = 0.0
+    transfere_debito = transfere_credito = 0.0
+
+    for resultado in resultados:
+        if resultado.mecanismo != AJUSTE_DE_APURACAO:
+            continue
+        for transferencia in resultado.transferencias:
+            valor = transferencia.valor_transferido
+            if not valor:
+                continue
+            if resultado.centralizadora == estabelecimento:
+                if valor < 0:
+                    recebe_debito += -valor
+                else:
+                    recebe_credito += valor
+            elif transferencia.origem == estabelecimento:
+                if valor < 0:
+                    transfere_debito += -valor
+                else:
+                    transfere_credito += valor
+
+    return LancamentosDeCentralizacao(
+        recebe_debito=recebe_debito,
+        recebe_credito=recebe_credito,
+        transfere_debito=transfere_debito,
+        transfere_credito=transfere_credito,
+    )
+
+
 def debito_recebido_por(
     resultados: list[ResultadoCentralizacao], estabelecimento: str
 ) -> float:
-    """Débito que um estabelecimento assume por ser centralizador.
-
-    É a linha 002 do Registro de Apuração da centralizadora — "recebimento de
-    saldo devedor do estabelecimento centralizador" — quando o mecanismo da UF
-    é o ajuste de apuração.
-
-    Devolve um valor **positivo**, porque no livro o débito é positivo: aqui a
-    convenção de caixa da apuração é trocada pela da conta gráfica.
-
-    O caminho inverso — o centralizado com saldo credor — não está modelado.
-    Ele seria crédito da centralizadora, linha 006, e nenhuma competência
-    observada o produziu. Ver decisão pendente nº 7.
-    """
-    return sum(
-        -t.valor_transferido
-        for r in resultados
-        if r.centralizadora == estabelecimento
-        and r.mecanismo == AJUSTE_DE_APURACAO
-        for t in r.transferencias
-        if t.valor_transferido < 0
-    )
+    """Débito que um estabelecimento assume por ser centralizador — linha 002."""
+    return lancamentos_de(resultados, estabelecimento).recebe_debito
 
 
 def calcular(saldos: dict[str, float], params: Parametros) -> list[ResultadoCentralizacao]:
