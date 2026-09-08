@@ -1,8 +1,10 @@
 # Contexto do repositório
 
 Monorepo de automações do time Fiscal/Tributário da Hinove Agrociência S.A.
-Projeto ativo: **Apurabot** (apuração de ICMS). O Fiscalbot, já existente, será
-importado depois — ele valida o Livro Fiscal que o Apurabot consome.
+A **Central Fiscal** (`central/`) é a tela única que reúne as ferramentas.
+Já dentro dela: **Apurabot** (apuração de ICMS) e **DiXML** (lote de XML em
+planilha). A importar, uma a uma: Fiscalbot — que valida o Livro Fiscal que o
+Apurabot consome —, GerarPendentes e GerarServPend.
 
 ## Regras deste repositório
 
@@ -17,6 +19,18 @@ importado depois — ele valida o Livro Fiscal que o Apurabot consome.
 4. **Nada de classificação por adivinhação.** Documento que não casar com regra
    recebe status `SEM REGRA` e bloqueia o encerramento da competência.
 5. **Documentação em português.** O público é o time fiscal, não só o desenvolvedor.
+6. **Roda sem instalar nada.** Máquina corporativa sem administrador: as
+   bibliotecas viajam em `vendor/`, na raiz, e precisam ser Python puro.
+   Dependência com extensão compilada (pandas, lxml) não entra.
+7. **Nenhuma ferramenta importa outra.** Quem costura é a Central. Para entrar
+   na tela, a ferramenta declara o que pede e o que devolve — o contrato está
+   em `docs/central/01-arquitetura.md`.
+
+## Antes de importar uma ferramenta nova
+
+Leia `docs/central/01-arquitetura.md` — o contrato de ferramenta e por que a
+ordem é uma de cada vez. A regra ao importar é trazer como está; reescreve-se
+só o que impede de rodar sem instalação.
 
 ## Antes de mexer no motor de ICMS
 

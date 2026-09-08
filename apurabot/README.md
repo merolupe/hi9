@@ -17,8 +17,8 @@ python rodar.py apurar <livro_fiscal.xlsx> --saida <pasta>
 
 **Não há passo de instalação.** Em máquina corporativa, instalar esbarra em
 permissão de administrador e em política de executável, então as bibliotecas
-viajam junto do código, em `src/apurabot/vendor` — todas Python puro. Ver
-[`src/apurabot/vendor/LEIA-ME.md`](src/apurabot/vendor/LEIA-ME.md).
+viajam junto do código, em `vendor/`, na raiz do repositório — todas Python
+puro. Ver [`../vendor/LEIA-ME.md`](../vendor/LEIA-ME.md).
 
 Quem tem a máquina livre pode usar `pip install -e apurabot`: as dependências
 estão declaradas no `pyproject.toml`, e as do sistema têm precedência sobre as
@@ -92,8 +92,7 @@ src/apurabot/
   conferencia.py       registro, apuração efetiva e transferências
   saida.py             escreve o .xlsx
   cli.py               linha de comando
-  _dependencias.py     põe `vendor/` ao alcance do import
-  vendor/              openpyxl, et_xmlfile, xlrd e PyYAML, embarcadas
+  _dependencias.py     acha `vendor/` na raiz e põe ao alcance do import
   web/servidor.py      a janela: servidor local e navegador
   web/painel.py        o que a janela mostra
   web/pagina.html      a interface

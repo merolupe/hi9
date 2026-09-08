@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Central Fiscal — Hinove Agrociência</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f3864'/%3E%3Ctext x='16' y='23' font-size='19' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EH%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --fundo:#f4f6fa; --painel:#ffffff; --texto:#16202e; --suave:#5b6b80;
+  --borda:#dde3ec; --marca:#1f3864; --marca-clara:#e8eef8;
+  --ok:#1e7b34; --ok-fundo:#e7f5ea; --erro:#b00020; --erro-fundo:#fdecef;
+  --atencao:#9a6b00; --atencao-fundo:#fff6e0;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --fundo:#11151c; --painel:#182029; --texto:#e8edf4; --suave:#9aabc0;
+    --borda:#2a3542; --marca:#7ea6e8; --marca-clara:#1d2836;
+    --ok:#6ede8a; --ok-fundo:#16301d; --erro:#ff8095; --erro-fundo:#341219;
+    --atencao:#ffce6a; --atencao-fundo:#33280d;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--fundo); color:var(--texto);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+.envelope{max-width:1080px; margin:0 auto; padding:28px 20px 80px}
+header{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
+h1{font-size:26px; margin:0; letter-spacing:-.3px}
+h1 span{color:var(--marca)}
+.subtitulo{color:var(--suave); font-size:14.5px; margin:0 0 26px}
+.oculto{display:none !important}
+code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
+
+/* ---------- menu de ferramentas ---------- */
+.grade{display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.cartao{
+  background:var(--painel); border:1px solid var(--borda); border-radius:12px;
+  padding:18px 20px; text-align:left; width:100%; display:flex; gap:15px;
+  align-items:flex-start; font:inherit; color:inherit; cursor:pointer;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.cartao:hover{border-color:var(--marca); background:var(--marca-clara)}
+.cartao:active{transform:translateY(1px)}
+.cartao[disabled]{cursor:default; opacity:.55}
+.cartao[disabled]:hover{border-color:var(--borda); background:var(--painel)}
+.cartao .icone{font-size:27px; line-height:1.1}
+.cartao .nome{font-weight:700; font-size:17px; margin-bottom:3px}
+.cartao .resumo{color:var(--suave); font-size:14px}
+.cartao .detalhe{color:var(--suave); font-size:13px; margin-top:7px; font-style:italic}
+.etiqueta{
+  display:inline-block; font-size:11px; font-weight:700; letter-spacing:.5px;
+  padding:2px 8px; border-radius:20px; margin-left:8px; vertical-align:2px;
+  background:var(--atencao-fundo); color:var(--atencao); text-transform:uppercase;
+}
+
+/* ---------- tela da ferramenta ---------- */
+.voltar{
+  background:none; border:none; color:var(--suave); font:inherit; cursor:pointer;
+  padding:0; margin-bottom:18px; font-size:14.5px;
+}
+.voltar:hover{color:var(--texto)}
+#largar{
+  background:var(--painel); border:2px dashed var(--borda); border-radius:14px;
+  padding:52px 28px; text-align:center; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+#largar:hover,#largar.sobre{border-color:var(--marca); background:var(--marca-clara)}
+#largar .icone{font-size:42px; line-height:1; margin-bottom:14px}
+#largar .principal{font-size:19px; font-weight:600; margin-bottom:6px}
+#largar .apoio{color:var(--suave); font-size:14.5px}
+#arquivo{display:none}
+
+section{
+  background:var(--painel); border:1px solid var(--borda); border-radius:12px;
+  padding:20px 22px; margin-bottom:18px;
+}
+section > h2{
+  font-size:13px; text-transform:uppercase; letter-spacing:.7px;
+  color:var(--suave); margin:0 0 14px; font-weight:700;
+}
+.faixa{
+  border-radius:12px; padding:16px 20px; margin-bottom:20px;
+  display:flex; align-items:center; gap:12px; font-weight:600;
+}
+.faixa.ok{background:var(--ok-fundo); color:var(--ok)}
+.faixa.erro{background:var(--erro-fundo); color:var(--erro)}
+.faixa .marca{font-size:22px}
+.fichas{display:flex; flex-wrap:wrap; gap:30px}
+.ficha .rotulo{font-size:12.5px; color:var(--suave); text-transform:uppercase; letter-spacing:.5px}
+.ficha .valor{font-size:23px; font-weight:600; font-variant-numeric:tabular-nums}
+ul.lista{margin:0; padding-left:20px; font-size:14px}
+ul.lista li{margin-bottom:5px; word-break:break-all}
+ul.lista.erro li{color:var(--erro)}
+.corte{color:var(--suave); font-size:13.5px; margin:10px 0 0}
+#processando{
+  background:var(--painel); border:1px solid var(--borda); border-radius:14px;
+  padding:44px 28px; text-align:center;
+}
+.girando{
+  width:34px; height:34px; margin:0 auto 16px; border-radius:50%;
+  border:3px solid var(--borda); border-top-color:var(--marca);
+  animation:girar .8s linear infinite;
+}
+@keyframes girar{to{transform:rotate(360deg)}}
+button.acao{
+  font:inherit; font-weight:600; cursor:pointer; border-radius:9px;
+  border:1px solid transparent; padding:11px 20px;
+}
+.principal-btn{background:var(--marca); color:#fff}
+.principal-btn:hover{filter:brightness(1.12)}
+.principal-btn[disabled]{opacity:.5; cursor:default; filter:none}
+.secundario-btn{background:transparent; color:var(--suave); border-color:var(--borda)}
+.secundario-btn:hover{color:var(--texto); border-color:var(--suave)}
+.acoes{display:flex; gap:12px; flex-wrap:wrap; margin:20px 0 4px}
+.rodape{color:var(--suave); font-size:13px; margin-top:34px; text-align:center}
+</style>
+</head>
+<body>
+<div class="envelope">
+
+  <header><h1>Central <span>Fiscal</span></h1></header>
+  <p class="subtitulo">Ferramentas do time Fiscal/Tributário — Hinove Agrociência S.A.</p>
+
+  <!-- ================= menu ================= -->
+  <div id="menu">
+    <div class="grade" id="grade"></div>
+  </div>
+
+  <!-- ================= ferramenta escolhida ================= -->
+  <div id="tela" class="oculto">
+    <button class="voltar" onclick="aoMenu()">← Ferramentas</button>
+    <h2 id="tela-nome" style="margin:0 0 4px; font-size:21px"></h2>
+    <p class="subtitulo" id="tela-resumo"></p>
+
+    <div id="entrada">
+      <div id="largar">
+        <div class="icone">📂</div>
+        <div class="principal" id="largar-rotulo"></div>
+        <div class="apoio" id="largar-apoio"></div>
+        <input type="file" id="arquivo">
+      </div>
+      <div id="escolhidos" class="oculto"></div>
+    </div>
+
+    <div id="processando" class="oculto">
+      <div class="girando"></div>
+      <div><strong id="processando-verbo"></strong></div>
+    </div>
+
+    <div id="erro" class="oculto">
+      <div class="faixa erro"><span class="marca">✕</span><span>Não deu certo</span></div>
+      <section><pre id="erro-texto" style="white-space:pre-wrap; margin:0; font-size:14px"></pre></section>
+      <div class="acoes"><button class="acao secundario-btn" onclick="recomecar()">Tentar de novo</button></div>
+    </div>
+
+    <div id="resultado" class="oculto"></div>
+  </div>
+
+  <p class="rodape">
+    Roda na sua máquina. Nada é enviado para fora.
+    <button class="acao secundario-btn" style="padding:4px 12px; font-size:13px; margin-left:8px"
+            onclick="encerrar()">Encerrar</button>
+  </p>
+</div>
+
+<script>
+const CHAVE = new URLSearchParams(location.search).get("chave") || "";
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const url = (rota, extra) => `${rota}?chave=${encodeURIComponent(CHAVE)}${extra || ""}`;
+
+let FERRAMENTAS = [];
+let atual = null;          // a ferramenta aberta
+let enviados = [];         // nomes já entregues ao servidor
+let ocupado = false;
+
+// ---------- menu ----------
+
+async function carregar(){
+  const r = await fetch(url("/ferramentas"));
+  const dados = await r.json();
+  FERRAMENTAS = dados.ferramentas;
+  $("grade").innerHTML = FERRAMENTAS.map(cartao).join("");
+}
+
+function cartao(f){
+  const aImportar = f.estado === "a_importar";
+  const etiqueta = aImportar ? '<span class="etiqueta">a importar</span>'
+                 : f.estado === "janela" ? '<span class="etiqueta">janela própria</span>' : "";
+  return `
+    <button class="cartao" ${aImportar ? "disabled" : ""} onclick="escolher('${f.id}')">
+      <span class="icone">${esc(f.icone)}</span>
+      <span>
+        <span class="nome">${esc(f.nome)}${etiqueta}</span>
+        <div class="resumo">${esc(f.resumo)}</div>
+        ${f.detalhe ? `<div class="detalhe">${esc(f.detalhe)}</div>` : ""}
+      </span>
+    </button>`;
+}
+
+// ---------- abrir uma ferramenta ----------
+
+async function escolher(id){
+  const f = FERRAMENTAS.find((x) => x.id === id);
+  if (!f || f.estado === "a_importar") return;
+
+  if (f.estado === "janela"){
+    const r = await fetch(url("/abrir", `&ferramenta=${id}`));
+    const dados = await r.json();
+    if (dados.erro) return alert(dados.erro);
+    window.open(dados.endereco, "_blank");
+    return;
+  }
+
+  atual = f;
+  enviados = [];
+  $("tela-nome").textContent = f.nome;
+  $("tela-resumo").textContent = f.resumo;
+  $("largar-rotulo").textContent = f.entrada.rotulo;
+  // O texto de apoio vem do catálogo do próprio repositório, não de quem usa.
+  $("largar-apoio").innerHTML = f.entrada.apoio;
+  $("processando-verbo").textContent = f.verbo;
+  const campo = $("arquivo");
+  campo.accept = f.entrada.extensoes.join(",");
+  campo.multiple = !!f.entrada.varios;
+  campo.value = "";
+  mostrar("entrada");
+  $("menu").classList.add("oculto");
+  $("tela").classList.remove("oculto");
+}
+
+function aoMenu(){
+  if (ocupado) return;
+  if (atual) fetch(url("/limpar", `&ferramenta=${atual.id}`));
+  atual = null; enviados = [];
+  $("tela").classList.add("oculto");
+  $("menu").classList.remove("oculto");
+}
+
+function mostrar(qual){
+  for (const bloco of ["entrada", "processando", "erro", "resultado"])
+    $(bloco).classList.toggle("oculto", bloco !== qual);
+}
+
+function recomecar(){
+  enviados = [];
+  $("arquivo").value = "";
+  $("escolhidos").classList.add("oculto");
+  mostrar("entrada");
+}
+
+// ---------- receber os arquivos ----------
+
+const largar = $("largar");
+largar.addEventListener("click", () => $("arquivo").click());
+largar.addEventListener("dragover", (e) => {
+  e.preventDefault(); largar.classList.add("sobre");
+});
+largar.addEventListener("dragleave", () => largar.classList.remove("sobre"));
+largar.addEventListener("drop", (e) => {
+  e.preventDefault(); largar.classList.remove("sobre");
+  receber(e.dataTransfer.files);
+});
+$("arquivo").addEventListener("change", (e) => receber(e.target.files));
+
+async function receber(lista){
+  if (!atual || ocupado || !lista.length) return;
+  ocupado = true;
+  $("processando-verbo").textContent = "Recebendo os arquivos…";
+  mostrar("processando");
+  try{
+    for (const arquivo of lista){
+      const r = await fetch(url("/enviar", `&ferramenta=${atual.id}` +
+                                 `&nome=${encodeURIComponent(arquivo.name)}`),
+                            {method:"POST", body:arquivo});
+      const dados = await r.json();
+      if (dados.erro){ falhar(dados.erro); return; }
+      enviados = dados.arquivos;
+    }
+  } catch (e){
+    falhar("A janela perdeu contato com a ferramenta. Ela ainda está aberta?");
+    return;
+  } finally {
+    ocupado = false;
+  }
+  listarEscolhidos();
+  executar();
+}
+
+function listarEscolhidos(){
+  $("escolhidos").innerHTML = `
+    <section><h2>Recebido</h2>
+      <ul class="lista">${enviados.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
+    </section>`;
+  $("escolhidos").classList.remove("oculto");
+}
+
+// ---------- rodar ----------
+
+async function executar(){
+  if (!atual || ocupado) return;
+  ocupado = true;
+  $("processando-verbo").textContent = atual.verbo;
+  mostrar("processando");
+  try{
+    const r = await fetch(url("/executar", `&ferramenta=${atual.id}`), {method:"POST"});
+    const dados = await r.json();
+    if (dados.erro){ falhar(dados.erro); return; }
+    desenhar(dados);
+  } catch (e){
+    falhar("A janela perdeu contato com a ferramenta. Ela ainda está aberta?");
+  } finally {
+    ocupado = false;
+  }
+}
+
+function falhar(mensagem){
+  ocupado = false;
+  $("erro-texto").textContent = mensagem;
+  mostrar("erro");
+}
+
+const TETO_DA_LISTA = 50;
+
+function desenhar(d){
+  const fichas = d.fichas.map((f) => `
+    <div class="ficha"><div class="rotulo">${esc(f.rotulo)}</div>
+      <div class="valor">${esc(f.valor)}</div></div>`).join("");
+
+  const listas = d.listas.map((l) => {
+    const itens = l.itens.slice(0, TETO_DA_LISTA)
+      .map((i) => `<li>${esc(i)}</li>`).join("");
+    const corte = l.itens.length > TETO_DA_LISTA
+      ? `<p class="corte">… e mais ${l.itens.length - TETO_DA_LISTA}.</p>` : "";
+    return `<section><h2>${esc(l.titulo)} — ${l.itens.length}</h2>
+      <ul class="lista ${l.tom === "erro" ? "erro" : ""}">${itens}</ul>${corte}</section>`;
+  }).join("");
+
+  $("resultado").innerHTML = `
+    <div class="faixa ok"><span class="marca">✓</span><span>${esc(d.titulo)}</span></div>
+    ${fichas ? `<section><h2>Resumo</h2><div class="fichas">${fichas}</div></section>` : ""}
+    ${listas}
+    <div class="acoes">
+      ${d.planilha ? `<button class="acao principal-btn" onclick="baixar()">
+        ⬇ Baixar ${esc(d.planilha)}</button>` : ""}
+      <button class="acao secundario-btn" onclick="recomecar()">Rodar outro lote</button>
+      <button class="acao secundario-btn" onclick="aoMenu()">Voltar às ferramentas</button>
+    </div>`;
+  mostrar("resultado");
+}
+
+function baixar(){ location.href = url("/baixar"); }
+
+async function encerrar(){
+  await fetch(url("/encerrar"));
+  document.body.innerHTML =
+    '<div class="envelope"><p class="rodape">Central encerrada. ' +
+    'Pode fechar esta aba.</p></div>';
+}
+
+carregar();
+</script>
+</body>
+</html>

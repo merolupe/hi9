@@ -1,0 +1,25 @@
+[project]
+name = "central"
+version = "0.1.0"
+description = "Central de Ferramentas Fiscais da Hinove Agrociência S.A."
+requires-python = ">=3.10"
+# A central não tem dependência de terceiros: ela é servidor HTTP da biblioteca
+# padrão mais uma página. Quem depende de openpyxl é cada ferramenta.
+dependencies = []
+
+[project.scripts]
+central = "central.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# A janela é um arquivo estático dentro do pacote.
+[tool.setuptools.package-data]
+"central" = ["*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
