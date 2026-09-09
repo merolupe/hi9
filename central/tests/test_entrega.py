@@ -48,7 +48,7 @@ def test_verificar_aprova_este_python_sem_instalacao():
 def test_a_central_carrega_as_ferramentas_sem_nenhum_pacote_instalado():
     r = _sem_pacotes_instalados(
         "sys.path.insert(0, 'central/src')\n"
-        "import central, apurabot, dixml, openpyxl\n"
+        "import central, apurabot, dixml, fiscalbot, openpyxl\n"
         "assert 'vendor' in openpyxl.__file__, openpyxl.__file__\n"
         "print('ok')\n"
     )
@@ -83,8 +83,9 @@ def test_a_janela_e_um_arquivo_dentro_do_pacote():
 
 def test_nenhuma_ferramenta_importa_outra():
     """Quem costura é a central. Ferramenta que conhece ferramenta vira novelo."""
-    for pacote, vizinhos in (("apurabot", ("dixml", "central")),
-                             ("dixml", ("apurabot", "central"))):
+    for pacote, vizinhos in (("apurabot", ("dixml", "fiscalbot", "central")),
+                             ("dixml", ("apurabot", "fiscalbot", "central")),
+                             ("fiscalbot", ("apurabot", "dixml", "central"))):
         for arquivo in (RAIZ / pacote / "src").rglob("*.py"):
             codigo = arquivo.read_text(encoding="utf-8")
             for vizinho in vizinhos:

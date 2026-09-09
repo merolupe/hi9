@@ -11,12 +11,15 @@ máquina.
 
 ## Como uma ferramenta entra na tela
 
-Declarando três coisas em [`src/central/ferramentas.py`](src/central/ferramentas.py):
+Declarando até quatro coisas em [`src/central/ferramentas.py`](src/central/ferramentas.py):
 
 1. **quem é** — nome, resumo de uma linha e estado;
 2. **o que pede** — `Entrada`: extensões aceitas, um arquivo ou vários;
 3. **o que devolve** — `Resultado`: os números do resumo, as listas do que
-   ficou de fora e, quando houver, a planilha para baixar.
+   ficou de fora e, quando houver, a planilha para baixar;
+4. **o que se configura nela** — `Configuracao`, quando a ferramenta guarda
+   estado. Nasceu com o Fiscalbot, cujas regras tributárias são cadastradas
+   numa tela em vez de planilha.
 
 A ferramenta não sabe que existe navegador, não monta HTML e não conhece as
 outras. Quem costura é a central.
@@ -39,7 +42,7 @@ src/central/
   cli.py           linha de comando
   _dependencias.py acha `vendor/` e as ferramentas, e põe no sys.path
 
-tests/             28 testes, incluindo a prova de que roda sem instalação
+tests/             33 testes, incluindo a prova de que roda sem instalação
 ```
 
 ## Testes

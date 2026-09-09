@@ -102,6 +102,8 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             })
         elif rota.path == "/abrir":
             self._abrir_janela(consulta)
+        elif rota.path == "/configuracao":
+            self._ler_configuracao(consulta)
         elif rota.path == "/limpar":
             self.sessao.esquecer((consulta.get("ferramenta") or [""])[0])
             self._json(200, {"ok": True})
@@ -122,6 +124,8 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             self._receber(consulta)
         elif rota.path == "/executar":
             self._executar(consulta)
+        elif rota.path == "/configuracao":
+            self._gravar_configuracao(consulta)
         else:
             self._enviar(404, "text/plain; charset=utf-8", b"nao encontrado")
 
@@ -165,6 +169,57 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
                 return
             self.sessao.janelas[ferramenta.id] = janela
         self._json(200, {"endereco": janela.endereco})
+
+    # -- configuração da ferramenta ----------------------------------------
+
+    def _ler_configuracao(self, consulta: dict) -> None:
+        ferramenta = self._ferramenta(consulta)
+        if ferramenta is None:
+            return
+        if ferramenta.configuracao is None:
+            self._json(400, {"erro": f"{ferramenta.nome} não tem o que configurar."})
+            return
+        try:
+            secoes = ferramenta.configuracao.secoes()
+            dados = ferramenta.configuracao.ler()
+        except Exception as erro:                 # noqa: BLE001
+            self._json(400, {"erro": self._explicar(erro, ferramenta)})
+            return
+        self._json(200, {
+            "resumo": ferramenta.configuracao.resumo,
+            "secoes": [
+                {
+                    "id": s.id, "titulo": s.titulo, "explicacao": s.explicacao,
+                    "fixa": s.fixa,
+                    "campos": [asdict(c) for c in s.campos],
+                }
+                for s in secoes
+            ],
+            "dados": dados,
+        })
+
+    def _gravar_configuracao(self, consulta: dict) -> None:
+        ferramenta = self._ferramenta(consulta)
+        if ferramenta is None:
+            return
+        if ferramenta.configuracao is None:
+            self._json(400, {"erro": f"{ferramenta.nome} não tem o que configurar."})
+            return
+        try:
+            tamanho = int(self.headers.get("Content-Length") or 0)
+            corpo = json.loads(self.rfile.read(tamanho) or b"{}")
+        except (ValueError, json.JSONDecodeError):
+            self._json(400, {"erro": "não entendi o que a tela mandou."})
+            return
+
+        quem = str(corpo.get("responsavel") or "").strip()
+        try:
+            gravou, problemas = ferramenta.configuracao.gravar(
+                corpo.get("dados") or {}, quem)
+        except Exception as erro:                 # noqa: BLE001
+            self._json(400, {"erro": self._explicar(erro, ferramenta)})
+            return
+        self._json(200, {"gravou": gravou, "problemas": problemas})
 
     # -- receber arquivo ---------------------------------------------------
 

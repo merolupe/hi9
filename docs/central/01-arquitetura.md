@@ -56,7 +56,7 @@ e mandando o navegador abrir a página.
 
 ## 4. O contrato de ferramenta
 
-Para aparecer na tela, uma ferramenta declara três coisas em
+Para aparecer na tela, uma ferramenta declara até quatro coisas em
 `central/src/central/ferramentas.py`:
 
 **Quem é** — `id`, `nome`, `resumo` de uma linha, `icone` e `estado`.
@@ -67,6 +67,14 @@ extensões aceita e se aceita mais de um arquivo.
 **O que devolve** — um `Resultado`: um título, as `Ficha`s (os números em
 destaque), as `Lista`s (o que precisa ser visto item a item — o que ficou de
 fora, o que falhou) e, quando houver, o caminho da planilha para baixar.
+
+**O que se configura nela** — uma `Configuracao`, quando a ferramenta guarda
+estado entre uma execução e outra. É a parte mais nova do contrato, e nasceu
+com o Fiscalbot: as regras tributárias dele são cadastradas numa tela, não em
+planilha nem em arquivo no git. A ferramenta declara `Secao`s — cada uma uma
+tabela editável, com seus `Campo`s — e duas funções: `ler`, que devolve o que
+está gravado, e `gravar`, que confere e responde `(gravou, problemas)`. Com
+erro não grava; com aviso grava e conta o que vai acontecer.
 
 ```python
 Ferramenta(
@@ -87,6 +95,29 @@ A função de execução recebe os caminhos dos arquivos e a pasta onde gravar, 
 devolve o `Resultado`. **Só isso.** A ferramenta não sabe que existe navegador,
 não monta HTML e não conhece as outras. Quem costura é a central — e há um
 teste que trava isso (`test_nenhuma_ferramenta_importa_outra`).
+
+A configuração segue a mesma disciplina: o Fiscalbot descreve as seções dele
+em dicionários simples (`fiscalbot/configuracao.py`), e é a central que os
+converte nos tipos dela e desenha a tela. Se fosse o contrário, a ferramenta
+precisaria importar a central.
+
+### Onde a configuração de uma ferramenta mora
+
+**Fora do git.** A base de uma ferramenta fica em `dados/<ferramenta>/`, pasta
+ignorada como `competencias/`. A razão é dupla: parte do conteúdo é dado da
+empresa (as listas de parceiros do Fiscalbot trazem nome de fornecedor real), e
+o time fiscal precisa alterar regra sem passar por commit.
+
+O que fica versionado é a **carga de fábrica** — `<projeto>/regras_de_fabrica.yaml`
+—, que traz só a parte tributária, sem dado de empresa. Ela existe para a
+ferramenta abrir funcionando numa máquina nova; na primeira abertura a base é
+semeada a partir dela, e dali em diante quem manda é a base.
+
+Isso **abre exceção às regras nº 2 e nº 3 do `CLAUDE.md`** — regra tributária
+versionada, com vigência. Foi decisão do time: a tela substitui a planilha, e a
+trilha de alteração passa a viver dentro do aplicativo, que carimba quem gravou
+e quando. Vale para ferramenta com tela de configuração; o Apurabot continua
+com os parâmetros dele versionados em `apurabot/parametros/`.
 
 ### Os três estados
 
@@ -126,6 +157,8 @@ hi9/
 ├─ central/src/central/  o menu, o contrato e o servidor
 ├─ apurabot/             apuração de ICMS
 ├─ dixml/                lote de XML para planilha
+├─ fiscalbot/            auditoria do Livro Fiscal
+├─ dados/                base de regras das ferramentas — ignorada pelo git
 └─ docs/                 esta documentação
 ```
 
@@ -157,7 +190,7 @@ depois.
 
 ## 8. O que falta
 
-- Trazer Fiscalbot, GerarPendentes e GerarServPend, uma a uma.
+- Trazer GerarPendentes e GerarServPend, uma a uma.
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).
 - O Faturabot está em desenvolvimento e entra pelo mesmo contrato.

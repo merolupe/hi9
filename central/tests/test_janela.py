@@ -28,10 +28,19 @@ def test_ferramenta_ainda_nao_importada_aparece_apagada_em_vez_de_sumir(janela):
     """O time enxerga o que falta, em vez de descobrir quando precisar."""
     _, dados = janela.pedir("/ferramentas")
     por_id = {f["id"]: f for f in dados["ferramentas"]}
-    assert por_id["fiscalbot"]["estado"] == ferramentas.A_IMPORTAR
-    assert por_id["fiscalbot"]["resumo"]
+    assert por_id["gerarpendentes"]["estado"] == ferramentas.A_IMPORTAR
+    assert por_id["gerarpendentes"]["resumo"]
     assert por_id["dixml"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["fiscalbot"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["apurabot"]["estado"] == ferramentas.JANELA_PROPRIA
+
+
+def test_so_quem_guarda_estado_declara_configuracao(janela):
+    """O Fiscalbot é a primeira com regras próprias; as outras não têm o que salvar."""
+    _, dados = janela.pedir("/ferramentas")
+    por_id = {f["id"]: f for f in dados["ferramentas"]}
+    assert por_id["fiscalbot"]["tem_configuracao"] is True
+    assert por_id["dixml"]["tem_configuracao"] is False
 
 
 def test_quem_roda_na_janela_declara_o_que_pede(janela):
@@ -148,7 +157,7 @@ def test_ferramenta_desconhecida_nao_derruba_a_janela(janela):
 
 
 def test_ferramenta_ainda_nao_importada_nao_finge_que_roda(janela):
-    codigo, dados = janela.postar("/executar", ferramenta="fiscalbot")
+    codigo, dados = janela.postar("/executar", ferramenta="gerarpendentes")
     assert codigo == 400
     assert "ainda não roda" in dados["erro"]
 
@@ -174,6 +183,51 @@ def test_zip_corrompido_vira_recado_em_vez_de_traceback(janela):
     assert codigo == 200
     titulos = " ".join(l["titulo"] for l in dados["listas"])
     assert "ilegíveis" in titulos
+
+
+# -- a tela de configuração ------------------------------------------------
+
+def test_a_tela_de_configuracao_traz_secoes_e_dados(janela):
+    codigo, dados = janela.pedir("/configuracao", ferramenta="fiscalbot")
+    assert codigo == 200, dados
+    ids = [s["id"] for s in dados["secoes"]]
+    assert "regras" in ids and "parceiros_sn" in ids
+    assert dados["dados"]["regras"], "a carga de fábrica tem que vir preenchida"
+    for secao in dados["secoes"]:
+        assert secao["explicacao"]
+        assert secao["campos"]
+
+
+def test_ferramenta_sem_configuracao_diz_isso(janela):
+    codigo, dados = janela.pedir("/configuracao", ferramenta="dixml")
+    assert codigo == 400
+    assert "não tem o que configurar" in dados["erro"]
+
+
+def test_gravar_configuracao_com_erro_nao_grava(janela):
+    """Base inconsistente auditaria o mês inteiro errado."""
+    import json
+    corpo = json.dumps({"dados": {
+        "regras": [{"id": "X1", "cfop": "5101", "ativa": True},
+                   {"id": "X1", "cfop": "5102", "ativa": True}],
+        "parametros": [{"tolerancia_carga": "0.05",
+                        "cst_exigem_icms_positivo": "00"}],
+    }}).encode("utf-8")
+    codigo, dados = janela.pedir("/configuracao", corpo=corpo, ferramenta="fiscalbot")
+    assert codigo == 200
+    assert dados["gravou"] is False
+    assert any(p["gravidade"] == "erro" for p in dados["problemas"])
+
+
+def test_a_tela_devolve_os_problemas_para_a_pessoa_ler(janela):
+    import json
+    corpo = json.dumps({"dados": {"regras": [], "parametros": [{}]}}).encode("utf-8")
+    codigo, dados = janela.pedir("/configuracao", corpo=corpo, ferramenta="fiscalbot")
+    assert codigo == 200
+    assert dados["gravou"] is False
+    assert dados["problemas"], "recusar sem dizer o motivo não ajuda ninguém"
+    for problema in dados["problemas"]:
+        assert problema["onde"] and problema["mensagem"]
 
 
 # -- o Apurabot, que tem tela própria --------------------------------------

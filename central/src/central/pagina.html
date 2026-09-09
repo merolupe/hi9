@@ -115,6 +115,43 @@ button.acao{
 .secundario-btn:hover{color:var(--texto); border-color:var(--suave)}
 .acoes{display:flex; gap:12px; flex-wrap:wrap; margin:20px 0 4px}
 .rodape{color:var(--suave); font-size:13px; margin-top:34px; text-align:center}
+
+/* ---------- tela de configuração ---------- */
+.explicacao{color:var(--suave); font-size:14px; margin:-6px 0 14px}
+.rolagem{overflow-x:auto; margin:0 -4px}
+table.grade-config{border-collapse:collapse; font-size:13px}
+table.grade-config th{
+  font-size:11.5px; text-transform:uppercase; letter-spacing:.3px; text-align:left;
+  color:var(--suave); border-bottom:2px solid var(--borda); font-weight:700;
+  padding:5px 4px; white-space:nowrap; cursor:help;
+}
+table.grade-config td{padding:2px 3px; border-bottom:1px solid var(--borda)}
+table.grade-config input[type=text]{
+  font:inherit; font-size:13px; padding:4px 6px; border-radius:6px;
+  border:1px solid var(--borda); background:var(--fundo); color:var(--texto);
+}
+table.grade-config input[type=text]:focus{outline:2px solid var(--marca); outline-offset:-1px}
+table.grade-config tr.alterada input[type=text]{border-color:var(--marca)}
+.remover{
+  background:none; border:none; color:var(--suave); cursor:pointer;
+  font-size:15px; padding:2px 6px; line-height:1;
+}
+.remover:hover{color:var(--erro)}
+.filtro{
+  font:inherit; font-size:13.5px; padding:6px 10px; border-radius:8px;
+  border:1px solid var(--borda); background:var(--fundo); color:var(--texto);
+  margin-bottom:10px; width:280px; max-width:100%;
+}
+.contagem{color:var(--suave); font-size:13px; margin-left:10px}
+ul.problemas{margin:0; padding-left:20px; font-size:14px}
+ul.problemas li{margin-bottom:5px}
+ul.problemas li.erro{color:var(--erro)}
+ul.problemas li.aviso{color:var(--atencao)}
+.barra-salvar{
+  position:sticky; bottom:0; background:var(--fundo); padding:14px 0 6px;
+  border-top:1px solid var(--borda); display:flex; gap:12px; align-items:center;
+  flex-wrap:wrap;
+}
 </style>
 </head>
 <body>
@@ -133,6 +170,7 @@ button.acao{
     <button class="voltar" onclick="aoMenu()">← Ferramentas</button>
     <h2 id="tela-nome" style="margin:0 0 4px; font-size:21px"></h2>
     <p class="subtitulo" id="tela-resumo"></p>
+    <div class="acoes" id="tela-acoes" style="margin-top:0"></div>
 
     <div id="entrada">
       <div id="largar">
@@ -156,6 +194,20 @@ button.acao{
     </div>
 
     <div id="resultado" class="oculto"></div>
+  </div>
+
+  <!-- ================= configuração da ferramenta ================= -->
+  <div id="config" class="oculto">
+    <button class="voltar" onclick="daConfigAoMenu()">← Ferramentas</button>
+    <h2 id="config-nome" style="margin:0 0 4px; font-size:21px"></h2>
+    <p class="subtitulo" id="config-resumo"></p>
+    <div id="config-recado"></div>
+    <div id="config-secoes"></div>
+    <div class="barra-salvar">
+      <button class="acao principal-btn" onclick="salvarConfig()">Salvar alterações</button>
+      <button class="acao secundario-btn" onclick="carregarConfig(atual.id)">Descartar</button>
+      <span class="contagem" id="config-carimbo"></span>
+    </div>
   </div>
 
   <p class="rodape">
@@ -219,6 +271,9 @@ async function escolher(id){
   enviados = [];
   $("tela-nome").textContent = f.nome;
   $("tela-resumo").textContent = f.resumo;
+  $("tela-acoes").innerHTML = f.tem_configuracao
+    ? `<button class="acao secundario-btn" onclick="carregarConfig('${f.id}')"
+         title="${esc(f.resumo_da_configuracao)}">⚙ Regras e parâmetros</button>` : "";
   $("largar-rotulo").textContent = f.entrada.rotulo;
   // O texto de apoio vem do catálogo do próprio repositório, não de quem usa.
   $("largar-apoio").innerHTML = f.entrada.apoio;
@@ -238,6 +293,152 @@ function aoMenu(){
   atual = null; enviados = [];
   $("tela").classList.add("oculto");
   $("menu").classList.remove("oculto");
+}
+
+// ---------- configuração da ferramenta ----------
+
+let CONFIG = null;          // {secoes, dados} da ferramenta aberta
+
+async function carregarConfig(id){
+  const f = FERRAMENTAS.find((x) => x.id === id);
+  if (!f || !f.tem_configuracao) return;
+  atual = f;
+  const r = await fetch(url("/configuracao", `&ferramenta=${id}`));
+  const dados = await r.json();
+  if (dados.erro){ alert(dados.erro); return; }
+  CONFIG = {secoes: dados.secoes, dados: dados.dados};
+  $("config-nome").textContent = `Configuração — ${f.nome}`;
+  $("config-resumo").textContent = dados.resumo;
+  $("config-recado").innerHTML = "";
+  desenharSecoes();
+  $("menu").classList.add("oculto");
+  $("tela").classList.add("oculto");
+  $("config").classList.remove("oculto");
+  window.scrollTo(0, 0);
+}
+
+function daConfigAoMenu(){
+  CONFIG = null; atual = null;
+  $("config").classList.add("oculto");
+  $("menu").classList.remove("oculto");
+}
+
+function desenharSecoes(){
+  $("config-secoes").innerHTML = CONFIG.secoes.map(secaoHtml).join("");
+}
+
+function secaoHtml(secao){
+  const linhas = CONFIG.dados[secao.id] || [];
+  const filtro = !secao.fixa && linhas.length > 10
+    ? `<input class="filtro" placeholder="filtrar…" oninput="filtrar('${secao.id}', this.value)">
+       <span class="contagem" id="conta-${secao.id}">${linhas.length} linha(s)</span>`
+    : "";
+  const acrescentar = secao.fixa ? "" :
+    `<button class="acao secundario-btn" style="margin-top:12px; padding:7px 14px; font-size:13.5px"
+             onclick="acrescentarLinha('${secao.id}')">+ acrescentar linha</button>`;
+  return `
+    <section id="secao-${secao.id}">
+      <h2>${esc(secao.titulo)}</h2>
+      <p class="explicacao">${esc(secao.explicacao)}</p>
+      ${filtro}
+      <div class="rolagem">
+        <table class="grade-config">
+          <thead><tr>
+            ${secao.campos.map((c) =>
+              `<th title="${esc(c.ajuda)}">${esc(c.rotulo)}</th>`).join("")}
+            ${secao.fixa ? "" : "<th></th>"}
+          </tr></thead>
+          <tbody id="corpo-${secao.id}">
+            ${linhas.map((l, i) => linhaHtml(secao, l, i)).join("")}
+          </tbody>
+        </table>
+      </div>
+      ${acrescentar}
+    </section>`;
+}
+
+function linhaHtml(secao, linha, i){
+  const celulas = secao.campos.map((c) => {
+    const v = linha[c.chave];
+    if (c.tipo === "booleano"){
+      return `<td style="text-align:center"><input type="checkbox" ${v ? "checked" : ""}
+        onchange="mudou('${secao.id}',${i},'${c.chave}',this.checked)"></td>`;
+    }
+    return `<td><input type="text" style="width:${c.largura}ch"
+      value="${esc(v === null || v === undefined ? "" : v)}"
+      title="${esc(c.ajuda)}"
+      oninput="mudou('${secao.id}',${i},'${c.chave}',this.value)"></td>`;
+  }).join("");
+  const remover = secao.fixa ? "" :
+    `<td><button class="remover" title="remover esta linha"
+        onclick="removerLinha('${secao.id}',${i})">✕</button></td>`;
+  return `<tr>${celulas}${remover}</tr>`;
+}
+
+function mudou(secaoId, i, chave, valor){
+  CONFIG.dados[secaoId][i][chave] = valor;
+  const corpo = $(`corpo-${secaoId}`);
+  if (corpo && corpo.rows[i]) corpo.rows[i].classList.add("alterada");
+}
+
+function acrescentarLinha(secaoId){
+  const secao = CONFIG.secoes.find((s) => s.id === secaoId);
+  const nova = {};
+  for (const c of secao.campos) nova[c.chave] = c.tipo === "booleano" ? true : "";
+  (CONFIG.dados[secaoId] = CONFIG.dados[secaoId] || []).push(nova);
+  desenharSecoes();
+  const corpo = $(`corpo-${secaoId}`);
+  if (corpo && corpo.lastElementChild) corpo.lastElementChild.scrollIntoView({block:"center"});
+}
+
+function removerLinha(secaoId, i){
+  CONFIG.dados[secaoId].splice(i, 1);
+  desenharSecoes();
+}
+
+function filtrar(secaoId, texto){
+  const alvo = texto.trim().toLowerCase();
+  const corpo = $(`corpo-${secaoId}`);
+  if (!corpo) return;
+  let visiveis = 0;
+  for (const linha of corpo.rows){
+    const casa = !alvo || linha.textContent.toLowerCase().includes(alvo) ||
+      [...linha.querySelectorAll("input[type=text]")]
+        .some((i) => i.value.toLowerCase().includes(alvo));
+    linha.hidden = !casa;
+    if (casa) visiveis++;
+  }
+  const conta = $(`conta-${secaoId}`);
+  if (conta) conta.textContent = `${visiveis} linha(s)`;
+}
+
+async function salvarConfig(){
+  if (!CONFIG || !atual) return;
+  const r = await fetch(url("/configuracao", `&ferramenta=${atual.id}`), {
+    method: "POST",
+    body: JSON.stringify({dados: CONFIG.dados, responsavel: ""}),
+  });
+  const resposta = await r.json();
+  if (resposta.erro){ mostrarProblemas(false, [{gravidade:"erro", onde:"Base", mensagem:resposta.erro}]); return; }
+  mostrarProblemas(resposta.gravou, resposta.problemas || []);
+  if (resposta.gravou) carregarConfig(atual.id).then(() => {
+    mostrarProblemas(true, resposta.problemas || []);
+  });
+}
+
+function mostrarProblemas(gravou, problemas){
+  const erros = problemas.filter((p) => p.gravidade === "erro");
+  const faixa = gravou
+    ? `<div class="faixa ok"><span class="marca">✓</span><span>Base gravada.</span></div>`
+    : `<div class="faixa erro"><span class="marca">✕</span><span>Nada foi gravado:
+        ${erros.length} problema(s) impedem.</span></div>`;
+  const lista = problemas.length ? `
+    <section><h2>Conferência da base</h2>
+      <ul class="problemas">${problemas.map((p) =>
+        `<li class="${p.gravidade}"><strong>${esc(p.onde)}</strong> — ${esc(p.mensagem)}</li>`
+      ).join("")}</ul></section>` : "";
+  $("config-recado").innerHTML = faixa + lista;
+  window.scrollTo(0, 0);
 }
 
 function mostrar(qual){
