@@ -236,6 +236,21 @@ def test_a_janela_espera_com_o_twin_orbit():
     assert "@keyframes orbitar" in html
 
 
+def test_a_janela_traz_a_marca_e_o_slogan():
+    """A abertura é a identidade: a marca partida em duas fontes e o slogan."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert '<span class="apura">Apura</span><span class="bot">bot</span>' in html
+    assert '<p class="slogan">tecnologias de Hinovação.</p>' in html
+
+
+def test_a_janela_nao_oferece_mais_o_botao_de_encerrar():
+    """Quem fecha é a janela preta. O rodapé saiu e a função foi junto."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert "Encerrar</button>" not in html
+    assert "async function encerrar(" not in html
+    assert 'class="rodape"' not in html
+
+
 def test_o_logo_tem_onde_ser_trocado_pela_arte_oficial():
     """`marca/embutir_logo.py` troca o desenho pelo PNG entre estas marcas."""
     html = PAGINA.read_text(encoding="utf-8")
