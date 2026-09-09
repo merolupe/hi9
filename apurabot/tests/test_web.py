@@ -170,6 +170,57 @@ def test_o_arquivo_enviado_nao_fica_na_maquina(janela, arquivo_julho):
 
 # -- a página ---------------------------------------------------------------
 
+def test_a_pagina_abre_com_os_destaques_da_ferramenta():
+    """O que a janela promete na abertura é o que a ferramenta faz.
+
+    O número de testes é uma promessa ao usuário: ao acrescentar teste,
+    atualize também o destaque na janela. É de propósito que este teste
+    quebre — a janela não pode prometer um número que não é mais verdade.
+    """
+    html = PAGINA.read_text(encoding="utf-8")
+    for destaque in (
+        "854 classificações de operação sob 117 CFOPs",
+        "268 testes automatizados sob o contexto HINOVE",
+        "Apuração completa das 7 filiais",
+        "Cálculo de centralização, DIFAL, CIAP e Benefício Fiscal"
+        " de Rio Brilhante configurados",
+    ):
+        assert destaque in html, f"sumiu o destaque: {destaque!r}"
+
+
+def test_a_espera_conta_os_passos_na_ordem_do_motor():
+    """A mensagem acompanha o que o motor faz, na ordem em que ele faz."""
+    html = PAGINA.read_text(encoding="utf-8")
+    passos = [
+        "Lendo livro…",
+        "Equalizando carga…",
+        "Aplicando regras…",
+        "Identificando regimes de apuração por filial…",
+        "Apurando…",
+        "Montando registro…",
+    ]
+    onde = [html.find(f'"{passo}"') for passo in passos]
+    assert all(i > 0 for i in onde), "faltou passo na lista da janela"
+    assert onde == sorted(onde), "os passos saíram fora de ordem"
+
+
+def test_o_ultimo_passo_segura_ate_a_resposta_chegar():
+    """Nenhum passo pode dizer que terminou antes do motor terminar."""
+    html = PAGINA.read_text(encoding="utf-8")
+    ultimo = html[html.index('"Montando registro…"'):]
+    assert ultimo[: ultimo.index("]")].rstrip().endswith("null"), (
+        "o último passo tem tempo: a janela vai avançar sozinha"
+    )
+
+
+def test_a_janela_espera_com_o_twin_orbit():
+    """O anel único saiu; entraram os dois anéis em contra-rotação."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert 'class="girando"' not in html and "@keyframes girar{" not in html
+    assert 'class="anel externo"' in html and 'class="anel interno"' in html
+    assert "@keyframes orbitar" in html
+
+
 def test_a_pagina_nao_busca_nada_fora_da_maquina():
     """Rede corporativa bloqueia CDN — e o dado não pode sair daqui.
 

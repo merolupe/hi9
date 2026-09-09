@@ -4,21 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Apurabot — apuração de ICMS</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f3864'/%3E%3Ctext x='16' y='23' font-size='20' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23333f7d'/%3E%3Ctext x='16' y='23' font-size='20' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
 <style>
+/* Paleta da identidade visual da Hinove: as três bolas do logo sobre
+   fundo branco. O fundo é branco em qualquer tema — a apuração é lida e
+   conferida, e a planilha impressa sai em papel branco. */
 :root{
-  --fundo:#f4f6fa; --painel:#ffffff; --texto:#16202e; --suave:#5b6b80;
-  --borda:#dde3ec; --marca:#1f3864; --marca-clara:#e8eef8;
-  --ok:#1e7b34; --ok-fundo:#e7f5ea; --erro:#b00020; --erro-fundo:#fdecef;
+  color-scheme:light;
+  --navy:#333f7d;        /* bola azul escura, e o wordmark HINOVE */
+  --azul:#93b5d1;        /* bola azul clara */
+  --azul-medio:#c6dae9;
+  --azul-palido:#eef4f9;
+  --verde:#1e9160;       /* bola verde */
+
+  --fundo:#ffffff; --painel:#ffffff; --texto:#1b2331; --suave:#5d6b80;
+  --borda:#dce5ef; --marca:var(--navy); --marca-clara:var(--azul-palido);
+  --ok:#17784f; --ok-fundo:#e7f4ee; --erro:#b00020; --erro-fundo:#fdecef;
   --atencao:#9a6b00; --atencao-fundo:#fff6e0;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --fundo:#11151c; --painel:#182029; --texto:#e8edf4; --suave:#9aabc0;
-    --borda:#2a3542; --marca:#7ea6e8; --marca-clara:#1d2836;
-    --ok:#6ede8a; --ok-fundo:#16301d; --erro:#ff8095; --erro-fundo:#341219;
-    --atencao:#ffce6a; --atencao-fundo:#33280d;
-  }
 }
 *{box-sizing:border-box}
 body{
@@ -26,10 +28,36 @@ body{
   font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
 }
 .envelope{max-width:1280px; margin:0 auto; padding:28px 20px 80px}
-header{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
-h1{font-size:26px; margin:0; letter-spacing:-.3px}
-h1 span{color:var(--marca)}
-.subtitulo{color:var(--suave); font-size:14.5px; margin:0 0 26px}
+/* ---------- cabeçalho: a marca, os destaques e o logo ---------- */
+header{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:30px; flex-wrap:wrap; margin:0 0 30px;
+}
+.marca{min-width:0}
+h1{font-size:58px; line-height:1.05; margin:0 0 16px; font-weight:400; white-space:nowrap}
+h1 .apura{
+  /* Fontes do próprio sistema: a janela roda sem internet. */
+  font-family:"Snell Roundhand","Edwardian Script ITC","Monotype Corsiva",
+              "Apple Chancery",Gabriola,"Segoe Script","Brush Script MT",cursive;
+  color:var(--navy); font-style:italic; padding-right:.05em;
+}
+h1 .bot{
+  font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  color:var(--azul); font-size:.66em; letter-spacing:-.02em;
+}
+.destaques{
+  list-style:none; margin:0; padding:14px 24px 14px 20px;
+  background:var(--azul-palido); border-radius:18px;
+  font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  font-size:13px; line-height:1.5;
+}
+.destaques li{display:flex; align-items:baseline; gap:12px; padding:3.5px 0}
+.destaques li:before{
+  content:""; flex:none; width:9px; height:9px; border-radius:50%;
+  background:var(--navy); transform:translateY(-1px);
+}
+.logo-hinove{flex:none; width:280px; max-width:42vw; align-self:center}
+.logo-hinove svg{display:block; width:100%; height:auto}
 
 /* ---------- área de largar o arquivo ---------- */
 #largar{
@@ -49,12 +77,41 @@ h1 span{color:var(--marca)}
   background:var(--painel); border:1px solid var(--borda); border-radius:14px;
   padding:44px 28px; text-align:center;
 }
-.girando{
-  width:34px; height:34px; margin:0 auto 16px; border-radius:50%;
-  border:3px solid var(--borda); border-top-color:var(--marca);
-  animation:girar .8s linear infinite;
+/* Twin orbit: dois anéis concêntricos girando em sentidos opostos,
+   cada um levando o seu corpo — o azul escuro e o verde do logo. */
+.orbita{position:relative; width:78px; height:78px; margin:0 auto 22px}
+.orbita .anel{
+  position:absolute; border-radius:50%; border:2px solid var(--azul-medio);
+  animation:orbitar 1.9s linear infinite;
 }
-@keyframes girar{to{transform:rotate(360deg)}}
+.orbita .anel:before{
+  content:""; position:absolute; left:50%; top:-7px;
+  width:12px; height:12px; margin-left:-6px; border-radius:50%;
+}
+.orbita .externo{inset:0; border-top-color:var(--navy)}
+.orbita .externo:before{background:var(--navy)}
+.orbita .interno{
+  inset:17px; border-bottom-color:var(--verde);
+  animation-duration:1.25s; animation-direction:reverse;
+}
+.orbita .interno:before{
+  top:auto; bottom:-6px; width:10px; height:10px; margin-left:-5px;
+  background:var(--verde);
+}
+.orbita .nucleo{
+  position:absolute; inset:33px; border-radius:50%; background:var(--azul);
+  animation:pulsar 1.9s ease-in-out infinite;
+}
+@keyframes orbitar{to{transform:rotate(360deg)}}
+@keyframes pulsar{50%{transform:scale(.6); opacity:.5}}
+@media (prefers-reduced-motion: reduce){
+  .orbita .anel,.orbita .nucleo{animation-duration:6s}
+}
+#processando .passo{
+  font-size:19px; font-weight:600; margin-bottom:7px;
+  transition:opacity .2s ease;
+}
+#processando .passo.trocando{opacity:0}
 
 /* ---------- blocos ---------- */
 .faixa{
@@ -138,8 +195,39 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
 <body>
 <div class="envelope">
 
-  <header><h1>Apura<span>bot</span></h1></header>
-  <p class="subtitulo">Apuração de ICMS — Hinove Agrociência S.A.</p>
+  <header>
+    <div class="marca">
+      <h1><span class="apura">Apura</span><span class="bot">bot</span></h1>
+      <ul class="destaques">
+        <li>854 classificações de operação sob 117 CFOPs</li>
+        <li>268 testes automatizados sob o contexto HINOVE</li>
+        <li>Apuração completa das 7 filiais</li>
+        <li>Cálculo de centralização, DIFAL, CIAP e Benefício Fiscal de Rio Brilhante configurados</li>
+      </ul>
+    </div>
+
+    <!-- O logo vai desenhado aqui dentro: a janela abre sem internet. -->
+    <div class="logo-hinove">
+      <svg viewBox="0 0 2360 900" role="img" aria-label="Hinove Fertilizantes Especiais"
+           xmlns="http://www.w3.org/2000/svg">
+        <g style="isolation:isolate">
+          <circle cx="400" cy="400" r="398" fill="#93b5d1" style="mix-blend-mode:multiply"/>
+          <circle cx="605" cy="495" r="300" fill="#333f7d" style="mix-blend-mode:multiply"/>
+          <circle cx="405" cy="645" r="203" fill="#1e9160" style="mix-blend-mode:multiply"/>
+        </g>
+        <text x="980" y="600" fill="#333f7d" font-size="300" textLength="1250"
+              lengthAdjust="spacingAndGlyphs" font-weight="900"
+              font-family="'Arial Black','Helvetica Neue',Arial,Helvetica,sans-serif"
+              >HINOVE</text>
+        <text x="2250" y="365" fill="#333f7d" font-size="105"
+              font-family="Arial,Helvetica,sans-serif">&#174;</text>
+        <text x="988" y="775" fill="#1e9160" font-size="128" textLength="1242"
+              lengthAdjust="spacingAndGlyphs" font-weight="700"
+              font-family="Arial,Helvetica,sans-serif"
+              >FERTILIZANTES ESPECIAIS</text>
+      </svg>
+    </div>
+  </header>
 
   <!-- ================= largar o arquivo ================= -->
   <div id="largar">
@@ -151,9 +239,13 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
 
   <!-- ================= processando ================= -->
   <div id="processando" class="oculto">
-    <div class="girando"></div>
-    <div><strong>Apurando…</strong></div>
-    <div class="apoio" style="color:var(--suave)">Ler o livro, equalizar a carga, aplicar as regras e montar o registro.</div>
+    <div class="orbita" aria-hidden="true">
+      <span class="anel externo"></span>
+      <span class="anel interno"></span>
+      <span class="nucleo"></span>
+    </div>
+    <div class="passo" id="passo" role="status" aria-live="polite">Lendo livro…</div>
+    <div class="apoio" style="color:var(--suave)">Nada sai da sua máquina. Um livro grande leva alguns minutos.</div>
   </div>
 
   <!-- ================= erro ================= -->
@@ -206,9 +298,46 @@ alvo.addEventListener("drop", (ev) => {
 document.addEventListener("dragover", (e) => e.preventDefault());
 document.addEventListener("drop", (e) => e.preventDefault());
 
+/* ---------------- os passos da apuração ----------------
+   O tempo é uma estimativa: o motor não reporta progresso. O último passo
+   fica na tela até a resposta chegar — nenhum passo mente dizendo que
+   terminou. */
+const PASSOS = [
+  ["Lendo livro…",                                  3500],
+  ["Equalizando carga…",                            3000],
+  ["Aplicando regras…",                             3000],
+  ["Identificando regimes de apuração por filial…", 2800],
+  ["Apurando…",                                     3200],
+  ["Montando registro…",                            null],
+];
+let relogioDoPasso = null;
+
+function andarNoPasso(i){
+  const alvo = $("passo");
+  alvo.classList.add("trocando");
+  setTimeout(() => {
+    alvo.textContent = PASSOS[i][0];
+    alvo.classList.remove("trocando");
+  }, 200);
+  const espera = PASSOS[i][1];
+  if (espera !== null) relogioDoPasso = setTimeout(() => andarNoPasso(i + 1), espera);
+}
+function comecarOsPassos(){
+  pararOsPassos();
+  const alvo = $("passo");
+  alvo.classList.remove("trocando");
+  alvo.textContent = PASSOS[0][0];
+  relogioDoPasso = setTimeout(() => andarNoPasso(1), PASSOS[0][1]);
+}
+function pararOsPassos(){
+  clearTimeout(relogioDoPasso);
+  relogioDoPasso = null;
+}
+
 function mostrar(qual){
   for (const id of ["largar","processando","erro","resultado"])
     $(id).classList.toggle("oculto", id !== qual);
+  if (qual === "processando") comecarOsPassos(); else pararOsPassos();
 }
 function reiniciar(){ campo.value = ""; mostrar("largar"); }
 
