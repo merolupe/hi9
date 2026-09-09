@@ -71,8 +71,15 @@ navegador. Anote — não é bloqueante, mas é defeito.
 **Faça:** arraste o Livro Fiscal do Explorador para dentro da área tracejada.
 (Ou clique nela e escolha o arquivo.)
 
-**Tem que acontecer:** a área some, aparece um círculo girando e a palavra
-*"Apurando…"*. Em até um minuto, o resultado.
+**Tem que acontecer:** a área some, aparecem dois anéis girando em sentidos
+opostos e a mensagem vai andando pelos passos — *"Lendo livro…"*,
+*"Equalizando carga…"*, *"Aplicando regras…"*, *"Identificando regimes de
+apuração por filial…"*, *"Apurando…"*, *"Montando registro…"*. Em até um
+minuto, o resultado.
+
+O tempo de cada passo é estimado — o motor não reporta progresso. O último
+passo fica na tela até o resultado aparecer; se ele ficar parado ali por
+bastante tempo num livro grande, é o esperado, não travamento.
 
 **O ponto deste teste:** o arquivo pode estar em **qualquer pasta**, com
 **qualquer nome**. Teste de propósito com o arquivo na sua área de trabalho, ou
