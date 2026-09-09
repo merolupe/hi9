@@ -272,10 +272,10 @@ Testar o caminho feliz não basta. Faça de propósito:
 
 ## Encerrar
 
-Clique em **Encerrar**, no rodapé da página, ou feche a janela preta.
+Feche a janela preta que abriu junto com o navegador, ou tecle Ctrl+C nela.
 
-**Tem que acontecer:** a página confirma o encerramento. A pasta temporária que
-guardava o arquivo enviado é apagada — nada do Livro Fiscal fica na máquina.
+**Tem que acontecer:** a pasta temporária que guardava o arquivo enviado é
+apagada — nada do Livro Fiscal fica na máquina.
 
 ---
 
