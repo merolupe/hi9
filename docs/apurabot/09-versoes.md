@@ -137,6 +137,12 @@ escuro e no azul claro das bolas do logo. O logo da Hinove entra no canto
 superior direito, desenhado em SVG dentro da própria página — a janela abre
 com a máquina desconectada da internet, então nenhum arquivo é buscado fora.
 
+**Para trocar o desenho pela arte oficial**, ponha o PNG em
+`apurabot/marca/hinove.png` e rode `python3 marca/embutir_logo.py`. O script
+converte para `data:` URI e escreve dentro do HTML, entre as marcas
+`<!-- logo:inicio -->` e `<!-- logo:fim -->`. Continua sendo um arquivo só,
+sem nada buscado por URL. Ver `apurabot/marca/README.md`.
+
 **A paleta.** Fundo branco, e o resto tirado das três bolas do logo: azul
 escuro `#333f7d`, azul claro `#93b5d1`, verde `#1e9160`. O tema escuro saiu:
 a apuração é lida, conferida e impressa, e o papel é branco.
