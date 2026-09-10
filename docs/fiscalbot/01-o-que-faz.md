@@ -157,8 +157,11 @@ exatamente os mesmos registros (é o que faria a auditoria marcar `AMBIGUA`);
 operador que o motor não conhece; tabela de produto citada e inexistente;
 `TABELAUF` com a matriz vazia; base sem nenhuma regra ativa.
 
-**Avisam, mas gravam:** regra ativa sem CFOP (nunca vai casar); CFOP vazio no
-meio da lista; CST esperado sem dois dígitos; lista de parceiros vazia.
+**Avisam, mas gravam:** regra ativa sem CFOP (nunca vai casar); CST esperado
+sem dois dígitos; lista de parceiros vazia.
+
+Posição vazia no meio da lista de CFOP não vira aviso: a tela simplesmente
+limpa ao salvar, e o motor confere todos os CFOP preenchidos.
 
 ## 7. Como se usa
 

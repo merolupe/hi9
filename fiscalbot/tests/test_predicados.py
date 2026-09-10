@@ -80,10 +80,12 @@ def test_icms_positivo_zero_e_delegado_a_carga():
 
 
 def test_texto_que_nao_e_numero_no_campo_de_icms_nao_faz_nada():
-    """`TABELAUF` foi parar em EspICMS na regra E11. No VBA, ali ele é inerte.
+    """Operador digitado na coluna errada não pode virar advertência falsa.
 
-    Portado como está, não como deveria ser: o padrão-ouro foi auditado assim,
-    e corrigir a regra é decisão do fiscal, na tela — não do porte.
+    Foi o que aconteceu com a regra E11, que tinha `TABELAUF` em `esp_icms` —
+    a regra já foi corrigida, mas o motor continua tolerante de propósito:
+    quem erra a célula recebe silêncio aqui e o aviso da tela, não uma
+    reclassificação silenciosa do mês inteiro.
     """
     assert p.testar_icms(regra(esp_icms="TABELAUF"), 123.0) == ""
 

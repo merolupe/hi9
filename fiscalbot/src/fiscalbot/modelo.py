@@ -54,17 +54,19 @@ class Regra:
 
     @property
     def cfops_conferidos(self) -> tuple[str, ...]:
-        """Os CFOP que o motor realmente compara.
+        """Os CFOP que o motor compara: todos os preenchidos.
 
-        A lista para no primeiro vazio — é o que o VBA faz, porque conta os
-        CFOP preenchidos e depois percorre essa **quantidade** de posições.
-        `1602;;2602` confere `1602` e a posição vazia, e nunca chega ao `2602`.
-        Reproduzido de propósito: a base de regras foi montada contra este
-        comportamento, e mudá-lo mudaria a auditoria de meses já fechados.
-        A tela avisa quando uma regra tem CFOP vazio no meio da lista.
+        O VBA parava no primeiro vazio — contava quantos CFOP estavam
+        preenchidos e depois percorria essa **quantidade** de posições, de
+        modo que `1602;;2602` conferia `1602`, conferia a posição vazia e
+        nunca chegava ao `2602`. Era defeito, não regra: um CFOP cadastrado
+        deixava de valer por causa de um ponto e vírgula a mais.
+
+        Corrigido. Na base de hoje nenhuma regra tem CFOP vazio no meio, então
+        a correção não muda auditoria nenhuma — o defeito estava armado, não
+        disparado. Ver `docs/fiscalbot/02-porte-do-vba.md`.
         """
-        preenchidos = sum(1 for c in self.cfop if c.strip())
-        return tuple(self.cfop[:preenchidos])
+        return tuple(c for c in self.cfop if c.strip())
 
 
 @dataclass(frozen=True)

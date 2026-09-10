@@ -234,7 +234,10 @@ def montar(dados: dict[str, Any]) -> BaseDeRegras:
                 id=_texto(l, "id"), operacao=_texto(l, "operacao"),
                 ativa=bool(l.get("ativa", True)), es=_texto(l, "es"),
                 especie=_texto(l, "especie"),
-                cfop=tuple(c.strip() for c in _texto(l, "cfop").split(";")),
+                # Ponto e vírgula a mais não pode custar um CFOP: a lista
+                # chega limpa, sem posição vazia.
+                cfop=tuple(c.strip() for c in _texto(l, "cfop").split(";")
+                           if c.strip()),
                 cond_produto=_texto(l, "cond_produto"),
                 cond_par_uf=_texto(l, "cond_par_uf"),
                 cond_parceiro=_texto(l, "cond_parceiro"),

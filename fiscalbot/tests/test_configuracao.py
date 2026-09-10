@@ -91,10 +91,13 @@ def test_regra_ativa_sem_cfop_e_aviso_e_nao_impede_de_gravar():
     assert any("nunca vai casar" in p.mensagem for p in problemas)
 
 
-def test_cfop_vazio_no_meio_da_lista_e_avisado():
-    """O motor confere só até o primeiro vazio — herança do VBA."""
-    base = base_com(regra("T01", cfop=("1602", "", "2602")))
-    assert any("vazio no meio" in p.mensagem for p in validacao.conferir(base))
+def test_a_tela_limpa_cfop_vazio_ao_salvar():
+    """Ponto e vírgula a mais não pode custar um CFOP."""
+    montada = cfg.montar({
+        "regras": [{"id": "T01", "cfop": "1602;;2602", "ativa": True}],
+        "parametros": [{"tolerancia_carga": "0.05"}],
+    })
+    assert montada.regras[0].cfop == ("1602", "2602")
 
 
 def test_base_sem_regra_ativa_e_erro():

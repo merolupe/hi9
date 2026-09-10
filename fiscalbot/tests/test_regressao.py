@@ -27,18 +27,25 @@ NA_SAIDA_DA_MACRO = {
 }
 
 
-@pytest.fixture(scope="session")
-def base_viva():
-    """A base do aplicativo, com as listas de parceiros já cadastradas."""
-    base = carregar()
-    if not base.parceiros_simples_nacional and not base.parceiros_cavaco:
+def _com_os_parceiros_locais(base):
+    """Empresta as listas de parceiros da base viva — elas não são versionadas."""
+    viva = carregar()
+    if not viva.parceiros_simples_nacional and not viva.parceiros_cavaco:
         pytest.skip(
             "a base local não tem as listas de parceiros. Elas são dado da "
             "empresa, não vêm no repositório e precisam ser cadastradas na "
             "tela do Fiscalbot — sem elas as camadas de frete SN e de cavaco "
             "não rodam, e a comparação não é justa."
         )
+    base.parceiros_simples_nacional = viva.parceiros_simples_nacional
+    base.parceiros_cavaco = viva.parceiros_cavaco
     return base
+
+
+@pytest.fixture(scope="session")
+def base_viva(regras_da_macro):
+    """As regras da macro, com os parceiros desta máquina."""
+    return _com_os_parceiros_locais(regras_da_macro)
 
 
 @pytest.fixture(scope="session")
@@ -119,6 +126,58 @@ def test_os_totais_do_resumo_batem(confronto, padrao_ouro):
     }
     for rotulo, quantos in do_python.items():
         assert quantos == da_macro.get(rotulo), rotulo
+
+
+#: O que é veredicto — o que muda a vida de quem confere. O texto da coluna
+#: `Auditoria` fica de fora: ele descreve o que a regra pede, então muda
+#: legitimamente quando a regra é corrigida.
+VEREDICTO = ("status", "operacao", "tipo", "cst", "icms", "produto",
+             "aliquota", "carga", "outros")
+
+
+def test_corrigir_a_regra_e11_nao_mudou_nenhum_veredicto(padrao_ouro,
+                                                          base_de_fabrica):
+    """A base de hoje não é mais a da macro. Os veredictos, sim.
+
+    A regra E11 tinha `TABELAUF` na coluna de ICMS, onde o operador é inerte,
+    e conferia a alíquota contra a lista literal `7;12`. A correção moveu o
+    operador para a coluna de alíquota, que passa a vir da matriz origem ×
+    destino. Nos 730 registros que casam com a E11 nesta competência, as duas
+    formas dão o mesmo resultado — a matriz devolve exatamente 7 ou 12 para
+    todos os pares presentes. O que muda é o texto que explica a regra.
+
+    Se um dia essa correção mudar veredicto, é aqui que se descobre.
+    """
+    import xlrd
+
+    base = _com_os_parceiros_locais(base_de_fabrica)
+    livro = xlrd.open_workbook(str(padrao_ouro))
+    if "Relatório" not in livro.sheet_names():
+        pytest.skip("o arquivo não traz a saída da macro")
+    entrada = livro.sheet_by_name("original")
+    da_macro = livro.sheet_by_name("Relatório")
+
+    linhas = [[entrada.cell_value(r, c) for c in range(entrada.ncols)]
+              for r in range(entrada.nrows)]
+    cabecalho = leitura.localizar_cabecalho(linhas)
+    mapa = leitura.mapear(linhas[cabecalho], base.parametros)
+    ultima = cabecalho
+    for i in range(cabecalho + 1, len(linhas)):
+        if str(linhas[i][mapa.posicoes["CFOP"]]).strip():
+            ultima = i
+
+    divergencias = []
+    for k, i in enumerate(range(cabecalho + 1, ultima + 1), start=1):
+        obtido = _do_python(auditar_linha(linhas[i], mapa, base))
+        for campo in VEREDICTO:
+            esperado = str(da_macro.cell_value(k, NA_SAIDA_DA_MACRO[campo])).strip()
+            if esperado != str(obtido[campo]).strip():
+                divergencias.append(
+                    f"linha {k}, {campo}: macro={esperado!r} python={obtido[campo]!r}")
+    assert not divergencias, (
+        f"a base de hoje mudou {len(divergencias)} veredicto(s) em relação à "
+        f"macro. As 5 primeiras:\n  " + "\n  ".join(divergencias[:5])
+    )
 
 
 def test_a_planilha_gerada_repete_as_colunas_da_macro(confronto, padrao_ouro,

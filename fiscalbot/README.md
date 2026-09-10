@@ -61,7 +61,8 @@ src/fiscalbot/
   execucao.py      a auditoria de ponta a ponta
   cli.py           linha de comando
 
-tests/             57 testes, incluindo a regressão contra a macro VBA
+tests/             59 testes, incluindo a regressão contra a macro VBA
+  regras_da_macro.yaml   foto das regras que a macro rodava — não editar
 ```
 
 Descende do módulo VBA `modFiscalbot` v3.2.

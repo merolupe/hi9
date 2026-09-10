@@ -119,3 +119,20 @@ def base_de_fabrica() -> BaseDeRegras:
     from fiscalbot.base import carregar_fabrica
 
     return carregar_fabrica()
+
+
+#: A foto das regras como a macro VBA as tinha. Não muda nunca.
+REGRAS_DA_MACRO = Path(__file__).resolve().parent / "regras_da_macro.yaml"
+
+
+@pytest.fixture(scope="session")
+def regras_da_macro() -> BaseDeRegras:
+    """As regras que a macro rodava, congeladas.
+
+    A regressão prova que o motor faz o mesmo que a macro **dadas as mesmas
+    regras**. Se ela usasse a base viva, uma correção legítima de regra
+    apareceria como quebra do porte — que é outra coisa.
+    """
+    from fiscalbot.base import carregar_fabrica
+
+    return carregar_fabrica(REGRAS_DA_MACRO)

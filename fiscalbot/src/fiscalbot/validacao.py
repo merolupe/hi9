@@ -93,13 +93,6 @@ def conferir(base: BaseDeRegras) -> list[Problema]:
             problemas.append(Problema(
                 AVISO, onde,
                 "está ativa e não tem CFOP: nunca vai casar com registro nenhum."))
-        if len(regra.cfops_conferidos) != len(regra.cfop):
-            problemas.append(Problema(
-                AVISO, onde,
-                f"tem CFOP vazio no meio da lista. O motor confere só os "
-                f"{len(regra.cfops_conferidos)} primeiros e ignora o resto — "
-                f"limpe a lista para evitar surpresa."))
-
         for campo in OPERADORES:
             valor = getattr(regra, campo)
             if not _operador_conhecido(campo, valor):

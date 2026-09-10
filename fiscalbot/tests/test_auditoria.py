@@ -87,6 +87,15 @@ def test_duas_regras_casando_acusam_a_base_e_nao_o_documento(mapa):
     assert "AMBIGUA" in achado.operacao
 
 
+def test_todo_cfop_preenchido_e_conferido(mapa):
+    """O VBA parava no primeiro vazio e perdia o resto da lista. Corrigido."""
+    base = base_com(regra("T01", cfop=("1602", "", "5101")))
+    achado = auditar_linha(registro(cfop=5101.0), mapa, base)
+    assert achado.operacao == "Operacao de teste", (
+        "o CFOP depois da posição vazia tem que valer"
+    )
+
+
 def test_regra_inativa_nao_casa(mapa):
     base = base_com(regra("T01", cfop="5101", ativa=False))
     assert auditar_linha(registro(), mapa, base).status == VALIDACAO_MANUAL

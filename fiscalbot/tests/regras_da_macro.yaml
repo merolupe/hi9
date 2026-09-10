@@ -1,12 +1,14 @@
-# Carga de fábrica do Fiscalbot — regra tributária, sem nenhum dado da empresa.
-# Serve para a ferramenta abrir funcionando numa máquina nova. A base viva do
-# aplicativo fica em dados/fiscalbot/base.yaml, fora do git, e é editada pela
-# tela da Central. Ver fiscalbot/src/fiscalbot/base.py.
+# FOTO das regras como a macro VBA v3.2 as tinha. NÃO EDITAR.
 #
-# As listas de parceiros (Simples Nacional e cavaco) NÃO estão aqui: trazem
-# código e nome de fornecedor real. Precisam ser cadastradas na tela.
+# O teste de regressão prova que o motor Python faz o mesmo que a macro
+# DADAS AS MESMAS REGRAS. Por isso ele não pode usar a base viva, que
+# muda quando o time fiscal corrige uma regra na tela — se usasse, uma
+# correção legítima apareceria como quebra do porte.
+#
+# Sem dado da empresa: as listas de parceiros vêm da base viva.
+
 atualizado_em: '2026-09-09'
-atualizado_por: carga de fábrica — importada do Base_Fiscalbot.xlsm (VBA v3.2)
+atualizado_por: foto das regras do Base_Fiscalbot.xlsm (VBA v3.2)
 parametros:
   tolerancia_carga: 0.05
   cst_exigem_icms_positivo:
@@ -1050,8 +1052,8 @@ regras:
   cond_par_uf: ''
   cond_parceiro: ''
   esp_cst: '00'
-  esp_icms: ''
-  esp_aliq: TABELAUF
+  esp_icms: TABELAUF
+  esp_aliq: 7;12
   esp_carga: ''
   esp_outros: ''
 - id: E12
