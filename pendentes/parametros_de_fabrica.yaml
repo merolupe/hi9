@@ -1,0 +1,236 @@
+# ============================================================================
+# Carga de fábrica — notas pendentes de entrada
+#
+# Valores de partida, versionados, para a ferramenta abrir funcionando numa
+# máquina nova. **Nenhum dado da empresa entra aqui** — nome de unidade, CNPJ
+# de filial e lista de guardiões nascem vazios e são cadastrados na tela
+# (regra nº 1 do CLAUDE.md, e o mesmo critério que o Fiscalbot usa com as
+# listas de parceiros).
+#
+# Na primeira abertura a base viva (`dados/pendentes/parametros.yaml`, fora do
+# git) é semeada a partir deste arquivo. Dali em diante quem manda é a base:
+# atualizar a fábrica não mexe em quem já está rodando.
+#
+# O que é parâmetro e o que é código está em `docs/pendentes/01-arquitetura.md`.
+# ============================================================================
+
+# -- o confronto de serviços -------------------------------------------------
+# Códigos de configuração do ERP e limiares de heurística. Um TOP novo é criado
+# por quem administra o Sankhya, não por quem escreve Python.
+confronto_servicos:
+  tops_de_lancamento: ["2020", "2111"]   # o universo de lançamento de serviço
+  prefixo_de_pedido: "PC"                # descrição de TOP que identifica pedido
+  cnpj_descartado: "00000000000000"      # não indexa, e passa a ser contado
+  tolerancia_da_razao: 0.005             # |valor do pedido / valor da nota - k|
+  multiplo_minimo: 2                     # pedido global: de 2 notas...
+  multiplo_maximo: 12                    # ...até 12
+
+# -- a semana ----------------------------------------------------------------
+# Hoje a semana é digitada num InputBox, e a data de referência e o limite de
+# dias moram nas células S2/S3 da própria planilha, relidas antes de ela ser
+# apagada. Com a planilha regerada a cada execução, os três precisam de casa.
+semana:
+  numero: ""                 # vazio: deduzida (ver pendência 7)
+  data_de_referencia: ""     # vazio: a data da execução
+  limite_de_dias: 10         # acima disso, o tempo do TOP sai destacado
+
+# -- o farol de emoji do Sankhya ---------------------------------------------
+# As colunas de status vêm como HTML com entidade de emoji. Trocar o ícone do
+# semáforo troca o número — por isso é tabela, e não literal em código.
+# O que NÃO é parâmetro: vazio significa "sem pedido vinculado", e não "não".
+farol:
+  pedido:                                  # Conferência de Entradas: 3 estados
+    - {codigo: "128994", rotulo: "Sim"}
+    - {codigo: "128308", rotulo: "Não"}
+  semaforo:                                # Conferência de Serviços: 5 ramos
+    - {codigo: "128994", rotulo: "Sim"}
+    - {codigo: "128308", rotulo: "Nao"}
+    - {codigo: "128993", rotulo: "Parcial"}
+    - {codigo: "9711", rotulo: ""}
+
+# -- o roteamento de mercadorias ---------------------------------------------
+# A ORDEM É A REGRA: laço único, a primeira condição verdadeira consome a linha
+# e as seguintes nem são avaliadas. O que sobra depois das quatro é `Pendentes`.
+#
+# Os valores literais são vocabulário do export do Sankhya: mudam quando o
+# relatório muda de redação, e hoje isso quebra em silêncio. A mecânica — laço
+# único, primeira verdadeira consome, exclusão de baixo para cima — fica no
+# código, porque é o algoritmo.
+roteamento:
+  - {ordem: 1, coluna: "Tomador CT-e", operador: "preenchido_e_diferente",
+     valor: "Não se aplica", destino: "CTe"}
+  - {ordem: 2, coluna: "Situação da manifestação", operador: "igual_a_algum",
+     valor: "desconhecida;operação não realizada", destino: "Manifestados"}
+  - {ordem: 3, coluna: "Situação NF-e", operador: "igual",
+     valor: "NF-e cancelada", destino: "Manifestados"}
+  - {ordem: 4, coluna: "Entrada/Saida NF-e", operador: "igual",
+     valor: "Entrada", destino: "Entradas 3os"}
+
+# -- as categorias válidas ---------------------------------------------------
+# Vocabulário de classificação, não dado da empresa. Lista vazia desliga a
+# validação (que é o comportamento de hoje). Ver pendência 6.
+categorias: ["Diretos", "Indiretos"]
+
+# -- dados da empresa: nascem VAZIOS -----------------------------------------
+# Unidade, filial e guardião trazem nome e CNPJ reais. Ficam só na base viva,
+# fora do git, cadastrados na tela.
+#
+# unidades: a ordem decide. `CORUMB` precisa vir ANTES de `GUAR`, senão
+#   qualquer fantasia de Corumbá que contenha "GUAR" vira Guará — em silêncio.
+#   É por isso que a coluna `ordem` existe.
+unidades: []          # {ordem, trecho, unidade}
+filiais: []           # {cnpj, codigo, nome} — complemento do mapa dinâmico
+guardioes: []         # lista vazia = sem validação (comportamento de hoje)
+
+# -- quem é quem entre os arquivos arrastados --------------------------------
+# Cada papel é reconhecido pelo CONJUNTO de âncoras do próprio cabeçalho, em
+# qualquer ordem de arrastar. `ancoras_ausentes` desqualifica: as 27 colunas do
+# XML estão todas contidas na planilha da semana anterior, e só a ausência de
+# `Guardião` separa uma da outra.
+papeis:
+  - id: xml
+    dominio: mercadorias
+    rotulo: "relatório de importação de XML"
+    obrigatorio: true
+    ancoras: ["Nro Nota", "Situação da manifestação", "Tomador CT-e"]
+    ancoras_ausentes: ["Guardião"]
+  - id: conferencia_de_entradas
+    dominio: mercadorias
+    rotulo: "Conferência de Entradas"
+    obrigatorio: true
+    ancoras: ["Chave Acesso", "Conf. Fiscal", "Motivo Incongruência"]
+  - id: semana_anterior_mercadorias
+    dominio: mercadorias
+    rotulo: "planilha da semana anterior"
+    obrigatorio: false
+    aba: "Pendentes"
+    ancoras: ["Chave Acesso", "Guardião"]
+  - id: asis
+    dominio: servicos
+    rotulo: "relatório ASIS (notas emitidas)"
+    obrigatorio: true
+    ancoras: ["Numero NFe", "Codigo Verificador", "Discriminacao"]
+  - id: portal_de_compras
+    dominio: servicos
+    rotulo: "Portal de Compras"
+    obrigatorio: true
+    ancoras: ["Nro. Unico", "Tipo Operacao", "CNPJ Empresa"]
+  - id: conferencia_de_servicos
+    dominio: servicos
+    rotulo: "Conferência de Serviços"
+    obrigatorio: false
+    ancoras: ["Nro. Unico Servico", "Dt. Hra. Ult. Anexo"]
+  - id: semana_anterior_servicos
+    dominio: servicos
+    rotulo: "planilha da semana anterior"
+    obrigatorio: false
+    aba: "Pendentes"
+    ancoras: ["Nro Nota", "Guardiao"]
+
+# -- as colunas de cada relatório --------------------------------------------
+# Nome de coluna não é dado da empresa: vem na fábrica. Hoje uma coluna
+# renomeada aborta a rotina semanal inteira e só um desenvolvedor resolve;
+# com `sinonimos` cadastrados, o nome novo entra pela tela.
+#
+# As 27 do XML são igualmente obrigatórias: o VBA declara 16 "principais" e 11
+# "complementares", mas une as duas listas antes de validar.
+colunas:
+  xml:
+    - {nome: "Nro Nota", sinonimos: []}
+    - {nome: "Cód. Parceiro", sinonimos: []}
+    - {nome: "Nome Parceiro (Parceiro)", sinonimos: []}
+    - {nome: "Dh. Emissão", sinonimos: []}
+    - {nome: "CFOP's XML", sinonimos: []}
+    - {nome: "Valor da Nota", sinonimos: []}
+    - {nome: "Nome Fantasia", sinonimos: []}
+    - {nome: "Chave Acesso", sinonimos: []}
+    - {nome: "Dt. Vencimento", sinonimos: []}
+    - {nome: "Situação da manifestação", sinonimos: []}
+    - {nome: "Situação NF-e", sinonimos: []}
+    - {nome: "Tipo NF-e", sinonimos: []}
+    - {nome: "Último Evento DF-e", sinonimos: []}
+    - {nome: "Descrição Nat. Operação", sinonimos: []}
+    - {nome: "Entrada/Saida NF-e", sinonimos: []}
+    - {nome: "Tomador CT-e", sinonimos: []}
+    - {nome: "Dias Emissão Doc", sinonimos: []}
+    - {nome: "Dh. Importação", sinonimos: []}
+    - {nome: "Status", sinonimos: []}
+    - {nome: "Nome (Usuário)", sinonimos: []}
+    - {nome: "Papel no CT-e", sinonimos: []}
+    - {nome: "Código da Empresa", sinonimos: []}
+    - {nome: "Cnpj Parceiro", sinonimos: []}
+    - {nome: "Código", sinonimos: []}
+    - {nome: "Possui o XML", sinonimos: []}
+    - {nome: "Importado pelo DF-e", sinonimos: []}
+    - {nome: "Série Doc", sinonimos: []}
+  conferencia_de_entradas:
+    - {nome: "Chave Acesso", sinonimos: []}
+    - {nome: "Conferência Física", sinonimos: []}
+    - {nome: "Conf. Fiscal", sinonimos: []}
+    - {nome: "Motivo Incongruência", sinonimos: []}
+    - {nome: "Dh. Conferência Física", sinonimos: []}
+    - {nome: "Nro. do Pedido", sinonimos: []}
+    - {nome: "Pedido confirmado?", sinonimos: []}
+  semana_anterior_mercadorias:
+    - {nome: "Chave Acesso", sinonimos: []}
+    - {nome: "Tipo de Operação", sinonimos: [], obrigatoria: false}
+    - {nome: "Guardião", sinonimos: ["Guardiao"], obrigatoria: false}
+    - {nome: "Gestor de apoio", sinonimos: [], obrigatoria: false}
+    - {nome: "Categoria", sinonimos: [], obrigatoria: false}
+  asis:
+    - {nome: "Numero NFe", sinonimos: []}
+    - {nome: "Data Emissao NFe", sinonimos: []}
+    - {nome: "Data Cancelamento", sinonimos: []}
+    - {nome: "Motivo Cancelamento", sinonimos: []}
+    - {nome: "Codigo Item Lei 116", sinonimos: []}
+    - {nome: "Descricao do Servico Municipal", sinonimos: []}
+    - {nome: "Municipio Prestacao", sinonimos: []}
+    - {nome: "Prestador", sinonimos: []}
+    - {nome: "CNPJ/CPF Prestador", sinonimos: []}
+    - {nome: "Valor NFe", sinonimos: []}
+    - {nome: "Discriminacao", sinonimos: []}
+    - {nome: "CNPJ/CPF Tomador", sinonimos: []}
+    - {nome: "Numero RPS", sinonimos: []}
+    - {nome: "Aliquota ISS", sinonimos: []}
+    - {nome: "Valor ISS", sinonimos: []}
+    - {nome: "Aliquota PIS", sinonimos: []}
+    - {nome: "Valor PIS", sinonimos: []}
+    - {nome: "Aliquota COFINS", sinonimos: []}
+    - {nome: "Valor COFINS", sinonimos: []}
+    - {nome: "Aliquota CSLL", sinonimos: []}
+    - {nome: "Valor CSLL", sinonimos: []}
+    - {nome: "Aliquota INSS", sinonimos: []}
+    - {nome: "Valor INSS", sinonimos: []}
+    - {nome: "Codigo Verificador", sinonimos: []}
+  portal_de_compras:
+    - {nome: "Nome (Usuario Inclusao)", sinonimos: []}
+    - {nome: "Nro. Unico", sinonimos: []}
+    - {nome: "Descricao (Tipo de Operacao)", sinonimos: []}
+    - {nome: "Nro. Nota", sinonimos: []}
+    - {nome: "Parceiro", sinonimos: []}
+    - {nome: "Nome Parceiro (Parceiro)", sinonimos: []}
+    - {nome: "Vlr. Nota", sinonimos: []}
+    - {nome: "Usuario inclusao RC", sinonimos: []}
+    - {nome: "Empresa", sinonimos: []}
+    - {nome: "Nome Fantasia (Empresa)", sinonimos: []}
+    - {nome: "Tipo Operacao", sinonimos: []}
+    - {nome: "Descricao (Natureza)", sinonimos: []}
+    - {nome: "Descricao (Centro de Resultado)", sinonimos: []}
+    - {nome: "CNPJ / CPF Parceiro", sinonimos: []}
+    - {nome: "CNPJ Empresa", sinonimos: []}
+    - {nome: "Dt. Neg.", sinonimos: []}
+  conferencia_de_servicos:
+    - {nome: "Nro. Unico Servico", sinonimos: []}
+    - {nome: "Dt. Hra. Ult. Anexo", sinonimos: []}
+    - {nome: "Vlr. total", sinonimos: []}
+    - {nome: "Parceiro", sinonimos: []}
+    - {nome: "Empresa", sinonimos: []}
+    - {nome: "Status lancamento", sinonimos: []}
+    - {nome: "Pedido Confirmado?", sinonimos: []}
+    - {nome: "Motivo incongruencia", sinonimos: []}
+  semana_anterior_servicos:
+    - {nome: "Nro Nota", sinonimos: []}
+    - {nome: "Cod Parceiro", sinonimos: []}
+    - {nome: "Guardiao", sinonimos: ["Guardião"], obrigatoria: false}
+    - {nome: "Gestor de apoio", sinonimos: [], obrigatoria: false}
+    - {nome: "Retorno", sinonimos: [], obrigatoria: false}
