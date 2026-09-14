@@ -313,6 +313,10 @@ FERRAMENTAS: list[Ferramenta] = [
         resumo="Planilha de notas de mercadoria pendentes de entrada.",
         icone="📦",
         estado=A_IMPORTAR,
+        detalhe="Porte em andamento: o núcleo comum das duas rotinas já está "
+                "no repositório, em `pendentes/`, com teste. O motor de "
+                "mercadorias — limpeza, roteamento, conferência e Resumo "
+                "Executivo — é a entrega seguinte, e o botão só acende com ele.",
     ),
     Ferramenta(
         id="gerarservpend",
@@ -320,6 +324,10 @@ FERRAMENTAS: list[Ferramenta] = [
         resumo="Planilha de notas de serviço pendentes de entrada.",
         icone="🧰",
         estado=A_IMPORTAR,
+        detalhe="Porte em andamento: o núcleo comum das duas rotinas já está "
+                "no repositório, em `pendentes/`, com teste. A cascata de "
+                "confronto do ASIS com o Sankhya é a próxima entrega, e o "
+                "botão só acende com ela.",
     ),
     Ferramenta(
         id="faturabot",
