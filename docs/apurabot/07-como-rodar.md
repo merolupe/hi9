@@ -36,7 +36,7 @@ Quem usa Git: `git clone https://github.com/merolupe/hi9.git`
 Nada. Não há passo de instalação.
 
 As bibliotecas de que o Apurabot depende **viajam junto com o código**, em
-`apurabot/src/apurabot/vendor`. Baixar a pasta é instalar.
+`vendor/`, na raiz do repositório. Baixar a pasta é instalar.
 
 > Isto mudou depois de o `pip install` falhar duas vezes na máquina real — uma
 > barrado pela política de segurança, outra acertando um Python diferente do que
@@ -92,9 +92,13 @@ sozinho.
 O caminho antigo continua valendo, e é o que serve para automatizar:
 
 ```
-python rodar.py apurar "caminho\do\livro.xls" --saida "pasta\de\saida"
-python rodar.py base-tratada "caminho\do\livro.xls" --saida "pasta\de\saida"
+python rodar.py apurabot apurar "caminho\do\livro.xls" --saida "pasta\de\saida"
+python rodar.py apurabot base-tratada "caminho\do\livro.xls" --saida "pasta\de\saida"
 ```
+
+Desde que o repositório passou a ter mais de uma ferramenta, o `rodar.py` pede
+o nome dela antes do comando. Os comandos antigos — `python rodar.py apurar
+...` — continuam valendo, para não quebrar o que já está anotado por aí.
 
 Aspas são obrigatórias em caminho com espaço. `Shift` + botão direito no arquivo
 → **"Copiar como caminho"** copia já com elas. A pasta de `--saida` precisa
@@ -304,7 +308,7 @@ Alterou, é só rodar de novo.
 | Mensagem | Causa e solução |
 |---|---|
 | **Nenhum Python consegue rodar** | Ou não há Python 3.10+, ou a pasta veio incompleta. Rode `python verificar.py` para saber qual dos dois. |
-| **`Falta a biblioteca ...`** | A pasta veio incompleta — as bibliotecas deveriam estar em `apurabot/src/apurabot/vendor`. Baixe o ZIP de novo e extraia **inteiro**. |
+| **`Falta a biblioteca ...`** | A pasta veio incompleta — as bibliotecas deveriam estar em `vendor/`, na raiz da pasta. Baixe o ZIP de novo e extraia **inteiro**. |
 | **O navegador não abriu sozinho** | Copie o endereço `http://127.0.0.1:…` que aparece na janela preta e cole no navegador. |
 | **A janela preta fecha na hora** | Abra o `cmd` na pasta e rode `python verificar.py` para ler o motivo. |
 | **A página diz que perdeu contato** | A janela preta foi fechada. Abra o `Apurabot.bat` de novo. |

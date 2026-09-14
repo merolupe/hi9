@@ -1,0 +1,1903 @@
+# Carga de fábrica do Fiscalbot — regra tributária, sem nenhum dado da empresa.
+# Serve para a ferramenta abrir funcionando numa máquina nova. A base viva do
+# aplicativo fica em dados/fiscalbot/base.yaml, fora do git, e é editada pela
+# tela da Central. Ver fiscalbot/src/fiscalbot/base.py.
+#
+# As listas de parceiros (Simples Nacional e cavaco) NÃO estão aqui: trazem
+# código e nome de fornecedor real. Precisam ser cadastradas na tela.
+atualizado_em: '2026-09-09'
+atualizado_por: carga de fábrica — importada do Base_Fiscalbot.xlsm (VBA v3.2)
+parametros:
+  tolerancia_carga: 0.05
+  cst_exigem_icms_positivo:
+  - '00'
+  - '20'
+  tabelas:
+    FRETE:
+    - '700000001'
+    - '700000002'
+    - '701000177'
+    - '700000003'
+    - '701000280'
+    CFOP_IND:
+    - '1124'
+    - '1125'
+    - '2124'
+    - '2125'
+    - '5901'
+    - '6901'
+    - '1902'
+    - '2902'
+  sinonimos:
+    ES:
+    - Entrada/Saida
+    - Entrada / Saida
+    - E/S
+    CST:
+    - Cod. de tributacao
+    - Codigo de tributacao
+    - CST
+    ICMS:
+    - Vlr. do ICMS
+    - Valor do ICMS
+    - Vlr ICMS
+    CFOP:
+    - CFOP
+    UFO:
+    - UF de Origem
+    - UF Origem
+    UFD:
+    - UF de Destino
+    - UF Destino
+    PROD:
+    - Produto
+    - Codigo do Produto
+    ALIQ:
+    - Aliquota ICMS
+    - Aliquota
+    VCONT:
+    - Vlr. contabil
+    - Valor contabil
+    ESP:
+    - Especie do documento
+    - Especie
+    PARC:
+    - Empresa/Parceiro
+    - Parceiro
+aliquotas:
+  AC:
+    AC: 19.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  AL:
+    AC: 12.0
+    AL: 19.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  AM:
+    AC: 12.0
+    AL: 12.0
+    AM: 20.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  AP:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 18.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  BA:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 20.5
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  CE:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 20.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  DF:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 20.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  ES:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 17.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  GO:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 19.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  MA:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 22.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  MT:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 17.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  MS:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 17.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  MG:
+    AC: 7.0
+    AL: 7.0
+    AM: 7.0
+    AP: 7.0
+    BA: 7.0
+    CE: 7.0
+    DF: 7.0
+    ES: 7.0
+    GO: 7.0
+    MA: 7.0
+    MT: 7.0
+    MS: 7.0
+    MG: 18.0
+    PA: 7.0
+    PB: 7.0
+    PR: 12.0
+    PE: 7.0
+    PI: 7.0
+    RN: 7.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 7.0
+    RR: 7.0
+    SC: 12.0
+    SP: 12.0
+    SE: 7.0
+    TO: 7.0
+    IM: 4.0
+  PA:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 19.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  PB:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 20.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  PR:
+    AC: 7.0
+    AL: 7.0
+    AM: 7.0
+    AP: 7.0
+    BA: 7.0
+    CE: 7.0
+    DF: 7.0
+    ES: 7.0
+    GO: 7.0
+    MA: 7.0
+    MT: 7.0
+    MS: 7.0
+    MG: 12.0
+    PA: 7.0
+    PB: 7.0
+    PR: 19.5
+    PE: 7.0
+    PI: 7.0
+    RN: 7.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 7.0
+    RR: 7.0
+    SC: 12.0
+    SP: 12.0
+    SE: 7.0
+    TO: 7.0
+    IM: 4.0
+  PE:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 20.5
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  PI:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 22.5
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  RN:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 18.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  RS:
+    AC: 7.0
+    AL: 7.0
+    AM: 7.0
+    AP: 7.0
+    BA: 7.0
+    CE: 7.0
+    DF: 7.0
+    ES: 7.0
+    GO: 7.0
+    MA: 7.0
+    MT: 7.0
+    MS: 7.0
+    MG: 12.0
+    PA: 7.0
+    PB: 7.0
+    PR: 12.0
+    PE: 7.0
+    PI: 7.0
+    RN: 7.0
+    RS: 17.0
+    RJ: 12.0
+    RO: 7.0
+    RR: 7.0
+    SC: 12.0
+    SP: 12.0
+    SE: 7.0
+    TO: 7.0
+    IM: 4.0
+  RJ:
+    AC: 7.0
+    AL: 7.0
+    AM: 7.0
+    AP: 7.0
+    BA: 7.0
+    CE: 7.0
+    DF: 7.0
+    ES: 7.0
+    GO: 7.0
+    MA: 7.0
+    MT: 7.0
+    MS: 7.0
+    MG: 12.0
+    PA: 7.0
+    PB: 7.0
+    PR: 12.0
+    PE: 7.0
+    PI: 7.0
+    RN: 7.0
+    RS: 12.0
+    RJ: 20.0
+    RO: 7.0
+    RR: 7.0
+    SC: 12.0
+    SP: 12.0
+    SE: 7.0
+    TO: 7.0
+    IM: 4.0
+  RO:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 19.5
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  RR:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 20.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 12.0
+    IM: 4.0
+  SC:
+    AC: 7.0
+    AL: 7.0
+    AM: 7.0
+    AP: 7.0
+    BA: 7.0
+    CE: 7.0
+    DF: 7.0
+    ES: 7.0
+    GO: 7.0
+    MA: 7.0
+    MT: 7.0
+    MS: 7.0
+    MG: 12.0
+    PA: 7.0
+    PB: 7.0
+    PR: 12.0
+    PE: 7.0
+    PI: 7.0
+    RN: 7.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 7.0
+    RR: 7.0
+    SC: 17.0
+    SP: 12.0
+    SE: 7.0
+    TO: 7.0
+    IM: 4.0
+  SP:
+    AC: 7.0
+    AL: 7.0
+    AM: 7.0
+    AP: 7.0
+    BA: 7.0
+    CE: 7.0
+    DF: 7.0
+    ES: 7.0
+    GO: 7.0
+    MA: 7.0
+    MT: 7.0
+    MS: 7.0
+    MG: 12.0
+    PA: 7.0
+    PB: 7.0
+    PR: 12.0
+    PE: 7.0
+    PI: 7.0
+    RN: 7.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 7.0
+    RR: 7.0
+    SC: 12.0
+    SP: 12.0
+    SE: 7.0
+    TO: 7.0
+    IM: 4.0
+  SE:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 19.0
+    TO: 12.0
+    IM: 4.0
+  TO:
+    AC: 12.0
+    AL: 12.0
+    AM: 12.0
+    AP: 12.0
+    BA: 12.0
+    CE: 12.0
+    DF: 12.0
+    ES: 12.0
+    GO: 12.0
+    MA: 12.0
+    MT: 12.0
+    MS: 12.0
+    MG: 12.0
+    PA: 12.0
+    PB: 12.0
+    PR: 12.0
+    PE: 12.0
+    PI: 12.0
+    RN: 12.0
+    RS: 12.0
+    RJ: 12.0
+    RO: 12.0
+    RR: 12.0
+    SC: 12.0
+    SP: 12.0
+    SE: 12.0
+    TO: 20.0
+    IM: 4.0
+  IM:
+    AC: 4.0
+    AL: 4.0
+    AM: 4.0
+    AP: 4.0
+    BA: 4.0
+    CE: 4.0
+    DF: 4.0
+    ES: 4.0
+    GO: 4.0
+    MA: 4.0
+    MT: 4.0
+    MS: 4.0
+    MG: 4.0
+    PA: 4.0
+    PB: 4.0
+    PR: 4.0
+    PE: 4.0
+    PI: 4.0
+    RN: 4.0
+    RS: 4.0
+    RJ: 4.0
+    RO: 4.0
+    RR: 4.0
+    SC: 4.0
+    SP: 4.0
+    SE: 4.0
+    TO: 4.0
+    IM: 4.0
+regras:
+- id: E01
+  operacao: Transferencia de ICMS
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1602'
+  - '2602'
+  cond_produto: '701000701'
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: ''
+  esp_icms: ''
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E02
+  operacao: Uso Consumo ST
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1407'
+  - '2407'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '60'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E03
+  operacao: Uso Consumo
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1556'
+  - '2556'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: NAOINICIA:econet
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E04
+  operacao: Imobilizado
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1551'
+  - '2551'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E05
+  operacao: Combustivel
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1653'
+  - '2653'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '60'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E06
+  operacao: NFCOM
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1302'
+  - '2302'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E07
+  operacao: Compra MP
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1101'
+  - '2101'
+  cond_produto: NAOINICIA:2
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: E08
+  operacao: Compra p/ Revenda MP
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1102'
+  - '2102'
+  cond_produto: NAOINICIA:2
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: E09
+  operacao: Embalagem BIG BAG INTRA
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1101'
+  - '2101'
+  cond_produto: INICIA:2
+  cond_par_uf: INTRA
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '12'
+  esp_outros: ''
+- id: E10
+  operacao: Embalagem BIG BAG INTER
+  ativa: false
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1101'
+  - '2101'
+  cond_produto: INICIA:2
+  cond_par_uf: INTER
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '12'
+  esp_outros: ''
+- id: E11
+  operacao: Frete creditado INTER
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '2352'
+  - '2353'
+  cond_produto: TABELA:FRETE
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: ''
+  esp_aliq: TABELAUF
+  esp_carga: ''
+  esp_outros: ''
+- id: E12
+  operacao: Frete venda SP 51
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '1351'
+  - '1352'
+  - '1353'
+  cond_produto: '700000001'
+  cond_par_uf: SPxSP
+  cond_parceiro: ''
+  esp_cst: '51'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E13
+  operacao: Frete creditado INTRA 40
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '1351'
+  - '1352'
+  - '1353'
+  cond_produto: TABELA:FRETE
+  cond_par_uf: MSxMS;PRxPR
+  cond_parceiro: ''
+  esp_cst: '40'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E14
+  operacao: Frete Prest. UF Diversa MS/PR
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '1932'
+  - '2932'
+  cond_produto: ''
+  cond_par_uf: MSxMS;PRxPR
+  cond_parceiro: ''
+  esp_cst: EM:40,90
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E15
+  operacao: Industrializacao INTRA
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1124'
+  - '1125'
+  cond_produto: ''
+  cond_par_uf: SPxSP
+  cond_parceiro: ''
+  esp_cst: '51'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E16
+  operacao: Industrializacao INTER
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2124'
+  - '2125'
+  cond_produto: ''
+  cond_par_uf: INTER
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: S01
+  operacao: Remessas para Conserto
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5915'
+  - '6915'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: S02
+  operacao: Transf. Uso Consumo e Ativo
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5552'
+  - '6552'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: S03
+  operacao: Vendas INTRA SP
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5101'
+  - '5102'
+  cond_produto: NAOINICIA:4
+  cond_par_uf: SPxSP;MSxMS
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: S04
+  operacao: Vendas INTRA dif.
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5101'
+  - '5102'
+  cond_produto: NAOINICIA:4
+  cond_par_uf: MTxMT;PRxPR
+  cond_parceiro: ''
+  esp_cst: '51'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: S05
+  operacao: Vendas INTER
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '6101'
+  - '6102'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: S06
+  operacao: Vendas Sucata
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5101'
+  - '5102'
+  cond_produto: INICIA:4
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: NAOEM:00,20,60
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: S07
+  operacao: Revenda de Ret. Simb. Armz
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5105'
+  - '5106'
+  - '6105'
+  - '6106'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: S08
+  operacao: Quebras
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5927'
+  - '6927'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: PARCEIROINICIA:HINOVE
+- id: S09
+  operacao: Devolucoes
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '6201'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: '>0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: S10
+  operacao: Remessa p/ Deposito/Armazem
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '6905'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: ''
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E17
+  operacao: Frete sem cred (produto)
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '1351'
+  - '1352'
+  - '1353'
+  - '2352'
+  - '2353'
+  cond_produto: '701000549'
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E12b
+  operacao: Frete SP demais 00
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '1351'
+  - '1352'
+  - '1353'
+  cond_produto: TABELAEXCETO:FRETE:700000001
+  cond_par_uf: SPxSP
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E12c
+  operacao: Frete interno MT 51
+  ativa: true
+  es: Entrada
+  especie: CT
+  cfop:
+  - '1351'
+  - '1352'
+  - '1353'
+  cond_produto: TABELA:FRETE
+  cond_par_uf: MTxMT
+  cond_parceiro: ''
+  esp_cst: '51'
+  esp_icms: ''
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: T01
+  operacao: Transferencias
+  ativa: true
+  es: ''
+  especie: ''
+  cfop:
+  - '1151'
+  - '1152'
+  - '1557'
+  - '2151'
+  - '2152'
+  - '2557'
+  - '5151'
+  - '5152'
+  - '5557'
+  - '6151'
+  - '6152'
+  - '6557'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: C01
+  operacao: Conta e Ordem Remessa
+  ativa: true
+  es: ''
+  especie: ''
+  cfop:
+  - '5923'
+  - '6923'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: ''
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: VCO51
+  operacao: Venda Conta/Ordem 51
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5118'
+  - '5119'
+  cond_produto: ''
+  cond_par_uf: MTxMT;PRxPR
+  cond_parceiro: ''
+  esp_cst: '51'
+  esp_icms: ''
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: VCO20
+  operacao: Venda Conta/Ordem 20
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5118'
+  - '5119'
+  - '6118'
+  - '6119'
+  cond_produto: ''
+  cond_par_uf: NAOPARUF:MTxMT;PRxPR
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: E10b
+  operacao: Embalagem Compra SP-MS
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1101'
+  - '2101'
+  cond_produto: INICIA:2
+  cond_par_uf: SPxMS
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: CARGA
+  esp_aliq: '7'
+  esp_carga: '7'
+  esp_outros: ''
+- id: I01
+  operacao: Importacao Outras Entradas
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '3949'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: V01
+  operacao: Vasilhame/Sacaria
+  ativa: true
+  es: ''
+  especie: ''
+  cfop:
+  - '5920'
+  - '6920'
+  - '1921'
+  - '2921'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '40'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: C02
+  operacao: Retorno Conserto
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1916'
+  - '2916'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI01
+  operacao: Remessa p/ Industrializacao INTER
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '6901'
+  cond_produto: NAOINICIA:2
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: RI02
+  operacao: Remessa p/ Industrializacao INTRA SP
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5901'
+  cond_produto: NAOINICIA:2
+  cond_par_uf: SPxSP
+  cond_parceiro: ''
+  esp_cst: '50'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI03
+  operacao: Remessa p/ Industrializacao circ. nao mapeada
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5901'
+  cond_produto: ''
+  cond_par_uf: NAOPARUF:SPxSP
+  cond_parceiro: ''
+  esp_cst: ''
+  esp_icms: ''
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: SEMPRE:Circulacao nao mapeada
+- id: RA01
+  operacao: Retorno de Armazenagem INTRA
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1906'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RA02
+  operacao: Retorno de Armazenagem INTER
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2906'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: RA03
+  operacao: Remessa p/ Armazem INTRA
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5905'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI04
+  operacao: Retorno de Industrializacao INTRA
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1902'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '50'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI05
+  operacao: Retorno de Industrializacao INTER
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2902'
+  cond_produto: ''
+  cond_par_uf: NAOUFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI06
+  operacao: Retorno de Industrializacao INTER SC
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2902'
+  cond_produto: ''
+  cond_par_uf: UFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: RS01
+  operacao: Retorno Simb. de Armz INTRA
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1907'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: SECST:20:Validar operacao real do documento
+- id: RS02
+  operacao: Retorno Simb. de Armz INTER
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2907'
+  cond_produto: ''
+  cond_par_uf: NAOUFORIG:SC;BA;PR
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: SECST:20:Validar operacao real do documento
+- id: RS03
+  operacao: Retorno Simb. de Armz INTER SC
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2907'
+  cond_produto: ''
+  cond_par_uf: UFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: SECST:20:Validar operacao real do documento
+- id: RS04
+  operacao: Remessa Simb. Armazem INTER
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '6934'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: I02
+  operacao: Compra Importada p/ Industrializacao
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '3101'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: E03b
+  operacao: Uso Consumo Econet
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2556'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: INICIA:econet
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: T02
+  operacao: Transf. Imobilizado
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1552'
+  - '2552'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: SF01
+  operacao: Remessa Simples Faturamento
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1116'
+  - '1117'
+  - '2116'
+  - '2117'
+  cond_produto: ''
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: N903A
+  operacao: Merc. nao Aplicada SC Insumo
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2903'
+  cond_produto: NAOINICIA:2
+  cond_par_uf: UFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: N903B
+  operacao: Merc. nao Aplicada SC Embalagem
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2903'
+  cond_produto: INICIA:2
+  cond_par_uf: UFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '12'
+  esp_outros: ''
+- id: N903C
+  operacao: Merc. nao Aplicada Insumo
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2903'
+  cond_produto: NAOINICIA:2
+  cond_par_uf: NAOUFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '20'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '4'
+  esp_outros: ''
+- id: N903D
+  operacao: Merc. nao Aplicada Embalagem
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2903'
+  cond_produto: INICIA:2
+  cond_par_uf: NAOUFORIG:SC
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: CARGA
+  esp_aliq: ''
+  esp_carga: '12'
+  esp_outros: ''
+- id: RS05
+  operacao: Retorno Simb. de Armz INTER BA
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2907'
+  cond_produto: ''
+  cond_par_uf: UFORIG:BA
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: SECST:20:Validar operacao real do documento
+- id: RS06
+  operacao: Retorno Simb. de Armz INTER PR
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '2907'
+  cond_produto: ''
+  cond_par_uf: UFORIG:PR
+  cond_parceiro: ''
+  esp_cst: '41'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: SECST:20:Validar operacao real do documento
+- id: E14b
+  operacao: Frete Prest. UF Diversa SP/MT
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1932'
+  - '2932'
+  cond_produto: ''
+  cond_par_uf: SPxSP;MTxMT
+  cond_parceiro: ''
+  esp_cst: EM:51,90
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: E14c
+  operacao: Frete Prest. UF Diversa
+  ativa: true
+  es: Entrada
+  especie: ''
+  cfop:
+  - '1932'
+  - '2932'
+  cond_produto: ''
+  cond_par_uf: NAOPARUF:MSxMS;PRxPR;SPxSP;MTxMT
+  cond_parceiro: ''
+  esp_cst: '90'
+  esp_icms: '0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI01b
+  operacao: Remessa p/ Industrializacao INTER Embalagem
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '6901'
+  cond_produto: INICIA:2
+  cond_par_uf: ''
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: '>0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''
+- id: RI02b
+  operacao: Remessa p/ Industrializacao INTRA SP Embalagem
+  ativa: true
+  es: Saida
+  especie: ''
+  cfop:
+  - '5901'
+  cond_produto: INICIA:2
+  cond_par_uf: SPxSP
+  cond_parceiro: ''
+  esp_cst: '00'
+  esp_icms: '>0'
+  esp_aliq: ''
+  esp_carga: ''
+  esp_outros: ''

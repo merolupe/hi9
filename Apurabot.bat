@@ -5,7 +5,9 @@ cd /d "%~dp0"
 rem ---------------------------------------------------------------------
 rem  Apurabot - apuracao de ICMS
 rem
-rem  De dois cliques neste arquivo. Ele abre o Apurabot no navegador.
+rem  De dois cliques neste arquivo. Ele abre o Apurabot no navegador,
+rem  direto, sem passar pelo menu. Para ver todas as ferramentas do
+rem  setor numa tela so, use Hinove.bat.
 rem
 rem  Nao instala nada, nao baixa nada e nao cria programa novo: usa o
 rem  Python que ja esta na maquina, e as bibliotecas viajam junto com o
@@ -34,7 +36,7 @@ echo   1. Nao ha Python instalado, ou ele e anterior ao 3.10.
 echo      Peca a instalacao do Python 3.10 ou mais novo. A opcao
 echo      "somente para este usuario" nao exige administrador.
 echo.
-echo   2. A pasta do Apurabot veio incompleta.
+echo   2. A pasta veio incompleta.
 echo      Baixe o ZIP de novo e extraia inteiro, sem tirar nada.
 echo.
 echo  Para ver a mensagem detalhada, abra o prompt de comando nesta
@@ -44,7 +46,7 @@ pause
 exit /b 1
 
 :rodar
-%PY% rodar.py janela
+%PY% rodar.py apurabot janela
 if errorlevel 1 (
   echo.
   echo  O Apurabot terminou com erro. A mensagem esta acima.
