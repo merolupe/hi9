@@ -563,6 +563,10 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
             "titulo": execucao.titulo(),
             "fichas": dict(execucao.fichas()),
             "confronto_por_procedimento": execucao.por_procedimento,
+            # O valor total pendente não vai para a tela — as quatro fichas já
+            # são o que se olha primeiro —, mas vai para a evidência: é a
+            # resposta a "quanto estava em aberto em 08/09?".
+            "valor_pendente": round(execucao.valor_pendente, 2),
             "bloqueios": execucao.bloqueios(),
             "atencoes": execucao.atencoes(),
         },

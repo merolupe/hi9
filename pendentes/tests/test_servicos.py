@@ -485,3 +485,20 @@ def test_o_numero_da_nota_e_o_codigo_verificador_saem_como_texto():
     assert formatos["Nro Nota"] == "texto"
     assert formatos["Codigo Verificador"] == "texto"
     assert formatos["Dt. ult. anexo"] == "data"
+
+
+def test_a_data_de_cancelamento_chega_como_data_e_nao_como_texto():
+    """Converter texto que já veio de célula de data perde a data inteira.
+
+    `06/08/2026 10:00:00` aparado vira texto, e o parse explícito por `/` lê
+    `2026 10:00:00` como ano — que não é ano nenhum. Guardar o valor cru e
+    converter na escrita é o que o VBA faz, e é o que preserva a data.
+    """
+    from datetime import datetime
+
+    from pendentes.valores import data_br
+
+    nota = notas(linha_asis("1", "99888777000166", "10.00",
+                            cancelamento=datetime(2026, 8, 6, 10, 0)))[0]
+    assert nota.cancelada
+    assert data_br(nota.data_de_cancelamento) == datetime(2026, 8, 6, 10, 0)

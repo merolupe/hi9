@@ -319,7 +319,7 @@ E uma décima segunda, que o desenho do porte não previa e o código revelou:
   sofreram corte de prefixo de ano, datas não interpretáveis.
 * **A coluna renomeada deixa de parar a rotina semanal.** Cadastra-se o
   sinônimo na tela.
-* **Teste.** 167 em `pendentes/`, todos sobre comportamento — 98 do núcleo, 69
+* **Teste.** 168 em `pendentes/`, todos sobre comportamento — 98 do núcleo, 70
   do motor de serviços.
 
 ## 10. Desempenho — a expectativa, não a medição

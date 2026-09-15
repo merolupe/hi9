@@ -137,7 +137,7 @@ python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
 python -m pytest
 ```
 
-167 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+168 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **A divergência zero contra a macro ainda não foi provada**, porque os arquivos

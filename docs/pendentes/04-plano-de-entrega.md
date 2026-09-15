@@ -76,7 +76,7 @@ acende**. O que entrou, bloco a bloco:
 | Pipeline e o que a tela mostra | `execucao.py` | as quatro abas, o livro, o snapshot e o `Painel` |
 | Entrada no catálogo + CLI | `central/ferramentas.py`, `rodar.py`, `verificar.py` | `_rodar_gerarservpend`, `python rodar.py pendentes servicos …` |
 
-`[FATO]` 69 testes novos em `pendentes/`, mais 2 na Central, todos de
+`[FATO]` 70 testes novos em `pendentes/`, mais 2 na Central, todos de
 comportamento. O que eles travam:
 
 * **a cascata por passos contra a cascata por linha** — o teste monta o caso em

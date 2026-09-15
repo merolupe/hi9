@@ -296,6 +296,8 @@ def test_a_semana_vira_snapshot_com_a_planilha_e_as_impressoes(semana):
     ultima = snapshot.ultima_semana("servicos", raiz=semana["dados"])
     assert ultima["encerravel"] is False
     assert ultima["confronto_por_procedimento"]
+    # O valor total pendente não vai para a tela, mas vai para a evidência.
+    assert ultima["valor_pendente"] == 77.0
 
 
 def test_rodar_a_mesma_semana_duas_vezes_nao_sobrescreve_a_evidencia(semana):

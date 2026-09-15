@@ -57,7 +57,10 @@ class NotaDeServico:
     cortou_prefixo_de_ano: bool
     rps: str
     emissao: Any
-    data_de_cancelamento: str
+    #: O valor cru da célula `Data Cancelamento`. Cru de propósito: a
+    #: `Canceladas` grava a data convertida, e converter texto que já veio de
+    #: uma célula de data perde a hora e pode não voltar a ser data.
+    data_de_cancelamento: Any
     motivo_do_cancelamento: Any
     cnpj_do_prestador: str
     cnpj_do_tomador: str
@@ -78,7 +81,7 @@ class NotaDeServico:
         com um traço ou com a palavra "sim" também cancela. Adivinhar o
         formato da data para decidir seria pior.
         """
-        return bool(self.data_de_cancelamento)
+        return bool(aparar(self.data_de_cancelamento))
 
     @property
     def chave_de_valor(self) -> str:
@@ -103,8 +106,7 @@ def ler_notas(linhas: Sequence[Sequence[Any]], mapa: Mapa) -> list[NotaDeServico
             cortou_prefixo_de_ano=analise.cortou_prefixo_de_ano,
             rps=numero_de_rps(mapa.valor(linha, col.A_RPS)),
             emissao=data_br(mapa.valor(linha, col.A_EMISSAO)),
-            data_de_cancelamento=aparar(
-                mapa.valor(linha, col.A_DATA_CANCELAMENTO)),
+            data_de_cancelamento=mapa.valor(linha, col.A_DATA_CANCELAMENTO),
             motivo_do_cancelamento=mapa.valor(linha, col.A_MOTIVO_CANCELAMENTO),
             cnpj_do_prestador=so_cnpj(mapa.valor(linha, col.A_CNPJ_PRESTADOR)),
             cnpj_do_tomador=so_cnpj(mapa.valor(linha, col.A_CNPJ_TOMADOR)),
