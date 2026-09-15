@@ -75,6 +75,16 @@ class Classificacao:
     gestor_de_apoio: str = ""
     categoria: str = ""
     retornos: dict[int, str] = field(default_factory=dict)
+    #: O CNPJ do emitente, quando a execução o conhece.
+    #:
+    #: Não faz parte da chave e nunca vem da planilha — a aba `Pendentes` de
+    #: serviços não carrega CNPJ, e é por isso que a identidade entre semanas
+    #: é `número | código do parceiro`. Guardá-lo aqui é o que permite
+    #: **perceber** a colisão: dois prestadores distintos sem cadastro no
+    #: Sankhya compartilham o literal `Sem cadastro` e podem produzir a mesma
+    #: chave. Hoje isso acontece em silêncio; com o CNPJ gravado, a execução
+    #: seguinte vê que o registro mudou de dono e conta o caso.
+    cnpj: str = ""
     origem: str = ""
     gravado_por: str = ""
     gravado_em: str = ""
@@ -84,6 +94,19 @@ class Classificacao:
 
     def retorno_da_semana(self, semana: int) -> str:
         return self.retornos.get(semana, "")
+
+    @property
+    def ultimo_retorno(self) -> str:
+        """O retorno da semana mais recente que o livro guardou.
+
+        A planilha carrega **uma** coluna de retorno; o livro guarda todas. É
+        esta que volta para a planilha da semana seguinte — que é o que o VBA
+        fazia ao copiar a coluna de um arquivo para o outro, só que sem
+        depender de o arquivo existir.
+        """
+        if not self.retornos:
+            return ""
+        return self.retornos[max(self.retornos)]
 
 
 @dataclass
@@ -157,6 +180,7 @@ def carregar(dominio: str, caminho: Path | None = None,
             categoria=str(linha.get("categoria", "") or ""),
             retornos={int(s): str(v or "")
                       for s, v in (linha.get("retornos") or {}).items()},
+            cnpj=str(linha.get("cnpj", "") or ""),
             origem=str(linha.get("origem", "") or ""),
             gravado_por=str(linha.get("gravado_por", "") or ""),
             gravado_em=str(linha.get("gravado_em", "") or ""),
@@ -182,6 +206,7 @@ def para_dicionario(livro: Livro) -> dict[str, Any]:
                 "gestor_de_apoio": r.gestor_de_apoio,
                 "categoria": r.categoria,
                 "retornos": dict(sorted(r.retornos.items())),
+                "cnpj": r.cnpj,
                 "origem": r.origem,
                 "gravado_por": r.gravado_por,
                 "gravado_em": r.gravado_em,
@@ -342,3 +367,28 @@ def ingerir(livro: Livro, classificacoes: Iterable[Classificacao], *,
         else:
             relato.inalteradas += 1
     return relato
+
+
+def registrar_identidade(livro: Livro, chave: str, cnpj: str) -> bool:
+    """Grava no registro o CNPJ de quem emitiu, e diz se o dono mudou.
+
+    A identidade entre semanas é `número da nota | código do parceiro`, porque
+    é a única que a planilha carrega. Para todo prestador **sem cadastro** no
+    Sankhya a segunda metade é o mesmo literal, e dois fornecedores distintos
+    com o mesmo número normalizado produzem a mesma chave — a classificação de
+    um passaria a valer para o outro.
+
+    Isto não elimina a colisão: elimina o **silêncio** dela. Quando o CNPJ
+    gravado difere do CNPJ de agora, a função devolve `True`, a execução conta
+    o caso e a tela mostra. Ver a decisão pendente sobre acrescentar o CNPJ à
+    planilha, que é o que resolveria de vez — ao preço de mudar a largura da
+    aba, que é invariante da prova.
+    """
+    registro = livro.registros.get(chave)
+    if registro is None or not cnpj:
+        return False
+    if registro.cnpj and registro.cnpj != cnpj:
+        registro.cnpj = cnpj
+        return True
+    registro.cnpj = cnpj
+    return False

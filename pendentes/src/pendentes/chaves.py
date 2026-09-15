@@ -41,16 +41,20 @@ def cnpj(valor: Any) -> str:
     return so_digitos(valor)
 
 
-def cnpj_utilizavel(valor: Any) -> bool:
-    """Falso para vazio e para `00000000000000`.
+def cnpj_utilizavel(valor: Any, descartado: str = CNPJ_ZERADO) -> bool:
+    """Falso para vazio e para o CNPJ descartado (`00000000000000`).
 
     O VBA simplesmente não indexa esses lançamentos — eles somem da análise
     sem contagem e sem aviso. Aqui a decisão é a mesma, mas o motor de
     serviços passa a **contar** quantos ficaram de fora, e a contagem vai para
     a tela.
+
+    Qual é o CNPJ descartado é **parâmetro**, não código: quem chama passa o
+    que está cadastrado na base. O valor padrão existe para as chamadas do
+    núcleo, que não têm parâmetro à mão.
     """
     digitos = cnpj(valor)
-    return bool(digitos) and digitos != CNPJ_ZERADO
+    return bool(digitos) and digitos != cnpj(descartado)
 
 
 @dataclass(frozen=True)

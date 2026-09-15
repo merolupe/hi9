@@ -198,6 +198,24 @@ def reconhecer(arquivos: Sequence[Arquivo],
     return Reconhecimento(por_papel, ausentes, nao_reconhecidos)
 
 
+def ler_inteiro(reconhecido: Reconhecido) -> Reconhecido:
+    """Relê o arquivo inteiro, mantendo o papel que ele já recebeu.
+
+    O reconhecimento espia só as primeiras linhas de cada aba — o suficiente
+    para o cabeçalho e nada além. Quem vai **usar** o relatório precisa das
+    outras sete mil linhas, e é esta função que as traz, sem repetir a
+    distribuição de papéis nem arriscar que um arquivo mude de papel entre uma
+    leitura e outra: o papel e o nome da aba vêm decididos de antes.
+    """
+    arquivo = ler(reconhecido.arquivo.caminho)
+    aba = arquivo.aba(reconhecido.aba.nome) or arquivo.primeira
+    linha = cab.localizar(aba.linhas, reconhecido.papel.ancoras,
+                          linhas_de_busca=LINHAS_PARA_ESPIAR)
+    if linha < 0:
+        linha = reconhecido.linha_do_cabecalho
+    return Reconhecido(reconhecido.papel, arquivo, aba, linha)
+
+
 def ler_e_reconhecer(caminhos: Iterable[Path | str],
                      papeis: Iterable[Papel]) -> tuple[Reconhecimento, list[Arquivo]]:
     """Espia o cabeçalho de cada arquivo e distribui os papéis.

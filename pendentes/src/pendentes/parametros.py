@@ -22,7 +22,7 @@ desenvolvedor não pode morar em `.py`* —, que é mais exigente, não menos.
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -136,3 +136,66 @@ def unidades(dados: dict[str, Any]) -> list[dict]:
 def roteamento(dados: dict[str, Any]) -> list[dict]:
     """As condições de roteamento de mercadorias, como cadastradas."""
     return list(dados.get("roteamento") or [])
+
+
+def confronto_de_servicos(dados: dict[str, Any]) -> dict[str, Any]:
+    """Os limiares do confronto de serviços, com o padrão da fábrica.
+
+    Nenhum deles é regra tributária — são código de configuração do ERP e
+    calibragem de heurística. O critério que os tira do `.py` é o outro, o que
+    o Fiscalbot explicitou: *o que o time fiscal muda sem precisar de
+    desenvolvedor não pode morar em código*. Um TOP novo é criado por quem
+    administra o Sankhya.
+    """
+    bruto = dict(dados.get("confronto_servicos") or {})
+    return {
+        "tops_de_lancamento": tuple(
+            str(t).strip() for t in bruto.get("tops_de_lancamento") or ()),
+        "prefixo_de_pedido": str(bruto.get("prefixo_de_pedido") or "PC"),
+        "cnpj_descartado": str(bruto.get("cnpj_descartado") or ""),
+        "tolerancia_da_razao": float(bruto.get("tolerancia_da_razao") or 0.005),
+        "multiplo_minimo": int(bruto.get("multiplo_minimo") or 2),
+        "multiplo_maximo": int(bruto.get("multiplo_maximo") or 12),
+    }
+
+
+def filiais(dados: dict[str, Any]) -> list[dict]:
+    """O complemento estático do de-para de filiais. Nasce vazio.
+
+    É dado da empresa — CNPJ e nome de filial —, então mora só na base viva.
+    Numa máquina nova a lista está vazia e o de-para é 100% dinâmico, que é o
+    comportamento de hoje.
+    """
+    return list(dados.get("filiais") or [])
+
+
+def semana_de(dados: dict[str, Any], hoje: date | None = None) -> tuple[int, int]:
+    """O ano e o número da semana desta execução.
+
+    O VBA pergunta o número num `InputBox`. Não há campo de texto na tela de
+    execução da Central, e **deduzir em silêncio seria adivinhação** — por
+    isso a semana deduzida é sempre exibida como ficha e é corrigível na tela
+    de configuração antes da execução seguinte.
+
+    A regra: o número cadastrado manda; sem ele, vale a semana ISO da data de
+    referência; sem data de referência, a de hoje.
+    """
+    secao_da_semana = dict(dados.get("semana") or {})
+    referencia = secao_da_semana.get("data_de_referencia")
+    quando = None
+    if referencia:
+        from .valores import data_br
+
+        convertida = data_br(referencia)
+        if not isinstance(convertida, str):
+            quando = convertida
+    if quando is None:
+        quando = hoje or date.today()
+    if isinstance(quando, datetime):
+        quando = quando.date()
+
+    ano, semana_iso, _ = quando.isocalendar()
+    numero = str(secao_da_semana.get("numero") or "").strip()
+    if numero.isdigit():
+        return ano, int(numero)
+    return ano, semana_iso
