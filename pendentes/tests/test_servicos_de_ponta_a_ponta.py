@@ -375,3 +375,41 @@ def test_o_rodape_do_relatorio_nao_vira_nota(tmp_path):
     resultado = gerar([asis, portal], tmp_path / "saida",
                       raiz_dos_dados=tmp_path / "dados")
     assert resultado.notas == 1
+
+
+def test_semana_anterior_sem_a_outra_metade_da_chave_degrada_com_aviso(
+        semana, tmp_path):
+    """Sem `Cod Parceiro` não há identidade: nada é ingerido, e a tela diz."""
+    anterior = escrever(tmp_path / "Pendentes37.xlsx", {"Pendentes": [
+        ["Nro Nota", "Guardiao", "Gestor de apoio", "Retorno"],
+        ["1001", "Suprimentos", "Maria", "aguardando"],
+    ]})
+    semana["arquivos"].append(anterior)
+    resultado = _rodar(semana)
+
+    assert resultado.ingestao is None
+    assert any("Cod Parceiro" in aviso for aviso in resultado.atencoes())
+    assert len(estado.carregar("servicos", raiz=semana["dados"])) == 0
+
+
+def test_a_planilha_da_semana_anterior_sem_guardiao_nao_e_reconhecida(
+        semana, tmp_path):
+    """A âncora do papel é `Nro Nota` **e** `Guardiao`; sem ela, é outro arquivo."""
+    estranho = escrever(tmp_path / "Outro.xlsx", {"Pendentes": [
+        ["Nro Nota", "Cod Parceiro", "Valor NFSe (Valor Bruto)"],
+        ["1001", "4001", 77.00],
+    ]})
+    semana["arquivos"].append(estranho)
+    resultado = _rodar(semana)
+
+    assert resultado.ingestao is None
+    assert len(estado.carregar("servicos", raiz=semana["dados"])) == 0
+
+
+def test_arquivo_que_nao_casa_com_papel_nenhum_aparece_na_tela(semana, tmp_path):
+    """Roda com os demais, mas nomeado — nada some em silêncio."""
+    estranho = escrever(tmp_path / "Planilha da Ana.xlsx",
+                        {"Plan1": [["Coisa", "Outra"], ["a", "b"]]})
+    semana["arquivos"].append(estranho)
+    resultado = _rodar(semana)
+    assert any("Planilha da Ana.xlsx" in aviso for aviso in resultado.atencoes())

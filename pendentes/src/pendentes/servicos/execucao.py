@@ -176,8 +176,10 @@ class Execucao:
         return itens
 
     def titulo(self) -> str:
-        return (f"Semana {self.semana} — {_milhar(self.notas)} notas do ASIS "
-                f"confrontadas com {_milhar(self.lancamentos)} lançamentos "
+        return (f"Semana {self.semana} — "
+                f"{_contadas(self.notas, 'nota', 'notas')} do ASIS "
+                f"{'confrontada' if self.notas == 1 else 'confrontadas'} com "
+                f"{_contadas(self.lancamentos, 'lançamento', 'lançamentos')} "
                 f"de serviço")
 
     def fichas(self) -> list[tuple[str, str]]:
@@ -216,6 +218,11 @@ def _milhar(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
 
+def _contadas(n: int, singular: str, plural: str) -> str:
+    """`1 nota` e `2.797 lançamentos` — o título é a primeira coisa que se lê."""
+    return f"{_milhar(n)} {singular if n == 1 else plural}"
+
+
 def nome_sugerido(agora: datetime | None = None) -> str:
     """O nome que a macro dá ao arquivo, e que o time já reconhece."""
     agora = agora or datetime.now()
@@ -252,23 +259,29 @@ def _chave_de_heranca(numero: str, codigo_do_parceiro: str) -> str:
 
 def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido, dados: dict,
                              livro: estado.Livro, semana: int,
-                             responsavel: str | None) -> estado.Ingestao | None:
+                             responsavel: str | None) -> estado.Ingestao:
     """A planilha da semana passada volta para o livro, antes de tudo.
 
     É a metade de volta do ciclo: a planilha sai do livro na segunda e volta
     para ele na quarta, com o que o time escreveu. Falha de leitura aqui
     **não** aborta a execução — degrada com aviso, como o VBA já fazia.
+
+    O arquivo só chega aqui se já tiver sido reconhecido como planilha da
+    semana anterior, o que exige `Nro Nota` e `Guardiao` no cabeçalho. O que
+    ainda pode faltar é o `Cod Parceiro`, que é a outra metade da identidade —
+    e sem ele não há chave, então a ingestão não acontece e a tela diz por quê.
     """
     inteiro = papeis.ler_inteiro(reconhecido)
+    anterior = max(semana - 1, 0)
     classificacoes = estado.extrair_da_planilha(
         inteiro.cabecalho, inteiro.dados,
         colunas_da_chave=col.S_CHAVE,
         montar_chave=lambda valores: _chave_de_heranca(
             fontes.analisar_numero_de_nfse(valores[0]).valor, valores[1]),
-        semana=max(semana - 1, 0),
+        semana=anterior,
     )
     return estado.ingerir(livro, classificacoes,
-                          origem=f"planilha da semana {max(semana - 1, 0)}",
+                          origem=f"planilha da semana {anterior}",
                           responsavel=responsavel)
 
 
@@ -361,6 +374,13 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
 
     reconhecimento, _ = papeis.ler_e_reconhecer(
         arquivos, parametros.papeis_de(dados, DOMINIO))
+    # Arquivo que não casou com papel nenhum roda com os demais — mas aparece
+    # na tela nomeado. Regra nº 4: nada é decidido por semelhança, e nada
+    # some em silêncio.
+    nao_reconhecidos = [
+        f"não reconheci {nome}; ele não entrou na execução"
+        for nome in reconhecimento.nao_reconhecidos
+    ]
 
     _, linhas_asis, mapa_asis = _ler(reconhecimento["asis"], dados, "asis",
                                      "ASIS (notas emitidas)", col.ANCORA_ASIS)
@@ -402,7 +422,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     anexos: list[fontes.Anexo] = []
     indice_da_conferencia: dict[str, list[int]] = {}
     conferencia_lida = False
-    avisos: list[str] = []
+    avisos: list[str] = list(nao_reconhecidos)
     if reconhecimento.tem("conferencia_de_servicos"):
         try:
             _, linhas_conf, mapa_conf = _ler(

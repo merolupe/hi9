@@ -8,7 +8,7 @@ Central.
 ## Situação
 
 **O GerarServPend roda.** O núcleo comum das duas rotinas e o motor de serviços
-estão no repositório, em `pendentes/`, com 164 testes de comportamento, e a
+estão no repositório, em `pendentes/`, com 167 testes de comportamento, e a
 entrada do catálogo saiu de `A_IMPORTAR`. O motor de mercadorias é a entrega
 seguinte, e por isso o **GerarPendentes continua apagado** na tela: botão que
 não roda é pior do que botão apagado.
