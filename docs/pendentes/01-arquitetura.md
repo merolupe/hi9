@@ -204,13 +204,22 @@ classificação lida por ninguém, e se voltar na semana seguinte, volta vazia. 
 livro guarda todo mundo, para sempre. Há teste
 (`test_a_classificacao_sobrevive_a_semana_em_que_a_nota_sai_de_pendentes`).
 
-`[FATO]` Um ganho de graça em serviços: a chave de herança do VBA é
-`NormNota | Cod Parceiro` porque *a aba `Pendentes` anterior não carrega o CNPJ
-do prestador* — e o próprio comentário do VBA diz isso. O livro é nosso: ele
-guarda o CNPJ, que a execução conhece. `[INFERÊNCIA]` A colisão silenciosa
-entre fornecedores distintos que compartilham o literal `"Sem cadastro"` deixa
-de existir. O par `NormNota | Cod Parceiro` continua, mas só como ponte de
-ingestão de arquivo antigo, onde é a única identidade disponível.
+`[FATO]` A chave de herança do VBA é `NormNota | Cod Parceiro` porque *a aba
+`Pendentes` anterior não carrega o CNPJ do prestador* — e o próprio comentário
+do VBA diz isso. Dois fornecedores distintos, ambos sem cadastro no Sankhya,
+compartilham o literal `"Sem cadastro"`: com o mesmo número normalizado,
+produzem a mesma chave, e a classificação de um passa a valer para o outro.
+
+`[FATO]` **O livro guarda o CNPJ; a colisão não desaparece, mas deixa de ser
+silenciosa.** A entrega do motor de serviços mediu o limite do desenho: a
+planilha que o time devolve editada continua sem CNPJ, então a chave de
+ingestão continua sendo a única reconstruível a partir dela. O que muda é que
+`estado.registrar_identidade` grava o CNPJ no registro e **conta** quando o
+dono de uma chave muda entre execuções — e o número vai para a tela.
+
+Eliminar de vez exige uma coluna nova na aba, o que mexe na largura de 36 e é
+invariante da prova. É a [decisão pendente nº 14](05-decisoes-pendentes.md), e
+o padrão assumido é não mexer.
 
 ### A primeira execução
 

@@ -7,6 +7,9 @@
 > 🟢 responder quando puder · 🟡 responder antes da entrega que depende dela ·
 > 🔴 **trava a prova do porte**
 >
+> A nº 14 nasceu na entrega do motor de serviços; as treze primeiras vêm da
+> leitura do VBA.
+>
 > O que o código já respondeu, e por isso **não** é pendência, está no fim.
 
 ---
@@ -188,6 +191,32 @@ e a precedência frente à herança.
 **Padrão assumido:** não implementar. O livro de classificação é o pré-requisito
 dela — com 30 semanas de livro, a base sai por consulta, não por projeto novo.
 
+## 14. 🟡 A `Pendentes` de serviços deveria carregar o CNPJ do prestador?
+
+`[FATO]` A identidade de uma nota entre uma semana e a outra é
+`número normalizado | Cod Parceiro` — e é assim porque a aba `Pendentes`
+**não carrega o CNPJ do prestador**. O comentário do VBA registra a decisão com
+essas palavras.
+
+`[FATO]` A consequência: todo prestador sem cadastro no Sankhya compartilha o
+literal `Sem cadastro` como segunda metade da chave. Duas notas de fornecedores
+distintos, ambos sem cadastro, com o mesmo número normalizado, produzem **a
+mesma chave** — e a classificação de uma passa a valer para a outra.
+
+`[FATO]` A entrega de serviços não elimina isso; ela **tira o silêncio**. O
+livro passa a guardar o CNPJ de quem emitiu (`estado.registrar_identidade`), e
+quando o dono de uma chave muda entre execuções o caso é contado e vai para a
+tela. Eliminar de vez exige uma **coluna a mais** na aba — e a largura de 36 é
+invariante da prova de regressão, além de alvo provável de PROCX de terceiro.
+
+**Pergunta:** acrescentar `CNPJ Prestador` como 37ª coluna da `Pendentes` de
+serviços, depois da prova de divergência zero? Ou basta a contagem?
+
+**Padrão assumido:** **não acrescentar.** A planilha continua com 36 colunas, o
+livro continua guardando o CNPJ, e a colisão continua possível — porém contada
+e visível. Se a contagem vier zerada nas primeiras execuções reais, a pergunta
+se responde sozinha.
+
 ---
 
 ## Já respondidas pelo código — não entram como pendência
@@ -204,5 +233,7 @@ dela — com 30 semanas de livro, a base sai por consulta, não por projeto novo
 | `Lancadas` tem 11 ou 12 colunas? | **12** — a 12ª é `Obs` |
 | `Pendentes` (serviços) tem 27 colunas? | **36** |
 | Quantas o proc 2 resolveu na execução de referência? | **zero** — 2.467 + 191 + 12 = 2.670 fecha exatamente |
+| A coluna 36 distingue "sem filial mapeada" de "não encontrei"? | **não.** Os dois casos gravam `Nao encontrado`; quem distingue, agora, é a lista bloqueante da tela |
+| O vínculo exige mais do que data e valor? | **sim**: emissão interpretável **e** valor da nota maior que zero, e valor do pedido maior que zero. Não estava registrado em lugar nenhum |
 | "Colunas nunca por posição" | **falso para a herança de mercadorias**, que lê as colunas 1 a 5 por posição |
 | As 16 "principais" + 11 "complementares" do XML têm exigência diferente? | **não** — as 27 são igualmente obrigatórias |

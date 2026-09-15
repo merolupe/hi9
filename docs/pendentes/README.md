@@ -7,11 +7,11 @@ Central.
 
 ## Situação
 
-**Esta é a entrega da fundação.** O núcleo comum das duas rotinas está no
-repositório, em `pendentes/`, com 98 testes de comportamento. Os dois motores
-de domínio — a cascata de confronto de serviços e o pipeline de mercadorias —
-são as entregas seguintes, e por isso as duas entradas da Central continuam
-**apagadas**: botão que não roda é pior do que botão apagado.
+**O GerarServPend roda.** O núcleo comum das duas rotinas e o motor de serviços
+estão no repositório, em `pendentes/`, com 164 testes de comportamento, e a
+entrada do catálogo saiu de `A_IMPORTAR`. O motor de mercadorias é a entrega
+seguinte, e por isso o **GerarPendentes continua apagado** na tela: botão que
+não roda é pior do que botão apagado.
 
 | | |
 |---|---|
@@ -21,7 +21,9 @@ são as entregas seguintes, e por isso as duas entradas da Central continuam
 | Livro de classificação, com carimbo | pronto |
 | Snapshot semanal imutável | pronto |
 | Escrita com formato antes da escrita | pronto |
-| Motor de serviços · motor de mercadorias · Resumo Executivo | entregas 2, 3 e 4 |
+| **Motor de serviços** — cascata por passos, vínculo de pedido, população inversa | **pronto** |
+| Tela de configuração de serviços | entrega 3 |
+| Motor de mercadorias · Resumo Executivo | entregas 3 e 4 |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 
 O `.xlam` em produção é **byte a byte o v14**: a rodada de formatação de

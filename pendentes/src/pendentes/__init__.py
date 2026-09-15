@@ -9,8 +9,8 @@ Por isso os dois domínios (`pendentes.mercadorias` e `pendentes.servicos`)
 moram sobre um núcleo comum — este pacote — em vez de duplicarem cinco
 conceitos, que é a situação de hoje no VBA.
 
-**Esta entrega traz o núcleo e a documentação.** Os dois motores de domínio
-ainda não existem: o que entrou e o que vem depois está em
+**O motor de serviços já roda** (`pendentes.servicos`); o de mercadorias é a
+entrega seguinte. O que entrou e o que vem depois está em
 `docs/pendentes/04-plano-de-entrega.md`.
 
 | Módulo | O que resolve |
@@ -26,6 +26,13 @@ ainda não existem: o que entrou e o que vem depois está em
 | `estado` | o livro de classificação: onde o julgamento humano passa a morar |
 | `snapshot` | a foto semanal imutável, para o controle interno |
 | `escrita` | a aba formatada, com o formato aplicado **antes** da escrita |
+
+E, sobre ele, o domínio:
+
+| Pacote | O que resolve |
+|---|---|
+| `servicos` | o confronto do ASIS com os lançamentos do Sankhya — quatro procedimentos, por passos, com consumo |
+| `mercadorias` | limpeza, roteamento e conferência — entrega 3 |
 """
 from ._dependencias import preparar as _preparar
 

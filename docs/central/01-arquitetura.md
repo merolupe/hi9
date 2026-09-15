@@ -191,15 +191,19 @@ depois.
 
 ## 8. O que falta
 
-- **GerarPendentes e GerarServPend — em importação.** O projeto `pendentes/`
-  já está no repositório com o núcleo comum das duas rotinas (reconhecimento
-  de arquivo por âncora de cabeçalho, leitura e mapeamento de coluna por nome,
-  as normalizações, o livro de classificação, o snapshot semanal e a escrita
-  formatada), a carga de fábrica dos parâmetros e a documentação do porte em
-  [`../pendentes/`](../pendentes/). Faltam os dois motores de domínio — a
-  cascata de confronto de serviços e o pipeline de mercadorias —, e por isso
-  as duas entradas do catálogo continuam `A_IMPORTAR`: botão que não roda é
-  pior do que botão apagado. A ordem e o que trava o quê estão em
+- **GerarServPend — importado, em teste.** O projeto `pendentes/` traz o
+  núcleo comum das duas rotinas (reconhecimento de arquivo por âncora de
+  cabeçalho, coluna por nome, as normalizações, o livro de classificação, o
+  snapshot semanal e a escrita formatada) e o **motor de serviços**: a cascata
+  de quatro procedimentos de confronto, o vínculo com a Conferência de
+  Serviços e a população inversa. A entrada do catálogo está `DISPONIVEL` e
+  roda dentro da janela. **A divergência zero contra a macro ainda não está
+  provada** — faltam os arquivos reais de uma semana e a saída que a macro
+  gerou a partir deles.
+- **GerarPendentes — em importação.** Falta o motor de mercadorias: limpeza,
+  roteamento, lookup da Conferência de Entradas e o Resumo Executivo. A
+  entrada do catálogo continua `A_IMPORTAR` — botão que não roda é pior do que
+  botão apagado. A ordem e o que trava o quê estão em
   [`../pendentes/04-plano-de-entrega.md`](../pendentes/04-plano-de-entrega.md).
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).

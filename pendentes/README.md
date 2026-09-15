@@ -12,10 +12,9 @@ nenhuma e precisa construir quatro.
 
 ## Situação
 
-**Esta entrega é a fundação.** O núcleo comum das duas rotinas está no
-repositório, com teste; os dois motores de domínio ainda não. As duas entradas
-da Central continuam apagadas (`A_IMPORTAR`) de propósito — botão que não roda
-é pior do que botão apagado.
+**O GerarServPend já roda**, na janela da Central e no terminal. O motor de
+mercadorias ainda não existe, e por isso o GerarPendentes continua apagado
+(`A_IMPORTAR`) de propósito — botão que não roda é pior do que botão apagado.
 
 | Bloco | Situação |
 |---|---|
@@ -26,7 +25,8 @@ da Central continuam apagadas (`A_IMPORTAR`) de propósito — botão que não r
 | Snapshot semanal imutável | pronto |
 | Escrita da planilha, com formato antes da escrita | pronto |
 | Carga de fábrica dos parâmetros | pronta |
-| **Motor de serviços** — cascata de confronto, vínculo, população inversa | entrega 2 |
+| **Motor de serviços** — cascata de confronto, vínculo, população inversa | **pronto** |
+| Tela de configuração de serviços | entrega 3 |
 | **Motor de mercadorias** — limpeza, roteamento, conferência, B1/B2 | entrega 3 |
 | **Resumo Executivo** — tabelas, TOP N e os quatro gráficos | entrega 4 |
 
@@ -52,7 +52,46 @@ src/pendentes/
   estado.py        o livro de classificação, com carimbo de quem gravou
   snapshot.py      a foto semanal imutável, que nunca é sobrescrita
   escrita.py       a aba formatada, com o formato aplicado ANTES da escrita
+  cli.py           python rodar.py pendentes servicos <arquivos>
+
+src/pendentes/servicos/
+  colunas.py       o nome de cada coluna lida e a ordem exata das quatro abas
+  fontes.py        as matrizes viram nota, lançamento e anexo
+  chaves.py        as três chaves do confronto e o índice que CONSOME
+  confronto.py     a cascata dos quatro procedimentos, POR PASSOS
+  enriquecimento.py cadastro de parceiro, de-para de filial, pedido mais recente
+  vinculo.py       a nota × o pedido da Conferência de Serviços (colunas 29-36)
+  inversa.py       Sem Correspondencia ASIS: o que o ASIS deixou de capturar
+  execucao.py      o pipeline de ponta a ponta e o que a tela mostra
 ```
+
+## O que o motor de serviços responde
+
+*Quais notas de serviço emitidas contra a Hinove ainda não foram lançadas — e,
+para cada uma, qual pedido de compra e qual requisitante estão por trás dela.*
+
+Não existe chave natural entre o ASIS e o Sankhya. O confronto é uma cascata de
+quatro procedimentos, do mais forte para o mais fraco, com **consumo**: cada
+lançamento casa com no máximo uma nota.
+
+| # | Chave | Força |
+|---|---|---|
+| 1 | número da nota + CNPJ do prestador | forte |
+| 2 | número da **RPS** + CNPJ, contra o número de nota do Sankhya | forte |
+| 3 | CNPJ + valor | fraca |
+| 4 | número da nota + valor, **sem CNPJ** | fraca — sai marcada para revisão |
+
+**O laço externo é o passo, nunca a nota.** Cada procedimento varre todas as
+notas antes de o seguinte começar; invertido, uma chave fraca consumiria o
+lançamento de um match forte e o resultado passaria a depender da ordem das
+linhas no relatório. Dois testes travam isso.
+
+A saída são quatro abas — `Lancadas` (12 colunas), `Pendentes` (36),
+`Canceladas` (16, layout próprio) e `Sem Correspondencia ASIS` (7 + N) —, e o
+que a ferramenta não consegue explicar **bloqueia o encerramento da semana**:
+confronto por chave fraca, chave nota+CNPJ duplicada no Sankhya, vínculo de
+pedido ambíguo e CNPJ de tomador sem filial. Nota que não casou com nada não
+bloqueia: ela é o produto.
 
 ## Três decisões que não são detalhe
 
@@ -73,6 +112,15 @@ chave de acesso em coluna numérica vira `3,52604E+43` e o PROCX para de casar;
 data gravada em célula formatada como Texto vira string literal, e formatar
 depois não reverte.
 
+## Como se usa
+
+Pela janela: `Hinove.bat`, ferramenta **GerarServPend**, e arraste os
+relatórios da semana. Pelo terminal, com os arquivos em qualquer ordem:
+
+```
+python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
+```
+
 ## Onde as coisas moram
 
 | O quê | Onde | Versionado? |
@@ -89,7 +137,7 @@ depois não reverte.
 python -m pytest
 ```
 
-98 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+164 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **A divergência zero contra a macro ainda não foi provada**, porque os arquivos

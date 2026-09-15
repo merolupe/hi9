@@ -71,6 +71,30 @@ termos. `[FATO]` O histórico de versões embutido no módulo vai até
 o da v14. Se a rodada de 17/08 ainda for desejada, ela é pedido novo — e entra
 na entrega do Resumo Executivo, não como "restaurar o que existia".
 
+### As divergências que a implementação de serviços encontrou
+
+`[FATO]` Ao portar linha a linha, apareceram cinco pontos em que a
+documentação do porte e o `.bas` não diziam a mesma coisa. **Em todos, o VBA
+venceu** — é ele que está em produção, e divergência de célula é divergência.
+
+| # | A documentação dizia | O VBA faz | O que se fez |
+|---|---|---|---|
+| V1 | a coluna 36 sem vínculo é `""`, `Sem cadastro de parceiro` ou `Nao encontrado` | confirmado — **e o caso "sem código de filial" cai em `Nao encontrado`**, indistinguível de "procurei e não achei" | preservado o rótulo do VBA; a distinção vai para a lista bloqueante da tela, com o CNPJ nomeado |
+| V2 | o vínculo é filtrado por data e por valor | há **duas guardas a mais**, não registradas: a nota só é vinculável se a emissão for data interpretável **e** o valor for maior que zero; e o pedido candidato precisa ter valor maior que zero | reproduzidas as quatro condições |
+| V3 | `mapQtdAsis` conta as notas do ASIS por CNPJ de prestador | confirmado — **e não descarta o CNPJ zerado**, ao contrário do lado do Portal de Compras, que descarta | preservada a assimetria, e registrada como preservado nº 25 |
+| V4 | a herança lê `Nro Nota` + `Cod Parceiro` | confirmado no corpo do procedimento — mas o **comentário de cabeçalho do próprio `CarregarHerancaAnterior` diz "nota normalizada + CNPJ prestador"**, e contradiz o código logo abaixo | seguido o código; o comentário de cabeçalho está errado desde que foi escrito |
+| V5 | `DecodificarSemaforo` tem "quatro estados" numa seção e "5 ramos" noutra | são **seis caminhos**: quatro códigos, o fallback de HTML desconhecido (vazio) e o fallback de texto cru | `farol.traduzir` implementa os seis; a carga de fábrica cadastra os quatro códigos, que é a parte parametrizável |
+
+`[FATO]` E uma divergência entre a documentação da **entrega 1** e o que é
+possível: `docs/pendentes/01-arquitetura.md` afirmava que a colisão silenciosa
+de chave de herança entre dois prestadores sem cadastro *deixa de existir*
+porque o livro guarda o CNPJ. Não deixa: a planilha que o time devolve editada
+**não carrega CNPJ**, e a chave de ingestão continua sendo a única
+reconstruível a partir dela. O que o livro entrega é a **detecção** — a
+execução conta quando o dono de uma chave muda. Eliminar de vez exige uma
+coluna nova na aba, que muda a largura de 36 e é invariante da prova. Virou a
+[decisão pendente nº 14](05-decisoes-pendentes.md).
+
 ## 3. Onde o padrão-ouro mora
 
 `competencias/pendentes/`, **fora do git**, exatamente como
@@ -131,6 +155,8 @@ pedido ou farol entre elas, farol 1.242 `Sim` / 143 `Não` / 5.459 vazio.
 | **O arquivo da semana anterior como fonte da verdade** | perder o anexo apagava a classificação de todos | o livro em `dados/pendentes/` |
 | **`.xls` 97-2003 como saída** | `openpyxl` não escreve `.xls`; `xlwt` está abandonado; serviços **já** entrega `.xlsx` | `.xlsx`. A leitura de entrada continua aceitando `.xls` |
 | **`AtualizarResumoExecutivo` como rotina** | round-trip por openpyxl descarta o XML de gráfico | vira **modo de execução**: a planilha é regerada do zero, e o problema deixa de existir |
+| **`Application.StatusBar`, `ScreenUpdating` e `Calculation`** (serviços) | não há Excel para pôr em estado ruim nem para restaurar | nada; some. O progresso, quando fizer falta, é a barra da própria janela |
+| **O `MsgBox` final com seis contagens** | mensagem que some ao clicar em OK, e que ninguém guarda | o `Resultado` da tela, e o `resumo.json` do snapshot, que fica |
 
 ## 5. O que fica idêntico, de propósito
 
@@ -145,6 +171,12 @@ pedido ou farol entre elas, farol 1.242 `Sim` / 143 `Não` / 5.459 vazio.
 * **O rótulo `Retorno semana {N-1}`**, com o número da semana **anterior**.
 * **As larguras diferentes das abas auxiliares**, que são acidente do momento
   em que cada uma copia o cabeçalho — e são invariante da prova (pendência 8).
+* **O `"Nao encontrado"`** da coluna `Pedido de compra mais recente` e da
+  coluna 36, e o **`"CNPJ nao mapeado: {cnpj}"`** dentro da célula de filial —
+  os três literais, com a grafia sem acento que o VBA usa.
+* **A ordem de reordenação das colunas de origem** da aba inversa: as cinco
+  pré-definidas, depois as que têm `CIDADE` no nome, depois as demais na ordem
+  do arquivo. E o bloco de análise **antes** delas, não depois.
 
 A única aba nova é **`Descartados`**, em mercadorias: as linhas excluídas pelas
 regras A1 (XML de terceiro) e A3 (NF-e destinada a transporte), com a coluna do
@@ -165,9 +197,24 @@ motivo. `[FATO]` Hoje elas somem sem rastro, sem contador e sem aba. É
 | 6 | Validação de colunas: mercadorias lista **todas** as faltantes, serviços aborta na **primeira** | uniformiza na ergonomia de mercadorias | o mesmo conjunto de execuções aborta; muda a mensagem |
 | 7 | Ano `2026` no código: em 01/2027 cai no seletor manual toda execução | desaparece com o ambiente | não há resolução de caminho |
 
-`[FATO]` Os itens 1 a 7 desta tabela **já estão resolvidos** nesta entrega, ou
-porque o código que os causava não existe mais (2, 4, 5, 7) ou porque o núcleo
-já se comporta do jeito novo (6, e a mecânica dos 1 e 3, que os motores usarão).
+`[FATO]` Os itens 1 a 7 desta tabela **estão todos resolvidos**. Os itens 2, 4,
+5 e 7 caíram com o ambiente, na entrega 1; o 6 veio do núcleo, na mesma
+entrega.
+
+`[FATO]` **Os itens 1 e 3 fecharam na entrega de serviços**, e os dois merecem
+o registro de como:
+
+* **item 3** — a falta de qualquer coluna da Conferência de Serviços agora
+  desliga só o bloco de vínculo. `execucao.gerar` envolve a leitura da
+  Conferência num `try` que captura coluna faltante e cabeçalho não
+  localizado, as colunas 29 a 36 saem vazias e a tela recebe o aviso com o
+  motivo. Há teste: `test_sem_a_conferencia_a_planilha_sai_com_as_colunas_de_vinculo_vazias`;
+* **item 1** — a planilha de serviços é gravada antes de o livro e o snapshot
+  serem escritos, e nenhuma dessas três etapas depende de painel nenhum. O
+  equivalente exato do defeito (o `Activate` depois de a aba do resumo não ter
+  sido criada) é de mercadorias e fecha na entrega 3; o que a entrega de
+  serviços prova é que a ordem escolhida — gravar primeiro, enfeitar depois —
+  já está no código.
 
 ### 6.2 Com medição obrigatória antes de mexer
 
@@ -187,9 +234,32 @@ a medição existir — é o padrão assumido da pendência nº 1.
 assimetria e aponta para esta tabela. Há teste que trava o comportamento de
 hoje — para que a mudança, quando vier, seja deliberada.
 
+`[FATO]` O motor de serviços acrescentou a **medição que falta** ao item 12 sem
+mexer no comportamento: a tela passa a contar as datas de emissão do ASIS que
+não foram interpretáveis e ficaram como texto. Quando o número aparecer numa
+execução real, a decisão deixa de ser hipótese.
+
 O item 11 tem função pronta (`chaves.chave_de_acesso`) mas **não aplicada ao
 confronto**: ela é usada apenas no livro de classificação, que é nosso e não
 tem macro com que divergir.
+
+### 6.3 O que a entrega de serviços corrigiu, e que não estava na lista
+
+`[FATO]` Três coisas que o VBA faz em silêncio e que agora têm número na tela.
+Nenhuma delas muda uma célula da planilha: mudam o que a pessoa sabe depois de
+rodar.
+
+| O quê | Hoje | Agora |
+|---|---|---|
+| Lançamento TOP 2020/2111 com CNPJ vazio ou zerado | não é indexado em lugar nenhum, some da análise e da aba inversa, **sem contagem e sem aviso** | contado e exibido em `Ficaram de fora da análise` |
+| Número de nota que sofreu o corte de prefixo de ano | o corte é premissa declarada em comentário, e invisível na execução | contado — quando um número legítimo de 13+ dígitos começando em `20` for mutilado, o número aparece |
+| Nota que recebeu pedido de compra de outra filial | `mapPedido` é indexado só por CNPJ do parceiro e ninguém percebe | contado; é a medição que fundamenta a pendência 5 |
+
+`[FATO]` E uma quarta, que o VBA conta mas não mostra a lista: **os quatro
+procedimentos de confronto** aparecem discriminados na tela. A `MsgBox` da
+macro só avisa que o procedimento 4 exige revisão; aqui os quatro números vêm
+com a contagem, e a soma tem de dar `Lançadas` — é o teste de regressão
+visível, que dispensa abrir teste para conferir.
 
 ## 7. O que o porte preserva de propósito
 
@@ -206,6 +276,14 @@ tem macro com que divergir.
 | 21 | **O fallback de unidade e de categoria devolve o texto original** | é a regra nº 4 em ação: *nenhum registro desaparece silenciosamente do resumo* é o comentário do próprio VBA. Preservo o valor e acrescento o bloqueio |
 | 22 | **`Dias Emissão Doc` está em `dateCols` e em `fmtDateCols`** — se for contagem de dias, o valor 30 exibe `30/01/1900` | `[INFERÊNCIA]` não confirmada. Preservar um defeito visível é melhor do que corrigir por suposição. Pendência 2 |
 | 23 | **`Dt. Conf. Física` e `Dt. ult. anexo` retêm hora e exibem só data** | mudar formato é visível para todo mundo que recebe a planilha. Pendência 3 |
+| 24 | **A coluna 36 grava `Nao encontrado` quando falta o código da filial** — o VBA não distingue esse caso do "procurei e não achei" | inventar um rótulo novo seria divergência de célula. Quem distingue é a tela, com o CNPJ nomeado na lista bloqueante |
+| 25 | **`mapQtdAsis` conta todo CNPJ de prestador não vazio, inclusive o zerado** — assimétrico com o lado do Portal de Compras, que descarta o zerado | é o universo que a coluna `Qtde notas do parceiro (ASIS)` sempre mediu; mudar muda o número que o time lê |
+| 26 | **O RPS do procedimento 2 não passa pelo corte de prefixo de ano** que o número da nota sofre | assimetria registrada no código. Um RPS com prefixo de ano não casaria; medir exige arquivo real |
+
+`[FATO]` Os itens 14 a 18 e 20 são de serviços, e **todos têm teste nomeado**
+desde esta entrega: a segregação das canceladas antes da cascata, a comparação
+antes/depois estrita, a `Diferenca` entre universos diferentes, o
+`mapPedido` por CNPJ e a coluna 8 literal da `Lancadas`.
 
 ## 8. As onze armadilhas que uma reimplementação ingênua cairia
 
@@ -214,14 +292,14 @@ marcadas.
 
 | # | A armadilha | Defesa |
 |---|---|---|
-| 1 | Rodar a cascata de serviços **por linha** em vez de **por passo** — o laço externo é o passo. Invertido, uma chave fraca consome o lançamento de um match forte, e o resultado passa a depender da ordem das linhas | teste dedicado, na entrega de serviços |
+| 1 | Rodar a cascata de serviços **por linha** em vez de **por passo** — o laço externo é o passo. Invertido, uma chave fraca consome o lançamento de um match forte, e o resultado passa a depender da ordem das linhas | **`confronto.confrontar`, com dois testes**: um monta o caso em que as duas ordens divergem e roda a cascata ingênua dentro do próprio teste para comparar; o outro embaralha as linhas e exige o mesmo resultado |
 | 2 | Achar que aplicar o formato **depois** de escrever resolve. `Insert Shift:=xlToRight` faz a coluna nova herdar o formato da vizinha, e gravar data em célula Texto converte o valor sem levantar exceção | **`escrita.preparar_aba` formata antes, e há teste** |
 | 3 | Buscar a pasta da semana recursivamente — encontraria `Serviços\Semana 30` querendo `Mercadorias\Semana 30` | o ambiente desapareceu |
 | 4 | Tratar o farol vazio como "Não" — são três estados, e vazio significa *sem pedido vinculado* | **`farol.py`, com teste** |
 | 5 | Supor que o número da nota no ASIS é o número do lançamento — há prefixo de ano de 4 dígitos, e prefeituras que informam a RPS como número da nota | **`chaves.analisar_numero_de_nfse`, com teste** |
-| 6 | Assumir que a chave de herança de serviços é nota + CNPJ. É nota + **Cod Parceiro** | o livro guarda o CNPJ; a chave antiga vira ponte de ingestão |
+| 6 | Assumir que a chave de herança de serviços é nota + CNPJ. É nota + **Cod Parceiro** | **`execucao._chave_de_heranca`, com teste de ida e volta.** O livro guarda o CNPJ e **conta** a colisão — eliminá-la exige uma coluna nova na planilha, que é decisão pendente |
 | 7 | Assumir que as abas auxiliares têm o mesmo número de colunas da principal | documentado como invariante |
-| 8 | Assumir que `Canceladas` (serviços) é `Pendentes` + 2 colunas. É layout próprio de 16 | documentado |
+| 8 | Assumir que `Canceladas` (serviços) é `Pendentes` + 2 colunas. É layout próprio de 16 | **`colunas.CANCELADAS`, com teste que compara as duas ordens internas** |
 | 9 | Assumir que a herança de mercadorias lê por cabeçalho. Lê as **colunas 1 a 5 por posição** | **`estado.extrair_da_planilha` lê por cabeçalho, com teste** — e o defeito 8 mede a diferença |
 | 10 | Assumir que `NormalizarTexto` faz a mesma coisa nos dois módulos | **`aparar` × `chave_de_texto`, com teste lado a lado** |
 | 11 | Achar que `Retorno semana N` se refere à semana corrente. É `semana - 1` | **`estado.semana_do_rotulo`, com teste** |
@@ -241,7 +319,8 @@ E uma décima segunda, que o desenho do porte não previa e o código revelou:
   sofreram corte de prefixo de ano, datas não interpretáveis.
 * **A coluna renomeada deixa de parar a rotina semanal.** Cadastra-se o
   sinônimo na tela.
-* **Teste.** 98 nesta entrega, todos sobre comportamento.
+* **Teste.** 164 em `pendentes/`, todos sobre comportamento — 98 do núcleo, 66
+  do motor de serviços.
 
 ## 10. Desempenho — a expectativa, não a medição
 

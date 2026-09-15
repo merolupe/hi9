@@ -55,34 +55,102 @@ está por vir.
 comando sem produto — nenhuma planilha sai desta entrega. `verificar.py`
 responde "este Python consegue rodar as ferramentas?", e a lista dele é a das
 ferramentas que a Central precisa carregar para abrir; `pendentes` ainda não é
-uma delas. As duas linhas entram junto com o primeiro motor, na entrega 2.
+uma delas. As duas linhas entram junto com o primeiro motor, na entrega 2 —
+e entraram.
 
-## 2. Entrega 2 — serviços
+## 2. Entrega 2 — serviços · **concluída**
 
-| Bloco | Esforço | Risco | Trava |
-|---|---|---|---|
-| Chaves do confronto (`dK1`, `dK3`, `dK4`) e o consumo | baixo | baixo | a cascata |
-| A cascata de 4 procedimentos, **por passos** | médio | **médio** — inverter os laços é a armadilha nº 1 | a aba `Lancadas` |
-| Enriquecimento: cadastro, de-para de filial, pedido mais recente | médio | baixo | `Pendentes` |
-| Vínculo com a Conferência de Serviços (colunas 29–36) | médio | médio | `Pendentes` |
-| População inversa (`Sem Correspondencia ASIS`) | médio | baixo | — |
-| As quatro abas e o `Resultado` da tela | baixo | baixo | — |
-| Entrada no catálogo + `_rodar_gerarservpend` + CLI | baixo | baixo | — |
+`[FATO]` O motor de serviços está no repositório, em `pendentes/servicos/`,
+e a entrada `gerarservpend` do catálogo saiu de `A_IMPORTAR`: **o botão
+acende**. O que entrou, bloco a bloco:
 
-### Por que serviços primeiro
+| Bloco | Módulo | O que resolve |
+|---|---|---|
+| Nome de coluna e ordem das abas | `colunas.py` | 12 / 36 / 16 / 7+N, literais, com o formato de cada coluna |
+| As matrizes viram registro | `fontes.py` | nota, lançamento e anexo com valor, data e CNPJ já normalizados |
+| Chaves do confronto e o consumo | `chaves.py` | os três índices; `consumir` devolve o primeiro lançamento livre e o marca |
+| A cascata de 4 procedimentos, **por passos** | `confronto.py` | o laço externo é o passo; as canceladas saem antes do primeiro |
+| Enriquecimento | `enriquecimento.py` | cadastro de parceiro, de-para dinâmico de filial + complemento estático, pedido de maior `Nro. Unico` |
+| Vínculo com a Conferência (29–36) | `vinculo.py` | razão exata, múltiplo 2×–12×, filtro de data por dia, desempate por NU, rótulo de confiança |
+| População inversa | `inversa.py` | bloco de análise antes das ~268 colunas de origem, nos três blocos de reordenação |
+| Pipeline e o que a tela mostra | `execucao.py` | as quatro abas, o livro, o snapshot e o `Painel` |
+| Entrada no catálogo + CLI | `central/ferramentas.py`, `rodar.py`, `verificar.py` | `_rodar_gerarservpend`, `python rodar.py pendentes servicos …` |
 
-`[FATO]` É o módulo mais próximo do que a Central espera: não tem resolução de
-caminho, não tem mitigação de OneDrive, não tem gráfico, não tem aba oculta, já
-entrega `.xlsx`, já tem handler global de erro, já lê por array e já avisa
-degradação com contagem.
+`[FATO]` 66 testes novos em `pendentes/`, mais 2 na Central, todos de
+comportamento. O que eles travam:
 
-E é o que tem os **melhores números de referência**: três identidades
-aritméticas que fecham (ver § 3 do documento do porte). Provar o núcleo contra
-ele é o teste mais barato e mais conclusivo.
+* **a cascata por passos contra a cascata por linha** — o teste monta o caso em
+  que as duas ordens divergem, roda a cascata ingênua dentro do próprio teste
+  e compara os dois resultados. É a armadilha nº 1, e é a única que não se
+  percebe olhando a planilha;
+* **a independência da ordem das linhas** — o mesmo relatório embaralhado dá o
+  mesmo resultado;
+* nota com prefixo de ano do Portal Nacional; nota cujo número é o da RPS; RPS
+  vazia ou zero, que não vira chave; CNPJ zerado descartado e contado;
+  cancelada fora do confronto; parceiro sem cadastro; filial não mapeada;
+  pedido ambíguo; pedido global × pedido exato;
+* **as identidades aritméticas da § 11 do documento de estrutura**: lançadas +
+  pendentes + canceladas = notas do ASIS; lançadas + sem correspondência =
+  lançamentos indexados; a soma dos quatro procedimentos = lançadas;
+* uma execução de ponta a ponta com arquivos sintéticos, que gera as quatro
+  abas, grava o livro e o snapshot e devolve o `Resultado` — pela ferramenta e
+  pela janela da Central.
 
-`[INFERÊNCIA]` A aba `Sem Correspondencia ASIS`, com suas ~275 colunas, **não é
-cara**. Ela é cara em VBA, onde cada célula é um acesso COM; em Python são 127
-× 275 ≈ 35 mil células — uma fração do que o Fiscalbot já escreve hoje.
+### O que a entrega acrescentou ao núcleo
+
+`[FATO]` Quatro coisas, e nenhuma delas é regra de serviços — por isso ficaram
+no núcleo, e não no domínio:
+
+| Onde | O quê |
+|---|---|
+| `papeis.ler_inteiro` | relê o arquivo já com o papel decidido — o reconhecimento espia 20 linhas, o motor precisa das outras |
+| `parametros.semana_de` | deduz ano e semana; sem `InputBox`, e sem adivinhar em silêncio (pendência 7) |
+| `parametros.confronto_de_servicos` / `.filiais` | as vistas dos parâmetros, com o padrão da fábrica |
+| `estado`: `cnpj`, `ultimo_retorno`, `registrar_identidade` | o livro passa a guardar o CNPJ e a **contar** a colisão de chave |
+
+### Três decisões desta entrega que vale registrar
+
+**O que bloqueia o encerramento ficou exatamente onde o desenho previa.**
+Confronto por procedimento 4, chave nota+CNPJ duplicada no Sankhya, vínculo de
+pedido ambíguo e CNPJ de tomador sem filial. Nota que não casou com nada **não**
+bloqueia: ela é o produto. A planilha é gravada de qualquer jeito, a lista
+vermelha abre a tela, e o snapshot registra `encerravel: false`.
+
+**A coluna 36 continua dizendo o que o VBA dizia.** Quando falta o código da
+filial, o VBA grava `Nao encontrado` — não distingue esse caso do "procurei e
+não achei". Seria fácil inventar um rótulo novo; não se inventou, porque
+divergência de célula é divergência. Quem distingue é a tela, com o CNPJ
+nomeado na lista bloqueante.
+
+**O defeito 3 do porte foi corrigido nesta entrega.** Faltar qualquer coluna da
+Conferência de Serviços passa a desligar só o bloco de vínculo, em vez de
+abortar a execução inteira — hoje o resultado é *crash*, não resultado, e não
+há o que comparar.
+
+### O que ficou de fora, de propósito
+
+`[FATO]` A configuração de serviços **não** ganhou tela nesta entrega: a
+`Ferramenta` do catálogo entrou sem `Configuracao`. Os parâmetros são lidos da
+carga de fábrica e da base viva, e o motor os honra — o que falta é a tela que
+os edita, que é trabalho de interface e não de motor. Enquanto ela não vem, o
+de-para estático de filiais (pendência 9) e a semana cadastrada (pendência 7)
+só se alteram editando `dados/pendentes/parametros.yaml` à mão.
+
+### Por que serviços veio primeiro, revisto depois de feito
+
+`[FATO]` A aposta era que serviços seria o módulo mais barato: sem resolução de
+caminho, sem mitigação de OneDrive, sem gráfico, sem aba oculta, já entregando
+`.xlsx`, já com handler global de erro e já lendo por array. Confirmou-se.
+
+`[FATO]` E a aposta sobre a aba inversa também: `[INFERÊNCIA]` dizia que as
+~275 colunas não seriam caras, porque em VBA cada célula é um acesso COM e em
+Python não. A aba sai da mesma função de escrita das outras três, sem nenhum
+tratamento especial além da reordenação das colunas de origem.
+
+O que **não** estava na estimativa: o motor precisou de quatro acréscimos ao
+núcleo (tabela acima). Nenhum deles é grande, e todos serviriam igualmente ao
+motor de mercadorias — o que sugere que a entrega 3 encontrará o núcleo mais
+completo do que esta encontrou.
 
 ## 3. Entrega 3 — mercadorias, sem painel
 
@@ -151,9 +219,9 @@ se ainda for desejada é pedido novo.
 ## 6. O que trava o quê
 
 ```
-núcleo (feito) ──┬─► serviços ──► catálogo (gerarservpend) + CLI
+núcleo (feito) ──┬─► serviços (feito) ──► catálogo + CLI (feito)
                  │
-                 ├─► estado + snapshot (feito) ──┬─► serviços (herança)
+                 ├─► estado + snapshot (feito) ──┬─► serviços (feito)
                  │                               └─► mercadorias (herança)
                  │
                  └─► mercadorias ──┬─► catálogo (gerarpendentes)
