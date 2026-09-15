@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 import urllib.error
 import urllib.request
@@ -169,6 +170,94 @@ def test_o_arquivo_enviado_nao_fica_na_maquina(janela, arquivo_julho):
 
 
 # -- a página ---------------------------------------------------------------
+
+def test_a_pagina_abre_com_os_destaques_da_ferramenta():
+    """O que a janela promete na abertura é o que a ferramenta faz."""
+    html = PAGINA.read_text(encoding="utf-8")
+    for destaque in (
+        "854 classificações de operação sob 117 CFOPs",
+        "Apuração completa das 7 filiais",
+        "Cálculo de centralização, DIFAL, CIAP e Benefício Fiscal"
+        " de Rio Brilhante configurados",
+    ):
+        assert destaque in html, f"sumiu o destaque: {destaque!r}"
+
+
+def test_o_destaque_conta_os_testes(request):
+    """A janela promete um número de testes; ele tem que ser o de verdade.
+
+    É a suíte coletada, não a que passou: os 5 pulados existem e rodam na
+    máquina que tem o extrato do Livro apontado por
+    APURABOT_FIXTURE_MOVIMENTO_JULHO. Só vale quando a suíte inteira roda —
+    rodando um arquivo só, a contagem seria menor e não diria nada.
+    """
+    html = PAGINA.read_text(encoding="utf-8")
+    achado = re.search(r"(\d+) testes automatizados sob o contexto HINOVE", html)
+    assert achado, "sumiu o destaque com o número de testes"
+
+    coletados = request.session.testscollected
+    if coletados < 100:
+        pytest.skip("suíte parcial: a contagem não serve de comparação")
+    assert int(achado.group(1)) == coletados, (
+        f"a janela promete {achado.group(1)} testes e a suíte tem {coletados}"
+    )
+
+
+def test_a_espera_conta_os_passos_na_ordem_do_motor():
+    """A mensagem acompanha o que o motor faz, na ordem em que ele faz."""
+    html = PAGINA.read_text(encoding="utf-8")
+    passos = [
+        "Lendo livro…",
+        "Equalizando carga…",
+        "Aplicando regras…",
+        "Identificando regimes de apuração por filial…",
+        "Apurando…",
+        "Montando registro…",
+    ]
+    onde = [html.find(f'"{passo}"') for passo in passos]
+    assert all(i > 0 for i in onde), "faltou passo na lista da janela"
+    assert onde == sorted(onde), "os passos saíram fora de ordem"
+
+
+def test_o_ultimo_passo_segura_ate_a_resposta_chegar():
+    """Nenhum passo pode dizer que terminou antes do motor terminar."""
+    html = PAGINA.read_text(encoding="utf-8")
+    ultimo = html[html.index('"Montando registro…"'):]
+    assert ultimo[: ultimo.index("]")].rstrip().endswith("null"), (
+        "o último passo tem tempo: a janela vai avançar sozinha"
+    )
+
+
+def test_a_janela_espera_com_o_twin_orbit():
+    """O anel único saiu; entraram os dois anéis em contra-rotação."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert 'class="girando"' not in html and "@keyframes girar{" not in html
+    assert 'class="anel externo"' in html and 'class="anel interno"' in html
+    assert "@keyframes orbitar" in html
+
+
+def test_a_janela_traz_a_marca_e_o_slogan():
+    """A abertura é a identidade: a marca partida em duas fontes e o slogan."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert '<span class="apura">Apura</span><span class="bot">bot</span>' in html
+    assert '<p class="slogan">tecnologias de Hinovação.</p>' in html
+
+
+def test_a_janela_nao_oferece_mais_o_botao_de_encerrar():
+    """Quem fecha é a janela preta. O rodapé saiu e a função foi junto."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert "Encerrar</button>" not in html
+    assert "async function encerrar(" not in html
+    assert 'class="rodape"' not in html
+
+
+def test_o_logo_tem_onde_ser_trocado_pela_arte_oficial():
+    """`marca/embutir_logo.py` troca o desenho pelo PNG entre estas marcas."""
+    html = PAGINA.read_text(encoding="utf-8")
+    assert html.count("<!-- logo:inicio -->") == 1
+    assert html.count("<!-- logo:fim -->") == 1
+    assert html.index("<!-- logo:inicio -->") < html.index("<!-- logo:fim -->")
+
 
 def test_a_pagina_nao_busca_nada_fora_da_maquina():
     """Rede corporativa bloqueia CDN — e o dado não pode sair daqui.

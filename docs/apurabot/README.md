@@ -34,6 +34,13 @@ Os números de cada verificação estão em
 | [08 — Roteiro de teste](08-roteiro-de-teste.md) | **Quem vai testar** | Nove testes com o resultado esperado de cada um |
 | [09 — Versões](09-versoes.md) | Todos | O que entrou em cada versão, e de qual regra saiu o número |
 
+## Mockups
+
+- [Mockup da interface web](mockups/interface-web.html) — proposta visual das três
+  telas do fechamento (abrir, apuração, pendências), nos moldes do print da marca
+  e das diretrizes de interface humana da Apple. Abra no navegador. **Todos os
+  números são fictícios**: é desenho de tela, não apuração.
+
 ## Fases
 
 - **Fase 1 — ICMS:** Entregas 0, 1, 3 e 4 concluídas, e a ferramenta já roda de

@@ -72,7 +72,7 @@ Na página:
    houver;
 4. **Baixar a planilha** salva o `.xlsx` completo em Downloads.
 
-Para fechar: o botão **Encerrar** no rodapé da página, ou feche a janela preta.
+Para fechar: feche a janela preta que abriu junto, ou tecle Ctrl+C nela. A pasta temporária com o arquivo enviado é apagada no encerramento — nada do Livro Fiscal fica na máquina.
 
 O Apurabot lê os dois formatos de extração do Sankhya — o **Movimento Livros
 Fiscais**, que é o padrão, e a extração antiga da apuração — e reconhece qual é

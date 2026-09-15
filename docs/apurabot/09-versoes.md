@@ -31,7 +31,9 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.20 | 03/09/2026 | Decisão nº 17 respondida: almoxarifado e venda conjunta são despesa; julho não é retificado |
 | 0.1.21 | 03/09/2026 | A conferência enxuta: uma coluna de percentual, sem CHECK, categoria com nome legível |
 | 0.1.22 | 03/09/2026 | A centralização passa a lançar as duas pontas: quem transfere zera o próprio Registro |
-| **0.1.23** | **03/09/2026** | **O saldo mostrado passa a ser o final, o mesmo do Registro, em todo lugar** |
+| 0.1.23 | 03/09/2026 | O saldo mostrado passa a ser o final, o mesmo do Registro, em todo lugar |
+| 0.1.24 | 09/09/2026 | A janela ganha a identidade da Hinove e conta o que está fazendo enquanto apura |
+| **0.1.25** | **09/09/2026** | **A marca no tamanho do mockup, o slogan e a abertura sem rodapé** |
 
 ## 0.1.19 — o que mudou, em detalhe
 
@@ -128,6 +130,57 @@ Registro de 06/2026 de Guará mostra, com 455.859,54 recebidos.
 **As linhas 011 a 014 saem arredondadas ao centavo.** O documento fiscal não
 tem casa abaixo dela, e quem transferia o saldo inteiro fechava em 4,6e-10 em
 vez de zero.
+
+## 0.1.25 — a abertura no tamanho certo
+
+Ajustes de proporção pedidos sobre o mockup aprovado:
+
+- **A marca triplicou**, de 58 px para 174 px. Vai num `clamp(72px, 13.5vw,
+  174px)`: em janela estreita ela encolhe em vez de estourar a linha.
+- **O logo da Hinove dividiu por três**, de 340 px para 113 px.
+- **Entrou o slogan** *tecnologias de Hinovação.*, embaixo do logo, na mesma
+  fonte de código e no mesmo azul claro do `bot`.
+- **Saiu o rodapé** — a frase "Roda na sua máquina" e o botão **Encerrar**.
+  Quem fecha o Apurabot é a janela preta, com Ctrl+C ou fechando; era o que a
+  própria janela preta já mandava fazer. A rota `/encerrar` continua no
+  servidor.
+
+## 0.1.24 — a janela com a cara da Hinove
+
+**A marca.** `Apura` sai em caligrafia, `bot` em fonte de código, no azul
+escuro e no azul claro das bolas do logo. O logo da Hinove entra no canto
+superior direito, desenhado em SVG dentro da própria página — a janela abre
+com a máquina desconectada da internet, então nenhum arquivo é buscado fora.
+
+**A arte oficial entrou** em `apurabot/marca/hinove.png` (2315 × 990, RGBA,
+129 KB), embutida no HTML por `python3 marca/embutir_logo.py`: o script
+converte para `data:` URI e escreve entre as marcas `<!-- logo:inicio -->` e
+`<!-- logo:fim -->`. A janela continua sendo um arquivo só, sem nada buscado
+por URL — passou de 27 KB para 200 KB, o que é irrelevante numa página servida
+pela própria máquina. Para trocar a arte de novo, sobrescreva o PNG e rode o
+script. Ver `apurabot/marca/README.md`.
+
+**A paleta.** Fundo branco, e o resto tirado das três bolas do logo: azul
+escuro `#333f7d`, azul claro `#93b5d1`, verde `#1e9160`. O tema escuro saiu:
+a apuração é lida, conferida e impressa, e o papel é branco.
+
+**Os destaques na abertura.** Quatro linhas abaixo da marca dizendo o que a
+ferramenta cobre — classificações, testes, filiais e os cálculos configurados.
+
+**A espera passou a contar o que está acontecendo.** No lugar de uma frase fixa
+e de um anel girando, entra o *twin orbit* — dois anéis em contra-rotação, um
+com o corpo azul escuro, outro com o verde — e a mensagem anda pelos passos do
+motor:
+
+```
+Lendo livro… → Equalizando carga… → Aplicando regras…
+→ Identificando regimes de apuração por filial… → Apurando…
+→ Montando registro…
+```
+
+O tempo de cada passo é estimado: o motor não reporta progresso. Por isso o
+**último passo segura na tela até a resposta chegar** — nenhuma mensagem diz
+que terminou antes de o motor terminar. Um teste guarda essa regra.
 
 ## 0.1.23 — um saldo só, o do Registro
 
