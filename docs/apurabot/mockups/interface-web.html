@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apurabot — Mockup da Interface</title>
+<style>
+/* ===========================================================================
+   Mockup da interface do Apurabot.
+   Nenhum dado real: todos os números desta página são fictícios.
+   Sem CDN e sem fonte externa, pela mesma razão da página de verdade
+   (docs/apurabot/01-arquitetura.md, seção 6): a janela precisa funcionar com
+   a máquina desconectada.
+   =========================================================================== */
+
+:root{
+  color-scheme: light;
+  /* Cinzas com viés azul — o azul da marca, dessaturado, não cinza neutro. */
+  --papel:#e9edf3;
+  --superficie:#ffffff;
+  --superficie-2:#f3f5f9;
+  --chrome:#eaeef4;
+  --fundo-app:#eef1f6;
+
+  --texto:#101722;
+  --texto-2:#57677d;
+  --texto-3:#8593a6;
+
+  --separador:rgba(31,56,100,.16);
+  --fio:rgba(31,56,100,.10);
+
+  --marca:#1f3864;         /* navio Hinove */
+  --marca-viva:#2f61ac;    /* azul de interação */
+  --azul-claro:#7f9ec0;    /* azul do círculo claro da marca */
+  --verde:#0f7a45;         /* Hinove verde — credor / liberado */
+  --verde-fundo:#e4f3ea;
+  --vermelho:#b3271e;      /* devedor / bloqueado */
+  --vermelho-fundo:#fbe9e7;
+  --ambar:#8a5a00;
+  --ambar-fundo:#fdf1dc;
+
+  --sombra:0 1px 2px rgba(16,23,34,.06), 0 12px 32px -18px rgba(16,23,34,.35);
+  --sombra-baixa:0 1px 1px rgba(16,23,34,.10);
+
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --script:"Snell Roundhand","Apple Chancery","Segoe Script","Brush Script MT",cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --papel:#0d1116;
+    --superficie:#1a2029;
+    --superficie-2:#141a22;
+    --chrome:#161c24;
+    --fundo-app:#11161d;
+
+    --texto:#e8eef6;
+    --texto-2:#9dabbf;
+    --texto-3:#75839a;
+
+    --separador:rgba(150,175,215,.20);
+    --fio:rgba(150,175,215,.12);
+
+    --marca:#8fb2ea;
+    --marca-viva:#7ea6e8;
+    --azul-claro:#7f9ec0;
+    --verde:#5ed08d;
+    --verde-fundo:#122c1e;
+    --vermelho:#ff8a80;
+    --vermelho-fundo:#331613;
+    --ambar:#f0bd63;
+    --ambar-fundo:#33270f;
+
+    --sombra:0 1px 2px rgba(0,0,0,.5), 0 16px 40px -22px rgba(0,0,0,.9);
+    --sombra-baixa:0 1px 1px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --papel:#0d1116;
+  --superficie:#1a2029;
+  --superficie-2:#141a22;
+  --chrome:#161c24;
+  --fundo-app:#11161d;
+  --texto:#e8eef6;
+  --texto-2:#9dabbf;
+  --texto-3:#75839a;
+  --separador:rgba(150,175,215,.20);
+  --fio:rgba(150,175,215,.12);
+  --marca:#8fb2ea;
+  --marca-viva:#7ea6e8;
+  --azul-claro:#7f9ec0;
+  --verde:#5ed08d;
+  --verde-fundo:#122c1e;
+  --vermelho:#ff8a80;
+  --vermelho-fundo:#331613;
+  --ambar:#f0bd63;
+  --ambar-fundo:#33270f;
+  --sombra:0 1px 2px rgba(0,0,0,.5), 0 16px 40px -22px rgba(0,0,0,.9);
+  --sombra-baixa:0 1px 1px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--papel); color:var(--texto);
+  font:15px/1.55 var(--ui);
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2.5px solid var(--marca-viva); outline-offset:2px; border-radius:6px}
+button{font:inherit; color:inherit}
+
+.folha{max-width:1140px; margin:0 auto; padding:44px 20px 72px; display:flex; flex-direction:column; gap:44px}
+
+/* ---------------------------------------------------- capa */
+.capa{display:flex; flex-direction:column; gap:14px; max-width:66ch}
+.sobrancelha{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--texto-3); margin:0;
+}
+.capa h1{
+  margin:0; font-size:clamp(28px,4.4vw,40px); line-height:1.1; letter-spacing:-.02em;
+  font-weight:700; text-wrap:balance;
+}
+.capa h1 .script{font-family:var(--script); font-weight:400; color:var(--azul-claro); font-size:1.32em; padding-right:.04em}
+.capa p{margin:0; color:var(--texto-2); font-size:16.5px}
+.etiquetas{display:flex; flex-wrap:wrap; gap:8px; margin-top:2px}
+.etiqueta{
+  font-family:var(--mono); font-size:11.5px; padding:4px 10px; border-radius:999px;
+  border:1px solid var(--fio); background:var(--superficie-2); color:var(--texto-2);
+}
+.etiqueta.aviso{color:var(--ambar); background:var(--ambar-fundo); border-color:transparent; font-weight:600}
+
+/* ---------------------------------------------------- tela (artboard) */
+.tela{display:flex; flex-direction:column; gap:12px}
+.legenda{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.legenda .num{font-family:var(--mono); font-size:12px; color:var(--marca); font-weight:600}
+.legenda h2{margin:0; font-size:17px; letter-spacing:-.01em}
+.legenda p{margin:0; color:var(--texto-2); font-size:13.5px}
+
+.moldura{
+  background:var(--superficie); border:1px solid var(--separador); border-radius:14px;
+  box-shadow:var(--sombra); overflow:hidden;
+}
+.barra-navegador{
+  display:flex; align-items:center; gap:12px; padding:9px 14px;
+  background:var(--chrome); border-bottom:1px solid var(--fio);
+}
+.semaforo{display:flex; gap:6px}
+.semaforo i{width:9px; height:9px; border-radius:50%; background:var(--fio); display:block}
+.url{
+  flex:1; text-align:center; font-family:var(--mono); font-size:11.5px; color:var(--texto-2);
+  background:var(--superficie-2); border-radius:7px; padding:4px 10px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.selo-local{font-family:var(--mono); font-size:11px; color:var(--verde); font-weight:600; white-space:nowrap}
+
+/* ---------------------------------------------------- marca */
+.marca-svg{display:block; flex:none}
+.assinatura{display:flex; align-items:center; gap:10px}
+.assinatura .nome{display:flex; align-items:baseline}
+.assinatura .script{font-family:var(--script); color:var(--azul-claro); line-height:.9}
+.assinatura .bot{font-family:var(--mono); font-weight:600; color:var(--marca); letter-spacing:-.02em}
+
+/* ---------------------------------------------------- tela 1 — abrir */
+.abertura{
+  display:flex; flex-direction:column; align-items:center; gap:26px;
+  padding:58px 28px 46px; background:var(--fundo-app);
+}
+.abertura .assinatura .script{font-size:62px}
+.abertura .assinatura .bot{font-size:38px}
+.abertura .subtitulo{margin:-14px 0 0; color:var(--texto-2); font-size:14.5px; text-align:center}
+.largar{
+  width:min(580px,100%); border:2px dashed var(--azul-claro); border-radius:16px;
+  background:var(--superficie); padding:32px 26px; text-align:center;
+  display:flex; flex-direction:column; gap:8px; cursor:pointer;
+  transition:border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.largar:hover{border-color:var(--marca-viva); transform:translateY(-1px)}
+.largar .principal{font-family:var(--mono); font-size:15.5px; color:var(--marca); font-weight:600}
+.largar .apoio{font-size:13px; color:var(--texto-2)}
+.largar code{font-family:var(--mono); font-size:12.5px; color:var(--texto-2)}
+.seta{color:var(--azul-claro); opacity:.85}
+.pendente{display:flex; flex-direction:column; align-items:center; gap:9px}
+.pontos{display:flex; gap:9px}
+.pontos i{width:11px; height:11px; border-radius:50%; display:block}
+.pontos i:nth-child(1){background:var(--marca)}
+.pontos i:nth-child(2){background:var(--azul-claro)}
+.pontos i:nth-child(3){background:var(--verde)}
+.pendente span{font-size:13px; color:var(--texto-2); font-weight:600}
+.rodape-abertura{
+  width:100%; border-top:1px solid var(--fio); padding:12px 20px; background:var(--superficie);
+  display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  font-size:12.5px; color:var(--texto-3);
+}
+.rodape-abertura b{color:var(--texto-2); font-weight:600}
+
+/* ---------------------------------------------------- tela 2 — aplicação */
+.app{display:grid; grid-template-columns:250px minmax(0,1fr)}
+.lateral{
+  background:var(--superficie-2); border-right:1px solid var(--fio);
+  padding:16px 10px; display:flex; flex-direction:column; gap:16px;
+}
+.lateral .assinatura{padding:0 8px 4px}
+.lateral .assinatura .script{font-size:30px}
+.lateral .assinatura .bot{font-size:19px}
+.grupo-lateral{display:flex; flex-direction:column; gap:2px}
+.grupo-lateral h3{
+  margin:0; padding:6px 10px 4px; font-family:var(--mono); font-size:10.5px;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--texto-3); font-weight:600;
+}
+.item-lateral{
+  display:flex; align-items:center; gap:9px; min-height:44px; width:100%;
+  padding:8px 10px; border:0; border-radius:8px; background:none; cursor:pointer;
+  text-align:left; font-size:13.5px; line-height:1.25;
+}
+.item-lateral:hover{background:var(--fio)}
+.item-lateral[aria-current="true"]{background:var(--marca); color:#fff}
+.item-lateral .rotulo{flex:1; min-width:0}
+.item-lateral .rotulo b{display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.item-lateral .rotulo small{font-family:var(--mono); font-size:10.5px; color:var(--texto-3)}
+.item-lateral[aria-current="true"] .rotulo small{color:rgba(255,255,255,.72)}
+.marcador{width:8px; height:8px; border-radius:50%; flex:none; background:var(--verde)}
+.marcador.atencao{background:var(--ambar)}
+.item-lateral[aria-current="true"] .marcador{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.lateral footer{margin-top:auto; padding:10px 10px 2px; border-top:1px solid var(--fio); font-size:11.5px; color:var(--texto-3)}
+.lateral footer code{font-family:var(--mono); font-size:11px}
+
+.detalhe{
+  background:var(--fundo-app); padding:22px 24px 28px;
+  display:flex; flex-direction:column; gap:18px; min-width:0;
+}
+.topo{display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap}
+.titulo-grande{
+  margin:0; font-family:var(--mono); font-size:clamp(22px,3vw,30px); font-weight:600;
+  letter-spacing:-.02em; line-height:1.1; color:var(--texto);
+}
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+.chip{
+  font-size:11.5px; padding:3px 9px; border-radius:999px;
+  background:var(--superficie); border:1px solid var(--fio); color:var(--texto-2);
+}
+.chip.marca{color:var(--marca); border-color:transparent; background:rgba(47,97,172,.12); font-weight:600}
+.acoes{display:flex; gap:9px; flex-wrap:wrap}
+.botao{
+  min-height:36px; padding:8px 15px; border-radius:9px; border:1px solid transparent;
+  font-size:13.5px; font-weight:600; cursor:pointer; background:var(--marca); color:#fff;
+  box-shadow:var(--sombra-baixa);
+}
+.botao:hover{filter:brightness(1.12)}
+.botao.secundario{background:var(--superficie); color:var(--texto-2); border-color:var(--separador); box-shadow:none}
+.botao.secundario:hover{color:var(--texto); filter:none; border-color:var(--texto-3)}
+.botao[disabled]{opacity:.45; cursor:not-allowed; filter:none}
+
+.faixa{
+  display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px;
+  font-size:13.5px; font-weight:600;
+}
+.faixa.ok{background:var(--verde-fundo); color:var(--verde)}
+.faixa.bloqueio{background:var(--vermelho-fundo); color:var(--vermelho)}
+.faixa svg{flex:none}
+.faixa .complemento{font-weight:400; color:inherit; opacity:.8}
+
+.medidores{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px}
+.medidor{
+  background:var(--superficie); border:1px solid var(--fio); border-radius:12px; padding:14px 16px;
+  display:flex; flex-direction:column; gap:5px;
+}
+.medidor .rotulo{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--texto-3);
+}
+.medidor .numero{
+  font-family:var(--mono); font-size:clamp(19px,2.4vw,25px); font-weight:600;
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+}
+.medidor .nota{font-size:11.5px; color:var(--texto-3)}
+.credor{color:var(--verde)}
+.devedor{color:var(--vermelho)}
+
+.segmentado{
+  display:inline-flex; align-self:flex-start; gap:2px; padding:3px;
+  background:var(--superficie-2); border:1px solid var(--fio); border-radius:10px;
+}
+.segmentado button{
+  border:0; background:none; border-radius:7px; padding:7px 14px; min-height:34px;
+  font-size:13px; color:var(--texto-2); cursor:pointer; white-space:nowrap;
+}
+.segmentado button[aria-selected="true"]{
+  background:var(--superficie); color:var(--texto); font-weight:600; box-shadow:var(--sombra-baixa);
+}
+
+.grupo{background:var(--superficie); border:1px solid var(--fio); border-radius:12px; overflow:hidden}
+.grupo > h4{
+  margin:0; padding:12px 16px 10px; font-size:12px; font-weight:600; color:var(--texto-3);
+  font-family:var(--mono); letter-spacing:.09em; text-transform:uppercase;
+  border-bottom:1px solid var(--fio);
+}
+.linha{
+  display:grid; grid-template-columns:34px minmax(0,1fr) auto; gap:12px; align-items:center;
+  padding:10px 16px; border-top:1px solid var(--fio); font-size:13.5px;
+}
+.grupo > h4 + .linha{border-top:0}
+.linha .cod{font-family:var(--mono); font-size:11px; color:var(--texto-3)}
+.linha .titulo{min-width:0}
+.linha .valor{font-family:var(--mono); font-size:14px; font-variant-numeric:tabular-nums; text-align:right}
+.linha.subtotal{background:var(--superficie-2); font-weight:600}
+.linha.fecha{background:var(--superficie-2)}
+.linha.fecha .titulo{font-weight:700}
+.linha.fecha .valor{font-size:16px; font-weight:700}
+.linha .discriminacao{display:block; font-size:11.5px; color:var(--texto-3); margin-top:2px}
+.rodape-grupo{padding:10px 16px 12px; font-size:11.5px; color:var(--texto-3); border-top:1px solid var(--fio)}
+
+.rolagem{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:620px}
+th,td{padding:9px 14px; text-align:right; white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--texto-3); font-weight:600; border-bottom:1px solid var(--separador);
+}
+tbody td{border-top:1px solid var(--fio); font-variant-numeric:tabular-nums; font-family:var(--mono)}
+tbody td:first-child{font-family:var(--ui); font-weight:600}
+tbody tr.selecionada td{background:rgba(47,97,172,.08)}
+tfoot td{border-top:1px solid var(--separador); font-weight:700; font-family:var(--mono); font-variant-numeric:tabular-nums}
+tfoot td:first-child{font-family:var(--ui)}
+
+.cartoes{display:flex; flex-direction:column; gap:10px}
+.cartao{
+  background:var(--superficie); border:1px solid var(--fio); border-radius:12px; padding:14px 16px;
+  display:flex; gap:14px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+}
+.cartao .quem{font-weight:600; font-size:14px}
+.cartao .quem small{display:block; font-weight:400; color:var(--texto-2); font-size:12.5px; margin-top:3px}
+.cartao .quanto{font-family:var(--mono); font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; text-align:right}
+.cartao .quanto small{display:block; font-family:var(--ui); font-size:11.5px; font-weight:400; color:var(--texto-3); margin-top:3px}
+
+.vazio{
+  background:var(--superficie); border:1px solid var(--fio); border-radius:12px;
+  padding:30px 20px; text-align:center; color:var(--texto-2); font-size:13.5px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.vazio b{color:var(--texto); font-size:15px}
+
+.pendencia{
+  display:grid; grid-template-columns:26px minmax(0,1fr); gap:12px; align-items:start;
+  padding:13px 16px; border-top:1px solid var(--fio); font-size:13.5px;
+}
+.grupo > h4 + .pendencia{border-top:0}
+.pendencia .onde{font-family:var(--mono); font-size:11.5px; color:var(--texto-3); display:block; margin-bottom:3px}
+.pendencia .como{display:block; color:var(--texto-2); font-size:12.5px; margin-top:4px}
+.pendencia .como code{font-family:var(--mono); font-size:12px; color:var(--marca)}
+
+.procedencia{
+  font-family:var(--mono); font-size:11.5px; color:var(--texto-3); line-height:1.7;
+  border-top:1px solid var(--fio); padding-top:14px; word-break:break-all;
+}
+
+/* ---------------------------------------------------- notas de desenho */
+.notas{display:flex; flex-direction:column; gap:16px}
+.grade-notas{display:grid; grid-template-columns:repeat(auto-fit,minmax(258px,1fr)); gap:1px; background:var(--fio); border:1px solid var(--fio); border-radius:12px; overflow:hidden}
+.nota{background:var(--superficie); padding:16px 18px; display:flex; flex-direction:column; gap:6px}
+.nota h4{margin:0; font-size:13.5px}
+.nota p{margin:0; font-size:13px; color:var(--texto-2)}
+.nota .fonte{font-family:var(--mono); font-size:11px; color:var(--texto-3)}
+
+.rodape-pagina{color:var(--texto-3); font-size:12.5px; border-top:1px solid var(--fio); padding-top:18px}
+.rodape-pagina code{font-family:var(--mono)}
+
+@media (max-width:840px){
+  .app{grid-template-columns:1fr}
+  .lateral{border-right:0; border-bottom:1px solid var(--fio)}
+  .lateral footer{margin-top:12px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important}
+}
+</style>
+</head>
+<body>
+<main class="folha">
+
+  <!-- ============================================================ capa -->
+  <header class="capa">
+    <p class="sobrancelha">Mockup de interface · Hinove Agrociência S.A.</p>
+    <h1><span class="script">Apura</span>bot na tela do time fiscal</h1>
+    <p>
+      Três telas do fechamento de ICMS: abrir a janela, ler a apuração e ver o que
+      trava a competência. É uma proposta visual — o motor, as regras e os números
+      de verdade estão no repositório.
+    </p>
+    <div class="etiquetas">
+      <span class="etiqueta aviso">Dados fictícios</span>
+      <span class="etiqueta">Competência 08/2026</span>
+      <span class="etiqueta">Roda em 127.0.0.1</span>
+      <span class="etiqueta">Sem fonte externa, sem CDN</span>
+    </div>
+  </header>
+
+  <!-- ============================================================ tela 1 -->
+  <section class="tela">
+    <div class="legenda">
+      <span class="num">01</span>
+      <h2>Ao abrir</h2>
+      <p>Uma única coisa a fazer: soltar o Livro Fiscal.</p>
+    </div>
+
+    <div class="moldura">
+      <div class="barra-navegador">
+        <span class="semaforo" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="url">127.0.0.1:52318/?chave=•••••••••</span>
+        <span class="selo-local">● local</span>
+      </div>
+
+      <div class="abertura">
+        <div class="assinatura">
+          <svg class="marca-svg" width="60" height="52" viewBox="0 0 30 26" aria-hidden="true">
+            <circle cx="10" cy="10" r="8" fill="#7f9ec0"/>
+            <circle cx="14.5" cy="18" r="5.2" fill="#128a46"/>
+            <circle cx="20" cy="10.5" r="7.6" fill="#1f3864"/>
+            <text x="20" y="14" text-anchor="middle" fill="#ffffff"
+                  font-family="ui-monospace,Menlo,monospace" font-size="9" font-weight="700">H</text>
+          </svg>
+          <span class="nome"><span class="script">Apura</span><span class="bot">bot</span></span>
+        </div>
+        <p class="subtitulo">Apuração de ICMS — 7 estabelecimentos, 4 UFs, 4 regimes</p>
+
+        <div class="largar" role="button" tabindex="0">
+          <span class="principal">arraste o arquivo do Livro Fiscal aqui</span>
+          <span class="apoio">ou clique para escolher — <code>.xls</code>, <code>.xlsx</code> ou <code>.xlsm</code>, de qualquer pasta</span>
+        </div>
+
+        <svg class="seta" width="26" height="54" viewBox="0 0 26 54" aria-hidden="true">
+          <path d="M13 0 v38" stroke="currentColor" stroke-width="6" fill="none"/>
+          <path d="M13 52 L2 34 h22 Z" fill="currentColor"/>
+        </svg>
+
+        <div class="pendente">
+          <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Apuração pendente</span>
+        </div>
+      </div>
+
+      <div class="rodape-abertura">
+        <span>Última competência apurada nesta máquina: <b>07/2026</b> · saldo transportado, sem pendência</span>
+        <span>O arquivo não sai daqui. A pasta temporária é apagada ao encerrar.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ tela 2 -->
+  <section class="tela">
+    <div class="legenda">
+      <span class="num">02</span>
+      <h2>Depois da apuração</h2>
+      <p>Clique num estabelecimento da lateral ou troque de painel — o mockup responde.</p>
+    </div>
+
+    <div class="moldura">
+      <div class="barra-navegador">
+        <span class="semaforo" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="url">127.0.0.1:52318/?chave=•••••••••</span>
+        <span class="selo-local">● local</span>
+      </div>
+
+      <div class="app">
+        <nav class="lateral" aria-label="Estabelecimentos">
+          <div class="assinatura">
+            <svg class="marca-svg" width="30" height="26" viewBox="0 0 30 26" aria-hidden="true">
+              <circle cx="10" cy="10" r="8" fill="#7f9ec0"/>
+              <circle cx="14.5" cy="18" r="5.2" fill="#128a46"/>
+              <circle cx="20" cy="10.5" r="7.6" fill="#1f3864"/>
+              <text x="20" y="14" text-anchor="middle" fill="#ffffff"
+                    font-family="ui-monospace,Menlo,monospace" font-size="9" font-weight="700">H</text>
+            </svg>
+            <span class="nome"><span class="script">Apura</span><span class="bot">bot</span></span>
+          </div>
+          <div id="lista-filiais"></div>
+          <footer>
+            Competência <b>08/2026</b><br>
+            Livro lido: <code>livro_fiscal_2026-08.xlsx</code>
+          </footer>
+        </nav>
+
+        <div class="detalhe">
+          <div class="topo">
+            <div>
+              <h3 class="titulo-grande" id="filial-nome">HINOVE GUARÁ</h3>
+              <div class="chips" id="filial-chips"></div>
+            </div>
+            <div class="acoes">
+              <button class="botao" type="button">Baixar a planilha</button>
+              <button class="botao secundario" type="button">Apurar outro livro</button>
+            </div>
+          </div>
+
+          <div class="faixa ok">
+            <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="7.2" fill="currentColor" opacity=".16"/>
+              <path d="M4.4 8.2 6.9 10.7 11.6 5.6" stroke="currentColor" stroke-width="1.9"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Encerramento liberado <span class="complemento">— nenhuma pendência nos 7 estabelecimentos.</span></span>
+          </div>
+
+          <div class="medidores" id="medidores"></div>
+
+          <div class="segmentado" role="tablist" aria-label="Painéis da apuração">
+            <button type="button" role="tab" data-painel="registro" aria-selected="true">Registro de Apuração</button>
+            <button type="button" role="tab" data-painel="estabelecimentos" aria-selected="false">Estabelecimentos</button>
+            <button type="button" role="tab" data-painel="transferencias" aria-selected="false">Transferências</button>
+            <button type="button" role="tab" data-painel="pendencias" aria-selected="false">Pendências</button>
+          </div>
+
+          <div id="painel" role="tabpanel"></div>
+
+          <div class="procedencia">
+            Apurabot 1.4.0 · gerado em 05/09/2026 08:41<br>
+            SHA-256 do arquivo lido: 9f2c1ab7e40d8c55b1e0f7a3d6c9821bb4e57f0a3c2d918e6b4a70cd5f13e824
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ tela 3 -->
+  <section class="tela">
+    <div class="legenda">
+      <span class="num">03</span>
+      <h2>Quando algo trava a competência</h2>
+      <p>A pendência não é um aviso discreto: ela toma a frente e diz onde olhar.</p>
+    </div>
+
+    <div class="moldura">
+      <div class="barra-navegador">
+        <span class="semaforo" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="url">127.0.0.1:52318/?chave=•••••••••</span>
+        <span class="selo-local">● local</span>
+      </div>
+
+      <div class="detalhe">
+        <div class="topo">
+          <div>
+            <h3 class="titulo-grande">COMPETÊNCIA 08/2026</h3>
+            <div class="chips">
+              <span class="chip">6.712 linhas no livro</span>
+              <span class="chip">4.208 relevantes para ICMS</span>
+              <span class="chip">7 estabelecimentos</span>
+            </div>
+          </div>
+          <div class="acoes">
+            <button class="botao secundario" type="button">Baixar a planilha com as pendências</button>
+            <button class="botao" type="button" disabled>Encerrar competência</button>
+          </div>
+        </div>
+
+        <div class="faixa bloqueio">
+          <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="7.2" fill="currentColor" opacity=".16"/>
+            <path d="M8 4.2v4.6M8 11.2v.1" stroke="currentColor" stroke-width="1.9"
+                  fill="none" stroke-linecap="round"/>
+          </svg>
+          <span>Encerramento bloqueado <span class="complemento">— 3 pendências. A planilha sai, a competência não fecha.</span></span>
+        </div>
+
+        <div class="grupo">
+          <h4>O que trava</h4>
+
+          <div class="pendencia">
+            <span class="marcador atencao" aria-hidden="true" style="margin-top:5px"></span>
+            <div>
+              <span class="onde">HINOVE (MATRIZ) · linha 1.842 · SEM REGRA</span>
+              <strong>Produto 21430 não casou com nenhuma categoria.</strong>
+              <span class="como">O motor não adivinha enquadramento. Cadastre a categoria em
+                <code>parametros/produtos.yaml</code> e apure de novo.</span>
+            </div>
+          </div>
+
+          <div class="pendencia">
+            <span class="marcador atencao" aria-hidden="true" style="margin-top:5px"></span>
+            <div>
+              <span class="onde">HINOVE (CORUMBÁ - MS) · aba AJUSTES · linha 007</span>
+              <strong>Estorno de crédito de 12.400,00 marcado sem aprovador.</strong>
+              <span class="como">Ajuste sem aprovação não entra na apuração. Preencha o aprovador na planilha
+                devolvida e rode <em>Atualizar Ajustes</em>.</span>
+            </div>
+          </div>
+
+          <div class="pendencia">
+            <span class="marcador atencao" aria-hidden="true" style="margin-top:5px"></span>
+            <div>
+              <span class="onde">HINOVE (REGISTRO) · centralização</span>
+              <strong>NF-e de transferência de saldo credor ainda não emitida.</strong>
+              <span class="como">26.434,15 a transferir para Guará. O saldo só é considerado centralizado
+                depois da emissão.</span>
+            </div>
+          </div>
+
+          <div class="rodape-grupo">
+            As três aparecem também na aba <b>PENDÊNCIAS</b> da planilha, com a linha de origem de cada uma.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ notas -->
+  <section class="notas">
+    <div class="legenda">
+      <span class="num">·</span>
+      <h2>Por que a tela é assim</h2>
+      <p>Decisões de desenho, cada uma com o princípio que a sustenta.</p>
+    </div>
+
+    <div class="grade-notas">
+      <div class="nota">
+        <h4>Uma tela, uma ação</h4>
+        <p>A abertura tem um único alvo: soltar o arquivo. Nenhum menu, nenhuma configuração
+          antes de existir apuração para configurar.</p>
+        <span class="fonte">HIG · Clarity</span>
+      </div>
+      <div class="nota">
+        <h4>O conteúdo manda, a moldura recua</h4>
+        <p>Fundo neutro com viés azul, cartões brancos e fio de 1px. Sombra e borda aparecem só
+          onde separam objetos de verdade — não em todo bloco.</p>
+        <span class="fonte">HIG · Deference</span>
+      </div>
+      <div class="nota">
+        <h4>Lista agrupada com valor à direita</h4>
+        <p>O Registro de Apuração é uma lista de rótulo e valor, com os subtotais em fundo
+          levemente distinto e o fechamento em peso maior. É o padrão de lista inset do sistema.</p>
+        <span class="fonte">HIG · Lists and tables</span>
+      </div>
+      <div class="nota">
+        <h4>Tipografia do sistema, número monoespaçado</h4>
+        <p>Texto na fonte da interface (San Francisco no Mac, Segoe no Windows); número em
+          monoespaçada com <code>tabular-nums</code>, para que as colunas fiquem alinhadas ao centavo.</p>
+        <span class="fonte">HIG · Typography</span>
+      </div>
+      <div class="nota">
+        <h4>Cor semântica separada da cor da marca</h4>
+        <p>Azul Hinove é identidade e interação. Verde é crédito e liberado, vermelho é a recolher
+          e bloqueado — e nunca sozinhos: sempre acompanhados de rótulo e ícone.</p>
+        <span class="fonte">HIG · Color · Acessibilidade</span>
+      </div>
+      <div class="nota">
+        <h4>Estado vazio que ensina</h4>
+        <p>Sem pendência, o painel não fica em branco: diz qual trava foi verificada e passou.
+          O erro explica o que aconteceu e o que fazer, sem pedir desculpa.</p>
+        <span class="fonte">HIG · Feedback · Writing</span>
+      </div>
+      <div class="nota">
+        <h4>Alvo grande, foco visível</h4>
+        <p>Itens da lateral e botões com 44px de altura mínima, anel de foco em todo controle,
+          navegação por teclado e <code>prefers-reduced-motion</code> respeitado.</p>
+        <span class="fonte">HIG · Accessibility</span>
+      </div>
+      <div class="nota">
+        <h4>Claro e escuro no mesmo peso</h4>
+        <p>Toda cor sai de token; o tema escuro não é inversão automática — o azul da marca clareia
+          para continuar legível sobre fundo escuro.</p>
+        <span class="fonte">HIG · Dark Mode</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="rodape-pagina">
+    Mockup — não é o Apurabot rodando. Todos os valores são fictícios e não reproduzem nenhuma
+    competência real. Os rótulos das 14 linhas são os do Registro de Apuração do ICMS, como em
+    <code>apurabot/src/apurabot/nucleo/registro.py</code>; os regimes por UF estão em
+    <code>docs/apurabot/04-matriz-de-regras-icms.md</code>.
+  </footer>
+</main>
+
+<script>
+"use strict";
+/* Dados fictícios. As 14 linhas são calculadas a partir dos lançamentos, e não
+   digitadas uma a uma: assim os subtotais fecham e a trava
+   "crédito mantido + estorno = crédito bruto" continua verdadeira na tela. */
+
+const FILIAIS = [
+  { id:"matriz", nome:"HINOVE MATRIZ", uf:"SP", regime:"Equilíbrio fiscal (carga 4%)",
+    papel:"Centralizada", curto:"Matriz",
+    debito:498213.44, outrosDebitos:12980.10, estornoCredito:74116.88,
+    creditoBruto:412880.17, outrosCreditos:0, estornoDebito:0,
+    saldoAnterior:3402.55, deducoes:0 },
+
+  { id:"guara", nome:"HINOVE GUARÁ", uf:"SP", regime:"Equilíbrio fiscal (carga 4%)",
+    papel:"Centralizadora", curto:"Guará",
+    debito:1198402.91, outrosDebitos:41207.66, estornoCredito:96554.12,
+    creditoBruto:1204771.38, outrosCreditos:26434.15, estornoDebito:0,
+    saldoAnterior:104961.82, deducoes:0,
+    creditosDe:"Recebe o saldo credor de Registro (26.434,15)" },
+
+  { id:"registro", nome:"HINOVE REGISTRO", uf:"SP", regime:"Equilíbrio fiscal (carga 4%)",
+    papel:"Centralizada", curto:"Registro",
+    debito:61972.05, outrosDebitos:26434.15, estornoCredito:8210.44,
+    creditoBruto:88406.20, outrosCreditos:0, estornoDebito:0,
+    saldoAnterior:8210.44, deducoes:0,
+    debitosDe:"Transferência do saldo credor para Guará (26.434,15)" },
+
+  { id:"rio-brilhante", nome:"HINOVE RIO BRILHANTE", uf:"MS", regime:"Estorno proporcional + Termo de Acordo",
+    papel:"Benefício fiscal", curto:"Rio Brilhante",
+    debito:902556.30, outrosDebitos:6418.77, estornoCredito:121884.05,
+    creditoBruto:743219.64, outrosCreditos:0, estornoDebito:0,
+    saldoAnterior:0, deducoes:201347.64,
+    beneficio:"Termo de Acordo MS · crédito presumido apurado no período" },
+
+  { id:"corumba", nome:"HINOVE CORUMBÁ", uf:"MS", regime:"Estorno proporcional",
+    papel:"Centralizada", curto:"Corumbá",
+    debito:214870.55, outrosDebitos:1204.00, estornoCredito:33918.72,
+    creditoBruto:268115.90, outrosCreditos:0, estornoDebito:0,
+    saldoAnterior:12004.38, deducoes:0 },
+
+  { id:"barra", nome:"HINOVE BARRA DO GARÇAS", uf:"MT", regime:"Diferimento — estorna 100%",
+    papel:"Não centraliza", curto:"Barra do Garças",
+    debito:0, outrosDebitos:4980.22, estornoCredito:58412.90,
+    creditoBruto:58412.90, outrosCreditos:0, estornoDebito:0,
+    saldoAnterior:0, deducoes:0,
+    debitosDe:"DIFAL recalculado pelo XML (4.980,22)" },
+
+  { id:"londrina", nome:"HINOVE LONDRINA", uf:"PR", regime:"Diferimento — mantém 100%",
+    papel:"Não centraliza", curto:"Londrina",
+    debito:0, outrosDebitos:2117.45, estornoCredito:0,
+    creditoBruto:47930.18, outrosCreditos:0, estornoDebito:0,
+    saldoAnterior:21884.60, deducoes:0,
+    debitosDe:"DIFAL recalculado pelo XML (2.117,45)" }
+];
+
+const UFS = [
+  ["SÃO PAULO", ["matriz","guara","registro"]],
+  ["MATO GROSSO DO SUL", ["rio-brilhante","corumba"]],
+  ["MATO GROSSO", ["barra"]],
+  ["PARANÁ", ["londrina"]]
+];
+
+const TRANSFERENCIAS = [
+  { de:"HINOVE REGISTRO", para:"HINOVE GUARÁ", uf:"SP", valor:26434.15,
+    nota:"NF-e de transferência de saldo credor · emitir até 09/09/2026" }
+];
+
+const nf = new Intl.NumberFormat("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+const dinheiro = (v) => nf.format(v ?? 0);
+const cent = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
+
+function apurar(f){
+  const l1 = f.debito, l2 = f.outrosDebitos, l3 = f.estornoCredito;
+  const l4 = cent(l1 + l2 + l3);
+  const l5 = f.creditoBruto, l6 = f.outrosCreditos, l7 = f.estornoDebito;
+  const l8 = cent(l5 + l6 + l7);
+  const l9 = f.saldoAnterior;
+  const l10 = cent(l8 + l9);
+  const l11 = cent(Math.max(l4 - l10, 0));
+  const l12 = cent(Math.min(f.deducoes, l11));
+  const l13 = cent(Math.max(l11 - l12, 0));
+  const l14 = cent(Math.max(l10 - l4, 0));
+  return {l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,l12,l13,l14};
+}
+
+const acha = (id) => FILIAIS.find((f) => f.id === id);
+let selecionada = "guara";
+let painelAtivo = "registro";
+
+/* ---------------------------------------------------------------- lateral */
+function desenharLateral(){
+  const alvo = document.getElementById("lista-filiais");
+  alvo.innerHTML = UFS.map(([uf, ids]) => `
+    <div class="grupo-lateral">
+      <h3>${uf}</h3>
+      ${ids.map((id) => {
+        const f = acha(id), a = apurar(f);
+        const saldo = a.l14 > 0 ? `credor ${dinheiro(a.l14)}`
+                    : a.l13 > 0 ? `a recolher ${dinheiro(a.l13)}`
+                    : "fecha em zero";
+        return `<button class="item-lateral" type="button" data-filial="${id}"
+                        aria-current="${id === selecionada}">
+          <span class="marcador" aria-hidden="true"></span>
+          <span class="rotulo"><b>${f.curto}</b><small>${saldo}</small></span>
+        </button>`;
+      }).join("")}
+    </div>`).join("");
+
+  alvo.querySelectorAll("[data-filial]").forEach((b) => {
+    b.addEventListener("click", () => { selecionada = b.dataset.filial; desenhar(); });
+  });
+}
+
+/* ------------------------------------------------------------- cabeçalho */
+function desenharCabecalho(){
+  const f = acha(selecionada), a = apurar(f);
+  document.getElementById("filial-nome").textContent = f.nome;
+  document.getElementById("filial-chips").innerHTML = `
+    <span class="chip marca">${f.uf}</span>
+    <span class="chip">${f.regime}</span>
+    <span class="chip">${f.papel}</span>
+    <span class="chip">Competência 08/2026</span>`;
+
+  const zerado = a.l14 === 0 && a.l13 === 0;
+  const credor = a.l14 > 0;
+  const fecho = zerado
+    ? ["Saldo final", 0, "", "linhas 013 e 014 · a competência fecha em zero"]
+    : credor
+      ? ["Saldo credor a transportar", a.l14, "credor", "linha 014 · vai para a competência seguinte"]
+      : ["Imposto a recolher", a.l13, "devedor", "linha 013 · guia do período"];
+
+  document.getElementById("medidores").innerHTML = `
+    ${medidor("Crédito do período", a.l8, "", "linha 008 · entradas + outros créditos + saldo anterior na 009")}
+    ${medidor("Débito do período", a.l4, "", "linha 004 · saídas + outros débitos + estornos de crédito")}
+    ${medidor(fecho[0], fecho[1], fecho[2], fecho[3])}`;
+}
+
+const medidor = (rotulo, valor, classe, nota) => `
+  <div class="medidor">
+    <span class="rotulo">${rotulo}</span>
+    <span class="numero ${classe}">${dinheiro(valor)}</span>
+    <span class="nota">${nota}</span>
+  </div>`;
+
+/* ---------------------------------------------------------------- painéis */
+function painelRegistro(){
+  const f = acha(selecionada), a = apurar(f);
+  const linhas = [
+    [1, "por Saídas/Prestações com Débito do Imposto", a.l1, ""],
+    [2, "Outros Débitos", a.l2, f.debitosDe || ""],
+    [3, "Estornos de Créditos", a.l3, ""],
+    [4, "Sub Total", a.l4, "", "subtotal"],
+    [5, "por Entradas/Aquisições com Crédito do Imposto", a.l5, ""],
+    [6, "Outros Créditos", a.l6, f.creditosDe || ""],
+    [7, "Estornos de Débitos", a.l7, ""],
+    [8, "Sub Total", a.l8, "", "subtotal"],
+    [9, "Saldo Credor do Período Anterior", a.l9, ""],
+    [10, "Total", a.l10, "", "subtotal"],
+    [11, "SALDO DEVEDOR (Débito menos Crédito)", a.l11, ""],
+    [12, "DEDUÇÕES", a.l12, f.beneficio || ""],
+    [13, "IMPOSTO A RECOLHER", a.l13, "", a.l13 > 0 ? "fecha" : ""],
+    [14, "SALDO CREDOR a Transportar p/ o Período Seguinte", a.l14, "", a.l14 > 0 ? "fecha" : ""]
+  ];
+
+  const corpo = linhas.map(([cod, titulo, valor, discr, classe]) => {
+    const cor = classe === "fecha" ? (cod === 14 ? "credor" : "devedor") : "";
+    return `<div class="linha ${classe || ""}">
+      <span class="cod">${String(cod).padStart(3, "0")}</span>
+      <span class="titulo">${titulo}${discr ? `<span class="discriminacao">${discr}</span>` : ""}</span>
+      <span class="valor ${cor}">${dinheiro(valor)}</span>
+    </div>`;
+  }).join("");
+
+  return `<div class="grupo">
+    <h4>Registro de Apuração do ICMS — ${acha(selecionada).nome}</h4>
+    ${corpo}
+    <div class="rodape-grupo">
+      Valores em reais. Cada linha abre na memória de cálculo, nota a nota, na planilha gerada.
+    </div>
+  </div>`;
+}
+
+function painelEstabelecimentos(){
+  const linhas = FILIAIS.map((f) => {
+    const a = apurar(f);
+    return `<tr class="${f.id === selecionada ? "selecionada" : ""}">
+      <td>${f.curto}</td><td>${f.uf}</td>
+      <td>${dinheiro(a.l5)}</td><td>${dinheiro(a.l3)}</td><td>${dinheiro(a.l1)}</td>
+      <td class="${a.l14 > 0 ? "credor" : ""}">${a.l14 > 0 ? dinheiro(a.l14) : "—"}</td>
+      <td class="${a.l13 > 0 ? "devedor" : ""}">${a.l13 > 0 ? dinheiro(a.l13) : "—"}</td>
+    </tr>`;
+  }).join("");
+
+  const soma = (campo) => FILIAIS.reduce((t, f) => t + apurar(f)[campo], 0);
+
+  return `<div class="grupo">
+    <h4>Apuração por estabelecimento</h4>
+    <div class="rolagem">
+      <table>
+        <thead><tr>
+          <th>Estabelecimento</th><th>UF</th><th>Crédito bruto</th><th>Estorno</th>
+          <th>Débito</th><th>Saldo credor</th><th>A recolher</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+        <tfoot><tr>
+          <td>Grupo</td><td>—</td>
+          <td>${dinheiro(soma("l5"))}</td><td>${dinheiro(soma("l3"))}</td><td>${dinheiro(soma("l1"))}</td>
+          <td class="credor">${dinheiro(soma("l14"))}</td><td class="devedor">${dinheiro(soma("l13"))}</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div class="rodape-grupo">Clique numa linha da lateral para abrir o registro do estabelecimento.</div>
+  </div>`;
+}
+
+function painelTransferencias(){
+  return `<div class="cartoes">
+    ${TRANSFERENCIAS.map((t) => `
+      <div class="cartao">
+        <span class="quem">${t.de} → ${t.para}<small>${t.nota}</small></span>
+        <span class="quanto">${dinheiro(t.valor)}<small>saldo credor centralizado em ${t.uf}</small></span>
+      </div>`).join("")}
+    <div class="cartao">
+      <span class="quem">Conferência da centralização<small>saldo individual = valor transferido + saldo residual</small></span>
+      <span class="quanto credor">confere<small>trava verificada nos 3 estabelecimentos de SP</small></span>
+    </div>
+  </div>`;
+}
+
+function painelPendencias(){
+  return `<div class="vazio">
+    <svg width="26" height="26" viewBox="0 0 16 16" aria-hidden="true" style="color:var(--verde)">
+      <circle cx="8" cy="8" r="7.2" fill="currentColor" opacity=".16"/>
+      <path d="M4.4 8.2 6.9 10.7 11.6 5.6" stroke="currentColor" stroke-width="1.9"
+            fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <b>Nada pendente nesta competência</b>
+    <span>Nenhum documento ficou <code>SEM REGRA</code>, todo ajuste tem aprovador e as travas de
+      integridade fecharam. A competência pode ser encerrada.</span>
+  </div>`;
+}
+
+const PAINEIS = {
+  registro: painelRegistro,
+  estabelecimentos: painelEstabelecimentos,
+  transferencias: painelTransferencias,
+  pendencias: painelPendencias
+};
+
+function desenhar(){
+  desenharLateral();
+  desenharCabecalho();
+  document.getElementById("painel").innerHTML = PAINEIS[painelAtivo]();
+}
+
+document.querySelectorAll("[data-painel]").forEach((b) => {
+  b.addEventListener("click", () => {
+    painelAtivo = b.dataset.painel;
+    document.querySelectorAll("[data-painel]").forEach((o) =>
+      o.setAttribute("aria-selected", String(o === b)));
+    document.getElementById("painel").innerHTML = PAINEIS[painelAtivo]();
+  });
+});
+
+desenhar();
+</script>
+</body>
+</html>
