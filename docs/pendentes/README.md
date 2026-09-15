@@ -23,7 +23,8 @@ não roda é pior do que botão apagado.
 | Escrita com formato antes da escrita | pronto |
 | **Motor de serviços** — cascata por passos, vínculo de pedido, população inversa | **pronto** |
 | Tela de configuração de serviços | entrega 3 |
-| Motor de mercadorias · Resumo Executivo | entregas 3 e 4 |
+| Motor de mercadorias | entrega 3 |
+| Resumo Executivo | **suspenso** — vira resumo das duas frentes, com três categorias ([06](06-proximas-rodadas.md)) |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 
 O `.xlam` em produção é **byte a byte o v14**: a rodada de formatação de
@@ -37,7 +38,8 @@ O `.xlam` em produção é **byte a byte o v14**: a rodada de formatação de
 | [02 — O porte do VBA](02-porte-do-vba.md) | Desenvolvedor + Gerência | O critério, o padrão-ouro, o que sai, o que fica idêntico, os defeitos corrigidos e os preservados — com a medição que cada um exige |
 | [03 — O que cada relatório responde](03-o-que-cada-relatorio-responde.md) | **Fiscal/Tributário e as áreas** | O que a ferramenta responde, o ciclo da semana e o que continua sendo decisão de gente |
 | [04 — Plano de entrega](04-plano-de-entrega.md) | Todos | O que entrou, o que vem, em que ordem, com esforço e risco de cada bloco |
-| [05 — Decisões pendentes](05-decisoes-pendentes.md) | **Fiscal/Tributário** | As 13 perguntas em aberto, cada uma com o padrão assumido |
+| [05 — Decisões pendentes](05-decisoes-pendentes.md) | **Fiscal/Tributário** | As 14 perguntas em aberto, cada uma com o padrão assumido |
+| [06 — Próximas rodadas](06-proximas-rodadas.md) | **Fiscal/Tributário** + Desenvolvedor | O que o time já enxerga e ainda não foi desenhado — entre isso, o Resumo Executivo repensado |
 
 ## A pendência vermelha
 

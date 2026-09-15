@@ -171,7 +171,19 @@ FIS-FAT` são o que vai anexado ao e-mail, e as fichas da Central cobrem, para
 quem roda, boa parte do que o painel responde. Quem recebe o e-mail é que sente
 falta — por isso a entrega 4 não pode demorar.
 
-## 4. Entrega 4 — o Resumo Executivo
+## 4. Entrega 4 — o Resumo Executivo · **suspensa**
+
+> **Decisão de 15/09/2026 do Compliance Tributário: o Resumo Executivo sai do
+> porte.** Ele deixa de ser a reprodução da aba que a macro de mercadorias
+> monta e passa a ser um resumo automático das **duas frentes**, gerado depois
+> que mercadorias e serviços rodarem, com **três categorias — Diretos,
+> Indiretos e Serviços** — e layout revisto. Ver
+> [06 — Próximas rodadas](06-proximas-rodadas.md) § 1.
+>
+> Reproduzir fielmente uma tela que vai mudar de conteúdo e de forma é trabalho
+> que nasce para ser jogado fora. **A análise abaixo continua valendo** — ela é
+> sobre o que o openpyxl faz e quanto custa, não sobre o layout de hoje — e é
+> por onde a rodada nova começa quando for desenhada.
 
 `[FATO]` `vendor/openpyxl/chart/` traz `pie_chart`, `bar_chart`, `axis`,
 `label`, `legend`, `print_settings`, `series` e `reference`. **Gráfico nativo é
