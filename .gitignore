@@ -12,6 +12,16 @@ competencias/
 *.pdf
 !docs/**/*.pdf
 
+# ============================================================
+# BASE DE REGRAS DO APLICATIVO — NUNCA versionar
+# As ferramentas guardam aqui a configuração que o time fiscal
+# edita pela tela da Central: regras, parâmetros e as listas de
+# parceiros, que trazem código e nome de fornecedor real.
+# A carga de fábrica, essa sim versionada, fica em
+# <projeto>/regras_de_fabrica.yaml — e não tem dado de empresa.
+# ============================================================
+dados/
+
 # Python
 __pycache__/
 *.py[cod]

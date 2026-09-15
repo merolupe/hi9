@@ -1,0 +1,25 @@
+[project]
+name = "fiscalbot"
+version = "3.2.0"
+description = "Auditoria do Livro Fiscal de ICMS da Hinove Agrociência S.A."
+requires-python = ">=3.10"
+# Também viajam embarcadas em `vendor/`, na raiz do repositório, para a
+# ferramenta rodar sem instalação em máquina sem administrador.
+dependencies = [
+    "openpyxl>=3.1",   # escrita do .xlsx e leitura do relatório em .xlsx
+    "xlrd==2.0.1",     # leitura do .xls antigo, que é o que o Sankhya entrega
+    "PyYAML>=6.0",     # a base de regras
+]
+
+[project.scripts]
+fiscalbot = "fiscalbot.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

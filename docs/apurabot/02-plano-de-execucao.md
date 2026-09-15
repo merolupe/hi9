@@ -217,7 +217,7 @@ baixa-se a planilha. Sem caminho para digitar, sem pasta com nome fixo.
 ### Por que não há instalação
 
 As quatro bibliotecas de que a ferramenta depende são **Python puro**, e viajam
-junto com o código em `apurabot/src/apurabot/vendor`. Baixar a pasta é
+junto com o código em `vendor/`, na raiz do repositório. Baixar a pasta é
 instalar.
 
 Isso saiu de duas falhas na máquina real. Na primeira, o `pip install` foi

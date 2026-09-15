@@ -1,8 +1,12 @@
 # Bibliotecas de terceiros embarcadas
 
-Estas pastas **não são código do Apurabot**. São cópias inalteradas de
-bibliotecas de código aberto, guardadas aqui para que a ferramenta rode sem
-instalar nada.
+Estas pastas **não são código da Hinove**. São cópias inalteradas de
+bibliotecas de código aberto, guardadas aqui para que as ferramentas rodem
+sem instalar nada.
+
+Ficam na raiz do repositório, e não dentro de um projeto, porque são de
+todos: o Apurabot e o DiXML carregam as mesmas cópias, e a próxima
+ferramenta também carregará.
 
 ## Por que embarcar
 
@@ -36,7 +40,8 @@ velocidade não é perceptível.
 
 ## Como são carregadas
 
-`apurabot/_dependencias.py` acrescenta esta pasta ao **fim** do `sys.path`.
+Cada ferramenta tem um `_dependencias.py` que procura esta pasta subindo a
+partir do próprio arquivo e a acrescenta ao **fim** do `sys.path`.
 O fim, e não o começo, é deliberado: se o administrador tiver instalado alguma
 dessas bibliotecas na máquina, é a dele que vale. Esta cópia é a rede de
 segurança.
@@ -44,6 +49,7 @@ segurança.
 ## Ao atualizar
 
 Substitua a pasta inteira pela nova versão, atualize a tabela acima e rode a
-bateria de testes. Não edite nada aqui dentro: qualquer correção que o Apurabot
-precise vai no código do Apurabot, nunca na cópia da biblioteca — uma alteração
-local se perderia silenciosamente na próxima atualização.
+bateria de testes de **todas** as ferramentas — a pasta é compartilhada. Não
+edite nada aqui dentro: qualquer correção que uma ferramenta precise vai no
+código dela, nunca na cópia da biblioteca — uma alteração local se perderia
+silenciosamente na próxima atualização.
