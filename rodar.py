@@ -15,6 +15,7 @@ ferramentas para escolher.
     python rodar.py                    abre a Central no navegador
     python rodar.py dixml lote.zip --saida "pasta\\de\\saida"
     python rodar.py fiscalbot "Movimento_Livros_Fiscais.xls"
+    python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
     python rodar.py apurabot apurar "caminho\\do\\livro.xls"
     python rodar.py --help
 
@@ -43,6 +44,7 @@ Central de Ferramentas Fiscais — Hinove Agrociência S.A.
     python rodar.py central --help        opções da janela
     python rodar.py dixml --help          lote de XML para planilha
     python rodar.py fiscalbot --help      auditoria do Livro Fiscal
+    python rodar.py pendentes --help      notas pendentes de entrada
     python rodar.py apurabot --help       apuração de ICMS
 
 Sem argumento nenhum, abre a Central: é o mesmo que dois cliques em
@@ -87,6 +89,9 @@ def main(argv: list[str]) -> int:
     elif ferramenta == "fiscalbot":
         import central                       # idem
         from fiscalbot.cli import main as rodar
+    elif ferramenta == "pendentes":
+        import central                       # idem
+        from pendentes.cli import main as rodar
     else:
         print(f"Não conheço a ferramenta {ferramenta!r}.\n{AJUDA}", file=sys.stderr)
         return 2
@@ -100,7 +105,7 @@ if __name__ == "__main__":
     except ModuleNotFoundError as erro:      # dependência ausente
         nome = getattr(erro, "name", "?")
         if nome and nome.split(".")[0] in ("central", "apurabot", "dixml",
-                                           "fiscalbot"):
+                                           "fiscalbot", "pendentes"):
             raise
         print(FALTANDO.format(nome=nome, executavel=sys.executable), file=sys.stderr)
         raise SystemExit(2) from None

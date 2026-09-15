@@ -1,0 +1,23 @@
+[project]
+name = "pendentes"
+version = "0.1.0"
+description = "Notas pendentes de entrada: mercadorias e serviços, num projeto só."
+requires-python = ">=3.10"
+# Também viajam embarcadas em `vendor/`, na raiz do repositório, para a
+# ferramenta rodar sem instalação em máquina sem administrador. Declará-las
+# aqui faz o `pip install` preferir a do sistema, quando há uma.
+dependencies = [
+    "openpyxl>=3.1",   # escrita do .xlsx e leitura do .xlsx/.xlsm
+    "xlrd==2.0.1",     # leitura do .xls antigo, que é o que o Sankhya entrega
+    "PyYAML>=6.0",     # a carga de fábrica, a base viva e o livro
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

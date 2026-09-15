@@ -29,13 +29,15 @@ Quem só usa a apuração pode continuar indo direto por **`Apurabot.bat`**.
 | **Apurabot** | `apurabot/` | Em desenvolvimento | Apuração mensal de ICMS (e, em fase posterior, PIS/Cofins) a partir do Livro Fiscal. A competência de referência já é reproduzida da ingestão ao benefício fiscal, sem pendências, e a apuração de Rio Brilhante confere ao centavo com a GIA entregue. |
 | **DiXML** | `dixml/` | Importado | Transforma lote de XMLs em planilha. Permite validar qualquer informação fiscal presente no arquivo da nota. |
 | **Fiscalbot** | `fiscalbot/` | Importado, em teste | Confere o lançamento de cada nota e valida o Livro Fiscal. É o fornecedor do Livro Fiscal validado que o Apurabot consome. |
-| _GerarPendentes_ | — | Existente, a ser importado | Confronta dados e gera uma planilha de notas de mercadoria pendente de entrada. |
-| _GerarServPend_ | — | Existente, a ser importado | Confronta dados e gera uma planilha de notas de serviço pendente de entrada. |
+| **GerarServPend** | `pendentes/` | Importado, em teste | Confronta as notas de serviço emitidas contra a Hinove (ASIS) com os lançamentos do Sankhya e diz o que ainda não foi lançado, com o pedido de compra e o requisitante por trás de cada pendência. |
+| _GerarPendentes_ | `pendentes/` | Em importação | Confronta dados e gera uma planilha de notas de mercadoria pendente de entrada. Compartilha o núcleo com a de cima — duas ferramentas na tela, um projeto no disco. O motor de mercadorias é a entrega seguinte. |
 | _Faturabot_ | — | Em desenvolvimento | Conferências do time de expedição. Confere e consolida desvios da balança, escrituração de saídas e entradas de diretos. |
 
 As ferramentas que ainda não foram importadas **aparecem na Central**, apagadas,
 com o nome e o que fazem: o time enxerga o que falta em vez de descobrir na hora
-em que for precisar.
+em que for precisar. O GerarPendentes segue apagado enquanto o motor de
+mercadorias não roda — botão que não roda é pior do que botão apagado —, mas o
+texto dele na tela já diz em que pé o porte está.
 
 ## Como entra a próxima ferramenta
 
@@ -89,3 +91,6 @@ pela primeira vez, siga o
   colunas da Reforma Tributária.
 - [`docs/fiscalbot/`](docs/fiscalbot/) — as camadas da auditoria, a linguagem
   das regras e o registro do porte que veio do VBA.
+- [`docs/pendentes/`](docs/pendentes/) — as duas rotinas de notas pendentes de
+  entrada: a arquitetura, o registro do porte, o que cada relatório responde, o
+  plano de entrega e as decisões pendentes.

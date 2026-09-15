@@ -20,7 +20,7 @@ sys.path.insert(0, str(RAIZ / "central" / "src"))
 
 #: As ferramentas que precisam carregar. A central põe as demais ao alcance
 #: do import, então ela vem primeiro.
-FERRAMENTAS = ("central", "apurabot", "dixml", "fiscalbot")
+FERRAMENTAS = ("central", "apurabot", "dixml", "fiscalbot", "pendentes")
 
 #: As bibliotecas embarcadas em `vendor/`.
 BIBLIOTECAS = ("yaml", "openpyxl", "xlrd")

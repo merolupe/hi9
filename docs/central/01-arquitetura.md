@@ -158,6 +158,7 @@ hi9/
 ├─ apurabot/             apuração de ICMS
 ├─ dixml/                lote de XML para planilha
 ├─ fiscalbot/            auditoria do Livro Fiscal
+├─ pendentes/            notas pendentes de entrada: mercadorias e serviços
 ├─ dados/                base de regras das ferramentas — ignorada pelo git
 └─ docs/                 esta documentação
 ```
@@ -190,7 +191,20 @@ depois.
 
 ## 8. O que falta
 
-- Trazer GerarPendentes e GerarServPend, uma a uma.
+- **GerarServPend — importado, em teste.** O projeto `pendentes/` traz o
+  núcleo comum das duas rotinas (reconhecimento de arquivo por âncora de
+  cabeçalho, coluna por nome, as normalizações, o livro de classificação, o
+  snapshot semanal e a escrita formatada) e o **motor de serviços**: a cascata
+  de quatro procedimentos de confronto, o vínculo com a Conferência de
+  Serviços e a população inversa. A entrada do catálogo está `DISPONIVEL` e
+  roda dentro da janela. **A divergência zero contra a macro ainda não está
+  provada** — faltam os arquivos reais de uma semana e a saída que a macro
+  gerou a partir deles.
+- **GerarPendentes — em importação.** Falta o motor de mercadorias: limpeza,
+  roteamento, lookup da Conferência de Entradas e o Resumo Executivo. A
+  entrada do catálogo continua `A_IMPORTAR` — botão que não roda é pior do que
+  botão apagado. A ordem e o que trava o quê estão em
+  [`../pendentes/04-plano-de-entrega.md`](../pendentes/04-plano-de-entrega.md).
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).
 - O Faturabot está em desenvolvimento e entra pelo mesmo contrato.
