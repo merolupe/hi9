@@ -32,7 +32,17 @@ def test_ferramenta_ainda_nao_importada_aparece_apagada_em_vez_de_sumir(janela):
     assert por_id["gerarpendentes"]["resumo"]
     assert por_id["dixml"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["fiscalbot"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["gerarservpend"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["apurabot"]["estado"] == ferramentas.JANELA_PROPRIA
+
+
+def test_a_ferramenta_de_servicos_pede_varios_arquivos_em_qualquer_ordem(janela):
+    """Quatro relatórios, uma caixa só: cada um é reconhecido pelo cabeçalho."""
+    _, dados = janela.pedir("/ferramentas")
+    servpend = next(f for f in dados["ferramentas"] if f["id"] == "gerarservpend")
+    assert servpend["entrada"]["varios"] is True
+    assert servpend["entrada"]["extensoes"] == [".xls", ".xlsx", ".xlsm"]
+    assert servpend["verbo"] and servpend["detalhe"]
 
 
 def test_so_quem_guarda_estado_declara_configuracao(janela):
@@ -276,3 +286,74 @@ def test_o_lancador_da_central_pergunta_ao_python_em_vez_de_adivinhar():
 def test_os_arquivos_de_entrada_estao_na_raiz():
     for arquivo in ("Hinove.bat", "Apurabot.bat", "rodar.py", "verificar.py"):
         assert (RAIZ / arquivo).is_file(), arquivo
+
+
+# -- o GerarServPend de ponta a ponta --------------------------------------
+
+def _relatorio(caminho: Path, colunas: list[str], linhas: list[list]) -> bytes:
+    """Um relatório sintético, do jeito que o Sankhya entrega."""
+    from openpyxl import Workbook
+
+    livro = Workbook()
+    aba = livro.active
+    aba.append(["Relatorio de exemplo"])
+    aba.append(["Emitido em 14/09/2026"])
+    aba.append(colunas)
+    for linha in linhas:
+        aba.append(linha)
+    livro.save(str(caminho))
+    return caminho.read_bytes()
+
+
+def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
+        janela, tmp_path, monkeypatch):
+    """A prova da costura: os arquivos entram, o Resultado volta para a tela.
+
+    O livro e o snapshot são desviados para uma pasta do teste — eles são
+    dados da empresa e moram fora do git, e um teste não escreve na pasta de
+    quem roda de verdade.
+    """
+    from pendentes import estado, parametros, snapshot
+
+    monkeypatch.setattr(estado, "_raiz", lambda: tmp_path)
+    monkeypatch.setattr(snapshot, "_raiz", lambda: tmp_path)
+
+    # Os nomes das colunas vêm da carga de fábrica, que é onde eles moram —
+    # copiá-los para dentro do teste seria manter duas listas em sincronia.
+    fabrica = parametros.carregar_fabrica()
+    colunas_de = lambda fonte: [e.nome for e in parametros.colunas_de(fabrica, fonte)]
+
+    cnpj = "99888777000166"
+    asis = _relatorio(tmp_path / "ASIS.xlsx", colunas_de("asis"), [
+        ["1234", "05/08/2026", "", "", "17.01", "Assessoria", "Campo Grande",
+         "PRESTADOR INVENTADO LTDA", cnpj, "1500.00", "Servico", "11222333000144",
+         "", 5, 10, 0.65, 1, 3, 5, 1, 2, 0, 0, "VER-1"],
+        ["9999", "06/08/2026", "", "", "17.01", "Assessoria", "Campo Grande",
+         "PRESTADOR INVENTADO LTDA", cnpj, "90.00", "Servico", "11222333000144",
+         "", 5, 10, 0.65, 1, 3, 5, 1, 2, 0, 0, "VER-2"],
+    ])
+    portal = _relatorio(tmp_path / "PC27.xlsx", colunas_de("portal_de_compras"), [
+        ["COMPRADOR", 1, "VENDA DE SERVICO", "1234", "4001", "PARCEIRO LTDA",
+         1500.00, "REQUISITANTE", "1", "HINOVE MATRIZ", "2020", "SERVICOS",
+         "CR 100", cnpj, "11222333000144", "10/08/2026"],
+    ])
+
+    for nome, corpo in (("ASIS.xlsx", asis), ("PC27.xlsx", portal)):
+        codigo, envio = janela.pedir("/enviar", corpo=corpo,
+                                     ferramenta="gerarservpend", nome=nome)
+        assert codigo == 200, envio
+
+    codigo, dados = janela.postar("/executar", ferramenta="gerarservpend")
+    assert codigo == 200, dados
+
+    fichas = {f["rotulo"]: f["valor"] for f in dados["fichas"]}
+    assert fichas["Lançadas"] == "1"
+    assert fichas["Pendentes"] == "1"
+    assert dados["planilha"].startswith("Notas_Servico_Pendentes_")
+    assert "Confronto por procedimento" in [l["titulo"] for l in dados["listas"]]
+
+    codigo, corpo = janela.pedir("/baixar")
+    assert codigo == 200
+    livro = openpyxl.load_workbook(io.BytesIO(corpo))
+    assert livro.sheetnames == ["Lancadas", "Pendentes", "Canceladas",
+                                "Sem Correspondencia ASIS"]

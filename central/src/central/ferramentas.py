@@ -222,6 +222,28 @@ def _rodar_fiscalbot(arquivos: list[Path], saida: Path) -> Resultado:
     )
 
 
+# -- GerarServPend ---------------------------------------------------------
+
+def _rodar_gerarservpend(arquivos: list[Path], saida: Path) -> Resultado:
+    """Confronta o ASIS com os lançamentos do Sankhya e resume para a tela.
+
+    A ferramenta devolve o painel em texto puro — ela não conhece `Ficha` nem
+    `Lista`, que são da central. Quem traduz é este arquivo, como já faz com o
+    DiXML e com o Fiscalbot.
+    """
+    from pendentes.servicos.execucao import gerar
+
+    execucao = gerar(arquivos, saida)
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+        planilha=execucao.planilha,
+    )
+
+
 def _configuracao_do_fiscalbot() -> Configuracao:
     """A tela de regras do Fiscalbot.
 
@@ -313,21 +335,36 @@ FERRAMENTAS: list[Ferramenta] = [
         resumo="Planilha de notas de mercadoria pendentes de entrada.",
         icone="📦",
         estado=A_IMPORTAR,
-        detalhe="Porte em andamento: o núcleo comum das duas rotinas já está "
-                "no repositório, em `pendentes/`, com teste. O motor de "
-                "mercadorias — limpeza, roteamento, conferência e Resumo "
-                "Executivo — é a entrega seguinte, e o botão só acende com ele.",
+        detalhe="Porte em andamento: o núcleo comum das duas rotinas e o "
+                "motor de serviços já estão no repositório, em `pendentes/`, "
+                "com teste — o GerarServPend já roda. O motor de mercadorias "
+                "— limpeza, roteamento, conferência e Resumo Executivo — é a "
+                "entrega seguinte, e este botão só acende com ele.",
     ),
     Ferramenta(
         id="gerarservpend",
         nome="GerarServPend",
-        resumo="Planilha de notas de serviço pendentes de entrada.",
+        resumo="Notas de serviço emitidas contra a Hinove que ainda não foram "
+               "lançadas.",
         icone="🧰",
-        estado=A_IMPORTAR,
-        detalhe="Porte em andamento: o núcleo comum das duas rotinas já está "
-                "no repositório, em `pendentes/`, com teste. A cascata de "
-                "confronto do ASIS com o Sankhya é a próxima entrega, e o "
-                "botão só acende com ela.",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste os relatórios da semana",
+            apoio="o <code>ASIS</code> (notas emitidas) e o <code>Portal de "
+                  "Compras</code> são obrigatórios; a <code>Conferência de "
+                  "Serviços</code> e a planilha da semana passada entram se "
+                  "houver. Em qualquer ordem: cada arquivo é reconhecido pelo "
+                  "próprio cabeçalho.",
+            extensoes=(".xls", ".xlsx", ".xlsm"),
+            varios=True,
+        ),
+        verbo="Confrontando o ASIS com os lançamentos do Sankhya…",
+        detalhe="Quatro procedimentos de confronto, do mais forte para o mais "
+                "fraco. O que casou só por nota e valor sai marcado para "
+                "revisão, e a classificação vem do livro da ferramenta — "
+                "perder a planilha da semana passada não apaga mais o "
+                "histórico.",
+        executar=_rodar_gerarservpend,
     ),
     Ferramenta(
         id="faturabot",
