@@ -3,6 +3,11 @@
 # O repositório guarda código, regras e documentação.
 # Livro Fiscal, XMLs, base de bens e apurações contêm dados
 # fiscais reais da Hinove e ficam fora do git.
+#
+# É aqui que também moram os padrões-ouro dos portes:
+# competencias/fiscalbot/ e competencias/pendentes/ — os
+# arquivos reais e a saída que a macro produziu a partir
+# deles. Sem eles o teste de regressão é pulado.
 # ============================================================
 competencias/
 *.xls
@@ -11,6 +16,16 @@ competencias/
 *.xml
 *.pdf
 !docs/**/*.pdf
+
+# ============================================================
+# BASE DE REGRAS DO APLICATIVO — NUNCA versionar
+# As ferramentas guardam aqui a configuração que o time fiscal
+# edita pela tela da Central: regras, parâmetros e as listas de
+# parceiros, que trazem código e nome de fornecedor real.
+# A carga de fábrica, essa sim versionada, fica em
+# <projeto>/regras_de_fabrica.yaml — e não tem dado de empresa.
+# ============================================================
+dados/
 
 # Python
 __pycache__/

@@ -1,0 +1,24 @@
+[project]
+name = "dixml"
+version = "2.2.0"
+description = "Lote de XML de nota (NF-e e CT-e) para planilha."
+requires-python = ">=3.10"
+# Também viaja embarcada em `vendor/`, na raiz do repositório, para a
+# ferramenta rodar sem instalação em máquina sem administrador. Declará-la
+# aqui faz o `pip install` preferir a do sistema, quando há uma.
+dependencies = [
+    "openpyxl>=3.1",   # escrita do .xlsx
+]
+
+[project.scripts]
+dixml = "dixml.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
