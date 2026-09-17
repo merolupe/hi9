@@ -180,6 +180,8 @@ def mercadorias(dados: dict[str, Any]) -> dict[str, Any]:
         "conferencia_fisica_confirmada": str(
             bruto.get("conferencia_fisica_confirmada") or "Sim"),
         "conf_fiscal_lancada": str(bruto.get("conf_fiscal_lancada") or "Sim"),
+        "sem_pedido_vinculado": str(
+            bruto.get("sem_pedido_vinculado") or "NA Conf Física"),
         "guardiao_da_reclassificacao": str(
             bruto.get("guardiao_da_reclassificacao") or "Fiscal"),
         "guardioes_da_fis_fat": tuple(

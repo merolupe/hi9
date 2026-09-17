@@ -137,11 +137,17 @@ def _divergem(primeira: LinhaDeConferencia, outra: LinhaDeConferencia,
 
 
 def anotar(documentos: Iterable[Documento], indice: Conferencia, *,
-           ausente_da_conferencia: str) -> int:
+           ausente_da_conferencia: str,
+           conferencia_fisica_confirmada: str = "Sim",
+           sem_pedido_vinculado: str = "NA Conf Física") -> int:
     """Escreve as seis colunas em cada documento. Devolve quantos casaram.
 
     A chave é comparada **como veio** dos dois lados, sem normalizar — é o que
     o VBA faz, e é o defeito 11 do porte, que espera medição.
+
+    Aqui também nasce `Pedido vinculado`, a nona coluna da `Pendentes`: o
+    pedido de compra que o CE informa, trazido para a frente da linha em vez
+    de ficar na coluna 19, onde só se chega rolando a planilha.
     """
     casaram = 0
     vazio = Anotacao(ausente_da_conferencia, "", ausente_da_conferencia,
@@ -151,11 +157,42 @@ def anotar(documentos: Iterable[Documento], indice: Conferencia, *,
         if achada is None:
             documento.conferencia = vazio.como_colunas()
             documento.no_ce = False
-            continue
-        documento.conferencia = achada.como_colunas()
-        documento.no_ce = True
-        casaram += 1
+        else:
+            documento.conferencia = achada.como_colunas()
+            documento.no_ce = True
+            casaram += 1
+        documento.pedido_vinculado = pedido_vinculado(
+            documento,
+            conferencia_fisica_confirmada=conferencia_fisica_confirmada,
+            sem_pedido_vinculado=sem_pedido_vinculado)
     return casaram
+
+
+def pedido_vinculado(documento: Documento, *,
+                     conferencia_fisica_confirmada: str,
+                     sem_pedido_vinculado: str) -> Any:
+    """O que a nona coluna da `Pendentes` mostra para aquela nota.
+
+    Três casos, e a condição é a **conferência física**, não a presença do
+    número — é o que o rótulo diz, e é o que o relatório real da semana 37
+    mostra em 97 linhas sem exceção:
+
+    * conferida (`Conf fisica` = `Sim`) e com pedido → o número, **como
+      número**, porque é assim que ele sai hoje e é assim que se soma e se
+      ordena por ele;
+    * não conferida — coluna vazia, ou o `não` das notas que nem estão no CE
+      → o rótulo de "não se aplica";
+    * conferida e **sem** pedido → **vazio**. Não apareceu na semana 37, e por
+      isso não ganha rótulo: afirmar "não se aplica" onde o pedido pode
+      simplesmente faltar seria inventar informação.
+    """
+    fisica = texto_de(valor_da_coluna(documento, col.P_CONF_FISICA))
+    if fisica.strip().lower() != conferencia_fisica_confirmada.strip().lower():
+        return sem_pedido_vinculado
+    numero = texto_de(valor_da_coluna(documento, col.P_NRO_DO_PEDIDO)).strip()
+    if not numero:
+        return ""
+    return int(numero) if numero.isdigit() else numero
 
 
 def valor_da_coluna(documento: Documento, rotulo: str) -> Any:

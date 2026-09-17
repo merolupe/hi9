@@ -10,8 +10,8 @@ sabem onde cada coluna está, e várias mantêm PROCX por cima.
 
 | Aba | Colunas | De onde vem a largura |
 |---|---|---|
-| `Pendentes` | **38** | 5 de categorização + 27 do XML + 6 de conferência |
-| `PENDENTES FIS-FAT` | **36** | as 38 menos `Gestor de apoio` e `Categoria` |
+| `Pendentes` | **39** | 5 de categorização + 27 do XML + 6 de conferência + `Pedido vinculado` |
+| `PENDENTES FIS-FAT` | **36** | as 39 menos `Gestor de apoio`, `Categoria` e `Pedido vinculado` |
 | `CTe`, `Manifestados`, `Entradas 3os` | **27** | o cabeçalho copiado na etapa 11 |
 | `Lançados` | **33** | o cabeçalho copiado na etapa 15: já com as 6, ainda sem as 5 |
 | `Descartados` | **28** | as 27 do XML mais o motivo — **a única aba nova** |
@@ -182,6 +182,31 @@ FORA_DA_FIS_FAT: tuple[str, ...] = (C_GESTOR, C_CATEGORIA)
 #: A coluna que a aba nova acrescenta, e a razão de ela existir.
 D_MOTIVO = "Motivo do descarte"
 
+# -- o pedido de compra, à frente da linha -----------------------------------
+
+P_PEDIDO_VINCULADO = "Pedido vinculado"
+
+#: `Pedido vinculado` **não existe no `.bas` v14** — ela está no relatório em
+#: produção, e o relatório real da semana 37 diz de onde ela sai: é o
+#: `Nro. do Pedido` da Conferência de Entradas, trazido para a **nona** posição,
+#: logo depois de `Dh. Emissão`. Medido nas 97 linhas daquela semana, sem uma
+#: exceção:
+#:
+#: | `Conf fisica` | linhas | o que a coluna traz |
+#: |---|---|---|
+#: | `Sim` | 41 | o número do pedido, **como número** — e igual ao da coluna 19 |
+#: | vazia | 53 | o rótulo `NA Conf Física` |
+#: | `não` (nota fora do CE) | 3 | o rótulo `NA Conf Física` |
+#:
+#: A leitura é a do próprio rótulo: sem conferência física **não se aplica**
+#: pedido. Por isso a condição é a conferência, e não a presença do número — e
+#: por isso o caso "conferida e sem pedido", que não apareceu na semana 37,
+#: sai **vazio**: ausência de informação não vira rótulo.
+#:
+#: Ela entra só na `Pendentes`. A `PENDENTES FIS-FAT` do relatório real não a
+#: tem, e as auxiliares nascem da cópia do cabeçalho do XML.
+FORA_DA_FIS_FAT_NO_CORPO: tuple[str, ...] = (P_PEDIDO_VINCULADO,)
+
 
 def rotulo_do_retorno(semana: int) -> str:
     """`Retorno semana 30` quando a semana corrente é a 31.
@@ -204,11 +229,20 @@ def categorizacao(semana: int) -> tuple[Coluna, ...]:
     )
 
 
-def com_conferencia(colunas: Sequence[Coluna] = XML) -> tuple[Coluna, ...]:
-    """As 27 do XML com as 6 de conferência logo depois de `Chave Acesso`."""
+def com_conferencia(colunas: Sequence[Coluna] = XML, *,
+                    pedido_vinculado: bool = False) -> tuple[Coluna, ...]:
+    """As 27 do XML com as 6 de conferência logo depois de `Chave Acesso`.
+
+    Com `pedido_vinculado`, também a coluna do pedido logo depois de
+    `Dh. Emissão` — é a `Pendentes`, e só ela. As duas inserções são por
+    **nome** da coluna vizinha, nunca por índice: é o que mantém o layout
+    correto quando o XML muda de largura.
+    """
     saida: list[Coluna] = []
     for coluna in colunas:
         saida.append(coluna)
+        if pedido_vinculado and coluna.rotulo == X_EMISSAO:
+            saida.append(Coluna(P_PEDIDO_VINCULADO))
         if coluna.rotulo == X_CHAVE:
             saida.extend(CONFERENCIA)
     return tuple(saida)
@@ -226,13 +260,14 @@ DESCARTADOS: tuple[Coluna, ...] = XML + (Coluna(D_MOTIVO),)
 
 
 def pendentes(semana: int) -> tuple[Coluna, ...]:
-    """`Pendentes` — 38 colunas, na ordem exata da seção A7 do documento."""
-    return categorizacao(semana) + com_conferencia()
+    """`Pendentes` — 39 colunas: as 38 da seção A7 mais `Pedido vinculado`."""
+    return categorizacao(semana) + com_conferencia(pedido_vinculado=True)
 
 
 def fis_fat(semana: int) -> tuple[Coluna, ...]:
-    """`PENDENTES FIS-FAT` — as 38 menos `Gestor de apoio` e `Categoria`."""
-    return tuple(c for c in pendentes(semana) if c.rotulo not in FORA_DA_FIS_FAT)
+    """`PENDENTES FIS-FAT` — 36: sem `Gestor`, `Categoria` e `Pedido vinculado`."""
+    fora = set(FORA_DA_FIS_FAT) | set(FORA_DA_FIS_FAT_NO_CORPO)
+    return tuple(c for c in pendentes(semana) if c.rotulo not in fora)
 
 
 def indice(colunas: Sequence[Coluna], rotulo: str) -> int:

@@ -84,6 +84,10 @@ mercadorias:
   ausente_da_conferencia: "não"        # o "não" MINÚSCULO das 3 colunas (ver 19)
   conferencia_fisica_confirmada: "Sim" # B1: física conferida
   conf_fiscal_lancada: "Sim"           # etapa 15: move para `Lançados`
+  # O que a coluna `Pedido vinculado` diz quando a nota não tem conferência
+  # física — e por isso não tem pedido a mostrar. É rótulo, não ausência: o
+  # vazio ali seria indistinguível de "conferida e sem pedido".
+  sem_pedido_vinculado: "NA Conf Física"
   guardiao_da_reclassificacao: "Fiscal"          # B1 sobrescreve para este
   guardioes_da_fis_fat: ["Fiscal", "Faturamento"]  # B2 move estes dois
 

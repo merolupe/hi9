@@ -424,5 +424,5 @@ def test_o_xml_e_a_conferencia_entram_pela_janela_e_sai_a_planilha(
     assert livro.sheetnames == ["Pendentes", "CTe", "Manifestados",
                                 "Entradas 3os", "Lançados",
                                 "PENDENTES FIS-FAT", "Descartados"]
-    assert livro["Pendentes"].max_column == 38
+    assert livro["Pendentes"].max_column == 39
     assert livro["Descartados"].max_row == 2

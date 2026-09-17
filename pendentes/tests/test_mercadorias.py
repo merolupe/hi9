@@ -60,8 +60,11 @@ def limpar(*linhas):
 
 
 def anotar(docs, indice):
-    conferencia.anotar(docs, indice,
-                       ausente_da_conferencia=LITERAIS["ausente_da_conferencia"])
+    conferencia.anotar(
+        docs, indice,
+        ausente_da_conferencia=LITERAIS["ausente_da_conferencia"],
+        conferencia_fisica_confirmada=LITERAIS["conferencia_fisica_confirmada"],
+        sem_pedido_vinculado=LITERAIS["sem_pedido_vinculado"])
     return docs
 
 
@@ -537,7 +540,7 @@ def test_com_a_lista_cadastrada_o_guardiao_de_fora_bloqueia():
 def test_as_larguras_de_cada_aba_sao_as_da_secao_11_1():
     assert len(col.XML) == 27
     assert len(col.NOMES_DO_CE) == 7
-    assert len(col.pendentes(31)) == 38
+    assert len(col.pendentes(31)) == 39
     assert len(col.fis_fat(31)) == 36
     assert len(col.AUXILIARES) == 27
     assert len(col.LANCADOS) == 33
@@ -558,11 +561,18 @@ def test_o_bloco_de_categorizacao_ocupa_as_cinco_primeiras_posicoes():
                            col.C_GESTOR, col.C_CATEGORIA, "Retorno semana 30"]
 
 
-def test_a_ordem_das_38_colunas_e_a_da_secao_a7():
+def test_a_ordem_das_39_colunas_e_a_do_relatorio_em_producao():
+    """A ordem da seção A7, com `Pedido vinculado` na nona posição.
+
+    As 38 do `.bas` v14 mais a coluna que o relatório real da semana 37 traz
+    logo depois de `Dh. Emissão` — o pedido de compra que o CE informa, à
+    frente da linha em vez de na coluna 19.
+    """
     assert [c.rotulo for c in col.pendentes(31)] == [
         "Tipo de Operação", "Guardião", "Gestor de apoio", "Categoria",
         "Retorno semana 30", "Nro Nota", "Cód. Parceiro",
-        "Nome Parceiro (Parceiro)", "Dh. Emissão", "CFOP's XML",
+        "Nome Parceiro (Parceiro)", "Dh. Emissão", "Pedido vinculado",
+        "CFOP's XML",
         "Valor da Nota", "Nome Fantasia", "Chave Acesso", "Conf fisica",
         "Dt. Conf. Física", "Conf fiscal", "Incongruência", "Nro. do Pedido",
         "Pedido confirmado?", "Dt. Vencimento", "Situação da manifestação",
@@ -598,3 +608,59 @@ def test_sao_sete_abas_duas_visiveis_e_cinco_ocultas():
     assert [nome for nome, visivel in col.ABAS if visivel] == [
         "Pendentes", "PENDENTES FIS-FAT"]
     assert len([nome for nome, visivel in col.ABAS if not visivel]) == 5
+
+
+# =========================================================================
+# `Pedido vinculado` — a nona coluna, medida no relatório da semana 37
+# =========================================================================
+
+def test_nota_conferida_traz_o_pedido_do_ce_como_numero():
+    """Como número, e não como texto: é assim que ele sai hoje."""
+    docs = anotar(documentos(linha_xml("1001", chave=chave_de(1))),
+                  conferir(linha_ce(chave_de(1), fisica="Sim", pedido="713535")))
+    assert docs[0].pedido_vinculado == 713535
+    assert isinstance(docs[0].pedido_vinculado, int)
+
+
+def test_nota_sem_conferencia_fisica_diz_que_nao_se_aplica():
+    """53 das 97 linhas da semana 37: conferência vazia, rótulo no lugar."""
+    docs = anotar(documentos(linha_xml("1001", chave=chave_de(1))),
+                  conferir(linha_ce(chave_de(1), fisica="", pedido="")))
+    assert docs[0].pedido_vinculado == "NA Conf Física"
+
+
+def test_nota_fora_do_ce_tambem_diz_que_nao_se_aplica():
+    """As outras 3: a nota nem está no CE, e recebe o `não` minúsculo."""
+    docs = anotar(documentos(linha_xml("1001", chave=chave_de(1))),
+                  conferir(linha_ce(chave_de(2))))
+    assert docs[0].pedido_vinculado == "NA Conf Física"
+
+
+def test_conferida_e_sem_pedido_fica_vazia_em_vez_de_ganhar_rotulo():
+    """Caso que não apareceu na semana 37 — e por isso não se afirma nada.
+
+    O rótulo diz "não se aplica por falta de conferência física". Usá-lo aqui
+    afirmaria o que não se sabe: a nota foi conferida, e o pedido é que falta.
+    """
+    docs = anotar(documentos(linha_xml("1001", chave=chave_de(1))),
+                  conferir(linha_ce(chave_de(1), fisica="Sim", pedido="")))
+    assert docs[0].pedido_vinculado == ""
+
+
+def test_pedido_que_nao_e_numero_chega_como_veio():
+    docs = anotar(documentos(linha_xml("1001", chave=chave_de(1))),
+                  conferir(linha_ce(chave_de(1), fisica="Sim", pedido="PC-42")))
+    assert docs[0].pedido_vinculado == "PC-42"
+
+
+def test_o_pedido_vinculado_entra_na_pendentes_e_nao_na_fis_fat():
+    """A `PENDENTES FIS-FAT` do relatório real tem 36 colunas, sem ela."""
+    assert col.P_PEDIDO_VINCULADO in [c.rotulo for c in col.pendentes(31)]
+    assert col.P_PEDIDO_VINCULADO not in [c.rotulo for c in col.fis_fat(31)]
+    assert col.P_PEDIDO_VINCULADO not in [c.rotulo for c in col.LANCADOS]
+    assert col.P_PEDIDO_VINCULADO not in [c.rotulo for c in col.AUXILIARES]
+
+
+def test_o_pedido_vinculado_vem_logo_depois_da_emissao():
+    rotulos = [c.rotulo for c in col.pendentes(31)]
+    assert rotulos[rotulos.index(col.X_EMISSAO) + 1] == col.P_PEDIDO_VINCULADO

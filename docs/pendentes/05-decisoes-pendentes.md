@@ -156,7 +156,7 @@ semanas?
 pior do que ocupar disco.
 
 `[INFERÊNCIA]` O custo é de espaço: uma planilha de mercadorias com ~2.500
-linhas × 38 colunas mais um YAML de alguns milhares de chaves dá poucos
+linhas × 39 colunas mais um YAML de alguns milhares de chaves dá poucos
 megabytes por semana. Cinquenta semanas cabem folgadamente.
 
 ## 11. 🟢 Uma coluna de retorno ou o histórico inteiro na planilha?
@@ -167,7 +167,7 @@ carrega um (`Retorno semana {N-1}`).
 **Pergunta:** vale acrescentar `Retorno semana {N-2}`, para o guardião ver a
 própria resposta anterior?
 
-**Padrão assumido:** **uma** coluna, para preservar as 38 e as 36 colunas. O
+**Padrão assumido:** **uma** coluna, para preservar as 39 e as 36 colunas. O
 histórico completo fica no livro e no snapshot.
 
 ## 12. 🟢 A ingestão deve aceitar planilha editada por qualquer pessoa?

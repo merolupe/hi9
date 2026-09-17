@@ -55,6 +55,10 @@ class Documento:
     valores: list[Any]
     conferencia: list[Any] = field(default_factory=lambda: ["" for _ in range(6)])
     categorizacao: list[Any] = field(default_factory=lambda: ["" for _ in range(5)])
+    #: O pedido de compra do CE, trazido para a nona coluna da `Pendentes`.
+    #: Número quando a nota tem conferência física; o rótulo de "não se
+    #: aplica" quando não tem. Ver `colunas.P_PEDIDO_VINCULADO`.
+    pedido_vinculado: Any = ""
     #: Preenchido quando a limpeza descarta a linha (regras A1 e A3).
     motivo_do_descarte: str = ""
     #: A chave foi encontrada na Conferência de Entradas?
@@ -107,8 +111,20 @@ class Documento:
         return [*self.valores[:corte], *self.conferencia, *self.valores[corte:]]
 
     def linha_pendente(self) -> list[Any]:
-        """38 colunas — as 5 de categorização à frente das 33."""
-        return [*self.categorizacao, *self.linha_lancada()]
+        """39 colunas — as 5 de categorização, as 33, e o pedido na nona.
+
+        A inserção é pelo **nome** da coluna vizinha, como o layout faz em
+        `colunas.com_conferencia`: as duas descrições do mesmo arranjo não
+        podem depender de um índice escrito duas vezes.
+        """
+        corpo: list[Any] = []
+        for coluna, valor in zip(col.XML, self.valores):
+            corpo.append(valor)
+            if coluna.rotulo == col.X_EMISSAO:
+                corpo.append(self.pedido_vinculado)
+            elif coluna.rotulo == col.X_CHAVE:
+                corpo.extend(self.conferencia)
+        return [*self.categorizacao, *corpo]
 
     def linha_fis_fat(self) -> list[Any]:
         """36 colunas — as 38 sem `Gestor de apoio` e sem `Categoria`.

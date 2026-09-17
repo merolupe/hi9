@@ -58,7 +58,7 @@ src/pendentes/
   cli.py           python rodar.py pendentes mercadorias|servicos <arquivos>
 
 src/pendentes/mercadorias/
-  colunas.py       as 27 do XML, as 7 do CE e a ordem das 38 / 36 / 33 / 27 / 28
+  colunas.py       as 27 do XML, as 7 do CE e a ordem das 39 / 36 / 33 / 27 / 28
   fontes.py        o documento com as 27 colunas, e as DUAS chaves que ele tem
   limpeza.py       A1 (XML de terceiro), A2 (parceiro), A3 (transporte)
   roteamento.py    as 4 condições na ordem, e a segregação de `Lançados`
@@ -96,7 +96,7 @@ conferência    o lookup do CE: 6 colunas, farol de TRÊS estados
 classificação  a herança vem do livro → B1 (Fiscal) → B2 (split FIS-FAT)
 ```
 
-A saída são sete abas: `Pendentes` (38 colunas) e `PENDENTES FIS-FAT` (36)
+A saída são sete abas: `Pendentes` (39 colunas) e `PENDENTES FIS-FAT` (36)
 visíveis, e `CTe`, `Manifestados`, `Entradas 3os` (27 cada), `Lançados` (33) e
 `Descartados` (28) ocultas — **ocultas, não apagadas**: elas são evidência para
 auditoria, e reexibem-se por clique direito.

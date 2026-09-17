@@ -94,18 +94,27 @@ def planilha_anterior(caminho, semana_anterior, pendentes=(), fis_fat=()):
 
 def linha_da_semana_anterior(chave, *, tipo="", guardiao="", gestor="",
                              categoria="", retorno="", fis_fat=False):
-    """Uma linha devolvida pelo time, com a classificação preenchida."""
-    largura = 36 if fis_fat else 38
-    linha = [""] * largura
-    posicao_da_chave = 10 if fis_fat else 12
+    """Uma linha devolvida pelo time, com a classificação preenchida.
+
+    As posições saem do **layout**, pelo nome da coluna: é o que mantém a
+    fixture honesta quando a largura da aba muda — como mudou quando
+    `Pedido vinculado` entrou.
+    """
+    layout = col.fis_fat(30) if fis_fat else col.pendentes(30)
+    linha = [""] * len(layout)
     if fis_fat:
         linha[0], linha[1], linha[2] = tipo, guardiao, retorno
     else:
         linha[0], linha[1], linha[2] = tipo, guardiao, gestor
         linha[3], linha[4] = categoria, retorno
-    linha[posicao_da_chave] = chave
-    linha[posicao_da_chave - 7] = "1001"      # Nro Nota, para o papel casar
+    linha[col.indice(layout, col.X_CHAVE)] = chave
+    linha[col.indice(layout, col.X_NRO_NOTA)] = "1001"   # para o papel casar
     return linha
+
+
+def _em(linha, rotulo, *, semana=31):
+    """O valor de uma coluna da `Pendentes` pelo nome dela, nunca por índice."""
+    return linha[col.indice(col.pendentes(semana), rotulo)]
 
 
 # -- a planilha -------------------------------------------------------------
@@ -116,7 +125,7 @@ def test_a_execucao_gera_as_sete_abas_na_ordem_e_com_a_largura_de_cada_uma(
     livro = openpyxl.load_workbook(resultado.planilha)
 
     assert livro.sheetnames == [nome for nome, _ in col.ABAS]
-    assert livro["Pendentes"].max_column == 38
+    assert livro["Pendentes"].max_column == 39
     assert livro["PENDENTES FIS-FAT"].max_column == 36
     assert livro["CTe"].max_column == 27
     assert livro["Manifestados"].max_column == 27
@@ -202,12 +211,12 @@ def test_b1_manda_a_nota_conferida_para_a_fis_fat(semana):
 def test_o_bloco_de_conferencia_chega_na_planilha_com_os_seis_valores(semana):
     resultado = _rodar(semana)
     linha = next(l for l in _linhas(resultado, "Pendentes") if l[5] == "1001")
-    assert linha[13] == "Sim"                       # Conf fisica
-    assert linha[14].strftime("%d/%m/%Y") == "05/07/2026"
-    assert linha[15] == "não"                       # Conf fiscal
-    assert linha[16] == "divergência de peso"       # Incongruência
-    assert linha[17] == "9001"                      # Nro. do Pedido
-    assert linha[18] == "Não"                       # farol vermelho
+    assert _em(linha, col.P_CONF_FISICA) == "Sim"
+    assert _em(linha, col.P_DATA_CONF_FISICA).strftime("%d/%m/%Y") == "05/07/2026"
+    assert _em(linha, col.P_CONF_FISCAL) == "não"
+    assert _em(linha, col.P_INCONGRUENCIA) == "divergência de peso"
+    assert _em(linha, col.P_NRO_DO_PEDIDO) == "9001"
+    assert _em(linha, col.P_PEDIDO_CONFIRMADO) == "Não"       # farol vermelho
 
 
 def test_dias_emissao_doc_chega_como_veio_com_formato_de_data(semana):
@@ -245,9 +254,30 @@ def test_a_chave_de_acesso_sai_como_texto_de_44_digitos(semana):
     """44 dígitos em coluna numérica viram notação científica e o PROCX cai."""
     resultado = _rodar(semana)
     aba = _aba(resultado, "Pendentes")
-    celula = aba.cell(2, 13)
+    celula = aba.cell(2, col.indice(col.pendentes(31), col.X_CHAVE) + 1)
     assert celula.value == PENDENTE
     assert celula.number_format == "@"
+
+
+def test_o_pedido_vinculado_chega_na_planilha(semana):
+    """A nona coluna, do jeito que o relatório da semana 37 a mostra.
+
+    A nota 1001 foi conferida e tem pedido — sai o número. A 1010 entrou no CE
+    sem conferência física — sai o rótulo. O terceiro caso, a nota que nem está
+    no CE, é exercitado no teste de unidade: nesta semana sintética todas as
+    notas que sobram em `Pendentes` estão no relatório de conferência.
+    """
+    linhas = _linhas(_rodar(semana), "Pendentes")
+    por_nota = {l[5]: _em(l, col.P_PEDIDO_VINCULADO) for l in linhas}
+    assert por_nota["1001"] == 9001
+    assert por_nota["1010"] == "NA Conf Física"
+
+
+def test_o_pedido_vinculado_nao_aparece_na_fis_fat(semana):
+    aba = _aba(_rodar(semana), "PENDENTES FIS-FAT")
+    cabecalho = [c.value for c in next(aba.iter_rows(max_row=1))]
+    assert col.P_PEDIDO_VINCULADO not in cabecalho
+    assert aba.max_column == 36
 
 
 def test_as_duas_abas_visiveis_tem_autofiltro_e_cabecalho_congelado(semana):

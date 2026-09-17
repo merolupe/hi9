@@ -379,7 +379,9 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     # -- conferência, só sobre o que sobrou -------------------------------
     casaram = conferencia.anotar(
         rotas.pendentes, indice,
-        ausente_da_conferencia=literais["ausente_da_conferencia"])
+        ausente_da_conferencia=literais["ausente_da_conferencia"],
+        conferencia_fisica_confirmada=literais["conferencia_fisica_confirmada"],
+        sem_pedido_vinculado=literais["sem_pedido_vinculado"])
     lancados, restantes = roteamento.segregar_lancados(
         rotas.pendentes, literais["conf_fiscal_lancada"])
 

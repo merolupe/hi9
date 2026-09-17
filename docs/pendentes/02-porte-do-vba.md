@@ -124,6 +124,44 @@ escrito e que a implementação precisou decidir:
   ficam em `Geral`. `[INFERÊNCIA]` Nenhum valor de célula difere: as cinco só
   guardam texto digitado por gente.
 
+### O relatório em produção não é o do `.bas` v14
+
+`[FATO]` Em 17/09/2026 o relatório real da **semana 37** entrou na análise, e
+ele desmente uma premissa do porte: a aba `Pendentes` em produção tem **39
+colunas**, não 38. A coluna a mais é `Pedido vinculado`, na **nona** posição,
+logo depois de `Dh. Emissão`, e ela não existe em lugar nenhum do
+`GerarPendentes_v14.bas` nem do `.xlam` — nem o nome, nem o rótulo que ela
+grava.
+
+`[FATO]` De onde ela sai, respondido pelo Compliance Tributário e conferido
+nas 97 linhas daquela semana, sem uma exceção:
+
+| `Conf fisica` | linhas | `Nro. do Pedido` no CE | `Pedido vinculado` |
+|---|---|---|---|
+| `Sim` | 41 | sempre presente | o número, **como número**, igual ao da coluna 19 |
+| vazia | 53 | ausente | `NA Conf Física` |
+| `não` — a nota nem está no CE | 3 | ausente | `NA Conf Física` |
+
+É o pedido de compra que a Conferência de Entradas já informa, trazido para a
+frente da linha em vez de ficar na coluna 19, onde só se chega rolando a
+planilha. **A condição é a conferência física, não a presença do número** — é
+o que o rótulo afirma, e é o que o dado confirma.
+
+O caso "conferida e **sem** pedido" não apareceu na semana 37. Ele sai
+**vazio**, e não com o rótulo: dizer "não se aplica" onde o pedido pode
+simplesmente faltar seria afirmar o que não se sabe.
+
+`[FATO]` A coluna entra **só** na `Pendentes`. A `PENDENTES FIS-FAT` do
+relatório real continua com 36 colunas, sem ela, e as auxiliares nascem da
+cópia do cabeçalho do XML.
+
+> `PENDENTE:` **a `Categoria` mudou de lugar, e isso ainda não foi mexido.** No
+> `.bas` v14 ela é a quarta coluna, dentro do bloco de categorização; no
+> relatório da semana 37 ela está na **décima terceira**, entre `Nome Fantasia`
+> e `Chave Acesso`. O porte segue o v14 até haver decisão: mover uma coluna que
+> dezenas de pessoas leem, e sobre a qual há PROCX de terceiro, não é ajuste de
+> implementação.
+
 ## 3. Onde o padrão-ouro mora
 
 `competencias/pendentes/`, **fora do git**, exatamente como
