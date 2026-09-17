@@ -155,21 +155,118 @@ núcleo (tabela acima). Nenhum deles é grande, e todos serviriam igualmente ao
 motor de mercadorias — o que sugere que a entrega 3 encontrará o núcleo mais
 completo do que esta encontrou.
 
-## 3. Entrega 3 — mercadorias, sem painel
+## 3. Entrega 3 — mercadorias, sem painel · **concluída**
 
-| Bloco | Esforço | Risco | Depende de |
-|---|---|---|---|
-| Limpeza A1/A2/A3 + aba `Descartados` | baixo | baixo | — |
-| Roteamento parametrizado (4 condições, 4 abas) | médio | **médio** | medição 10 |
-| Lookup do CE, as 6 colunas, os três estados do farol | médio | baixo | — |
-| B1 (reclassificação para Fiscal) e B2 (split FIS-FAT) | médio | **médio** | medições 8, 9 e 19 |
-| Herança pelo livro | baixo | baixo | entrega 1 |
-| As 7 abas, formatação, ocultamento | médio | baixo | — |
+`[FATO]` O motor de mercadorias está no repositório, em `pendentes/mercadorias/`,
+e a entrada `gerarpendentes` do catálogo saiu de `A_IMPORTAR`: **o botão
+acende**. O que entrou, bloco a bloco:
 
-Sai **utilizável sem Resumo Executivo**: as abas `Pendentes` e `PENDENTES
-FIS-FAT` são o que vai anexado ao e-mail, e as fichas da Central cobrem, para
-quem roda, boa parte do que o painel responde. Quem recebe o e-mail é que sente
-falta — por isso a entrega 4 não pode demorar.
+| Bloco | Módulo | O que resolve |
+|---|---|---|
+| Nome de coluna e ordem das abas | `colunas.py` | 27 do XML, 7 do CE; 38 / 36 / 33 / 27 / 28 de saída, com o formato de cada coluna |
+| As matrizes viram registro | `fontes.py` | o documento com as 27 colunas inteiras, e as **duas** chaves que ele tem |
+| Limpeza A1/A2/A3 + aba `Descartados` | `limpeza.py` | a ordem A1 → A3 → A2, e o motivo de cada descarte |
+| Roteamento parametrizado | `roteamento.py` | as 4 condições na ordem, a primeira verdadeira consome; e a segregação de `Lançados` |
+| Lookup do CE, 6 colunas, farol de 3 estados | `conferencia.py` | primeira ocorrência vence, duplicadas contadas, divergência bloqueia |
+| B1 e B2, e a herança pelo livro | `classificacao.py` | a única regra que sobrescreve, e o split que **move** |
+| Unidade, categoria e guardião | `vocabulario.py` | o que a ferramenta não reconhece, contado e nomeado |
+| Pipeline e o que a tela mostra | `execucao.py` | as sete abas, o livro, o snapshot e o painel |
+| Entrada no catálogo + CLI | `central/ferramentas.py`, `pendentes/cli.py` | `_rodar_gerarpendentes`, `python rodar.py pendentes mercadorias …` |
+
+`[FATO]` 94 testes novos em `pendentes/`, mais 2 na Central, todos de
+comportamento. O que eles travam:
+
+* **as três ordens que carregam correção de defeito antigo** — a limpeza antes
+  do roteamento (o teste monta o XML de terceiro **de entrada** e roda a ordem
+  invertida ali mesmo, para mostrar que ele sobreviveria em `Entradas 3os`);
+  A1 antes de A3; a herança antes de B1 e B1 antes de B2;
+* **a ordem do roteamento**, nos dois sentidos: o registro que satisfaz duas
+  condições vai para a primeira, e inverter a tabela muda o destino;
+* as assimetrias de comparação que o VBA tem e que **não** foram uniformizadas:
+  A3 tolera caixa e espaço mas não acento; as condições 3 e 4 são exatas; a
+  etapa 15 é exata e B2 não é;
+* os três estados do farol; a chave do CE com várias linhas, em que a primeira
+  vence, as duplicadas são contadas e a divergência de pedido ou de farol entre
+  elas **bloqueia**;
+* B1 sobrescrevendo classificação herdada, e **não** disparando para nota que
+  nem estava no CE; B2 movendo e não copiando;
+* a herança que atravessa a semana pelo livro — inclusive quando a nota deixa
+  de ser pendente, e quando o arquivo da semana passada não vem;
+* `CORUMB` antes de `GUAR`, provado nos dois sentidos;
+* **os invariantes estruturais da § 11.1**: 27 / 7 / 38 / 36 / 33 / 28, o bloco
+  de conferência sempre logo depois de `Chave Acesso`, o de categorização
+  sempre nas cinco primeiras posições, sete abas com duas visíveis;
+* uma execução de ponta a ponta com dez notas sintéticas, uma por caminho do
+  pipeline, que gera as sete abas, grava o livro e o snapshot e devolve o
+  `Resultado` — pela ferramenta e pela janela da Central.
+
+### O que a entrega acrescentou ao núcleo
+
+`[FATO]` Duas coisas, e nenhuma delas é regra de mercadorias:
+
+| Onde | O quê |
+|---|---|
+| `chaves.SEM_CADASTRO` | o **quinto** conceito duplicado entre os dois módulos VBA; os outros quatro já estavam no núcleo desde a entrega 1 |
+| `cabecalho.ate_a_ultima` | o corte de rodapé do relatório, que estava dentro de `servicos/fontes.py` e serve aos dois domínios |
+
+### A herança pelo livro mata três defeitos por construção
+
+`[FATO]` Os defeitos 8 e 9 do registro do porte — a leitura das cinco colunas
+de classificação **por posição fixa**, o `Cells(Rows.Count, 6)` com a coluna 6
+no código e o `colChaveNova = colChaveAtual + 5` — não têm onde existir quando
+a herança vem do livro: o livro tem campo com nome, a planilha devolvida é lida
+por cabeçalho e a chave é um campo do documento, não um deslocamento.
+
+`[FATO]` Os dois offsets são o **mesmo antipadrão que a v7 já havia removido**
+da etapa 15, onde `colChaveAtual + 2` quebrou quando o bloco de conferência
+passou de 3 para 6 colunas. Ele sobreviveu na etapa 17 porque ninguém mexeu
+nela desde então.
+
+A medição que os defeitos 8 e 9 pedem **continua pendente**, e continua valendo
+a pena: ela responde se a leitura posicional de hoje estava certa, e desde
+quando. O que mudou é que a resposta deixou de ser pré-requisito para portar.
+
+### Três decisões desta entrega que vale registrar
+
+**A aba `Descartados` é a única aba nova, e é acréscimo.** Nenhuma aba
+existente muda. Ela nasce oculta, como as outras auxiliares, e recebe as 27
+colunas do XML mais o motivo. `[FATO]` Hoje essas linhas somem: a exclusão é
+física, não há contador, não há aba e a mensagem final não reporta volume
+descartado — o próprio dossiê registra que *não há como medir volume descartado
+por semana*. Agora há.
+
+**As comparações assimétricas do roteamento ficaram como estão.** Os três
+operadores da tabela (`preenchido_e_diferente`, `igual_a_algum`, `igual`) são
+os três jeitos com que o VBA compara, com o alcance que cada um tem hoje —
+inclusive o espaço à esquerda que manda a nota para `CTe`. Uniformizar é o
+defeito 10, e ele exige medição sobre arquivo real **antes** de mexer.
+
+**A derivação de unidade e de categoria sobreviveu ao painel.** O Resumo
+Executivo saiu do porte, e com ele a agregação, os TOP N e os quatro gráficos.
+A derivação ficou, em `vocabulario.py`, porque ela não é ornamento: é o que
+permite dizer que a ferramenta **não** reconheceu alguma coisa — e é isso que
+bloqueia o encerramento da semana, como a regra nº 4 pede.
+
+### O que ficou de fora, de propósito
+
+`[FATO]` A configuração de mercadorias **não** ganhou tela nesta entrega, pelo
+mesmo motivo de serviços: a `Ferramenta` do catálogo entrou sem `Configuracao`.
+Os parâmetros são lidos da carga de fábrica e da base viva, e o motor os honra
+— o que falta é a tela que os edita. Enquanto ela não vem, a tabela de
+unidades (pendência 6) e a lista de guardiões só se cadastram editando
+`dados/pendentes/parametros.yaml` à mão, e **enquanto elas estiverem vazias
+nada é validado**, que é o comportamento de hoje.
+
+`[FATO]` E não entrou nada de Resumo Executivo: sem painel, sem gráfico, sem
+`_AuxResumo`, sem esboço. Ver § 4.
+
+### A entrega sai utilizável sem o painel
+
+As abas `Pendentes` e `PENDENTES FIS-FAT` são o que vai anexado ao e-mail, e as
+fichas da Central cobrem, para quem roda, boa parte do que o painel responde —
+quantas pendências, de quem, quanto vale e o que trava. Quem recebe o e-mail é
+que sente falta do painel; e é por isso que a rodada nova dele
+([06 — Próximas rodadas](06-proximas-rodadas.md) § 1) não deve demorar.
 
 ## 4. Entrega 4 — o Resumo Executivo · **suspensa**
 
@@ -237,10 +334,10 @@ se ainda for desejada é pedido novo.
 núcleo (feito) ──┬─► serviços (feito) ──► catálogo + CLI (feito)
                  │
                  ├─► estado + snapshot (feito) ──┬─► serviços (feito)
-                 │                               └─► mercadorias (herança)
+                 │                               └─► mercadorias (feito)
                  │
-                 └─► mercadorias ──┬─► catálogo (gerarpendentes)
-                                   └─► Resumo Executivo ──► gráficos
+                 └─► mercadorias (feito) ──┬─► catálogo + CLI (feito)
+                                           └─► Resumo Executivo — SUSPENSO
 
 arquivos reais ──► as 6 medições ──► fechamento das correções 8, 9, 10, 11, 12, 19
 arquivos reais + saída da macro ──► divergência zero ──► "o porte está provado"

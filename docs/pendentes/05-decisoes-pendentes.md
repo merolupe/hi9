@@ -7,8 +7,8 @@
 > 🟢 responder quando puder · 🟡 responder antes da entrega que depende dela ·
 > 🔴 **trava a prova do porte**
 >
-> A nº 14 nasceu na entrega do motor de serviços; as treze primeiras vêm da
-> leitura do VBA.
+> A nº 14 nasceu na entrega do motor de serviços e a nº 15 na de mercadorias;
+> as treze primeiras vêm da leitura do VBA.
 >
 > O que o código já respondeu, e por isso **não** é pendência, está no fim.
 
@@ -217,12 +217,51 @@ livro continua guardando o CNPJ, e a colisão continua possível — porém cont
 e visível. Se a contagem vier zerada nas primeiras execuções reais, a pergunta
 se responde sozinha.
 
+## 15. 🟡 O que a regra B1 escreveu deve voltar para o livro?
+
+`[FATO]` O livro de classificação existe para guardar **julgamento humano**: o
+que o time digitou em `Tipo de Operação`, `Guardião`, `Gestor de apoio`,
+`Categoria` e no retorno da semana. A regra B1 é a única do módulo de
+mercadorias que escreve numa dessas colunas sozinha — ela grava `Fiscal` em
+`Guardião` e esvazia `Gestor de apoio` quando a mercadoria foi conferida
+fisicamente sem divergência.
+
+`[FATO]` Quando o time devolve a planilha editada, essas linhas voltam com
+`Fiscal` escrito. A ingestão não sabe distinguir quem escreveu o quê: ela lê a
+célula e grava no livro. **O livro passa a guardar, junto com o julgamento
+humano, o que a máquina derivou.**
+
+`[FATO]` O efeito visível é o mesmo de hoje: no VBA a reclassificação também
+volta na semana seguinte, porque ela está na aba `PENDENTES FIS-FAT` do arquivo
+anterior e o PROCX a lê de lá. E como B1 roda **depois** da herança e é
+recalculada do zero a cada execução, a célula entregue é sempre a que a regra
+decidiu nesta semana, não a da semana passada.
+
+`[FATO]` O que muda é o conteúdo do livro. Uma nota que num mês foi conferida
+fisicamente e voltou como `Fiscal`, e no mês seguinte deixa de ser conferida,
+carrega `Fiscal` no livro — e não o `Suprimentos` que alguém tinha digitado
+antes de B1 passar por cima.
+
+**Pergunta:** o livro deve distinguir o que a pessoa escreveu do que a regra
+derivou — guardando os dois, e devolvendo o humano quando a regra deixar de
+disparar?
+
+**Padrão assumido:** **não distinguir.** É o que reproduz o comportamento de
+hoje, e distinguir exigiria uma coluna a mais na planilha para marcar a origem
+de cada valor — a mesma objeção da decisão nº 14: a largura de 38 é invariante
+da prova de regressão e alvo provável de PROCX de terceiro. Se a pergunta vier
+a valer a pena, o lugar dela é o livro, não a planilha: o registro já tem
+carimbo de quem gravou, e `gravado_por` poderia dizer `regra B1`.
+
 ---
 
 ## Já respondidas pelo código — não entram como pendência
 
 | Pergunta que estava em aberto | Resposta |
 |---|---|
+| As categorias são uma lista de nomes? | **Não**, são uma tabela com ordem: `NormalizarCategoria` é teste de subcadeia e testa `indireto` **antes** de `direto` |
+| A herança de mercadorias lê só a aba `Pendentes` anterior? | **Não** — lê também a `PENDENTES FIS-FAT` do mesmo arquivo, e a `Pendentes` tem precedência |
+| A condição 2 do roteamento compara duas grafias? | **Três** — `desconhecida`, `operação não realizada` e `operacao nao realizada`, porque a comparação é `LCase` e não remove acento |
 | A rodada de formatação de 17/08/2026 entrou em produção? | **Não.** O `.xlam` é byte a byte idêntico à v14; 8 dos 10 ajustes estão ausentes. **Não existe v15** |
 | Layout da aba `Canceladas` (serviços) | **16 colunas**, layout próprio — **não** é a `Pendentes` mais duas |
 | Integração com a Conferência de Serviços | **totalmente implementada**: colunas 29–36, com filtro de data, valor exato ou múltiplo 2×–12×, desempate por maior NU e rótulo de confiança |

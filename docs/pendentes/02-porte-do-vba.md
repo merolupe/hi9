@@ -95,6 +95,35 @@ execução conta quando o dono de uma chave muda. Eliminar de vez exige uma
 coluna nova na aba, que muda a largura de 36 e é invariante da prova. Virou a
 [decisão pendente nº 14](05-decisoes-pendentes.md).
 
+### As divergências que a implementação de mercadorias encontrou
+
+`[FATO]` A entrega de serviços achou cinco. Esta achou mais quatro, e uma
+delas estava dentro da nossa própria carga de fábrica. **Em todas, o VBA
+venceu.**
+
+| # | A documentação dizia | O VBA faz | O que se fez |
+|---|---|---|---|
+| V6 | a condição 2 do roteamento compara `Situação da manifestação` com `desconhecida` e `operação não realizada` — e é assim que a carga de fábrica da entrega 1 a cadastrou | testa **três** literais: os dois acima **e** `operacao nao realizada`, sem acento. A comparação é `LCase` e **não** remove acento, então a terceira grafia é a que cobre o export sem acentuação | a carga de fábrica passou a listar as três. Faltando a terceira, a nota ficaria em `Pendentes` — silenciosamente |
+| V7 | as categorias válidas são a lista `["Diretos", "Indiretos"]` | `NormalizarCategoria` é um teste de **subcadeia**, e testa `indireto` **antes** de `direto` porque a primeira contém a segunda. Uma lista simples não consegue expressar isso — e, na ordem em que estava escrita, `Indiretos` casaria com o trecho `direto` e viraria `Diretos` | as categorias viraram tabela com `ordem`, como as unidades, pelo mesmo motivo e com o mesmo teste |
+| V8 | o exemplo de tela do desenho usava `"Indireto."` como categoria **não reconhecida** | `InStr(s, "indireto") > 0` reconhece `Indireto.` sem hesitar | o exemplo estava errado; há teste nomeado que fixa o comportamento do `.bas` |
+| V9 | o papel "planilha da semana anterior" de mercadorias é reconhecido pela aba `Pendentes` | a herança lê **duas** abas do mesmo arquivo: `Pendentes` e `PENDENTES FIS-FAT`, com precedência da primeira | o papel continua sendo reconhecido pela aba `Pendentes` — é ela que tem as âncoras —, e a ingestão lê as duas, nessa ordem, para que a `Pendentes` vença |
+
+`[FATO]` E duas observações que não são divergência, mas que ninguém tinha
+escrito e que a implementação precisou decidir:
+
+* **`CoagirData` não é `ConverterDataBR`.** O `CoagirData` do CE devolve
+  **vazio** quando o valor não é data; o `ConverterDataBR` devolve o texto
+  original. São dois comportamentos diferentes no mesmo módulo, e a coluna
+  `Dt. Conf. Física` usa o primeiro. No núcleo, quem faz isso é
+  `valores.data_hora` — e é ela que a conferência de mercadorias chama, e não
+  `valores.data_br`;
+* **o formato das cinco colunas de categorização.** O VBA formata `Columns(1)`
+  como Texto na etapa 9, quando a coluna 1 é `Nro Nota`; depois a etapa 16
+  insere cinco colunas à esquerda, e o formato viaja com as colunas
+  deslocadas. Aqui `Nro Nota` é declarada Texto e as cinco de categorização
+  ficam em `Geral`. `[INFERÊNCIA]` Nenhum valor de célula difere: as cinco só
+  guardam texto digitado por gente.
+
 ## 3. Onde o padrão-ouro mora
 
 `competencias/pendentes/`, **fora do git**, exatamente como
@@ -212,9 +241,9 @@ o registro de como:
 * **item 1** — a planilha de serviços é gravada antes de o livro e o snapshot
   serem escritos, e nenhuma dessas três etapas depende de painel nenhum. O
   equivalente exato do defeito (o `Activate` depois de a aba do resumo não ter
-  sido criada) é de mercadorias e fecha na entrega 3; o que a entrega de
-  serviços prova é que a ordem escolhida — gravar primeiro, enfeitar depois —
-  já está no código.
+  sido criada) é de mercadorias e **fechou na entrega 3**: `execucao.gerar`
+  grava a planilha antes de qualquer coisa opcional, e nenhuma etapa posterior
+  pode desfazê-la. O painel que causava o problema, aliás, saiu do porte.
 
 ### 6.2 Com medição obrigatória antes de mexer
 
@@ -228,6 +257,27 @@ a medição existir — é o padrão assumido da pendência nº 1.
 | 10 | **Comparações assimétricas no roteamento e na etapa 15**: a condição 1 sem `Trim`, a 2 com `LCase` mas sem `Trim`, as 3 e 4 exatas e sensíveis a caixa, a etapa 15 com `= "Sim"` exato — enquanto B1 e B2 usam `vbTextCompare` | uma disciplina só: comparar por `chave_de_texto` em todas | contar, no XML e no CE reais, quantas linhas têm valor que difere dos literais **só** por caixa, acento ou espaço. Se for **zero**, a uniformização não muda destino nenhum. Se for maior que zero, **o código de hoje está perdendo linhas**, e o número vai para o time fiscal antes da troca |
 | 11 | **Chave de acesso comparada sem normalização** (`CStr` dos dois lados); a integridade é sustentada só por `NumberFormat = "@"` | normalizar para só-dígitos dos dois lados | contar quantas chaves mudam ao normalizar e quantos confrontos XML × CE passam a casar. Esperado: zero e zero. Confronto novo = nota hoje reportada como pendente indevidamente — achado relevante, não detalhe técnico |
 | 12 | `ConverterDataHora` devolve `""` quando não interpreta, enquanto `ConverterDataBR` devolve o texto original e o deixa visível | uniformizar no comportamento de `ConverterDataBR`, e contar na tela | contar quantos valores são ininterpretáveis nos arquivos reais. Se for zero, a troca é inócua; se não, ela **revela** dado que hoje some |
+
+`[FATO]` **Os itens 8 e 9 deixaram de existir na entrega 3 — por construção, e
+não por correção.** A herança de mercadorias não lê mais a planilha da semana
+anterior: lê o livro, que tem campo com nome. A planilha devolvida é ingerida
+por cabeçalho, com sinônimo, e a chave é um campo do documento — não há mais
+coluna 6 mágica nem `colChaveAtual + 5` onde existir. Os dois offsets eram o
+**mesmo antipadrão que a v7 já havia removido** da etapa 15; ele sobreviveu na
+etapa 17 porque ninguém mexeu nela desde então.
+
+`[FATO]` A medição que os dois itens pedem **continua pendente e continua
+valendo a pena**: rodar as duas leituras sobre um `Pendentes{N-1}.xls` real
+responde se a leitura posicional de hoje estava certa, e desde quando. O que
+mudou é que a resposta deixou de ser pré-requisito para portar — virou
+auditoria do passado, não trava do presente.
+
+`[FATO]` Os itens 10, 11 e 12 **continuam como estão, defeito e tudo**. O 10
+tem agora três operadores nomeados na carga de fábrica
+(`preenchido_e_diferente`, `igual_a_algum`, `igual`), um para cada jeito com
+que o VBA compara — inclusive o espaço à esquerda que manda a nota para `CTe`
+—, e há teste para cada assimetria. Nomeá-las não é corrigi-las: é deixar a
+medição barata de fazer no dia em que o arquivo real chegar.
 
 `[FATO]` O item 12 está implementado **com o defeito preservado**:
 `valores.data_hora` devolve vazio, e o docstring da função registra a
@@ -261,6 +311,25 @@ macro só avisa que o procedimento 4 exige revisão; aqui os quatro números vê
 com a contagem, e a soma tem de dar `Lançadas` — é o teste de regressão
 visível, que dispensa abrir teste para conferir.
 
+### 6.4 O que a entrega de mercadorias corrigiu, e que não estava na lista
+
+`[FATO]` Quatro coisas que o VBA faz em silêncio e que agora têm número na
+tela. Só a primeira acrescenta uma aba; as outras três não mudam uma célula da
+planilha — mudam o que a pessoa sabe depois de rodar.
+
+| O quê | Hoje | Agora |
+|---|---|---|
+| Linhas descartadas por A1 e A3 | excluídas fisicamente, **sem cópia, sem contador e sem aba**; o dossiê registra que não há como medir o volume descartado por semana | vão para a aba `Descartados`, com o motivo, e as duas contagens abrem a tela |
+| Chave repetida na Conferência de Entradas | vence a primeira ocorrência, nos seis dicionários, **sem registro** | as duplicadas são contadas; e quando as linhas da mesma chave **divergem** em pedido ou em farol, o caso vira bloqueio — porque aí a escolha da primeira deixou de ser inofensiva |
+| Unidade que não casa com nenhuma palavra-chave | vira o texto cru no painel, e ninguém conta | contada e **nomeada** na lista vermelha, com quantas notas cada uma — quando a tabela de unidades estiver cadastrada |
+| Categoria fora da lista e nota sem guardião | passam em silêncio; a nota sem guardião vira `(sem guardião)` no resumo | idem, com a mesma regra: **lista vazia não valida nada**, e a lista nasce vazia numa máquina nova |
+
+`[FATO]` A última linha dessa tabela é o que torna a regra nº 4 efetiva neste
+domínio, e ela tem um preço honesto: **enquanto o time fiscal não cadastrar a
+tabela de unidades e a lista de guardiões, esses três bloqueios não disparam**.
+Validar contra uma tabela vazia reprovaria todas as notas, toda semana. É a
+pendência 6, e o cadastro da tabela de unidades são cinco linhas.
+
 ## 7. O que o porte preserva de propósito
 
 | # | Comportamento | Por que preservar |
@@ -285,6 +354,31 @@ desde esta entrega: a segregação das canceladas antes da cascata, a comparaç�
 antes/depois estrita, a `Diferenca` entre universos diferentes, o
 `mapPedido` por CNPJ e a coluna 8 literal da `Lancadas`.
 
+`[FATO]` **Os itens 13, 19, 20, 21, 22 e 23 são de mercadorias, e ganharam
+teste nomeado na entrega 3:**
+
+* **13** — a primeira ocorrência vence no CE, e as duplicadas passam a ser
+  contadas; a divergência de pedido ou de farol entre linhas da mesma chave
+  bloqueia o encerramento;
+* **19** — o `"não"` minúsculo das três colunas continua sendo escrito, e há
+  teste que prova que é ele quem impede B1 de disparar para nota ausente do
+  CE. A condição de B1 ficou **explícita** no código — *esteve no CE* **e**
+  *física confirmada* **e** *incongruência vazia ou zero* —, e o resultado é o
+  mesmo: a reescrita que o item pedia está feita, e o `[MEDIR]` que ela pedia
+  continua valendo para o arquivo real;
+* **20** — cada ordem virou um teste com nome próprio: A1 antes de A3, a
+  limpeza antes do roteamento, a herança antes de B1, B1 antes de B2. O teste
+  da limpeza roda a ordem invertida dentro dele mesmo, para mostrar o que
+  aconteceria;
+* **21** — o fallback de unidade e de categoria devolve o texto original, e
+  agora **também** conta e nomeia. Preservar o valor e acrescentar o bloqueio é
+  exatamente o que o item pedia;
+* **22** — `Dias Emissão Doc` continua declarada como data, e continua
+  exibindo uma data de 1900 se o valor for contagem de dias. Defeito visível,
+  preservado, pendência 2;
+* **23** — `Dt. Conf. Física` continua retendo a hora no valor e exibindo só a
+  data.
+
 ## 8. As onze armadilhas que uma reimplementação ingênua cairia
 
 `[FATO]` Todas verificadas no código. As que já têm defesa nesta entrega estão
@@ -295,14 +389,14 @@ marcadas.
 | 1 | Rodar a cascata de serviços **por linha** em vez de **por passo** — o laço externo é o passo. Invertido, uma chave fraca consome o lançamento de um match forte, e o resultado passa a depender da ordem das linhas | **`confronto.confrontar`, com dois testes**: um monta o caso em que as duas ordens divergem e roda a cascata ingênua dentro do próprio teste para comparar; o outro embaralha as linhas e exige o mesmo resultado |
 | 2 | Achar que aplicar o formato **depois** de escrever resolve. `Insert Shift:=xlToRight` faz a coluna nova herdar o formato da vizinha, e gravar data em célula Texto converte o valor sem levantar exceção | **`escrita.preparar_aba` formata antes, e há teste** |
 | 3 | Buscar a pasta da semana recursivamente — encontraria `Serviços\Semana 30` querendo `Mercadorias\Semana 30` | o ambiente desapareceu |
-| 4 | Tratar o farol vazio como "Não" — são três estados, e vazio significa *sem pedido vinculado* | **`farol.py`, com teste** |
+| 4 | Tratar o farol vazio como "Não" — são três estados, e vazio significa *sem pedido vinculado* | **`farol.py`, com teste** — e, desde a entrega 3, a distribuição dos três estados vai para a tela a cada execução |
 | 5 | Supor que o número da nota no ASIS é o número do lançamento — há prefixo de ano de 4 dígitos, e prefeituras que informam a RPS como número da nota | **`chaves.analisar_numero_de_nfse`, com teste** |
 | 6 | Assumir que a chave de herança de serviços é nota + CNPJ. É nota + **Cod Parceiro** | **`execucao._chave_de_heranca`, com teste de ida e volta.** O livro guarda o CNPJ e **conta** a colisão — eliminá-la exige uma coluna nova na planilha, que é decisão pendente |
-| 7 | Assumir que as abas auxiliares têm o mesmo número de colunas da principal | documentado como invariante |
+| 7 | Assumir que as abas auxiliares têm o mesmo número de colunas da principal | **`mercadorias/colunas.py`, com teste**: 27 / 33 / 38 / 36 / 28, e a razão de cada largura |
 | 8 | Assumir que `Canceladas` (serviços) é `Pendentes` + 2 colunas. É layout próprio de 16 | **`colunas.CANCELADAS`, com teste que compara as duas ordens internas** |
-| 9 | Assumir que a herança de mercadorias lê por cabeçalho. Lê as **colunas 1 a 5 por posição** | **`estado.extrair_da_planilha` lê por cabeçalho, com teste** — e o defeito 8 mede a diferença |
+| 9 | Assumir que a herança de mercadorias lê por cabeçalho. Lê as **colunas 1 a 5 por posição** | **`estado.extrair_da_planilha` lê por cabeçalho, com teste** — e, com o livro, a leitura posicional deixou de ter onde existir. O defeito 8 continua medindo a diferença contra o passado |
 | 10 | Assumir que `NormalizarTexto` faz a mesma coisa nos dois módulos | **`aparar` × `chave_de_texto`, com teste lado a lado** |
-| 11 | Achar que `Retorno semana N` se refere à semana corrente. É `semana - 1` | **`estado.semana_do_rotulo`, com teste** |
+| 11 | Achar que `Retorno semana N` se refere à semana corrente. É `semana - 1` | **`estado.semana_do_rotulo` e `colunas.rotulo_do_retorno`, com teste dos dois lados** — o que lê e o que escreve |
 
 E uma décima segunda, que o desenho do porte não previa e o código revelou:
 
@@ -319,8 +413,12 @@ E uma décima segunda, que o desenho do porte não previa e o código revelou:
   sofreram corte de prefixo de ano, datas não interpretáveis.
 * **A coluna renomeada deixa de parar a rotina semanal.** Cadastra-se o
   sinônimo na tela.
-* **Teste.** 168 em `pendentes/`, todos sobre comportamento — 98 do núcleo, 70
-  do motor de serviços.
+* **A ordem das regras deixa de ser invisível.** A limpeza antes do roteamento,
+  A1 antes de A3, `CORUMB` antes de `GUAR`, `indireto` antes de `direto` — cada
+  uma dessas ordens é hoje uma sequência de `ElseIf` enterrada no `.bas`, e
+  passa a ser uma tabela com coluna `ordem` ou um teste com nome próprio.
+* **Teste.** 262 em `pendentes/`, todos sobre comportamento — 98 do núcleo, 70
+  do motor de serviços e 94 do de mercadorias.
 
 ## 10. Desempenho — a expectativa, não a medição
 

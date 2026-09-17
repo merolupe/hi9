@@ -200,11 +200,24 @@ depois.
   roda dentro da janela. **A divergência zero contra a macro ainda não está
   provada** — faltam os arquivos reais de uma semana e a saída que a macro
   gerou a partir deles.
-- **GerarPendentes — em importação.** Falta o motor de mercadorias: limpeza,
-  roteamento, lookup da Conferência de Entradas e o Resumo Executivo. A
-  entrada do catálogo continua `A_IMPORTAR` — botão que não roda é pior do que
-  botão apagado. A ordem e o que trava o quê estão em
+- **GerarPendentes — importado, em teste.** O motor de mercadorias entrou:
+  a limpeza (A1, A2 e A3) com a aba `Descartados`, o roteamento das quatro
+  condições parametrizadas, o lookup da Conferência de Entradas com o farol de
+  três estados, a herança pelo livro, a reclassificação para Fiscal e o split
+  da `PENDENTES FIS-FAT`. A entrada do catálogo está `DISPONIVEL` e roda
+  dentro da janela. **O Resumo Executivo não entrou**: ele saiu do porte por
+  decisão do Compliance Tributário de 15/09/2026 e vira um resumo das duas
+  frentes, com três categorias — ver
+  [`../pendentes/06-proximas-rodadas.md`](../pendentes/06-proximas-rodadas.md).
+  A divergência zero contra a macro também aqui **não está provada**, e o que
+  trava o quê está em
   [`../pendentes/04-plano-de-entrega.md`](../pendentes/04-plano-de-entrega.md).
+- **As duas ferramentas de pendentes entraram sem tela de configuração.** Os
+  parâmetros são lidos da carga de fábrica e da base viva, e os motores os
+  honram; o que falta é a tela que os edita. Enquanto ela não vem, a tabela de
+  unidades e a lista de guardiões só se cadastram editando
+  `dados/pendentes/parametros.yaml` à mão — e, **vazias, elas não validam
+  nada**, que é o comportamento de hoje.
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).
 - O Faturabot está em desenvolvimento e entra pelo mesmo contrato.
