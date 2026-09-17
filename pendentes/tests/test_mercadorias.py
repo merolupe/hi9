@@ -585,9 +585,12 @@ def test_as_colunas_criticas_sao_texto_e_as_de_data_sao_data():
                    "Nome Parceiro (Parceiro)", "Nro. do Pedido"):
         assert formato[rotulo] == "texto", rotulo
     for rotulo in ("Dh. Emissão", "Dt. Vencimento", "Dh. Importação",
-                   "Dias Emissão Doc", "Dt. Conf. Física"):
+                   "Dt. Conf. Física"):
         assert formato[rotulo] == "data", rotulo
     assert formato["Valor da Nota"] == "valor"
+    # A coluna que ninguém sabe se é data ou contagem de dias: formato de
+    # data, valor como veio. Ver a pendência nº 2.
+    assert formato["Dias Emissão Doc"] == "data_ou_contagem"
 
 
 def test_sao_sete_abas_duas_visiveis_e_cinco_ocultas():

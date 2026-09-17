@@ -32,10 +32,12 @@ seis colunas de conferência uma a uma logo depois de inseri-las, porque
 a data viraria string. Aqui não há `Insert`, mas a doutrina fica: a coluna
 declara o formato, e a aba só então recebe a primeira linha.
 
-`Dias Emissão Doc` está declarada como data porque o VBA a escreve como valor
-nativo **e** formata a coluna como `DD/MM/YYYY`. Se a coluna for contagem de
-dias, o valor 30 aparece como uma data de janeiro de 1900 — defeito visível,
-preservado de propósito enquanto a pendência nº 2 não for respondida.
+`Dias Emissão Doc` é declarada `data_ou_contagem`: recebe o formato de data,
+como o VBA faz, e o valor vai **como veio**, também como o VBA faz — ele
+escreve essa coluna sem conversão. Se a coluna for contagem de dias, o valor 30
+aparece como uma data de janeiro de 1900. Defeito visível, preservado de
+propósito enquanto a pendência nº 2 não for respondida; converter o número
+numa data de verdade trocaria esse defeito por outro, e mudaria a célula.
 """
 from __future__ import annotations
 
@@ -94,7 +96,7 @@ XML: tuple[Coluna, ...] = (
     Coluna(X_NATUREZA),
     Coluna(X_ENTRADA_SAIDA),
     Coluna(X_TOMADOR_CTE),
-    Coluna(X_DIAS_EMISSAO, "data"),
+    Coluna(X_DIAS_EMISSAO, "data_ou_contagem"),
     Coluna(X_IMPORTACAO, "data"),
     Coluna(X_STATUS),
     Coluna(X_USUARIO),

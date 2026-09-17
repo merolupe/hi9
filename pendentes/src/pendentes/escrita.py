@@ -39,6 +39,9 @@ FORMATOS = {
     "texto": "@",
     "valor": "#,##0.00",
     "data": "DD/MM/YYYY",
+    # A coluna que ninguém sabe se é data ou contagem de dias: recebe o mesmo
+    # formato de data, e o valor vai **como veio**. Ver `valor_formatado`.
+    "data_ou_contagem": "DD/MM/YYYY",
     "geral": "General",
 }
 
@@ -121,11 +124,20 @@ def valor_formatado(valor: Any, formato: str) -> Any:
 
     Vazio continua vazio: coluna de valor sem valor não vira zero, porque
     zero é uma afirmação e ausência não é.
+
+    `data_ou_contagem` é a exceção, e existe por uma coluna só: o VBA escreve
+    `Dias Emissão Doc` **sem conversão** e formata a coluna como `DD/MM/YYYY`.
+    Se o valor for contagem de dias, o Excel exibe uma data de 1900 — defeito
+    visível, e preservado até a pendência nº 2 ser respondida. Converter aqui
+    trocaria o defeito por outro: o número viraria uma data de verdade, e a
+    célula deixaria de ser a que a macro produz.
     """
     if formato == "texto":
         return texto_de(valor)
     if valor is None or (isinstance(valor, str) and not valor.strip()):
         return ""
+    if formato == "data_ou_contagem":
+        return valor
     if formato == "valor":
         return numero_br(valor)
     if formato == "data":

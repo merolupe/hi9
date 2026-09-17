@@ -210,6 +210,25 @@ def test_o_bloco_de_conferencia_chega_na_planilha_com_os_seis_valores(semana):
     assert linha[18] == "Não"                       # farol vermelho
 
 
+def test_dias_emissao_doc_chega_como_veio_com_formato_de_data(semana):
+    """O defeito da pendência nº 2, preservado **exatamente** como ele é.
+
+    O VBA escreve essa coluna sem conversão e formata a coluna como data. Se
+    o valor for contagem de dias, o Excel exibe uma data de 1900. Converter o
+    número numa data de verdade aqui trocaria um defeito por outro — e a
+    célula deixaria de ser a que a macro produz.
+    """
+    aba = _aba(_rodar(semana), "Pendentes")
+    rotulos = [c.value for c in aba[1]]
+    celula = aba.cell(2, rotulos.index("Dias Emissão Doc") + 1)
+    assert celula.number_format == "DD/MM/YYYY"
+    # A célula guarda o 12 que veio do relatório; quem lê com formato de data
+    # vê 12/01/1900, que é o que o Excel exibe hoje. Se a ferramenta tivesse
+    # convertido o número numa data, a célula guardaria 11/01/1900 — um dia a
+    # menos, porque a conversão não reproduz o calendário de 1900 do Excel.
+    assert celula.value.strftime("%d/%m/%Y") == "12/01/1900"
+
+
 def test_o_farol_sai_nos_tres_estados(semana):
     resultado = _rodar(semana)
     assert resultado.farol == {"Sim": 2, "Não": 1, "sem pedido": 1}

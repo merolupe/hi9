@@ -373,9 +373,13 @@ teste nomeado na entrega 3:**
 * **21** — o fallback de unidade e de categoria devolve o texto original, e
   agora **também** conta e nomeia. Preservar o valor e acrescentar o bloqueio é
   exatamente o que o item pedia;
-* **22** — `Dias Emissão Doc` continua declarada como data, e continua
-  exibindo uma data de 1900 se o valor for contagem de dias. Defeito visível,
-  preservado, pendência 2;
+* **22** — `Dias Emissão Doc` continua recebendo o formato de data e o valor
+  **como veio**, sem conversão, que é o que o VBA faz. Se o valor for contagem
+  de dias, o Excel exibe uma data de janeiro de 1900. Defeito visível,
+  preservado, pendência 2 — e preservado com precisão: converter o número numa
+  data de verdade mudaria a célula, e ainda por cima erraria o dia, porque a
+  conversão não reproduz o calendário de 1900 do Excel. Há teste que trava
+  `12` exibindo `12/01/1900`, e não `11/01/1900`;
 * **23** — `Dt. Conf. Física` continua retendo a hora no valor e exibindo só a
   data.
 
