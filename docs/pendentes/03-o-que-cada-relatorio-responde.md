@@ -31,15 +31,24 @@ O que sobra é a pendência.
 
 | Aba | O que tem nela | Quem olha |
 |---|---|---|
-| **Resumo Executivo** | o painel: quanto, de quem, e as dez maiores | quem abre o e-mail no celular |
 | **Pendentes** | o que é das áreas de negócio | os guardiões |
 | **PENDENTES FIS-FAT** | o que é do Fiscal e do Faturamento | o time fiscal |
 | `CTe` · `Manifestados` · `Entradas 3os` · `Lançados` | o que saiu da lista, e **por quê** | quem precisa conferir uma saída |
 | **Descartados** *(nova)* | XML de terceiro e NF-e destinada a transporte | quem quiser medir o descarte |
 
-As quatro abas do meio ficam ocultas, como hoje — são evidência de auditoria, e
+As cinco abas de baixo ficam ocultas, como hoje — são evidência de auditoria, e
 continuam reexibíveis por clique direito. A aba `Descartados` é a única novidade:
 hoje essas linhas somem sem deixar rastro, e não há como dizer quantas foram.
+
+**O `Resumo Executivo` não vem nesta versão.** O painel deixou de ser cópia da
+aba de hoje e virou outra coisa: um resumo automático das **duas** frentes —
+mercadorias e serviços —, com três categorias (Diretos, Indiretos e Serviços) e
+layout revisto. A decisão é de 15/09/2026, do Compliance Tributário, e está em
+[06 — Próximas rodadas](06-proximas-rodadas.md).
+
+Enquanto ele não vem, quem roda vê os números na própria tela da Central —
+quantas pendências, de quem, quanto valem e o que exige revisão — e o e-mail
+segue com as duas abas de sempre.
 
 ### Por que uma nota sai da lista
 
