@@ -224,6 +224,27 @@ def _rodar_fiscalbot(arquivos: list[Path], saida: Path) -> Resultado:
 
 # -- GerarServPend ---------------------------------------------------------
 
+def _rodar_gerarpendentes(arquivos: list[Path], saida: Path) -> Resultado:
+    """Cruza o XML com a Conferência de Entradas e resume para a tela.
+
+    Mesmo desenho do GerarServPend: a ferramenta devolve o painel em texto
+    puro e quem traduz para `Ficha` e `Lista` é este arquivo. A importação é
+    tardia, dentro da função, para a Central abrir mesmo que uma ferramenta
+    esteja quebrada.
+    """
+    from pendentes.mercadorias.execucao import gerar
+
+    execucao = gerar(arquivos, saida)
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+        planilha=execucao.planilha,
+    )
+
+
 def _rodar_gerarservpend(arquivos: list[Path], saida: Path) -> Resultado:
     """Confronta o ASIS com os lançamentos do Sankhya e resume para a tela.
 
@@ -332,14 +353,27 @@ FERRAMENTAS: list[Ferramenta] = [
     Ferramenta(
         id="gerarpendentes",
         nome="GerarPendentes",
-        resumo="Planilha de notas de mercadoria pendentes de entrada.",
+        resumo="Notas de mercadoria emitidas contra a Hinove que ainda não têm "
+               "entrada.",
         icone="📦",
-        estado=A_IMPORTAR,
-        detalhe="Porte em andamento: o núcleo comum das duas rotinas e o "
-                "motor de serviços já estão no repositório, em `pendentes/`, "
-                "com teste — o GerarServPend já roda. O motor de mercadorias "
-                "— limpeza, roteamento, conferência e Resumo Executivo — é a "
-                "entrega seguinte, e este botão só acende com ele.",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste os relatórios da semana",
+            apoio="o relatório de importação de <code>XML</code> e a "
+                  "<code>Conferência de Entradas</code> são obrigatórios; a "
+                  "planilha da semana passada, com as classificações "
+                  "preenchidas, entra se houver. Em qualquer ordem: cada "
+                  "arquivo é reconhecido pelo próprio cabeçalho.",
+            extensoes=(".xls", ".xlsx", ".xlsm"),
+            varios=True,
+        ),
+        verbo="Cruzando o XML com a Conferência de Entradas…",
+        detalhe="A classificação por guardião é herdada do livro da "
+                "ferramenta, não do arquivo — renomear ou perder a planilha "
+                "da semana passada não apaga mais o histórico. O que a "
+                "limpeza descarta passa a aparecer na aba Descartados, com o "
+                "motivo.",
+        executar=_rodar_gerarpendentes,
     ),
     Ferramenta(
         id="gerarservpend",

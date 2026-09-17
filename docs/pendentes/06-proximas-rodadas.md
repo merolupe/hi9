@@ -35,6 +35,33 @@ fora. O bloco fica suspenso até esta rodada ser desenhada — e a análise de
 viabilidade dos gráficos, que já está feita na § 4 do plano de entrega,
 continua valendo para quando for a hora.
 
+### O resumo depende de classificação completa, e por isso vem por último
+
+`[FATO]` Decisão de 17/09/2026, depois de o relatório real da semana 37 entrar
+na análise: **o resumo só faz sentido sobre um relatório totalmente
+classificado** — e a classificação completa só existe depois que os relatórios
+são gerados e remodelados à mão. Ele é o fim do ciclo da semana, não uma saída
+da execução.
+
+Duas consequências práticas:
+
+- **Cada frente continua rodando sozinha.** Gerar só mercadorias e gerar só
+  serviços são casos normais da semana, não exceções — o resumo não pode virar
+  condição para rodar nenhum dos dois, e nenhuma das duas execuções espera pela
+  outra.
+- **A ordem de trabalho muda:** primeiro se automatiza o que dá para automatizar
+  dentro dos dois relatórios — é o que encurta a remodelagem manual — e só
+  depois se constrói o resumo. Quanto menos classificação manual sobrar, mais
+  cedo o resumo da semana fica pronto, e menos ele depende de alguém ter
+  terminado.
+
+`[FATO]` O layout-alvo deixou de ser hipótese: o relatório da semana 37 traz o
+painel em uso, e ele já é o de três categorias, com TOP 10 de Indiretos, TOP 5
+de Diretos e TOP 5 de Serviços, média de dias pendente na tabela por categoria,
+e as duas frentes no mesmo arquivo. **É esse painel que o resumo tem que
+reproduzir** — não o do `.bas` v14, que tem duas categorias e outra área de
+impressão.
+
 O que ainda não está decidido: quem dispara o resumo (a Central, depois das
 duas execuções? uma terceira entrada no catálogo?), o que acontece quando só
 uma das duas frentes rodou na semana, e se o consolidado para a gerência e o

@@ -56,20 +56,52 @@ farol:
 # relatório muda de redação, e hoje isso quebra em silêncio. A mecânica — laço
 # único, primeira verdadeira consome, exclusão de baixo para cima — fica no
 # código, porque é o algoritmo.
+#
+# Os três operadores são os três jeitos com que o VBA compara, e a assimetria
+# entre eles é o defeito 10 do porte — preservada até haver medição:
+#   preenchido_e_diferente  desigualdade EXATA, e o `Trim` só no comprimento
+#   igual_a_algum           `LCase` dos dois lados, sem `Trim` e sem acento
+#   igual                   igualdade exata, sensível a caixa e a acento
+# Por isso a condição 2 lista as duas grafias, com e sem acento: é o que o
+# `.bas` faz, literal por literal.
 roteamento:
   - {ordem: 1, coluna: "Tomador CT-e", operador: "preenchido_e_diferente",
      valor: "Não se aplica", destino: "CTe"}
   - {ordem: 2, coluna: "Situação da manifestação", operador: "igual_a_algum",
-     valor: "desconhecida;operação não realizada", destino: "Manifestados"}
+     valor: "desconhecida;operação não realizada;operacao nao realizada",
+     destino: "Manifestados"}
   - {ordem: 3, coluna: "Situação NF-e", operador: "igual",
      valor: "NF-e cancelada", destino: "Manifestados"}
   - {ordem: 4, coluna: "Entrada/Saida NF-e", operador: "igual",
      valor: "Entrada", destino: "Entradas 3os"}
 
+# -- os literais das regras de mercadorias -----------------------------------
+# Vocabulário do export do Sankhya e da rotina, sem nenhum dado da empresa. A
+# mecânica das regras (a ordem A1 → A3, a herança antes de B1, B1 antes de B2)
+# fica no código, porque é o algoritmo.
+mercadorias:
+  tipo_nfe_de_transporte: "NF-e Destinada a Transporte"   # A3
+  ausente_da_conferencia: "não"        # o "não" MINÚSCULO das 3 colunas (ver 19)
+  conferencia_fisica_confirmada: "Sim" # B1: física conferida
+  conf_fiscal_lancada: "Sim"           # etapa 15: move para `Lançados`
+  # O que a coluna `Pedido vinculado` diz quando a nota não tem conferência
+  # física — e por isso não tem pedido a mostrar. É rótulo, não ausência: o
+  # vazio ali seria indistinguível de "conferida e sem pedido".
+  sem_pedido_vinculado: "NA Conf Física"
+  guardiao_da_reclassificacao: "Fiscal"          # B1 sobrescreve para este
+  guardioes_da_fis_fat: ["Fiscal", "Faturamento"]  # B2 move estes dois
+
 # -- as categorias válidas ---------------------------------------------------
-# Vocabulário de classificação, não dado da empresa. Lista vazia desliga a
+# Vocabulário de classificação, não dado da empresa. Tabela vazia desliga a
 # validação (que é o comportamento de hoje). Ver pendência 6.
-categorias: ["Diretos", "Indiretos"]
+#
+# A ORDEM É A REGRA, pelo mesmo motivo das unidades: `indireto` precisa ser
+# testado ANTES de `direto`, senão "Indiretos" casa com "direto" e toda
+# categoria indireta vira direta — em silêncio. Uma lista simples de nomes não
+# consegue dizer isso, e é por isso que aqui é tabela.
+categorias:
+  - {ordem: 1, trecho: "indireto", categoria: "Indiretos"}
+  - {ordem: 2, trecho: "direto", categoria: "Diretos"}
 
 # -- dados da empresa: nascem VAZIOS -----------------------------------------
 # Unidade, filial e guardião trazem nome e CNPJ reais. Ficam só na base viva,

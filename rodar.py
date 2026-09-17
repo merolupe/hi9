@@ -15,6 +15,7 @@ ferramentas para escolher.
     python rodar.py                    abre a Central no navegador
     python rodar.py dixml lote.zip --saida "pasta\\de\\saida"
     python rodar.py fiscalbot "Movimento_Livros_Fiscais.xls"
+    python rodar.py pendentes mercadorias XML31.xls CE31.xls
     python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
     python rodar.py apurabot apurar "caminho\\do\\livro.xls"
     python rodar.py --help
