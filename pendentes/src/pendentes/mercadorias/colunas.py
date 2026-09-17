@@ -160,6 +160,21 @@ C_CATEGORIA = "Categoria"
 #: por isso que ela é procurada por prefixo em toda leitura.
 C_PREFIXO_DO_RETORNO = "Retorno semana"
 
+#: Os cinco nomes do bloco de categorização, na ordem em que eles ocupam as
+#: cinco primeiras posições. O quinto muda de nome toda semana — por isso ele
+#: entra aqui pelo prefixo, e é pelo prefixo que ele é procurado em toda
+#: leitura.
+NOMES_DA_CATEGORIZACAO: tuple[str, ...] = (
+    C_TIPO_DE_OPERACAO, C_GUARDIAO, C_GESTOR, C_CATEGORIA, C_PREFIXO_DO_RETORNO,
+)
+
+#: Em que posição do bloco está cada um. Existe para que nenhuma regra precise
+#: escrever "a coluna 2" — o VBA escreve, e é assim que a herança dele
+#: embaralha os campos quando alguém insere uma coluna.
+POSICAO_DA_CATEGORIZACAO: dict[str, int] = {
+    nome: i for i, nome in enumerate(NOMES_DA_CATEGORIZACAO)
+}
+
 #: As colunas que a `PENDENTES FIS-FAT` **não** tem. O retorno permanece nela,
 #: e o comentário do VBA diz por quê: "é mantido para histórico".
 FORA_DA_FIS_FAT: tuple[str, ...] = (C_GESTOR, C_CATEGORIA)

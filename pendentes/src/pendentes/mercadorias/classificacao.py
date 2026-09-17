@@ -106,8 +106,8 @@ def reclassificar_para_fiscal(documentos: Iterable[Documento], *,
                               conferencia_fisica_confirmada: str,
                               guardiao: str) -> int:
     """B1 — as três condições, explícitas. Devolve quantas foram reclassificadas."""
-    posicao_do_guardiao = col.indice(col.categorizacao(0), col.C_GUARDIAO)
-    posicao_do_gestor = col.indice(col.categorizacao(0), col.C_GESTOR)
+    posicao_do_guardiao = col.POSICAO_DA_CATEGORIZACAO[col.C_GUARDIAO]
+    posicao_do_gestor = col.POSICAO_DA_CATEGORIZACAO[col.C_GESTOR]
     reclassificadas = 0
 
     for documento in documentos:
@@ -127,7 +127,7 @@ def reclassificar_para_fiscal(documentos: Iterable[Documento], *,
 
 def guardiao_de(documento: Documento) -> str:
     """O `Guardião` da linha, aparado — é como o VBA o compara em B2."""
-    posicao = col.indice(col.categorizacao(0), col.C_GUARDIAO)
+    posicao = col.POSICAO_DA_CATEGORIZACAO[col.C_GUARDIAO]
     return aparar(documento.categorizacao[posicao])
 
 

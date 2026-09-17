@@ -437,8 +437,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         for documento in pendentes + para_fis_fat)
 
     # O que a ferramenta não soube dizer o que é — e que trava a semana.
-    posicao_do_guardiao = col.indice(col.categorizacao(0), col.C_GUARDIAO)
-    posicao_da_categoria = col.indice(col.categorizacao(0), col.C_CATEGORIA)
+    posicao_do_guardiao = col.POSICAO_DA_CATEGORIZACAO[col.C_GUARDIAO]
+    posicao_da_categoria = col.POSICAO_DA_CATEGORIZACAO[col.C_CATEGORIA]
     execucao.nao_reconhecidos = vocabulario.conferir(
         ((documento.de(col.X_NOME_FANTASIA),
           documento.categorizacao[posicao_da_categoria],

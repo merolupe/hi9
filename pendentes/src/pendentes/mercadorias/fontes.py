@@ -113,12 +113,14 @@ class Documento:
     def linha_fis_fat(self) -> list[Any]:
         """36 colunas — as 38 sem `Gestor de apoio` e sem `Categoria`.
 
-        As duas saem por **posição no bloco de categorização** (3ª e 4ª), e não
-        por índice absoluto: é o equivalente honesto do que o VBA faz ao
-        localizá-las por cabeçalho e apagá-las da maior posição para a menor.
+        As duas saem pelo **nome**, e não por índice: é o equivalente honesto
+        do que o VBA faz ao localizá-las por cabeçalho e apagá-las da maior
+        posição para a menor, para não invalidar os índices no caminho.
         """
+        fora = {col.POSICAO_DA_CATEGORIZACAO[nome]
+                for nome in col.FORA_DA_FIS_FAT}
         categorizacao = [v for i, v in enumerate(self.categorizacao)
-                         if i not in (2, 3)]
+                         if i not in fora]
         return [*categorizacao, *self.linha_lancada()]
 
 
