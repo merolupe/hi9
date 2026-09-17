@@ -42,13 +42,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
-from ..chaves import CNPJ_ZERADO, cnpj as so_cnpj, cnpj_utilizavel
+from ..chaves import (
+    CNPJ_ZERADO, SEM_CADASTRO, cnpj as so_cnpj, cnpj_utilizavel,
+)
 from ..texto import aparar, texto_de
 from .fontes import Registro
 
 #: O que vai para `Cod Parceiro` quando o CNPJ do prestador não está no
-#: cadastro do Sankhya. É literal, e é o mesmo dos dois domínios.
-SEM_CADASTRO = "Sem cadastro"
+#: cadastro do Sankhya. Mora no núcleo (`chaves.SEM_CADASTRO`) porque é o
+#: mesmo literal que mercadorias grava na regra A2; fica reexportado aqui para
+#: quem lê este módulo saber de onde vem.
 
 #: O que vai para `Pedido de compra mais recente` quando não há pedido.
 SEM_PEDIDO = "Nao encontrado"

@@ -36,8 +36,8 @@ from .farol import tabela_de
 FABRICA = Path(__file__).resolve().parents[2] / "parametros_de_fabrica.yaml"
 
 #: As seções que a tela edita em fatias — `gravar` mescla, nunca substitui.
-SECOES = ("confronto_servicos", "semana", "farol", "roteamento", "categorias",
-          "unidades", "filiais", "guardioes", "papeis", "colunas")
+SECOES = ("confronto_servicos", "mercadorias", "semana", "farol", "roteamento",
+          "categorias", "unidades", "filiais", "guardioes", "papeis", "colunas")
 
 
 def _raiz() -> Path:
@@ -136,6 +136,56 @@ def unidades(dados: dict[str, Any]) -> list[dict]:
 def roteamento(dados: dict[str, Any]) -> list[dict]:
     """As condições de roteamento de mercadorias, como cadastradas."""
     return list(dados.get("roteamento") or [])
+
+
+def categorias(dados: dict[str, Any]) -> list[dict]:
+    """A tabela de categorias, na ordem em que foi cadastrada.
+
+    Tabela vazia desliga a validação, que é o comportamento de hoje — e a
+    ordem é a regra: `indireto` antes de `direto`, senão "Indiretos" casa com
+    o trecho "direto" e a categoria indireta vira direta sem aviso.
+    """
+    return list(dados.get("categorias") or [])
+
+
+def guardioes(dados: dict[str, Any]) -> list[str]:
+    """As áreas guardiãs válidas. Nasce **vazia**, e vazia não valida nada.
+
+    É dado da empresa (nome de área), então não vem da fábrica. Enquanto a
+    lista não for cadastrada, qualquer texto entra em `Guardião` — que é o
+    comportamento de hoje. Ver a decisão pendente nº 6.
+    """
+    return [str(g).strip() for g in (dados.get("guardioes") or []) if str(g).strip()]
+
+
+def mercadorias(dados: dict[str, Any]) -> dict[str, Any]:
+    """Os literais que as regras de mercadorias comparam e gravam.
+
+    Nenhum deles é regra tributária, e nenhum é dado da empresa: são o
+    vocabulário do export do Sankhya (`NF-e Destinada a Transporte`, `Sim`) e
+    o das regras B1 e B2 (`Fiscal`, `Faturamento`). Mudam quando o relatório
+    muda de redação — hoje isso quebra em silêncio, e é o defeito 10 do porte.
+
+    O `ausente_da_conferencia` merece nota: é o `"não"` **minúsculo** que o VBA
+    grava em `Conf fisica`, `Conf fiscal` e `Incongruência` quando a nota não
+    está na Conferência de Entradas. Trocá-lo por vazio faria `zero_ou_vazio`
+    devolver `True` e a regra B1 reclassificaria para Fiscal notas que nem
+    foram conferidas. Ver o preservado nº 19 do registro do porte.
+    """
+    bruto = dict(dados.get("mercadorias") or {})
+    return {
+        "tipo_nfe_de_transporte": str(
+            bruto.get("tipo_nfe_de_transporte") or "NF-e Destinada a Transporte"),
+        "ausente_da_conferencia": str(bruto.get("ausente_da_conferencia") or "não"),
+        "conferencia_fisica_confirmada": str(
+            bruto.get("conferencia_fisica_confirmada") or "Sim"),
+        "conf_fiscal_lancada": str(bruto.get("conf_fiscal_lancada") or "Sim"),
+        "guardiao_da_reclassificacao": str(
+            bruto.get("guardiao_da_reclassificacao") or "Fiscal"),
+        "guardioes_da_fis_fat": tuple(
+            str(g).strip() for g in (bruto.get("guardioes_da_fis_fat")
+                                     or ("Fiscal", "Faturamento"))),
+    }
 
 
 def confronto_de_servicos(dados: dict[str, Any]) -> dict[str, Any]:
