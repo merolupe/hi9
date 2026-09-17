@@ -1,5 +1,7 @@
 """Linha de comando das notas pendentes.
 
+    pendentes mercadorias <XML> <Conferência de Entradas> [semana anterior]
+                          [--saida PASTA]
     pendentes servicos <ASIS> <Portal de Compras> [Conferência] [semana anterior]
                        [--saida PASTA]
 
@@ -9,8 +11,10 @@ terminal não precisa disto — as duas ferramentas estão na janela da Central,
 em `Hinove.bat`. A linha de comando serve para automação e para conferir uma
 execução sem abrir o navegador.
 
-O motor de mercadorias ainda não existe; `pendentes mercadorias` responde
-dizendo isso, em vez de fingir que roda.
+As duas rotinas devolvem a mesma coisa para a tela — título, fichas e listas —,
+e é por isso que a impressão aqui é uma só. O código de saída também: `1`
+quando a semana ficou **não encerrável**, porque há item que exige revisão
+manual, e `2` quando a execução nem chegou a gerar planilha.
 """
 from __future__ import annotations
 
@@ -25,25 +29,9 @@ from .planilha import PlanilhaIlegivel
 
 LARGURA = 66
 
-AINDA_NAO = """
-O motor de mercadorias (GerarPendentes) ainda não foi portado. O que já está
-no repositório é o núcleo comum das duas rotinas e o motor de serviços.
 
-O plano, com o que trava o quê, está em docs/pendentes/04-plano-de-entrega.md.
-"""
-
-
-def _servicos(args) -> int:
-    from .servicos.execucao import SemRegistros, gerar
-
-    try:
-        resultado = gerar(args.arquivos, Path(args.saida))
-    except (PapelAusente, PapelDuplicado, PapelAmbiguo, ColunasFaltando,
-            CabecalhoNaoEncontrado, PlanilhaIlegivel, SemRegistros,
-            FileNotFoundError) as erro:
-        print(f"\n{erro}\n", file=sys.stderr)
-        return 2
-
+def _imprimir(resultado) -> None:
+    """O painel da execução, em texto — o mesmo que a janela mostra em HTML."""
     print(f"\n{resultado.titulo()}")
     print("─" * LARGURA)
     for rotulo, valor in resultado.fichas():
@@ -61,7 +49,36 @@ def _servicos(args) -> int:
     if not resultado.encerravel:
         print("\nA semana ficou como NÃO encerrável: há itens acima que "
               "exigem revisão manual.")
+
+
+def _executar(dominio: str, args) -> int:
+    if dominio == "mercadorias":
+        from .mercadorias.execucao import SemRegistros, gerar
+        from .mercadorias.roteamento import RoteamentoInvalido as Invalido
+    else:
+        from .servicos.execucao import SemRegistros, gerar
+
+        class Invalido(Exception):
+            """Só mercadorias tem tabela de roteamento para estar inválida."""
+
+    try:
+        resultado = gerar(args.arquivos, Path(args.saida))
+    except (PapelAusente, PapelDuplicado, PapelAmbiguo, ColunasFaltando,
+            CabecalhoNaoEncontrado, PlanilhaIlegivel, SemRegistros, Invalido,
+            FileNotFoundError) as erro:
+        print(f"\n{erro}\n", file=sys.stderr)
+        return 2
+
+    _imprimir(resultado)
     return 0 if resultado.encerravel else 1
+
+
+#: O que cada rotina precisa receber para ter o que fazer.
+EXIGIDOS = {
+    "mercadorias": "Informe pelo menos o relatório de importação de XML e a "
+                   "Conferência de Entradas.",
+    "servicos": "Informe pelo menos o ASIS e o Portal de Compras.",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,14 +96,10 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"\nPendentes {__version__} — notas pendentes de entrada")
 
-    if args.dominio == "mercadorias":
-        print(AINDA_NAO)
-        return 2
     if not args.arquivos:
-        print("\nInforme pelo menos o ASIS e o Portal de Compras.\n",
-              file=sys.stderr)
+        print(f"\n{EXIGIDOS[args.dominio]}\n", file=sys.stderr)
         return 2
-    return _servicos(args)
+    return _executar(args.dominio, args)
 
 
 if __name__ == "__main__":

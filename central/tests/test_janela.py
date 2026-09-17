@@ -28,11 +28,12 @@ def test_ferramenta_ainda_nao_importada_aparece_apagada_em_vez_de_sumir(janela):
     """O time enxerga o que falta, em vez de descobrir quando precisar."""
     _, dados = janela.pedir("/ferramentas")
     por_id = {f["id"]: f for f in dados["ferramentas"]}
-    assert por_id["gerarpendentes"]["estado"] == ferramentas.A_IMPORTAR
-    assert por_id["gerarpendentes"]["resumo"]
+    assert por_id["faturabot"]["estado"] == ferramentas.A_IMPORTAR
+    assert por_id["faturabot"]["resumo"]
     assert por_id["dixml"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["fiscalbot"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["gerarservpend"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["gerarpendentes"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["apurabot"]["estado"] == ferramentas.JANELA_PROPRIA
 
 
@@ -167,7 +168,7 @@ def test_ferramenta_desconhecida_nao_derruba_a_janela(janela):
 
 
 def test_ferramenta_ainda_nao_importada_nao_finge_que_roda(janela):
-    codigo, dados = janela.postar("/executar", ferramenta="gerarpendentes")
+    codigo, dados = janela.postar("/executar", ferramenta="faturabot")
     assert codigo == 400
     assert "ainda não roda" in dados["erro"]
 
@@ -357,3 +358,71 @@ def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
     livro = openpyxl.load_workbook(io.BytesIO(corpo))
     assert livro.sheetnames == ["Lancadas", "Pendentes", "Canceladas",
                                 "Sem Correspondencia ASIS"]
+
+
+def test_a_ferramenta_de_mercadorias_pede_varios_arquivos_em_qualquer_ordem(
+        janela):
+    """Três relatórios, uma caixa só: cada um é reconhecido pelo cabeçalho."""
+    _, dados = janela.pedir("/ferramentas")
+    pendentes = next(f for f in dados["ferramentas"]
+                     if f["id"] == "gerarpendentes")
+    assert pendentes["entrada"]["varios"] is True
+    assert pendentes["entrada"]["extensoes"] == [".xls", ".xlsx", ".xlsm"]
+    assert pendentes["verbo"] and pendentes["detalhe"]
+
+
+def test_o_xml_e_a_conferencia_entram_pela_janela_e_sai_a_planilha(
+        janela, tmp_path, monkeypatch):
+    """A prova da costura do lado de mercadorias, com as sete abas."""
+    from pendentes import estado, parametros, snapshot
+
+    monkeypatch.setattr(estado, "_raiz", lambda: tmp_path)
+    monkeypatch.setattr(snapshot, "_raiz", lambda: tmp_path)
+
+    fabrica = parametros.carregar_fabrica()
+    colunas_de = lambda fonte: [e.nome for e in parametros.colunas_de(fabrica, fonte)]
+
+    chave = "35260612345678000199550010000001231000001234"
+    def nota(numero, chave_da_nota, **campos):
+        return [
+            numero, "4", "FORNECEDOR INVENTADO LTDA", "01/07/2026", "1102",
+            "1500.00", campos.get("fantasia", "HINOVE MATRIZ"), chave_da_nota,
+            "30/07/2026", campos.get("manifestacao", "Ciência"),
+            "NF-e autorizada", "NF-e Normal", "Autorizada", "COMPRA", "Saida",
+            "Não se aplica", 12, "02/07/2026", "Importado", "fulano", "", "1",
+            "12345678000199", "9001", "Sim", "Sim", "1",
+        ]
+
+    xml = _relatorio(tmp_path / "XML31.xlsx", colunas_de("xml"), [
+        nota("1001", chave),
+        nota("1002", chave[:-1] + "5", manifestacao="Desconhecida"),
+        nota("1003", chave[:-1] + "7", fantasia=""),
+    ])
+    ce = _relatorio(tmp_path / "CE31.xlsx",
+                    colunas_de("conferencia_de_entradas"), [
+        [chave, "Sim", "não", "divergência", "05/07/2026", "7788",
+         '<div><span>&#128994;</span></div>'],
+    ])
+
+    for nome, corpo in (("XML31.xlsx", xml), ("CE31.xlsx", ce)):
+        codigo, envio = janela.pedir("/enviar", corpo=corpo,
+                                     ferramenta="gerarpendentes", nome=nome)
+        assert codigo == 200, envio
+
+    codigo, dados = janela.postar("/executar", ferramenta="gerarpendentes")
+    assert codigo == 200, dados
+
+    fichas = {f["rotulo"]: f["valor"] for f in dados["fichas"]}
+    assert fichas["Pendentes (áreas)"] == "1"
+    assert dados["planilha"].startswith("Pendentes")
+    assert "Descartados antes do roteamento" in [l["titulo"]
+                                                 for l in dados["listas"]]
+
+    codigo, corpo = janela.pedir("/baixar")
+    assert codigo == 200
+    livro = openpyxl.load_workbook(io.BytesIO(corpo))
+    assert livro.sheetnames == ["Pendentes", "CTe", "Manifestados",
+                                "Entradas 3os", "Lançados",
+                                "PENDENTES FIS-FAT", "Descartados"]
+    assert livro["Pendentes"].max_column == 38
+    assert livro["Descartados"].max_row == 2
