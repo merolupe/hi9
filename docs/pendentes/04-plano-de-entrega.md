@@ -281,6 +281,13 @@ que sente falta do painel; e é por isso que a rodada nova dele
 > que nasce para ser jogado fora. **A análise abaixo continua valendo** — ela é
 > sobre o que o openpyxl faz e quanto custa, não sobre o layout de hoje — e é
 > por onde a rodada nova começa quando for desenhada.
+>
+> **Reordenada em 17/09/2026:** o resumo passa a ser o **último** bloco, e não o
+> próximo. Ele exige um relatório **totalmente classificado**, e isso só existe
+> depois da remodelagem manual da semana — então o que encurta o caminho até ele
+> é automatizar a classificação dentro dos dois relatórios, não desenhá-lo
+> antes. Cada frente continua rodando sozinha, sem esperar a outra. Ver
+> [06 — Próximas rodadas](06-proximas-rodadas.md) § 1.
 
 `[FATO]` `vendor/openpyxl/chart/` traz `pie_chart`, `bar_chart`, `axis`,
 `label`, `legend`, `print_settings`, `series` e `reference`. **Gráfico nativo é
