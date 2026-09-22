@@ -150,3 +150,21 @@ def test_a_planilha_escrita_e_lida_de_volta_pelo_proprio_projeto(tmp_path):
     lido = ler(caminho).aba("Pendentes")
     assert lido.linhas[0][0] == "Chave Acesso"
     assert lido.linhas[1][0] == CHAVE
+
+
+def test_xlsx_com_nome_de_xls_e_lido_pelo_conteudo(tmp_path):
+    """`XMLAnterior.xls` salvo como `.xlsx` e renomeado: o Excel abre, nós também."""
+    verdadeiro = escrever(tmp_path / "Pendentes.xlsx",
+                          {"Pendentes": [["Chave Acesso"], [CHAVE]]})
+    renomeado = tmp_path / "XMLAnterior.xls"
+    verdadeiro.rename(renomeado)
+
+    arquivo = ler(renomeado)
+    assert arquivo.aba("Pendentes").linhas[1] == [CHAVE]
+
+
+def test_html_com_nome_de_xls_diz_o_que_fazer(tmp_path):
+    falso = tmp_path / "Relatorio.xls"
+    falso.write_text("<html><table><tr><td>1</td></tr></table></html>")
+    with pytest.raises(PlanilhaIlegivel, match="salve como .xlsx"):
+        ler(falso)
