@@ -36,9 +36,10 @@ from .farol import tabela_de
 FABRICA = Path(__file__).resolve().parents[2] / "parametros_de_fabrica.yaml"
 
 #: As seções que a tela edita em fatias — `gravar` mescla, nunca substitui.
-SECOES = ("confronto_servicos", "excecoes_servicos", "mercadorias", "resumo",
-          "semana", "farol", "roteamento", "categorias", "unidades", "filiais",
-          "guardioes", "papeis", "colunas")
+SECOES = ("confronto_servicos", "excecoes_servicos", "mercadorias",
+          "pre_categorizacao", "resumo", "semana", "farol", "roteamento",
+          "categorias", "unidades", "filiais", "guardioes", "papeis",
+          "colunas")
 
 
 def _raiz() -> Path:
@@ -213,6 +214,32 @@ def resumo(dados: dict[str, Any]) -> dict[str, Any]:
             str(g).strip()
             for g in (bruto.get("guardioes_fora_do_ranking") or ())
             if str(g).strip()),
+    }
+
+
+def pre_categorizacao(dados: dict[str, Any]) -> dict[str, str]:
+    """Qual coluna a base de conhecimento preenche, e com que exigência.
+
+    Um valor por coluna: `firme` (só o que a lista curada e o histórico
+    afirmam juntos, com lastro), `sugestao` (também o que tem proposta sem
+    lastro) ou `nao` (não preenche).
+
+    `[FATO]` A carga de fábrica liga as duas colunas em `sugestao`, por
+    decisão do Compliance Tributário de 22/09/2026, tomada depois da medição
+    contra a semana 38 — que mostra categoria acertando 44 de 44 com
+    evidência firme e guardião acertando 77% no grau de sugestão. Não é
+    parâmetro tributário nem dado da empresa: é o quanto de risco de revisão
+    manual o time aceita, e por isso vem da fábrica e é editável na tela.
+
+    A trava que não é parâmetro: **nada sobrescreve célula preenchida**, e
+    toda célula preenchida pela base sai marcada.
+    """
+    bruto = dict(dados.get("pre_categorizacao") or {})
+    from .mercadorias import colunas as col
+
+    return {
+        col.C_CATEGORIA: str(bruto.get("categoria") or "sugestao"),
+        col.C_GUARDIAO: str(bruto.get("guardiao") or "sugestao"),
     }
 
 

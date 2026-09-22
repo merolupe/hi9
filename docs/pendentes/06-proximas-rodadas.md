@@ -91,17 +91,21 @@ aberto, e agora é decisão de quem lê o painel, não de quem o constrói.
 
 ## 2. Base de conhecimento para pré-categorizar · **a base existe desde 22/09/2026**
 
-> **Metade feita.** A base foi importada e medida, e está em
-> [08 — A base de conhecimento](08-base-de-conhecimento.md). Ela responde a
-> quem perguntar; **nenhuma etapa do relatório semanal a consulta ainda**, e é
-> de propósito: a pergunta desta seção — *a sugestão nasce em coluna própria
-> ou no campo definitivo?* — continua sem resposta, e agora pode ser
-> respondida com número.
+> **Feita.** A base foi importada, medida e **ligada**, e está em
+> [08 — A base de conhecimento](08-base-de-conhecimento.md).
 >
 > `[FATO]` Medida contra a semana 38, que a base não viu: **categoria acerta
 > 44 de 44 com evidência firme**; **guardião acerta 77% e não tem nenhuma
-> proposta firme**. São dois campos em estágios diferentes, e tratá-los igual
-> seria errado nos dois sentidos.
+> proposta firme**. Com esses números na mesa, o Compliance Tributário decidiu
+> em 22/09/2026 **preencher as duas** — assumindo cerca de 12 guardiões
+> errados em 67 notas como custo de conferência.
+>
+> As perguntas desta seção foram respondidas assim: a sugestão nasce **no
+> campo definitivo**, e não em coluna própria; quem confirma é quem remodela a
+> planilha, e o que a ferramenta preencheu sai **marcado em cor** para que ele
+> saiba o que olhar. O que falta é a trilha do outro lado: hoje a semana
+> seguinte não distingue, na volta, uma célula confirmada de uma célula
+> proposta que ninguém olhou.
 
 **Hoje:** Tipo de Operação, Guardião, Gestor de apoio e Categoria são 100%
 manuais. O que a ferramenta faz é preservar o que foi digitado, nunca inferir —

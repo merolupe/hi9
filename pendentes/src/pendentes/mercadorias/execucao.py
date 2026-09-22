@@ -55,9 +55,11 @@ from typing import Any, Iterable
 
 from .. import cabecalho as cab
 from .. import escrita, estado, papeis, parametros, snapshot
+from ..conhecimento import base as conhecimento
 from ..chaves import chave_de_acesso
 from ..valores import numero_br
-from . import classificacao, conferencia, limpeza, roteamento, vocabulario
+from . import (classificacao, conferencia, limpeza, precategorizacao,
+               roteamento, vocabulario)
 from . import colunas as col
 from . import fontes
 
@@ -100,6 +102,7 @@ class Execucao:
     sem_classificacao: int = 0
     com_retorno: int = 0
     reclassificadas_para_fiscal: int = 0
+    pre_categorizacao: precategorizacao.Preenchimento | None = None
     ingestao: estado.Ingestao | None = None
 
     # o que bloqueia
@@ -229,6 +232,11 @@ class Execucao:
         saida.append(("Para onde as notas foram", self.roteamento(), "neutro"))
         saida.append(("Conferência de Entradas", self.conferencia(), "neutro"))
         saida.append(("Herança da classificação", self.heranca(), "neutro"))
+        if self.pre_categorizacao and (self.pre_categorizacao.total
+                                       or self.pre_categorizacao.desligadas):
+            saida.append((
+                "Preenchido pela base de conhecimento — confira antes de cobrar",
+                self.pre_categorizacao.linhas(), "atencao"))
         saida.append(("Descartados antes do roteamento", self.descarte(), "neutro"))
         return saida
 
@@ -410,6 +418,14 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         restantes,
         conferencia_fisica_confirmada=literais["conferencia_fisica_confirmada"],
         guardiao=literais["guardiao_da_reclassificacao"])
+    # A base de conhecimento preenche o que continuou vazio — depois da
+    # herança e de B1, que mandam, e **antes** de B2, para que um guardião
+    # proposto encaminhe a nota como encaminharia um guardião escrito à mão.
+    # Ver `precategorizacao`, que registra a consequência disso.
+    preenchimento = precategorizacao.preencher(
+        restantes, conhecimento.carregar(raiz=raiz_dos_dados),
+        minimo_por_coluna=parametros.pre_categorizacao(dados))
+
     para_fis_fat, pendentes = classificacao.dividir_fis_fat(
         restantes, literais["guardioes_da_fis_fat"])
 
@@ -427,6 +443,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         herdadas=heranca.herdadas, sem_classificacao=heranca.sem_classificacao,
         com_retorno=heranca.com_retorno,
         reclassificadas_para_fiscal=reclassificadas,
+        pre_categorizacao=preenchimento,
         ingestao=relato,
         chaves_duplicadas=len(indice.chaves_duplicadas),
         chaves_divergentes=list(indice.chaves_divergentes),
@@ -475,6 +492,11 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
             },
             "bloqueios": execucao.bloqueios(),
             "atencoes": execucao.atencoes(),
+            # O que a base preencheu fica na foto da semana: é a única
+            # evidência de quanto do que voltar classificado veio da
+            # ferramenta e não de uma pessoa.
+            "pre_categorizacao": (execucao.pre_categorizacao.por_coluna
+                                  if execucao.pre_categorizacao else {}),
         },
         encerravel=execucao.encerravel,
         raiz=raiz_dos_dados,
@@ -497,8 +519,10 @@ def _escrever(caminho: Path, semana: int, *,
     """
     principal = escrita.Estilo(centralizar=True, bordas=True)
     caderno = escrita.novo_livro()
+    colunas_da_pendentes = col.pendentes(semana)
+    colunas_da_fis_fat = col.fis_fat(semana)
     conteudo: dict[str, tuple] = {
-        "Pendentes": (col.pendentes(semana),
+        "Pendentes": (colunas_da_pendentes,
                       [d.linha_pendente() for d in pendentes], principal),
         "CTe": (col.AUXILIARES,
                 [d.linha_auxiliar() for d in rotas.destinos.get("CTe", ())], None),
@@ -511,15 +535,25 @@ def _escrever(caminho: Path, semana: int, *,
             [d.linha_auxiliar() for d in rotas.destinos.get("Entradas 3os", ())],
             None),
         "Lançados": (col.LANCADOS, [d.linha_lancada() for d in lancados], None),
-        "PENDENTES FIS-FAT": (col.fis_fat(semana),
+        "PENDENTES FIS-FAT": (colunas_da_fis_fat,
                               [d.linha_fis_fat() for d in fis_fat], principal),
         "Descartados": (col.DESCARTADOS,
                         [d.linha_descartada() for d in descartados], None),
     }
+    # As células que a base preencheu saem realçadas, nas duas abas em que a
+    # classificação aparece. A `PENDENTES FIS-FAT` não tem `Categoria`, e o
+    # layout de cada aba é quem diz onde marcar — não um índice escrito aqui.
+    marcas = {
+        "Pendentes": [precategorizacao.marcar(d, colunas_da_pendentes)
+                      for d in pendentes],
+        "PENDENTES FIS-FAT": [precategorizacao.marcar(d, colunas_da_fis_fat)
+                              for d in fis_fat],
+    }
     for nome, visivel in col.ABAS:
         colunas, linhas, estilo = conteudo[nome]
         escrita.escrever_aba(caderno, nome, colunas, linhas,
-                             oculta=not visivel, estilo=estilo)
+                             oculta=not visivel, estilo=estilo,
+                             marcadas=marcas.get(nome))
     return escrita.salvar(caderno, caminho)
 
 

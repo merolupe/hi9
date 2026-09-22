@@ -77,10 +77,7 @@ concordância, não acerto. Isso é do processo, não do dado.
 
 ## O que a base não faz
 
-* **não preenche nada, ainda.** Ela responde a quem perguntar; nenhuma etapa
-  do relatório semanal a consulta. Onde a sugestão deve aparecer — em coluna
-  própria ou no campo definitivo — é decisão de quem recebe a planilha, e
-  agora ela pode ser tomada com número na mão;
+* **não sobrescreve nada.** Ver "O que ela preenche", abaixo;
 * **não mescla com a base anterior.** Duas fotografias de épocas diferentes
   somariam evidência das mesmas notas contadas duas vezes. Importar
   substitui;
@@ -92,6 +89,53 @@ concordância, não acerto. Isso é do processo, não do dado.
   primeiro nome de gestor — é dado da empresa inteiro, regra nº 1. A base vive
   em `dados/pendentes/conhecimento/mercadorias.json` e nasce **vazia**: numa
   máquina nova nada é proposto até alguém importar.
+
+## O que ela preenche
+
+`[FATO]` Decisão do Compliance Tributário de 22/09/2026, tomada depois da
+medição acima: **categoria preenche, guardião preenche** — as duas colunas, no
+grau de sugestão. O parâmetro é `pre_categorizacao`, um valor por coluna
+(`firme`, `sugestao` ou `nao`), e é editável sem desenvolvedor.
+
+Na semana 38 isso teria preenchido **52 categorias e 52 guardiões** das 67
+notas. Pelas taxas medidas, cerca de **12 guardiões sairiam errados** — é o
+custo conhecido da decisão, e é por isso que as três travas abaixo não são
+parâmetro:
+
+### 1. Só preenche o que está vazio
+
+A herança do livro e a regra B1 vêm antes e **nunca** são sobrescritas. O que
+uma pessoa classificou, ou o que a semana passada devolveu, vale mais do que
+qualquer histórico agregado.
+
+### 2. A célula preenchida sai marcada
+
+Fundo âmbar claro, nas abas `Pendentes` e `PENDENTES FIS-FAT`. Sem a marca a
+planilha mentiria por omissão: o guardião proposto ficaria indistinguível do
+guardião escrito por alguém que conhece a nota.
+
+É **cor, e não coluna nova**: coluna mudaria um layout que dezenas de pessoas
+leem, e a leitura de volta na semana seguinte ignora cor. A tela também conta,
+por coluna e por grau, sob o título "confira antes de cobrar".
+
+### 3. Roda entre B1 e B2, e a consequência está declarada
+
+Depois da herança e de B1 — que preenchem primeiro —, e **antes** do split B2.
+Quer dizer que um guardião proposto encaminha a nota para a `PENDENTES
+FIS-FAT` exatamente como encaminharia um guardião escrito à mão.
+
+A alternativa era preencher depois do split, e ela produz um arquivo que se
+contradiz: uma nota na `Pendentes` com `Guardião = Faturamento`. Entre um
+arquivo coerente cuja sugestão pode estar errada e um arquivo incoerente, o
+primeiro é o que dá para conferir.
+
+### O que continua desligado
+
+`Gestor de apoio` e `Tipo de Operação`. O gestor porque ninguém pediu — e ele
+sai do guardião, então é uma linha quando for a hora. A operação porque o
+vocabulário mudou entre a base e a semana 38, e ligá-la hoje escreveria
+`Compra Uso e Consumo` em toda nota que a semana chama de `Compra Uso
+Consumo`. Primeiro a tabela de sinônimos, depois a coluna.
 
 ## Como se usa
 

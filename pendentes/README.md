@@ -35,7 +35,8 @@ sete abas inteiras; o painel é etapa separada e vem por último.
 | Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronta** |
 | Tela de configuração das ferramentas | não entrou |
 | **Resumo Executivo** — tabelas, os dois TOP N e os três gráficos | **pronto** |
-| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta**, e ainda não consultada pelo relatório |
+| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** |
+| **Pré-categorização** — categoria e guardião preenchidos, e a célula marcada | **ligada** |
 | **Exclusões de serviços** — cancelada na prefeitura e exceção cadastrada | **pronto** |
 | Aba `Resumo` — a série entre semanas, que o painel não cobre | não entrou |
 
@@ -72,6 +73,7 @@ src/pendentes/mercadorias/
   conferencia.py   o lookup do CE, as 6 colunas e o farol de três estados
   classificacao.py a herança pelo livro, B1 (Fiscal) e B2 (split FIS-FAT)
   vocabulario.py   unidade, categoria e guardião: o que não é reconhecido
+  precategorizacao.py  a base preenche o que está vazio, e a célula sai marcada
   execucao.py      o pipeline de ponta a ponta e o que a tela mostra
 
 src/pendentes/conhecimento/
@@ -206,7 +208,7 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-342 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+358 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido

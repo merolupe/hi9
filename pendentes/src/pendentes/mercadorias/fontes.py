@@ -59,6 +59,11 @@ class Documento:
     #: Número quando a nota tem conferência física; o rótulo de "não se
     #: aplica" quando não tem. Ver `colunas.P_PEDIDO_VINCULADO`.
     pedido_vinculado: Any = ""
+    #: Quais colunas de classificação foram **propostas** pela base de
+    #: conhecimento, e com que grau. Rótulo da coluna → grau. Existe para que
+    #: a célula proposta saia marcada na planilha: quem lê precisa saber o que
+    #: é decisão de gente e o que é sugestão da ferramenta.
+    propostas: dict[str, str] = field(default_factory=dict)
     #: Preenchido quando a limpeza descarta a linha (regras A1 e A3).
     motivo_do_descarte: str = ""
     #: A chave foi encontrada na Conferência de Entradas?

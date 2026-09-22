@@ -8,7 +8,7 @@ Central.
 ## Situação
 
 **As três ferramentas rodam.** O núcleo comum, o motor de serviços, o motor de
-mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 342
+mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 358
 testes de comportamento, e as quatro entradas do catálogo acendem.
 
 O painel voltou em 22/09/2026, e não como estava desenhado: o Resumo Executivo
@@ -32,7 +32,8 @@ e-mail — saem inteiras.
 | Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronto** |
 | Tela de configuração das ferramentas | não entrou |
 | **Resumo Executivo** — o painel das duas frentes, com três categorias | **pronto** ([07](07-resumo-executivo.md)) |
-| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** ([08](08-base-de-conhecimento.md)), e ainda não consultada pelo relatório |
+| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** ([08](08-base-de-conhecimento.md)) |
+| **Pré-categorização** — categoria e guardião preenchidos, e a célula marcada | **ligada** em 22/09/2026 |
 | Aba `Resumo` — a série entre semanas | não entrou ([06](06-proximas-rodadas.md) § 6) |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 

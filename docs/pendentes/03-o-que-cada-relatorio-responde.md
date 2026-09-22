@@ -56,6 +56,25 @@ Enquanto ele não vem, quem roda vê os números na própria tela da Central —
 quantas pendências, de quem, quanto valem e o que exige revisão — e o e-mail
 segue com as duas abas de sempre.
 
+### A célula âmbar é sugestão da ferramenta
+
+`[FATO]` Desde 22/09/2026 a ferramenta **preenche** `Categoria` e `Guardião`
+quando a célula está vazia e a base de conhecimento tem o que propor. O que
+ela preencheu sai com **fundo âmbar claro**.
+
+Três coisas que vale saber antes de confiar na cor:
+
+* **o que você escreveu nunca é sobrescrito.** A célula âmbar estava vazia;
+* **categoria erra pouco, guardião erra mais.** Medido contra a semana 38:
+  categoria acertou 44 de 44 no grau de evidência firme; guardião acerta cerca
+  de três em cada quatro. Confira o guardião âmbar antes de cobrar alguém;
+* **um guardião proposto encaminha a nota** — se a base propõe `Faturamento`,
+  a nota vai para a `PENDENTES FIS-FAT`, como iria se você tivesse escrito.
+
+A tela conta quantas células foram preenchidas, por coluna, sob o título
+"confira antes de cobrar". Quem não quiser o preenchimento desliga por coluna
+no parâmetro `pre_categorizacao`.
+
 ### Por que uma nota sai da lista
 
 A ordem importa, e a **primeira** explicação que serve é a que vale:

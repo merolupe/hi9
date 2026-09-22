@@ -103,6 +103,20 @@ mercadorias:
 # testado ANTES de `direto`, senão "Indiretos" casa com "direto" e toda
 # categoria indireta vira direta — em silêncio. Uma lista simples de nomes não
 # consegue dizer isso, e é por isso que aqui é tabela.
+# -- a pré-categorização de mercadorias --------------------------------------
+# Qual coluna a base de conhecimento preenche quando a célula está vazia, e com
+# que exigência: `firme` (a lista curada e o histórico afirmam juntos, com três
+# notas em duas semanas), `sugestao` (também o que tem proposta sem lastro) ou
+# `nao`. Nada sobrescreve célula já preenchida, e toda célula preenchida pela
+# base sai marcada na planilha.
+#
+# Ligadas em `sugestao` por decisão de 22/09/2026, depois da medição contra a
+# semana 38: categoria acerta 44 de 44 com evidência firme; guardião acerta 77%
+# no grau de sugestão. Ver docs/pendentes/08-base-de-conhecimento.md.
+pre_categorizacao:
+  categoria: sugestao
+  guardiao: sugestao
+
 # -- o que sai do relatório de serviços --------------------------------------
 # Parceiro e valor que o time decidiu não cobrar. Traz código e nome de
 # parceiro real — dado da empresa (regra nº 1) —, então nasce vazia e é
