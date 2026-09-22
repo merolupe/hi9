@@ -99,6 +99,17 @@ mercadorias:
 # testado ANTES de `direto`, senão "Indiretos" casa com "direto" e toda
 # categoria indireta vira direta — em silêncio. Uma lista simples de nomes não
 # consegue dizer isso, e é por isso que aqui é tabela.
+# -- o painel semanal --------------------------------------------------------
+# O Resumo Executivo é montado depois, sobre o relatório já classificado. Nada
+# aqui muda número: muda o que cabe na tela de quem lê o painel na segunda.
+resumo:
+  linhas_do_top: 5                # quantas notas cada TOP mostra
+  guardioes_no_grafico: 8         # quantas barras o gráfico de guardião mostra
+  destacar_acima_de_dias: 10      # acima disso, a célula de dias sai marcada
+  # Guardiões que não entram no ranking do gráfico. Nome de área é dado da
+  # empresa, então a lista nasce vazia — cadastrada pela tela.
+  guardioes_fora_do_ranking: []
+
 categorias:
   - {ordem: 1, trecho: "indireto", categoria: "Indiretos"}
   - {ordem: 2, trecho: "direto", categoria: "Diretos"}

@@ -4,6 +4,7 @@
                           [--saida PASTA]
     pendentes servicos <ASIS> <Portal de Compras> [Conferência] [semana anterior]
                        [--saida PASTA]
+    pendentes resumo <relatório da semana, já classificado> [--saida PASTA]
 
 Os arquivos entram **em qualquer ordem**: cada um é reconhecido pelo próprio
 cabeçalho, não pelo nome nem pela posição na linha de comando. Quem não usa
@@ -11,7 +12,11 @@ terminal não precisa disto — as duas ferramentas estão na janela da Central,
 em `Hinove.bat`. A linha de comando serve para automação e para conferir uma
 execução sem abrir o navegador.
 
-As duas rotinas devolvem a mesma coisa para a tela — título, fichas e listas —,
+O `resumo` é a terceira, e vem **depois** das outras duas: ele lê a planilha
+que elas geraram, já remodelada e classificada, e devolve o painel dentro
+dela. Rodar antes da classificação fechar publica número que ainda vai mudar.
+
+As três rotinas devolvem a mesma coisa para a tela — título, fichas e listas —,
 e é por isso que a impressão aqui é uma só. O código de saída também: `1`
 quando a semana ficou **não encerrável**, porque há item que exige revisão
 manual, e `2` quando a execução nem chegou a gerar planilha.
@@ -45,14 +50,21 @@ def _imprimir(resultado) -> None:
             print(f"  {marca} {item}")
 
     print(f"\nGerado: {resultado.planilha}")
-    print(f"Semana gravada em: {resultado.pasta_do_snapshot}")
+    if resultado.pasta_do_snapshot:
+        print(f"Semana gravada em: {resultado.pasta_do_snapshot}")
     if not resultado.encerravel:
         print("\nA semana ficou como NÃO encerrável: há itens acima que "
               "exigem revisão manual.")
 
 
 def _executar(dominio: str, args) -> int:
-    if dominio == "mercadorias":
+    if dominio == "resumo":
+        from .resumo.execucao import SemRelatorio as SemRegistros
+        from .resumo.execucao import gerar
+
+        class Invalido(Exception):
+            """Só mercadorias tem tabela de roteamento para estar inválida."""
+    elif dominio == "mercadorias":
         from .mercadorias.execucao import SemRegistros, gerar
         from .mercadorias.roteamento import RoteamentoInvalido as Invalido
     else:
@@ -78,6 +90,8 @@ EXIGIDOS = {
     "mercadorias": "Informe pelo menos o relatório de importação de XML e a "
                    "Conferência de Entradas.",
     "servicos": "Informe pelo menos o ASIS e o Portal de Compras.",
+    "resumo": "Informe a planilha da semana — a que as outras duas geraram, "
+              "já classificada.",
 }
 
 
@@ -86,8 +100,8 @@ def main(argv: list[str] | None = None) -> int:
         prog="pendentes",
         description="Notas emitidas contra a Hinove que ainda não têm entrada.",
     )
-    parser.add_argument("dominio", choices=("servicos", "mercadorias"),
-                        help="qual das duas rotinas semanais")
+    parser.add_argument("dominio", choices=("servicos", "mercadorias", "resumo"),
+                        help="qual das três rotinas semanais")
     parser.add_argument("arquivos", nargs="*",
                         help="os relatórios da semana, em qualquer ordem")
     parser.add_argument("--saida", default=".",

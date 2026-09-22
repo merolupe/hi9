@@ -265,6 +265,26 @@ def _rodar_gerarservpend(arquivos: list[Path], saida: Path) -> Resultado:
     )
 
 
+def _rodar_resumo(arquivos: list[Path], saida: Path) -> Resultado:
+    """Monta o painel semanal sobre o relatório já classificado.
+
+    A terceira rotina das notas pendentes, e a única que recebe a **saída** das
+    outras duas em vez de um export do Sankhya. Mesmo desenho: a ferramenta
+    devolve o painel em texto e quem traduz para `Ficha` e `Lista` é aqui.
+    """
+    from pendentes.resumo.execucao import gerar
+
+    execucao = gerar(arquivos, saida)
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+        planilha=execucao.planilha,
+    )
+
+
 def _configuracao_do_fiscalbot() -> Configuracao:
     """A tela de regras do Fiscalbot.
 
@@ -399,6 +419,28 @@ FERRAMENTAS: list[Ferramenta] = [
                 "perder a planilha da semana passada não apaga mais o "
                 "histórico.",
         executar=_rodar_gerarservpend,
+    ),
+    Ferramenta(
+        id="resumoexecutivo",
+        nome="Resumo Executivo",
+        resumo="O painel da semana sobre as duas frentes, já classificadas.",
+        icone="📊",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste a planilha da semana",
+            apoio="a planilha que o <code>GerarPendentes</code> e o "
+                  "<code>GerarServPend</code> geraram, <b>depois</b> de "
+                  "classificada. As abas <code>Pendentes</code> e "
+                  "<code>Servicos</code> podem vir num arquivo só ou em dois.",
+            extensoes=(".xlsx",),
+            varios=True,
+        ),
+        verbo="Montando o painel da semana…",
+        detalhe="O painel entra na própria planilha, na primeira aba, e o "
+                "arquivo de entrada não é alterado. Roda por último: as "
+                "contas são por categoria, e categoria é o que a pessoa "
+                "confirma depois da geração.",
+        executar=_rodar_resumo,
     ),
     Ferramenta(
         id="faturabot",

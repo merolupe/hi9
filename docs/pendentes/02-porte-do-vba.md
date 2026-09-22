@@ -155,12 +155,37 @@ simplesmente faltar seria afirmar o que não se sabe.
 relatório real continua com 36 colunas, sem ela, e as auxiliares nascem da
 cópia do cabeçalho do XML.
 
-> `PENDENTE:` **a `Categoria` mudou de lugar, e isso ainda não foi mexido.** No
-> `.bas` v14 ela é a quarta coluna, dentro do bloco de categorização; no
-> relatório da semana 37 ela está na **décima terceira**, entre `Nome Fantasia`
-> e `Chave Acesso`. O porte segue o v14 até haver decisão: mover uma coluna que
-> dezenas de pessoas leem, e sobre a qual há PROCX de terceiro, não é ajuste de
-> implementação.
+### A semana 38 muda a resposta da 37
+
+`[FATO]` Em 22/09/2026 o relatório da **semana 38** entrou na análise, e ele
+não confirma o da 37 — corrige. As duas divergências apontam para o mesmo
+lugar, e nas duas o layout se aproximou do porte:
+
+| | semana 37 | semana 38 |
+|---|---|---|
+| colunas da `Pendentes` | 39 | **38** |
+| o pedido de compra | duplicado: `Pedido vinculado` na 9ª **e** `Nro. do Pedido` na 19ª | **movido**: só `Nro. do Pedido`, na 10ª |
+| o rótulo `NA Conf Física` | em 56 das 97 linhas | **não existe** — célula vazia |
+| o tipo do número | número | texto, como vem do CE |
+| `Categoria` | 13ª posição | **4ª** — a do `.bas` v14, que é a do porte |
+| `CFOP's XML` | 10ª | 14ª, logo depois de `Chave Acesso` |
+
+O que isso diz: a semana 37 era um **experimento**, e a 38 é a forma que ele
+tomou. O pedido continua vindo à frente da linha — que é o pedido do time —,
+mas por **mudança de lugar** e não por cópia, e sem rótulo para a nota sem
+conferência física.
+
+> `PENDENTE:` **o porte ainda implementa a forma da semana 37** — a coluna
+> `Pedido vinculado` duplicada, com o rótulo. Trocar pela forma da 38 é
+> mecânico (mover `Nro. do Pedido` para depois de `Dh. Emissão`, mover
+> `CFOP's XML` para depois de `Chave Acesso`, apagar a coluna duplicada e o
+> literal `sem_pedido_vinculado`), mas é **mudança de layout do que já está
+> em produção**, e por isso espera confirmação de quem recebe a planilha. As
+> duas formas respondem à mesma pergunta; só uma delas é a que a semana 38
+> mostra.
+>
+> A `Categoria`, essa, deixou de ser pendência: na semana 38 ela voltou para a
+> **quarta** posição, que é onde o porte sempre a colocou. Nada a fazer.
 
 ## 3. Onde o padrão-ouro mora
 

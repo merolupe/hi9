@@ -4,19 +4,22 @@ Notas emitidas contra a Hinove que ainda **não** têm entrada lançada — de
 mercadoria e de serviço. São duas rotinas semanais do time fiscal, hoje em duas
 macros de Excel, e uma delas alimenta a cobrança formal às áreas guardiãs.
 
-**Duas ferramentas na tela, um projeto no disco.** As duas fazem a mesma coisa:
+**Três ferramentas na tela, um projeto no disco.** Duas fazem a mesma coisa:
 cruzam um universo de documentos com um registro de lançamento, dizem o que
 sobrou e preservam o julgamento humano de uma semana para a outra. O que muda é
 a chave do cruzamento — mercadorias tem `Chave Acesso`, serviços não tem chave
-nenhuma e precisa construir quatro.
+nenhuma e precisa construir quatro. A terceira, o **Resumo Executivo**, não
+cruza nada: ela lê a saída das outras duas, já classificada, e devolve o painel
+da semana dentro da própria planilha.
 
 ## Situação
 
-**As duas ferramentas já rodam**, na janela da Central e no terminal. O que
-ainda não existe é o Resumo Executivo, que saiu do porte por decisão do
-Compliance Tributário de 15/09/2026 e vira um resumo das duas frentes, com três
-categorias — a planilha de mercadorias sai sem ele, e com as sete abas
-inteiras.
+**As três ferramentas já rodam**, na janela da Central e no terminal. O Resumo
+Executivo saiu do porte em 15/09/2026 e voltou em 22/09/2026 como outra coisa:
+o painel das **duas frentes**, com três categorias, montado sobre o relatório
+já classificado — e conferido contra o relatório de produção da semana 38,
+bloco a bloco. A planilha de mercadorias continua saindo sem painel, com as
+sete abas inteiras; o painel é etapa separada e vem por último.
 
 | Bloco | Situação |
 |---|---|
@@ -30,8 +33,9 @@ inteiras.
 | **Motor de serviços** — cascata de confronto, vínculo, população inversa | **pronto** |
 | **Motor de mercadorias** — limpeza, roteamento, conferência, herança, B1/B2 | **pronto** |
 | Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronta** |
-| Tela de configuração das duas ferramentas | não entrou |
-| **Resumo Executivo** — tabelas, TOP N e os quatro gráficos | **suspenso** |
+| Tela de configuração das ferramentas | não entrou |
+| **Resumo Executivo** — tabelas, os dois TOP N e os três gráficos | **pronto** |
+| Aba `Resumo` — a série entre semanas, que o painel não cobre | não entrou |
 
 O que trava o quê está em
 [`docs/pendentes/04-plano-de-entrega.md`](../docs/pendentes/04-plano-de-entrega.md).
@@ -55,7 +59,7 @@ src/pendentes/
   estado.py        o livro de classificação, com carimbo de quem gravou
   snapshot.py      a foto semanal imutável, que nunca é sobrescrita
   escrita.py       a aba formatada, com o formato aplicado ANTES da escrita
-  cli.py           python rodar.py pendentes mercadorias|servicos <arquivos>
+  cli.py           python rodar.py pendentes mercadorias|servicos|resumo …
 
 src/pendentes/mercadorias/
   colunas.py       as 27 do XML, as 7 do CE e a ordem das 39 / 36 / 33 / 27 / 28
@@ -66,6 +70,13 @@ src/pendentes/mercadorias/
   classificacao.py a herança pelo livro, B1 (Fiscal) e B2 (split FIS-FAT)
   vocabulario.py   unidade, categoria e guardião: o que não é reconhecido
   execucao.py      o pipeline de ponta a ponta e o que a tela mostra
+
+src/pendentes/resumo/
+  colunas.py       onde cada coisa fica nas duas abas do painel
+  fontes.py        as abas `Pendentes` e `Servicos` viram uma lista de notas
+  painel.py        a conta — categorias, TOP N, unidade e guardião
+  escrita.py       as duas abas e os três gráficos, sem uma fórmula
+  execucao.py      o painel entra na planilha da semana, gravada ao lado
 
 src/pendentes/servicos/
   colunas.py       o nome de cada coluna lida e a ordem exata das quatro abas
@@ -187,8 +198,15 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-262 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+301 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
+
+**Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido
+contra o relatório de produção da semana 38 e reproduz os seis blocos dele —
+tabela por categoria, os dois TOP 5, valor por unidade e quantidade por
+guardião — dígito a dígito. A conferência está em
+[`docs/pendentes/07-resumo-executivo.md`](../docs/pendentes/07-resumo-executivo.md);
+o arquivo, por ser dado real, não entra no repositório.
 
 **A divergência zero contra a macro ainda não foi provada**, porque os arquivos
 reais de uma semana e a saída correspondente da macro ainda não chegaram. É a
@@ -199,4 +217,4 @@ reais de uma semana e a saída correspondente da macro ainda não chegaram. É a
 
 [`docs/pendentes/`](../docs/pendentes/) — a arquitetura, o registro do porte, o
 que cada relatório responde para o time fiscal, o plano de entrega com a
-viabilidade de cada bloco, e as decisões pendentes.
+viabilidade de cada bloco, as decisões pendentes e o painel semanal.

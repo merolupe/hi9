@@ -7,16 +7,17 @@ Central.
 
 ## Situação
 
-**As duas ferramentas rodam.** O núcleo comum, o motor de serviços e o motor de
-mercadorias estão no repositório, em `pendentes/`, com 262 testes de
-comportamento, e as duas entradas do catálogo saíram de `A_IMPORTAR`: os dois
-botões acendem.
+**As três ferramentas rodam.** O núcleo comum, o motor de serviços, o motor de
+mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 301
+testes de comportamento, e as três entradas do catálogo acendem.
 
-O que ainda **não** existe é o painel: o Resumo Executivo saiu do porte por
-decisão do Compliance Tributário de 15/09/2026 e vira um resumo das duas
-frentes, com três categorias. A planilha de mercadorias sai sem ele, e as abas
-`Pendentes` e `PENDENTES FIS-FAT` — que são o que vai anexado ao e-mail —
-saem inteiras.
+O painel voltou em 22/09/2026, e não como estava desenhado: o Resumo Executivo
+saiu do porte em 15/09/2026 e é agora o resumo das **duas frentes**, com três
+categorias, montado sobre o relatório já classificado — conferido contra o
+relatório de produção da semana 38, bloco a bloco ([07](07-resumo-executivo.md)).
+A planilha de mercadorias continua saindo sem painel: ele é etapa separada, e
+as abas `Pendentes` e `PENDENTES FIS-FAT` — que são o que vai anexado ao
+e-mail — saem inteiras.
 
 | | |
 |---|---|
@@ -29,8 +30,9 @@ saem inteiras.
 | **Motor de serviços** — cascata por passos, vínculo de pedido, população inversa | **pronto** |
 | **Motor de mercadorias** — limpeza, roteamento, conferência, herança, B1 e B2 | **pronto** |
 | Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronto** |
-| Tela de configuração das duas ferramentas | não entrou |
-| Resumo Executivo | **suspenso** — vira resumo das duas frentes, com três categorias ([06](06-proximas-rodadas.md)) |
+| Tela de configuração das ferramentas | não entrou |
+| **Resumo Executivo** — o painel das duas frentes, com três categorias | **pronto** ([07](07-resumo-executivo.md)) |
+| Aba `Resumo` — a série entre semanas | não entrou ([06](06-proximas-rodadas.md) § 6) |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 
 O `.xlam` em produção é **byte a byte o v14**: a rodada de formatação de
@@ -45,7 +47,8 @@ O `.xlam` em produção é **byte a byte o v14**: a rodada de formatação de
 | [03 — O que cada relatório responde](03-o-que-cada-relatorio-responde.md) | **Fiscal/Tributário e as áreas** | O que a ferramenta responde, o ciclo da semana e o que continua sendo decisão de gente |
 | [04 — Plano de entrega](04-plano-de-entrega.md) | Todos | O que entrou, o que vem, em que ordem, com esforço e risco de cada bloco |
 | [05 — Decisões pendentes](05-decisoes-pendentes.md) | **Fiscal/Tributário** | As 15 perguntas em aberto, cada uma com o padrão assumido |
-| [06 — Próximas rodadas](06-proximas-rodadas.md) | **Fiscal/Tributário** + Desenvolvedor | O que o time já enxerga e ainda não foi desenhado — entre isso, o Resumo Executivo repensado |
+| [06 — Próximas rodadas](06-proximas-rodadas.md) | **Fiscal/Tributário** + Desenvolvedor | O que o time já enxerga e ainda não foi desenhado |
+| [07 — O Resumo Executivo](07-resumo-executivo.md) | **Fiscal/Tributário** + Desenvolvedor | O painel da semana: o que ele mostra, de onde sai cada número, as quatro decisões e o que ele se recusa a contar |
 
 ## A pendência vermelha
 

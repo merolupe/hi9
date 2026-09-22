@@ -268,7 +268,24 @@ quantas pendências, de quem, quanto vale e o que trava. Quem recebe o e-mail é
 que sente falta do painel; e é por isso que a rodada nova dele
 ([06 — Próximas rodadas](06-proximas-rodadas.md) § 1) não deve demorar.
 
-## 4. Entrega 4 — o Resumo Executivo · **suspensa**
+## 4. Entrega 4 — o Resumo Executivo · **concluída em 22/09/2026**
+
+> **Entregue, e não como estava desenhada.** O que entrou não é a reprodução
+> do painel do VBA: é o painel das **duas frentes**, com três categorias,
+> montado sobre o relatório já classificado, a partir do relatório de produção
+> da semana 38. A especificação, a conferência e as quatro decisões estão em
+> [07 — O Resumo Executivo](07-resumo-executivo.md).
+>
+> Da tabela de viabilidade abaixo, que continua valendo como análise: entraram
+> as tabelas, os dois TOP N, as séries auxiliares, as larguras e os três
+> gráficos. **Não** entraram a área de impressão, a cor por série e o
+> `ReversePlotOrder` — a recomendação de "não perseguir o pixel" foi seguida.
+> A formatação condicional virou outra coisa: em vez de uma regra do Excel, a
+> célula é pintada na gravação, porque o painel não tem fórmula para a regra
+> acompanhar.
+>
+> O histórico abaixo fica como está — ele explica por que a entrega parou, e
+> por que ela voltou diferente.
 
 > **Decisão de 15/09/2026 do Compliance Tributário: o Resumo Executivo sai do
 > porte.** Ele deixa de ser a reprodução da aba que a macro de mercadorias

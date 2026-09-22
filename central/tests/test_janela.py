@@ -20,7 +20,7 @@ def test_o_menu_traz_todas_as_ferramentas_do_setor(janela):
     por_id = {f["id"]: f for f in dados["ferramentas"]}
     assert set(por_id) == {
         "apurabot", "dixml", "fiscalbot", "gerarpendentes",
-        "gerarservpend", "faturabot",
+        "gerarservpend", "resumoexecutivo", "faturabot",
     }
 
 
@@ -34,6 +34,7 @@ def test_ferramenta_ainda_nao_importada_aparece_apagada_em_vez_de_sumir(janela):
     assert por_id["fiscalbot"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["gerarservpend"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["gerarpendentes"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["resumoexecutivo"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["apurabot"]["estado"] == ferramentas.JANELA_PROPRIA
 
 

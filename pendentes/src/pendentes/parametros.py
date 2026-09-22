@@ -36,8 +36,9 @@ from .farol import tabela_de
 FABRICA = Path(__file__).resolve().parents[2] / "parametros_de_fabrica.yaml"
 
 #: As seções que a tela edita em fatias — `gravar` mescla, nunca substitui.
-SECOES = ("confronto_servicos", "mercadorias", "semana", "farol", "roteamento",
-          "categorias", "unidades", "filiais", "guardioes", "papeis", "colunas")
+SECOES = ("confronto_servicos", "mercadorias", "resumo", "semana", "farol",
+          "roteamento", "categorias", "unidades", "filiais", "guardioes",
+          "papeis", "colunas")
 
 
 def _raiz() -> Path:
@@ -187,6 +188,31 @@ def mercadorias(dados: dict[str, Any]) -> dict[str, Any]:
         "guardioes_da_fis_fat": tuple(
             str(g).strip() for g in (bruto.get("guardioes_da_fis_fat")
                                      or ("Fiscal", "Faturamento"))),
+    }
+
+
+def resumo(dados: dict[str, Any]) -> dict[str, Any]:
+    """Os ajustes do painel semanal, com o padrão medido no arquivo de origem.
+
+    Nenhum é regra tributária e nenhum muda número: mudam **o que cabe na
+    tela**. Quantas notas cada TOP mostra, quantas barras o gráfico de
+    guardião aguenta e a partir de quantos dias uma nota é destacada são
+    decisões de quem lê o painel toda segunda-feira, não de quem programa.
+
+    `guardioes_fora_do_ranking` nasce vazia pelo mesmo motivo que a lista de
+    guardiões: nome de área é dado da empresa (regra nº 1). No arquivo da
+    semana 38 ela tem três entradas — dois marcadores de que a classificação
+    não fechou e uma área que o time decidiu não rankear.
+    """
+    bruto = dict(dados.get("resumo") or {})
+    return {
+        "linhas_do_top": int(bruto.get("linhas_do_top") or 5),
+        "guardioes_no_grafico": int(bruto.get("guardioes_no_grafico") or 8),
+        "destacar_acima_de_dias": int(bruto.get("destacar_acima_de_dias") or 10),
+        "guardioes_fora_do_ranking": tuple(
+            str(g).strip()
+            for g in (bruto.get("guardioes_fora_do_ranking") or ())
+            if str(g).strip()),
     }
 
 

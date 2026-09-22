@@ -191,6 +191,12 @@ depois.
 
 ## 8. O que falta
 
+- **Resumo Executivo — importado, em teste.** A terceira entrada de
+  `pendentes/`, e a única do catálogo que recebe a **saída** de outras
+  ferramentas em vez de um export do ERP: ela lê a planilha da semana, já
+  classificada, e devolve o painel das duas frentes dentro dela. Conferida
+  contra o relatório de produção da semana 38, bloco a bloco. O que falta é a
+  aba `Resumo`, que é a série entre semanas.
 - **GerarServPend — importado, em teste.** O projeto `pendentes/` traz o
   núcleo comum das duas rotinas (reconhecimento de arquivo por âncora de
   cabeçalho, coluna por nome, as normalizações, o livro de classificação, o

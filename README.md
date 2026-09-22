@@ -31,6 +31,7 @@ Quem só usa a apuração pode continuar indo direto por **`Apurabot.bat`**.
 | **Fiscalbot** | `fiscalbot/` | Importado, em teste | Confere o lançamento de cada nota e valida o Livro Fiscal. É o fornecedor do Livro Fiscal validado que o Apurabot consome. |
 | **GerarServPend** | `pendentes/` | Importado, em teste | Confronta as notas de serviço emitidas contra a Hinove (ASIS) com os lançamentos do Sankhya e diz o que ainda não foi lançado, com o pedido de compra e o requisitante por trás de cada pendência. |
 | **GerarPendentes** | `pendentes/` | Importado, em teste | Confronta o relatório de importação de XML com a Conferência de Entradas e diz quais NF-e emitidas contra a Hinove ainda não têm entrada, de quem é a responsabilidade e há quantos dias estão paradas. Compartilha o núcleo com a de cima — duas ferramentas na tela, um projeto no disco. |
+| **Resumo Executivo** | `pendentes/` | Importado, em teste | O painel da semana sobre as duas frentes já classificadas: quanto está pendente por categoria, por unidade e por guardião, e as notas mais antigas e mais caras. Entra na própria planilha da semana, depois que as duas de cima rodam. |
 | _Faturabot_ | — | Em desenvolvimento | Conferências do time de expedição. Confere e consolida desvios da balança, escrituração de saídas e entradas de diretos. |
 
 As ferramentas que ainda não foram importadas **aparecem na Central**, apagadas,

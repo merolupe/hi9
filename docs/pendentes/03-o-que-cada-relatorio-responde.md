@@ -6,16 +6,22 @@
 
 ---
 
-## 1. As duas perguntas
+## 1. As duas perguntas — e a terceira, que é sobre as outras duas
 
 | Ferramenta | A pergunta |
 |---|---|
 | **GerarPendentes** (mercadoria) | *Quais notas emitidas contra a Hinove ainda não foram lançadas, de quem é a responsabilidade e há quantos dias estão paradas?* |
 | **GerarServPend** (serviço) | *Quais notas de serviço ainda não foram lançadas, qual pedido de compra e qual requisitante estão por trás delas, e o quanto o ASIS deixa de capturar?* |
 
-As duas fazem o mesmo movimento: pegam **tudo o que foi emitido** contra a
-empresa, pegam **tudo o que foi lançado** no Sankhya, e mostram a diferença.
-O que sobra é a pendência.
+| **Resumo Executivo** (as duas) | *Onde está concentrado o que sobrou — em qual categoria, em qual unidade, com qual guardião — e quais notas são as mais antigas e as mais caras?* |
+
+As duas primeiras fazem o mesmo movimento: pegam **tudo o que foi emitido**
+contra a empresa, pegam **tudo o que foi lançado** no Sankhya, e mostram a
+diferença. O que sobra é a pendência.
+
+A terceira não cruza nada: ela lê o que as duas produziram, **depois** de a
+classificação estar fechada, e responde onde a pendência dói. Está detalhada em
+[07 — O Resumo Executivo](07-resumo-executivo.md).
 
 ## 2. GerarPendentes — mercadoria
 
