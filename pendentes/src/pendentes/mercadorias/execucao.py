@@ -51,7 +51,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 from .. import cabecalho as cab
 from .. import escrita, estado, papeis, parametros, snapshot
@@ -338,6 +338,20 @@ def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido,
 
 # -- o pipeline -------------------------------------------------------------
 
+#: As abas que esta ferramenta escreve. `CTe`, `Manifestados` e `Descartados`
+#: são o XML cru; sem esta lista, a planilha da semana passada era tomada pelo
+#: relatório de XML da semana.
+ABAS_DA_SAIDA: tuple[str, ...] = tuple(nome for nome, _ in col.ABAS)
+
+
+def conferir(arquivos: Sequence[Path | str], *,
+             dados: dict | None = None) -> dict:
+    """Qual relatório cada arquivo é, sem rodar nada — para a tela de anexar."""
+    dados = dados if dados is not None else parametros.carregar()
+    return papeis.conferir(arquivos, parametros.papeis_de(dados, DOMINIO),
+                           ABAS_DA_SAIDA)
+
+
 def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
           dados: dict | None = None, livro: estado.Livro | None = None,
           raiz_dos_dados: Path | None = None, responsavel: str | None = None,
@@ -349,7 +363,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     ano, semana = parametros.semana_de(dados, agora.date())
 
     reconhecimento, _ = papeis.ler_e_reconhecer(
-        arquivos, parametros.papeis_de(dados, DOMINIO))
+        arquivos, parametros.papeis_de(dados, DOMINIO), ABAS_DA_SAIDA)
     # Arquivo que não casou com papel nenhum roda com os demais — mas aparece
     # na tela nomeado. Regra nº 4: nada é decidido por semelhança, e nada some
     # em silêncio.

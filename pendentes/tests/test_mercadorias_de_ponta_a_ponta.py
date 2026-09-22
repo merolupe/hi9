@@ -564,3 +564,15 @@ def test_a_planilha_da_semana_anterior_nao_e_confundida_com_o_xml(semana):
     semana["arquivos"].append(anterior)
     segunda = _rodar(semana)
     assert segunda.documentos == 10
+
+
+def test_a_saida_da_semana_passada_nao_e_tomada_pelo_xml(semana):
+    """`CTe`, `Manifestados` e `Descartados` são o XML cru, sem `Guardião`.
+
+    Anexada de volta, a planilha gerada casava com o papel do XML por uma
+    dessas abas — o mesmo defeito que serviços tinha com o Portal de Compras.
+    """
+    primeira = _rodar(semana)
+    semana["arquivos"].append(primeira.planilha)
+    segunda = _rodar(semana)
+    assert segunda.documentos == 10

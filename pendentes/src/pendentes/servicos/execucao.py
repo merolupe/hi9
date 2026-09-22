@@ -401,6 +401,21 @@ def _linha_pendente(nota: fontes.NotaDeServico,
     ]
 
 
+# -- o que cada arquivo anexado é -------------------------------------------
+
+def conferir(arquivos: Sequence[Path | str], *,
+             dados: dict | None = None) -> dict:
+    """Qual relatório cada arquivo é, sem rodar nada — para a tela de anexar.
+
+    As abas da própria saída (`col.ABAS`) ficam de fora do reconhecimento: a
+    `Sem Correspondencia ASIS` da semana passada traz as colunas do Portal de
+    Compras e, sem isto, era tomada pelo Portal de Compras da semana.
+    """
+    dados = dados if dados is not None else parametros.carregar()
+    return papeis.conferir(arquivos, parametros.papeis_de(dados, DOMINIO),
+                           col.ABAS)
+
+
 # -- o pipeline -------------------------------------------------------------
 
 def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
@@ -414,7 +429,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     ano, semana = parametros.semana_de(dados, agora.date())
 
     reconhecimento, _ = papeis.ler_e_reconhecer(
-        arquivos, parametros.papeis_de(dados, DOMINIO))
+        arquivos, parametros.papeis_de(dados, DOMINIO), col.ABAS)
     # Arquivo que não casou com papel nenhum roda com os demais — mas aparece
     # na tela nomeado. Regra nº 4: nada é decidido por semelhança, e nada
     # some em silêncio.
