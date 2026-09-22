@@ -98,6 +98,35 @@ A última aba é a que mede o **buraco da fonte externa**. Ela não é lista de
 pendência: é a resposta para "o ASIS está pegando tudo?". Na execução de
 referência, 127 lançamentos não tinham contraparte.
 
+### O que sai do relatório, e por quê
+
+`[FATO]` Duas regras do time fiscal, de 22/09/2026. As duas tiram a nota da
+`Pendentes` **depois** do confronto, e as duas escrevem por quê:
+
+**A nota cancelada na prefeitura que a nossa base não sabe.** Acontece de a
+NFS-e ser cancelada na prefeitura e o evento de cancelamento nunca chegar à
+base de serviços. Do lado de cá a nota continua emitida, nunca é lançada, e
+volta toda semana como pendência de alguém. Quando isso é descoberto, quem
+remodela a planilha escreve `cancelada` em **`Guardiao`, `Gestor de apoio` e
+no `Retorno`** — os três, porque um campo sozinho é digitação e os três juntos
+são uma afirmação. Na semana seguinte a nota sai da `Pendentes` e vai para a
+aba `Fora do relatorio`.
+
+A marca vive no **livro de classificação**, que é onde a classificação da
+semana passada já mora, e a aba é lida de volta junto com a `Pendentes`. São
+dois caminhos para a mesma conclusão: perder o arquivo não faz a nota voltar,
+e escrever direto na aba também funciona.
+
+**A exceção cadastrada.** Parceiro e valor que o time decidiu não cobrar — por
+exemplo, um prestador cuja nota de valor fixo é tratada por fora. Não é regra
+derivável de nada: é decisão, e por isso é **cadastro**, com parceiro, valor e
+o motivo que vai para a planilha. Nasce vazia, e vazia não exclui nada.
+
+**Nenhuma das duas apaga.** A aba `Fora do relatorio` traz a nota inteira — as
+36 colunas da `Pendentes` — mais a coluna `Motivo`, e a tela conta quantas
+saíram por cada motivo. É a mesma decisão da aba `Descartados` de mercadorias:
+esconder, e não apagar, para que o volume excluído seja mensurável.
+
 ### Como o confronto casa uma nota com um lançamento
 
 Não existe chave comum entre o ASIS e o Sankhya — nem chave de acesso, nem

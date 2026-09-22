@@ -36,9 +36,9 @@ from .farol import tabela_de
 FABRICA = Path(__file__).resolve().parents[2] / "parametros_de_fabrica.yaml"
 
 #: As seções que a tela edita em fatias — `gravar` mescla, nunca substitui.
-SECOES = ("confronto_servicos", "mercadorias", "resumo", "semana", "farol",
-          "roteamento", "categorias", "unidades", "filiais", "guardioes",
-          "papeis", "colunas")
+SECOES = ("confronto_servicos", "excecoes_servicos", "mercadorias", "resumo",
+          "semana", "farol", "roteamento", "categorias", "unidades", "filiais",
+          "guardioes", "papeis", "colunas")
 
 
 def _raiz() -> Path:
@@ -234,7 +234,20 @@ def confronto_de_servicos(dados: dict[str, Any]) -> dict[str, Any]:
         "tolerancia_da_razao": float(bruto.get("tolerancia_da_razao") or 0.005),
         "multiplo_minimo": int(bruto.get("multiplo_minimo") or 2),
         "multiplo_maximo": int(bruto.get("multiplo_maximo") or 12),
+        "marca_de_cancelada": str(bruto.get("marca_de_cancelada") or "cancelada"),
     }
+
+
+def excecoes_de_servicos(dados: dict[str, Any]) -> tuple:
+    """Os parceiros e valores que o time decidiu não cobrar. Nasce vazia.
+
+    É cadastro, não regra derivável: alguém decidiu que aquela nota daquele
+    parceiro não vira pendência. Traz código e nome de parceiro real, então é
+    dado da empresa — regra nº 1 — e mora só na base viva.
+    """
+    from .servicos.exclusao import excecoes_de
+
+    return excecoes_de(dados.get("excecoes_servicos") or [])
 
 
 def filiais(dados: dict[str, Any]) -> list[dict]:

@@ -8,8 +8,8 @@ Central.
 ## Situação
 
 **As três ferramentas rodam.** O núcleo comum, o motor de serviços, o motor de
-mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 301
-testes de comportamento, e as três entradas do catálogo acendem.
+mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 342
+testes de comportamento, e as quatro entradas do catálogo acendem.
 
 O painel voltou em 22/09/2026, e não como estava desenhado: o Resumo Executivo
 saiu do porte em 15/09/2026 e é agora o resumo das **duas frentes**, com três
@@ -32,6 +32,7 @@ e-mail — saem inteiras.
 | Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronto** |
 | Tela de configuração das ferramentas | não entrou |
 | **Resumo Executivo** — o painel das duas frentes, com três categorias | **pronto** ([07](07-resumo-executivo.md)) |
+| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** ([08](08-base-de-conhecimento.md)), e ainda não consultada pelo relatório |
 | Aba `Resumo` — a série entre semanas | não entrou ([06](06-proximas-rodadas.md) § 6) |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 
@@ -49,6 +50,7 @@ O `.xlam` em produção é **byte a byte o v14**: a rodada de formatação de
 | [05 — Decisões pendentes](05-decisoes-pendentes.md) | **Fiscal/Tributário** | As 15 perguntas em aberto, cada uma com o padrão assumido |
 | [06 — Próximas rodadas](06-proximas-rodadas.md) | **Fiscal/Tributário** + Desenvolvedor | O que o time já enxerga e ainda não foi desenhado |
 | [07 — O Resumo Executivo](07-resumo-executivo.md) | **Fiscal/Tributário** + Desenvolvedor | O painel da semana: o que ele mostra, de onde sai cada número, as quatro decisões e o que ele se recusa a contar |
+| [08 — A base de conhecimento](08-base-de-conhecimento.md) | **Fiscal/Tributário** + Desenvolvedor | O que o histórico já respondeu, os três graus de confiança, e quanto a base acertaria — medido contra uma semana que ela não viu |
 
 ## A pendência vermelha
 

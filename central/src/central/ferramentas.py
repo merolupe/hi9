@@ -285,6 +285,33 @@ def _rodar_resumo(arquivos: list[Path], saida: Path) -> Resultado:
     )
 
 
+def _rodar_conhecimento(arquivos: list[Path], saida: Path) -> Resultado:
+    """Importa a base de pré-categorização, ou a mede contra um relatório.
+
+    Duas coisas numa entrada só, decididas pelo **conteúdo** do que foi
+    arrastado: planilha já classificada é gabarito e a base é medida contra
+    ela; `.csv` e `.json` são fonte e a base é refeita. É o mesmo princípio do
+    reconhecimento de papel — nada é decidido pelo nome do arquivo.
+    """
+    from pendentes.conhecimento import base as conhecido
+    from pendentes.conhecimento.importacao import importar
+    from pendentes.conhecimento.simulacao import simular
+
+    planilhas = [a for a in arquivos
+                 if a.suffix.lower() in (".xls", ".xlsx", ".xlsm")]
+    if planilhas and len(planilhas) == len(arquivos):
+        execucao = simular(planilhas, conhecido.carregar())
+    else:
+        execucao = importar([a for a in arquivos if a not in planilhas])
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+    )
+
+
 def _configuracao_do_fiscalbot() -> Configuracao:
     """A tela de regras do Fiscalbot.
 
@@ -441,6 +468,29 @@ FERRAMENTAS: list[Ferramenta] = [
                 "contas são por categoria, e categoria é o que a pessoa "
                 "confirma depois da geração.",
         executar=_rodar_resumo,
+    ),
+    Ferramenta(
+        id="conhecimento",
+        nome="Base de conhecimento",
+        resumo="O que o histórico já respondeu sobre cada parceiro — para "
+               "propor classificação, nunca para decidir por ela.",
+        icone="🧠",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste a base, ou uma planilha já classificada",
+            apoio="a lista de parceiros (<code>.csv</code>) e as regras "
+                  "medidas (<code>.json</code>) refazem a base; uma planilha "
+                  "de semana já classificada, sozinha, <b>mede</b> a base "
+                  "contra ela e não altera nada.",
+            extensoes=(".csv", ".json", ".xls", ".xlsx", ".xlsm"),
+            varios=True,
+        ),
+        verbo="Lendo o que o histórico já respondeu…",
+        detalhe="A base propõe; quem classifica é gente. Só o que a lista "
+                "curada e o histórico afirmam juntos, com três notas em duas "
+                "semanas, chega a poder preencher célula — o resto aparece "
+                "como sugestão, com a evidência ao lado.",
+        executar=_rodar_conhecimento,
     ),
     Ferramenta(
         id="faturabot",

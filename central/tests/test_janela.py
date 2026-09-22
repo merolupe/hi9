@@ -20,7 +20,7 @@ def test_o_menu_traz_todas_as_ferramentas_do_setor(janela):
     por_id = {f["id"]: f for f in dados["ferramentas"]}
     assert set(por_id) == {
         "apurabot", "dixml", "fiscalbot", "gerarpendentes",
-        "gerarservpend", "resumoexecutivo", "faturabot",
+        "gerarservpend", "resumoexecutivo", "conhecimento", "faturabot",
     }
 
 
@@ -35,6 +35,7 @@ def test_ferramenta_ainda_nao_importada_aparece_apagada_em_vez_de_sumir(janela):
     assert por_id["gerarservpend"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["gerarpendentes"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["resumoexecutivo"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["conhecimento"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["apurabot"]["estado"] == ferramentas.JANELA_PROPRIA
 
 
@@ -358,7 +359,7 @@ def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
     assert codigo == 200
     livro = openpyxl.load_workbook(io.BytesIO(corpo))
     assert livro.sheetnames == ["Lancadas", "Pendentes", "Canceladas",
-                                "Sem Correspondencia ASIS"]
+                                "Sem Correspondencia ASIS", "Fora do relatorio"]
 
 
 def test_a_ferramenta_de_mercadorias_pede_varios_arquivos_em_qualquer_ordem(

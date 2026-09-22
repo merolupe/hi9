@@ -204,4 +204,14 @@ PREDEFINIDAS_DA_INVERSA = (
 TRECHO_DE_CIDADE = "CIDADE"
 
 #: Os nomes das abas, na ordem de criação.
-ABAS = ("Lancadas", "Pendentes", "Canceladas", "Sem Correspondencia ASIS")
+#: `Fora do relatorio` — as 36 da `Pendentes` mais o motivo de ter saído.
+#: A nota sai inteira, e não resumida: quem for conferir a exclusão precisa do
+#: mesmo que precisaria para cobrá-la.
+FORA_DO_RELATORIO: tuple[Coluna, ...] = (*PENDENTES, Coluna("Motivo"))
+
+ABAS = ("Lancadas", "Pendentes", "Canceladas", "Sem Correspondencia ASIS",
+        "Fora do relatorio")
+
+#: A aba de exclusões, pelo nome — é por ele que a semana seguinte a encontra
+#: no arquivo anterior, como `ABA_FIS_FAT_ANTERIOR` faz em mercadorias.
+ABA_FORA_DO_RELATORIO = ABAS[4]

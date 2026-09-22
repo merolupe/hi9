@@ -35,6 +35,8 @@ sete abas inteiras; o painel é etapa separada e vem por último.
 | Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronta** |
 | Tela de configuração das ferramentas | não entrou |
 | **Resumo Executivo** — tabelas, os dois TOP N e os três gráficos | **pronto** |
+| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta**, e ainda não consultada pelo relatório |
+| **Exclusões de serviços** — cancelada na prefeitura e exceção cadastrada | **pronto** |
 | Aba `Resumo` — a série entre semanas, que o painel não cobre | não entrou |
 
 O que trava o quê está em
@@ -59,7 +61,8 @@ src/pendentes/
   estado.py        o livro de classificação, com carimbo de quem gravou
   snapshot.py      a foto semanal imutável, que nunca é sobrescrita
   escrita.py       a aba formatada, com o formato aplicado ANTES da escrita
-  cli.py           python rodar.py pendentes mercadorias|servicos|resumo …
+  cli.py           python rodar.py pendentes mercadorias|servicos|resumo|
+                   conhecimento …
 
 src/pendentes/mercadorias/
   colunas.py       as 27 do XML, as 7 do CE e a ordem das 39 / 36 / 33 / 27 / 28
@@ -70,6 +73,11 @@ src/pendentes/mercadorias/
   classificacao.py a herança pelo livro, B1 (Fiscal) e B2 (split FIS-FAT)
   vocabulario.py   unidade, categoria e guardião: o que não é reconhecido
   execucao.py      o pipeline de ponta a ponta e o que a tela mostra
+
+src/pendentes/conhecimento/
+  base.py          os três graus de confiança, e a consulta que respeita eles
+  importacao.py    a lista curada + o histórico medido, sem escolher entre os dois
+  simulacao.py     a base contra um relatório classificado: quanto ela acertaria
 
 src/pendentes/resumo/
   colunas.py       onde cada coisa fica nas duas abas do painel
@@ -198,7 +206,7 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-301 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+342 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido

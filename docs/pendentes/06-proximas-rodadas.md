@@ -89,7 +89,19 @@ uma frente só é caso normal, e o painel diz na tela o que não veio; o
 consolidado e o detalhado continuam no mesmo arquivo — separá-los continua em
 aberto, e agora é decisão de quem lê o painel, não de quem o constrói.
 
-## 2. Base de conhecimento para pré-categorizar
+## 2. Base de conhecimento para pré-categorizar · **a base existe desde 22/09/2026**
+
+> **Metade feita.** A base foi importada e medida, e está em
+> [08 — A base de conhecimento](08-base-de-conhecimento.md). Ela responde a
+> quem perguntar; **nenhuma etapa do relatório semanal a consulta ainda**, e é
+> de propósito: a pergunta desta seção — *a sugestão nasce em coluna própria
+> ou no campo definitivo?* — continua sem resposta, e agora pode ser
+> respondida com número.
+>
+> `[FATO]` Medida contra a semana 38, que a base não viu: **categoria acerta
+> 44 de 44 com evidência firme**; **guardião acerta 77% e não tem nenhuma
+> proposta firme**. São dois campos em estágios diferentes, e tratá-los igual
+> seria errado nos dois sentidos.
 
 **Hoje:** Tipo de Operação, Guardião, Gestor de apoio e Categoria são 100%
 manuais. O que a ferramenta faz é preservar o que foi digitado, nunca inferir —
@@ -113,6 +125,12 @@ batido é rastreável depois?
 O dossiê de origem já previa o primeiro pedaço disto — a agregação de 30 semanas
 de histórico por parceiro. A chave (CNPJ inteiro ou raiz), o desempate quando o
 histórico diverge e a precedência frente à herança do livro continuam em aberto.
+
+**Respondido em parte, em 22/09/2026:** a chave é o **código do parceiro**, com
+a unidade como desempate mais específico; o desempate quando o histórico diverge
+é *não desempatar* — divergência vira sugestão com as alternativas à vista. A
+precedência frente à herança do livro segue em aberto, e só importa quando a
+base passar a preencher alguma coisa.
 
 ## 3. Pedido de compra na nota, e a validação contra a observação
 

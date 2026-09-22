@@ -5,6 +5,8 @@
     pendentes servicos <ASIS> <Portal de Compras> [Conferência] [semana anterior]
                        [--saida PASTA]
     pendentes resumo <relatório da semana, já classificado> [--saida PASTA]
+    pendentes conhecimento <parceiros.csv> <regras.json>   ← importa a base
+    pendentes conhecimento <relatório classificado.xlsx>   ← mede a base
 
 Os arquivos entram **em qualquer ordem**: cada um é reconhecido pelo próprio
 cabeçalho, não pelo nome nem pela posição na linha de comando. Quem não usa
@@ -30,7 +32,7 @@ from pathlib import Path
 from . import __version__
 from .cabecalho import CabecalhoNaoEncontrado, ColunasFaltando
 from .papeis import PapelAmbiguo, PapelAusente, PapelDuplicado
-from .planilha import PlanilhaIlegivel
+from .planilha import EXTENSOES, PlanilhaIlegivel
 
 LARGURA = 66
 
@@ -55,6 +57,48 @@ def _imprimir(resultado) -> None:
     if not resultado.encerravel:
         print("\nA semana ficou como NÃO encerrável: há itens acima que "
               "exigem revisão manual.")
+
+
+def _conhecimento(args) -> int:
+    """Importa a base, ou a mede contra um relatório já classificado.
+
+    Qual das duas coisas acontece é decidido pelo **conteúdo** do que chega,
+    como tudo no resto do projeto: planilha é gabarito, `.csv` e `.json` são
+    fonte. Misturar os dois na mesma chamada é erro, e é dito.
+    """
+    from .conhecimento import base as conhecido
+    from .conhecimento.importacao import ArquivoNaoReconhecido, importar
+    from .conhecimento.simulacao import SemRelatorioClassificado, simular
+
+    planilhas = [a for a in args.arquivos if Path(a).suffix.lower() in EXTENSOES]
+    try:
+        if planilhas and len(planilhas) == len(args.arquivos):
+            resultado = simular(planilhas, conhecido.carregar())
+        elif planilhas:
+            print("\nNão misture as fontes da base com o relatório que a mede: "
+                  "são duas chamadas.\n", file=sys.stderr)
+            return 2
+        else:
+            resultado = importar(args.arquivos)
+    except (ArquivoNaoReconhecido, SemRelatorioClassificado,
+            PlanilhaIlegivel, FileNotFoundError) as erro:
+        print(f"\n{erro}\n", file=sys.stderr)
+        return 2
+
+    print(f"\n{resultado.titulo()}")
+    print("─" * LARGURA)
+    for rotulo, valor in resultado.fichas():
+        print(f"  {rotulo:<28}{valor:>8}")
+    for titulo, itens, tom in resultado.listas():
+        marca = {"erro": "!", "atencao": "·", "neutro": " "}.get(tom, " ")
+        print(f"\n{titulo}")
+        print("─" * len(titulo))
+        for item in itens:
+            print(f"  {marca} {item}")
+    caminho = getattr(resultado, "caminho", None)
+    if caminho:
+        print(f"\nBase gravada em: {caminho}")
+    return 0
 
 
 def _executar(dominio: str, args) -> int:
@@ -92,6 +136,9 @@ EXIGIDOS = {
     "servicos": "Informe pelo menos o ASIS e o Portal de Compras.",
     "resumo": "Informe a planilha da semana — a que as outras duas geraram, "
               "já classificada.",
+    "conhecimento": "Informe os dois arquivos da base (`.csv` e `.json`) — ou "
+                    "uma planilha já classificada, para medir a base contra "
+                    "ela.",
 }
 
 
@@ -100,8 +147,9 @@ def main(argv: list[str] | None = None) -> int:
         prog="pendentes",
         description="Notas emitidas contra a Hinove que ainda não têm entrada.",
     )
-    parser.add_argument("dominio", choices=("servicos", "mercadorias", "resumo"),
-                        help="qual das três rotinas semanais")
+    parser.add_argument(
+        "dominio", choices=("servicos", "mercadorias", "resumo", "conhecimento"),
+        help="qual das três rotinas semanais, ou a base de conhecimento")
     parser.add_argument("arquivos", nargs="*",
                         help="os relatórios da semana, em qualquer ordem")
     parser.add_argument("--saida", default=".",
@@ -113,6 +161,8 @@ def main(argv: list[str] | None = None) -> int:
     if not args.arquivos:
         print(f"\n{EXIGIDOS[args.dominio]}\n", file=sys.stderr)
         return 2
+    if args.dominio == "conhecimento":
+        return _conhecimento(args)
     return _executar(args.dominio, args)
 
 

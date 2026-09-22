@@ -47,7 +47,7 @@ from .. import escrita, estado, papeis, parametros, snapshot
 from ..texto import aparar
 from . import colunas as col
 from . import confronto as casc
-from . import enriquecimento, fontes, inversa, vinculo
+from . import enriquecimento, exclusao, fontes, inversa, vinculo
 
 #: O domínio, para o livro e para a pasta de snapshots.
 DOMINIO = "servicos"
@@ -69,6 +69,8 @@ class Execucao:
     pendentes: int = 0
     canceladas: int = 0
     sem_correspondencia: int = 0
+    #: Notas que saíram da `Pendentes` depois da cascata, por motivo.
+    fora_do_relatorio: dict[str, int] = field(default_factory=dict)
     por_procedimento: dict[int, int] = field(default_factory=dict)
     herdadas: int = 0
     vinculadas: int = 0
@@ -187,6 +189,7 @@ class Execucao:
             ("Lançadas", _milhar(self.lancadas)),
             ("Pendentes", _milhar(self.pendentes)),
             ("Canceladas", _milhar(self.canceladas)),
+            ("Fora do relatório", _milhar(sum(self.fora_do_relatorio.values()))),
             ("Sem correspondência ASIS", _milhar(self.sem_correspondencia)),
         ]
 
@@ -203,6 +206,13 @@ class Execucao:
                           atencoes, "atencao"))
         saida.append(("Confronto por procedimento",
                       self.confronto_por_procedimento(), "neutro"))
+        if self.fora_do_relatorio:
+            saida.append((
+                "Fora do relatório, com o motivo",
+                [f"{quantas} — {motivo}" for motivo, quantas
+                 in sorted(self.fora_do_relatorio.items(), key=lambda t: -t[1])],
+                "neutro",
+            ))
         saida.append(("Herança da classificação", self.heranca(), "neutro"))
         if self.vinculadas:
             saida.append((
@@ -270,19 +280,50 @@ def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido, dados: dict,
     semana anterior, o que exige `Nro Nota` e `Guardiao` no cabeçalho. O que
     ainda pode faltar é o `Cod Parceiro`, que é a outra metade da identidade —
     e sem ele não há chave, então a ingestão não acontece e a tela diz por quê.
+
+    São **duas** abas: a `Pendentes` e a `Fora do relatorio`. A segunda é o
+    que faz a nota cancelada na prefeitura continuar fora na semana seguinte
+    mesmo se o livro for perdido — e é o que permite alguém marcar uma nota
+    como cancelada escrevendo direto nela.
     """
     inteiro = papeis.ler_inteiro(reconhecido)
     anterior = max(semana - 1, 0)
-    classificacoes = estado.extrair_da_planilha(
-        inteiro.cabecalho, inteiro.dados,
-        colunas_da_chave=col.S_CHAVE,
-        montar_chave=lambda valores: _chave_de_heranca(
-            fontes.analisar_numero_de_nfse(valores[0]).valor, valores[1]),
-        semana=anterior,
-    )
-    return estado.ingerir(livro, classificacoes,
-                          origem=f"planilha da semana {anterior}",
-                          responsavel=responsavel)
+    montar = lambda valores: _chave_de_heranca(                 # noqa: E731
+        fontes.analisar_numero_de_nfse(valores[0]).valor, valores[1])
+
+    # A aba de exclusões vem primeiro, como a FIS-FAT em mercadorias: quem
+    # entra por último vence onde as duas divergirem. Uma nota que estava
+    # fora e voltou para a `Pendentes` já classificada é a pessoa desfazendo
+    # a exclusão, e desfazer tem de valer.
+    relato: estado.Ingestao | None = None
+    fora = inteiro.arquivo.aba(col.ABA_FORA_DO_RELATORIO)
+    if fora is not None:
+        linha = cab.localizar(fora.linhas, (col.S_NUMERO_NOTA,))
+        if linha >= 0:
+            relato = estado.ingerir(
+                livro,
+                estado.extrair_da_planilha(
+                    fora.linha(linha), fora.linhas[linha + 1:],
+                    colunas_da_chave=col.S_CHAVE, montar_chave=montar,
+                    semana=anterior),
+                origem=f"aba {col.ABA_FORA_DO_RELATORIO} da semana {anterior}",
+                responsavel=responsavel)
+
+    da_principal = estado.ingerir(
+        livro,
+        estado.extrair_da_planilha(
+            inteiro.cabecalho, inteiro.dados,
+            colunas_da_chave=col.S_CHAVE, montar_chave=montar, semana=anterior),
+        origem=f"planilha da semana {anterior}", responsavel=responsavel)
+
+    if relato is None:
+        return da_principal
+    for campo in ("lidas", "novas", "alteradas", "preservadas", "inalteradas",
+                  "retornos"):
+        setattr(relato, campo,
+                getattr(relato, campo) + getattr(da_principal, campo))
+    relato.detalhes.extend(da_principal.detalhes)
+    return relato
 
 
 # -- montagem das linhas ----------------------------------------------------
@@ -483,6 +524,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     linhas_lancadas: list[list[Any]] = []
     linhas_pendentes: list[list[Any]] = []
     linhas_canceladas: list[list[Any]] = []
+    linhas_fora: list[list[Any]] = []
+    excecoes = parametros.excecoes_de_servicos(dados)
 
     for posicao, nota in enumerate(notas):
         procedimento = resultado.procedimento[posicao]
@@ -512,6 +555,24 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         if classificacao.guardiao or classificacao.gestor_de_apoio or (
                 classificacao.ultimo_retorno):
             execucao.herdadas += 1
+
+        # A nota que a semana passada declarou cancelada na prefeitura, e a
+        # que o cadastro de exceções manda não cobrar, saem aqui — depois da
+        # cascata, porque o confronto ainda vale para elas: uma nota marcada
+        # que apareceu lançada é notícia, e notícia não se apaga.
+        motivo = exclusao.motivo_da_exclusao(
+            classificacao, marca=ajuste["marca_de_cancelada"],
+            codigo_do_parceiro=codigo_do_parceiro, valor=nota.valor,
+            excecoes=excecoes)
+        if motivo:
+            execucao.fora_do_relatorio[motivo] = (
+                execucao.fora_do_relatorio.get(motivo, 0) + 1)
+            linhas_fora.append([
+                *_linha_pendente(nota, cadastro, classificacao,
+                                 vinculo.NAO_PROCURADO),
+                motivo,
+            ])
+            continue
         if estado.registrar_identidade(livro, chave, nota.cnpj_do_prestador):
             execucao.colisoes_de_identidade += 1
 
@@ -551,6 +612,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     escrita.escrever_aba(caderno, col.ABAS[2], col.CANCELADAS, linhas_canceladas)
     escrita.escrever_aba(caderno, col.ABAS[3], colunas_da_inversa,
                          linhas_da_inversa)
+    escrita.escrever_aba(caderno, col.ABA_FORA_DO_RELATORIO,
+                         col.FORA_DO_RELATORIO, linhas_fora)
     execucao.planilha = escrita.salvar(
         caderno, Path(saida) / nome_sugerido(agora))
 

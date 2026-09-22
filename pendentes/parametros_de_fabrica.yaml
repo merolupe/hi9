@@ -24,6 +24,10 @@ confronto_servicos:
   tolerancia_da_razao: 0.005             # |valor do pedido / valor da nota - k|
   multiplo_minimo: 2                     # pedido global: de 2 notas...
   multiplo_maximo: 12                    # ...até 12
+  # O que a pessoa escreve em `Guardiao`, `Gestor de apoio` e no `Retorno`
+  # quando descobre que a NFS-e foi cancelada na prefeitura e o evento nunca
+  # chegou à nossa base. Os três campos, e não um.
+  marca_de_cancelada: "cancelada"
 
 # -- a semana ----------------------------------------------------------------
 # Hoje a semana é digitada num InputBox, e a data de referência e o limite de
@@ -99,6 +103,13 @@ mercadorias:
 # testado ANTES de `direto`, senão "Indiretos" casa com "direto" e toda
 # categoria indireta vira direta — em silêncio. Uma lista simples de nomes não
 # consegue dizer isso, e é por isso que aqui é tabela.
+# -- o que sai do relatório de serviços --------------------------------------
+# Parceiro e valor que o time decidiu não cobrar. Traz código e nome de
+# parceiro real — dado da empresa (regra nº 1) —, então nasce vazia e é
+# cadastrada pela tela. Cada linha: {codigo_parceiro, nome, valor, motivo}.
+# `motivo` é opcional: sem ele, a planilha escreve parceiro e valor.
+excecoes_servicos: []
+
 # -- o painel semanal --------------------------------------------------------
 # O Resumo Executivo é montado depois, sobre o relatório já classificado. Nada
 # aqui muda número: muda o que cabe na tela de quem lê o painel na segunda.
