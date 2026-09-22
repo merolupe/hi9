@@ -36,7 +36,7 @@ sete abas inteiras; o painel é etapa separada e vem por último.
 | Tela de configuração das ferramentas | não entrou |
 | **Resumo Executivo** — tabelas, os dois TOP N e os três gráficos | **pronto** |
 | **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** |
-| **Pré-categorização** — categoria e guardião preenchidos, e a célula marcada | **ligada** |
+| **Pré-categorização** — categoria, guardião e operação, com a célula marcada | **ligada** |
 | **Exclusões de serviços** — cancelada na prefeitura e exceção cadastrada | **pronto** |
 | Aba `Resumo` — a série entre semanas, que o painel não cobre | não entrou |
 
@@ -208,7 +208,7 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-358 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+364 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido

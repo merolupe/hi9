@@ -28,7 +28,7 @@ from .. import cabecalho as cab
 from ..mercadorias import colunas as merc
 from ..planilha import ler
 from ..texto import aparar, chave_de_texto
-from .base import FIRME, SUGESTAO, Conhecimento
+from .base import FIRME, SUGESTAO, Conhecimento, chave_de_operacao
 from .importacao import cfop_normalizado
 
 #: As âncoras da aba `Pendentes` de um relatório já classificado.
@@ -119,11 +119,20 @@ def _achar_aba(arquivo) -> tuple[Any, int] | None:
 
 
 def _contar(placar: Placar, proposta, real: str, rotulo: str) -> None:
+    """Conta acerto e erro. Operação compara **sem os conectivos**.
+
+    `[FATO]` `Compra Uso e Consumo` e `Compra Uso Consumo` são o mesmo tipo de
+    operação escrito por duas pessoas diferentes. Contá-los como divergência
+    produziria 14 "erros" que ninguém cometeu — foi o que a primeira medição
+    contra a semana 38 mostrou, antes da normalização.
+    """
     if not proposta.valor:
         placar.sem_proposta += 1
         return
     grau = proposta.confianca
-    if chave_de_texto(proposta.valor) == chave_de_texto(real):
+    igual = (chave_de_operacao if placar.campo == "operacao"
+             else chave_de_texto)
+    if igual(proposta.valor) == igual(real):
         placar.acertos[grau] = placar.acertos.get(grau, 0) + 1
         return
     placar.erros[grau] = placar.erros.get(grau, 0) + 1

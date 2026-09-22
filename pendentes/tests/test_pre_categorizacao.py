@@ -173,11 +173,96 @@ def test_a_contagem_da_tela_separa_por_coluna_e_por_grau():
     assert relato.total == 3
 
 
+# -- a operação, e o conectivo que não é divergência ------------------------
+
+def test_o_conectivo_nao_separa_dois_tipos_de_operacao_iguais():
+    """`Compra Uso e Consumo` e `Compra Uso Consumo` são a mesma coisa."""
+    assert bc.chave_de_operacao("Compra Uso e Consumo") == \
+        bc.chave_de_operacao("Compra Uso Consumo")
+    assert bc.chave_de_operacao("Retorno de Conserto") == \
+        bc.chave_de_operacao("Retorno Conserto")
+
+
+def test_normalizar_tira_ligação_e_nao_aproxima_palavras():
+    """O que separa `Compra MP` de `Compra Embalagem` é substantivo."""
+    assert bc.chave_de_operacao("Compra MP") != \
+        bc.chave_de_operacao("Compra Embalagem")
+    assert bc.chave_de_operacao("Compra Insumo") != \
+        bc.chave_de_operacao("Compra Uso Consumo")
+
+
+def test_a_grafia_escrita_e_a_que_o_livro_mais_usa(tmp_path):
+    from pendentes.estado import Classificacao, Livro
+
+    livro = Livro("mercadorias", registros={
+        "a": Classificacao("a", tipo_de_operacao="Compra Uso Consumo"),
+        "b": Classificacao("b", tipo_de_operacao="Compra Uso Consumo"),
+        "c": Classificacao("c", tipo_de_operacao="Compra Uso e Consumo"),
+    })
+    grafias = pre.grafias_do_livro(livro)
+    assert grafias[bc.chave_de_operacao("Compra Uso e Consumo")] == \
+        "Compra Uso Consumo"
+
+
+def test_a_operacao_sai_na_grafia_do_livro_e_nao_na_da_base():
+    """A base aprendeu uma redação; o time usa outra. Quem manda é o time."""
+    from pendentes.estado import Classificacao, Livro
+
+    base = Conhecimento()
+    base.operacoes["1102"] = {
+        "|": {"proposto": "Compra Uso e Consumo",
+              "evidencia": {"valor": "Compra Uso e Consumo", "notas": 20,
+                            "apoio": 20, "semanas": 9,
+                            "alternativas": {"Compra Uso e Consumo": 20}}},
+    }
+    livro = Livro("mercadorias", registros={
+        "a": Classificacao("a", tipo_de_operacao="Compra Uso Consumo"),
+    })
+    doc = documento()
+    pre.preencher([doc], base, livro=livro,
+                  minimo_por_coluna={col.C_TIPO_DE_OPERACAO: FIRME})
+    posicao = col.POSICAO_DA_CATEGORIZACAO[col.C_TIPO_DE_OPERACAO]
+    assert doc.categorizacao[posicao] == "Compra Uso Consumo"
+
+
+def test_sem_livro_a_operacao_sai_na_grafia_da_base():
+    base = Conhecimento()
+    base.operacoes["1102"] = {
+        "|": {"proposto": "Compra Uso e Consumo",
+              "evidencia": {"valor": "Compra Uso e Consumo", "notas": 20,
+                            "apoio": 20, "semanas": 9,
+                            "alternativas": {"Compra Uso e Consumo": 20}}},
+    }
+    doc = documento()
+    pre.preencher([doc], base,
+                  minimo_por_coluna={col.C_TIPO_DE_OPERACAO: FIRME})
+    posicao = col.POSICAO_DA_CATEGORIZACAO[col.C_TIPO_DE_OPERACAO]
+    assert doc.categorizacao[posicao] == "Compra Uso e Consumo"
+
+
+def test_a_regra_de_operacao_mais_especifica_usa_a_categoria_recem_preenchida():
+    """Categoria é preenchida antes, e a regra por CFOP + parceiro +
+    categoria depende dela — a ordem dentro da passagem é a regra."""
+    base = conhecimento(p4={"categoria": ("Indiretos", 9, 4)})
+    base.operacoes["1102"] = {
+        "4|INDIRETOS": {"proposto": "Compra Uso Consumo",
+                        "evidencia": {"valor": "Compra Uso Consumo",
+                                      "notas": 9, "apoio": 9, "semanas": 4,
+                                      "alternativas": {"Compra Uso Consumo": 9}}},
+    }
+    doc = documento()
+    pre.preencher([doc], base, minimo_por_coluna={
+        col.C_CATEGORIA: SUGESTAO, col.C_TIPO_DE_OPERACAO: FIRME})
+    posicao = col.POSICAO_DA_CATEGORIZACAO[col.C_TIPO_DE_OPERACAO]
+    assert doc.categorizacao[posicao] == "Compra Uso Consumo"
+
+
 # -- a carga de fábrica ----------------------------------------------------
 
-def test_a_fabrica_liga_as_duas_colunas_em_sugestao():
+def test_a_fabrica_liga_as_tres_colunas():
     ligadas = parametros.pre_categorizacao(parametros.carregar_fabrica())
-    assert ligadas == {col.C_CATEGORIA: "sugestao", col.C_GUARDIAO: "sugestao"}
+    assert ligadas == {col.C_CATEGORIA: "sugestao", col.C_GUARDIAO: "sugestao",
+                       col.C_TIPO_DE_OPERACAO: "firme"}
 
 
 # -- de ponta a ponta ------------------------------------------------------

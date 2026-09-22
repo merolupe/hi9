@@ -113,6 +113,26 @@ class Proposta:
         return self.confianca == FIRME and bool(self.valor)
 
 
+#: As palavras que ligam e não classificam. `Compra Uso e Consumo` e
+#: `Compra Uso Consumo` são o mesmo tipo de operação escrito por duas pessoas
+#: diferentes, e tratá-los como valores distintos faz a ferramenta discordar
+#: de si mesma.
+#:
+#: `[FATO]` A lista é fechada e curta de propósito. Ela remove conectivo, não
+#: aproxima palavras: `Compra MP` e `Compra Embalagem` continuam diferentes,
+#: porque o que os separa é substantivo. Normalizar é tirar ruído conhecido —
+#: casar por semelhança seria adivinhação, e é outra coisa.
+PALAVRAS_DE_LIGACAO = ("E", "DE", "DA", "DO", "DAS", "DOS", "EM", "COM",
+                       "PARA", "POR", "A", "O", "AS", "OS")
+
+
+def chave_de_operacao(valor: Any) -> str:
+    """O `Tipo de Operação` sem o que nele é só ligação."""
+    palavras = [p for p in chave_de_texto(valor).split()
+                if p not in PALAVRAS_DE_LIGACAO]
+    return " ".join(palavras)
+
+
 def _confianca(valor: str, evidencia: Evidencia) -> tuple[str, str]:
     """O cruzamento entre o que se propõe e o que o histórico mostra.
 
@@ -159,6 +179,16 @@ class Conhecimento:
 
     def __len__(self) -> int:
         return len(self.parceiros)
+
+    @property
+    def vazia(self) -> bool:
+        """Sem parceiro **e** sem operação não há o que propor.
+
+        As duas metades são independentes: uma base só de operação continua
+        servindo para `Tipo de Operação`, e contar só parceiros a daria por
+        inútil.
+        """
+        return not self.parceiros and not self.operacoes
 
     # -- a consulta --------------------------------------------------------
 

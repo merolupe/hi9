@@ -56,7 +56,7 @@ não viu. Nas 67 notas de mercadoria daquela semana:
 |---|---|---|---|
 | **Categoria** | **44 de 44 — 100%** | 6 de 8 — 75% | 15 |
 | **Guardião** | nenhuma proposta | 40 de 52 — 77% | 15 |
-| **Tipo de Operação** | 4 de 18 — 22% | — | 49 |
+| **Tipo de Operação** | **18 de 18 — 100%** | — | 49 |
 
 Três leituras, e nenhuma delas é "a base funciona":
 
@@ -65,11 +65,11 @@ Três leituras, e nenhuma delas é "a base funciona":
 2. **Guardião não está pronto para preencher.** 77% de acerto quer dizer uma
    nota errada a cada quatro — e o guardião é quem recebe a cobrança. Ele
    sugere; quem decide é gente.
-3. **Os 14 "erros" de operação são um só, e não é erro de classificação.**
-   `[FATO]` A base diz `Compra Uso e Consumo` e a semana 38 diz
-   `Compra Uso Consumo`. O vocabulário mudou entre uma semana e outra. Casar
-   os dois por semelhança seria adivinhação; o caminho é uma tabela de
-   sinônimos cadastrada, como a que já existe para nome de coluna.
+3. **Operação acerta tudo — depois que o conectivo deixou de contar.**
+   `[FATO]` Na primeira medição ela aparecia com 4 de 18, e os 14 "erros"
+   eram um só: a base diz `Compra Uso e Consumo`, a semana 38 diz `Compra Uso
+   Consumo`. Normalizar levou a medida a **18 de 18**. Ver "O conectivo não é
+   divergência", abaixo.
 
 **A ressalva que a própria medição imprime na tela:** ela não sabe se quem
 classificou a semana 38 consultou a mesma base. Se consultou, a taxa mede
@@ -94,11 +94,12 @@ concordância, não acerto. Isso é do processo, não do dado.
 
 `[FATO]` Decisão do Compliance Tributário de 22/09/2026, tomada depois da
 medição acima: **categoria preenche, guardião preenche** — as duas colunas, no
-grau de sugestão. O parâmetro é `pre_categorizacao`, um valor por coluna
+grau de sugestão —, e **`Tipo de Operação` entrou junto** depois que a
+normalização do conectivo levou a medida dela a 18 de 18. O parâmetro é `pre_categorizacao`, um valor por coluna
 (`firme`, `sugestao` ou `nao`), e é editável sem desenvolvedor.
 
-Na semana 38 isso teria preenchido **52 categorias e 52 guardiões** das 67
-notas. Pelas taxas medidas, cerca de **12 guardiões sairiam errados** — é o
+Na semana 38 isso teria preenchido **52 categorias, 52 guardiões e 18 tipos
+de operação** das 67 notas. Pelas taxas medidas, cerca de **12 guardiões sairiam errados** — é o
 custo conhecido da decisão, e é por isso que as três travas abaixo não são
 parâmetro:
 
@@ -129,13 +130,28 @@ contradiz: uma nota na `Pendentes` com `Guardião = Faturamento`. Entre um
 arquivo coerente cuja sugestão pode estar errada e um arquivo incoerente, o
 primeiro é o que dá para conferir.
 
+### O conectivo não é divergência
+
+`[FATO]` `Compra Uso e Consumo` e `Compra Uso Consumo` são o mesmo tipo de
+operação escrito por duas pessoas diferentes. A comparação passa a ignorar uma
+lista **fechada e curta** de palavras de ligação (`e`, `de`, `da`, `do`, `com`,
+`para`…), e nada além disso: `Compra MP` e `Compra Embalagem` continuam
+diferentes, porque o que os separa é substantivo. Normalizar é tirar ruído
+conhecido; casar por semelhança seria adivinhação, e é outra coisa.
+
+Sobra a pergunta de qual das duas grafias **escrever**, e ela não pode ser
+respondida pelo histórico — ele é justamente o que está defasado. A resposta
+sai do **livro**: a grafia que mais aparece nas classificações que voltaram
+das pessoas é a grafia em uso. Muda a redação, a ferramenta acompanha na
+semana seguinte, sem ninguém cadastrar nada.
+
+`Tipo de Operação` está ligado em `firme` — e como a base só oferece operação
+quando a regra se repete sem divergência, `firme` e `sugestao` dão no mesmo.
+
 ### O que continua desligado
 
-`Gestor de apoio` e `Tipo de Operação`. O gestor porque ninguém pediu — e ele
-sai do guardião, então é uma linha quando for a hora. A operação porque o
-vocabulário mudou entre a base e a semana 38, e ligá-la hoje escreveria
-`Compra Uso e Consumo` em toda nota que a semana chama de `Compra Uso
-Consumo`. Primeiro a tabela de sinônimos, depois a coluna.
+`Gestor de apoio`, porque ninguém pediu — e ele sai do guardião, então é uma
+linha quando for a hora.
 
 ## Como se usa
 

@@ -58,16 +58,21 @@ segue com as duas abas de sempre.
 
 ### A célula âmbar é sugestão da ferramenta
 
-`[FATO]` Desde 22/09/2026 a ferramenta **preenche** `Categoria` e `Guardião`
-quando a célula está vazia e a base de conhecimento tem o que propor. O que
-ela preencheu sai com **fundo âmbar claro**.
+`[FATO]` Desde 22/09/2026 a ferramenta **preenche** `Categoria`, `Guardião` e
+`Tipo de Operação` quando a célula está vazia e a base de conhecimento tem o
+que propor. O que ela preencheu sai com **fundo âmbar claro**.
 
 Três coisas que vale saber antes de confiar na cor:
 
 * **o que você escreveu nunca é sobrescrito.** A célula âmbar estava vazia;
-* **categoria erra pouco, guardião erra mais.** Medido contra a semana 38:
-  categoria acertou 44 de 44 no grau de evidência firme; guardião acerta cerca
-  de três em cada quatro. Confira o guardião âmbar antes de cobrar alguém;
+* **categoria e operação erram pouco, guardião erra mais.** Medido contra a
+  semana 38: categoria acertou 44 de 44 e operação 18 de 18 no grau de
+  evidência firme; guardião acerta cerca de três em cada quatro. Confira o
+  guardião âmbar antes de cobrar alguém;
+* **a operação sai na sua redação.** Se o time passa a escrever `Compra Uso
+  Consumo` no lugar de `Compra Uso e Consumo`, a ferramenta acompanha na
+  semana seguinte — ela escreve a grafia que o livro mais usa, não a que
+  aprendeu;
 * **um guardião proposto encaminha a nota** — se a base propõe `Faturamento`,
   a nota vai para a `PENDENTES FIS-FAT`, como iria se você tivesse escrito.
 

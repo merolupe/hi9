@@ -240,6 +240,7 @@ def pre_categorizacao(dados: dict[str, Any]) -> dict[str, str]:
     return {
         col.C_CATEGORIA: str(bruto.get("categoria") or "sugestao"),
         col.C_GUARDIAO: str(bruto.get("guardiao") or "sugestao"),
+        col.C_TIPO_DE_OPERACAO: str(bruto.get("tipo_de_operacao") or "firme"),
     }
 
 

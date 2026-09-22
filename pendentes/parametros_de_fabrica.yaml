@@ -116,6 +116,12 @@ mercadorias:
 pre_categorizacao:
   categoria: sugestao
   guardiao: sugestao
+  # A operação só tem proposta quando a regra se repete sem divergência, então
+  # `firme` e `sugestao` dão no mesmo — fica `firme` por ser o que descreve.
+  # A grafia escrita é a que o livro mais usa, e não a da base: `Compra Uso e
+  # Consumo` e `Compra Uso Consumo` são o mesmo tipo, e quem manda é como o
+  # time escreve hoje.
+  tipo_de_operacao: firme
 
 # -- o que sai do relatório de serviços --------------------------------------
 # Parceiro e valor que o time decidiu não cobrar. Traz código e nome de

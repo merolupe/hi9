@@ -42,7 +42,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from ..conhecimento.base import FIRME, SUGESTAO, Conhecimento
+from ..conhecimento.base import (FIRME, SUGESTAO, Conhecimento,
+                                 chave_de_operacao)
+from ..conhecimento.importacao import cfop_normalizado
+from ..estado import Livro
 from ..texto import aparar
 from . import colunas as col
 from .fontes import Documento
@@ -52,7 +55,9 @@ from .fontes import Documento
 NAO = "nao"
 GRAUS = {NAO: (), FIRME: (FIRME,), SUGESTAO: (FIRME, SUGESTAO)}
 
-#: Qual campo do livro corresponde a cada coluna da planilha.
+#: Qual campo da base corresponde a cada coluna da planilha, **na ordem em
+#: que as colunas são preenchidas**. Categoria primeiro, porque a proposta de
+#: `Tipo de Operação` pode depender dela.
 CAMPOS = {col.C_CATEGORIA: "categoria", col.C_GUARDIAO: "guardiao"}
 
 
@@ -84,8 +89,34 @@ class Preenchimento:
         return saida
 
 
+def grafias_do_livro(livro: Livro | None) -> dict[str, str]:
+    """Como o time escreve hoje cada tipo de operação.
+
+    `[FATO]` A base aprendeu `Compra Uso e Consumo`; o relatório da semana 38
+    escreve `Compra Uso Consumo`. É o mesmo tipo de operação, e a ferramenta
+    não pode discordar de si mesma por causa de um conectivo.
+
+    Normalizar o **casamento** resolve metade: as duas formas passam a ser a
+    mesma chave. A outra metade é qual das duas **escrever**, e a resposta não
+    pode sair do histórico agregado — ele é justamente o que está defasado. Sai
+    do livro: a grafia que aparece mais nas classificações que voltaram das
+    pessoas é a grafia em uso. Muda a redação, a ferramenta acompanha na semana
+    seguinte, sem ninguém cadastrar nada.
+    """
+    contagem: dict[str, dict[str, int]] = {}
+    for registro in (livro.registros.values() if livro else ()):
+        escrita = aparar(registro.tipo_de_operacao)
+        if not escrita:
+            continue
+        por_grafia = contagem.setdefault(chave_de_operacao(escrita), {})
+        por_grafia[escrita] = por_grafia.get(escrita, 0) + 1
+    return {chave: max(grafias.items(), key=lambda t: t[1])[0]
+            for chave, grafias in contagem.items()}
+
+
 def preencher(documentos: Iterable[Documento], conhecimento: Conhecimento, *,
-              minimo_por_coluna: dict[str, str]) -> Preenchimento:
+              minimo_por_coluna: dict[str, str],
+              livro: Livro | None = None) -> Preenchimento:
     """Preenche as colunas ligadas, só onde estão vazias. Devolve o que fez.
 
     `minimo_por_coluna` diz, para cada coluna, qual o grau **mínimo** que
@@ -101,23 +132,58 @@ def preencher(documentos: Iterable[Documento], conhecimento: Conhecimento, *,
             relato.desligadas.append(coluna)
             continue
         ligadas[coluna] = (campo, GRAUS[grau])
-    if not ligadas or not len(conhecimento):
+    operacao = _grau_da_operacao(minimo_por_coluna, relato)
+    if (not ligadas and not operacao) or conhecimento.vazia:
         return relato
+
+    grafias = grafias_do_livro(livro) if operacao else {}
 
     for documento in documentos:
         for coluna, (campo, aceitos) in ligadas.items():
-            posicao = col.POSICAO_DA_CATEGORIZACAO[coluna]
-            if aparar(documento.categorizacao[posicao]):
-                continue                     # já classificado: não se toca
             proposta = conhecimento.propor(
                 documento.de(col.X_COD_PARCEIRO), campo,
                 documento.de(col.X_NOME_FANTASIA))
-            if not proposta or proposta.confianca not in aceitos:
-                continue
-            documento.categorizacao[posicao] = proposta.valor
-            documento.propostas[coluna] = proposta.confianca
-            relato.contar(coluna, proposta.confianca)
+            _escrever(documento, coluna, proposta, aceitos, relato)
+
+        if operacao:
+            # Depois das outras duas: a regra mais específica de operação é
+            # por CFOP + parceiro + **categoria**, e a categoria pode ter
+            # acabado de ser preenchida nesta mesma passagem.
+            proposta = conhecimento.propor_operacao(
+                cfop_normalizado(documento.de(col.X_CFOP)),
+                documento.de(col.X_COD_PARCEIRO),
+                documento.categorizacao[
+                    col.POSICAO_DA_CATEGORIZACAO[col.C_CATEGORIA]])
+            _escrever(documento, col.C_TIPO_DE_OPERACAO, proposta, operacao,
+                      relato, grafias=grafias)
     return relato
+
+
+def _grau_da_operacao(minimo_por_coluna: dict[str, str],
+                      relato: Preenchimento) -> tuple[str, ...]:
+    grau = str(minimo_por_coluna.get(col.C_TIPO_DE_OPERACAO)
+               or NAO).strip().lower()
+    if grau == NAO or grau not in GRAUS:
+        relato.desligadas.append(col.C_TIPO_DE_OPERACAO)
+        return ()
+    return GRAUS[grau]
+
+
+def _escrever(documento: Documento, coluna: str, proposta, aceitos,
+              relato: Preenchimento,
+              grafias: dict[str, str] | None = None) -> None:
+    """Escreve a proposta naquela coluna, **se** a célula estiver vazia."""
+    posicao = col.POSICAO_DA_CATEGORIZACAO[coluna]
+    if aparar(documento.categorizacao[posicao]):
+        return                               # já classificado: não se toca
+    if not proposta or proposta.confianca not in aceitos:
+        return
+    valor = proposta.valor
+    if grafias:
+        valor = grafias.get(chave_de_operacao(valor), valor)
+    documento.categorizacao[posicao] = valor
+    documento.propostas[coluna] = proposta.confianca
+    relato.contar(coluna, proposta.confianca)
 
 
 def marcar(documento: Documento, colunas) -> set[int]:
