@@ -4,17 +4,22 @@ Notas emitidas contra a Hinove que ainda **não** têm entrada lançada — de
 mercadoria e de serviço. São duas rotinas semanais do time fiscal, hoje em duas
 macros de Excel, e uma delas alimenta a cobrança formal às áreas guardiãs.
 
-**Duas ferramentas na tela, um projeto no disco.** As duas fazem a mesma coisa:
+**Três ferramentas na tela, um projeto no disco.** Duas fazem a mesma coisa:
 cruzam um universo de documentos com um registro de lançamento, dizem o que
 sobrou e preservam o julgamento humano de uma semana para a outra. O que muda é
 a chave do cruzamento — mercadorias tem `Chave Acesso`, serviços não tem chave
-nenhuma e precisa construir quatro.
+nenhuma e precisa construir quatro. A terceira, o **Resumo Executivo**, não
+cruza nada: ela lê a saída das outras duas, já classificada, e devolve o painel
+da semana dentro da própria planilha.
 
 ## Situação
 
-**O GerarServPend já roda**, na janela da Central e no terminal. O motor de
-mercadorias ainda não existe, e por isso o GerarPendentes continua apagado
-(`A_IMPORTAR`) de propósito — botão que não roda é pior do que botão apagado.
+**As três ferramentas já rodam**, na janela da Central e no terminal. O Resumo
+Executivo saiu do porte em 15/09/2026 e voltou em 22/09/2026 como outra coisa:
+o painel das **duas frentes**, com três categorias, montado sobre o relatório
+já classificado — e conferido contra o relatório de produção da semana 38,
+bloco a bloco. A planilha de mercadorias continua saindo sem painel, com as
+sete abas inteiras; o painel é etapa separada e vem por último.
 
 | Bloco | Situação |
 |---|---|
@@ -26,9 +31,14 @@ mercadorias ainda não existe, e por isso o GerarPendentes continua apagado
 | Escrita da planilha, com formato antes da escrita | pronto |
 | Carga de fábrica dos parâmetros | pronta |
 | **Motor de serviços** — cascata de confronto, vínculo, população inversa | **pronto** |
-| Tela de configuração de serviços | entrega 3 |
-| **Motor de mercadorias** — limpeza, roteamento, conferência, B1/B2 | entrega 3 |
-| **Resumo Executivo** — tabelas, TOP N e os quatro gráficos | entrega 4 |
+| **Motor de mercadorias** — limpeza, roteamento, conferência, herança, B1/B2 | **pronto** |
+| Aba `Descartados` — o que A1 e A3 tiram, com o motivo | **pronta** |
+| Tela de configuração das ferramentas | não entrou |
+| **Resumo Executivo** — tabelas, os dois TOP N e os três gráficos | **pronto** |
+| **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** |
+| **Pré-categorização** — categoria, guardião e operação, com a célula marcada | **ligada** |
+| **Exclusões de serviços** — cancelada na prefeitura e exceção cadastrada | **pronto** |
+| Aba `Resumo` — a série entre semanas, que o painel não cobre | não entrou |
 
 O que trava o quê está em
 [`docs/pendentes/04-plano-de-entrega.md`](../docs/pendentes/04-plano-de-entrega.md).
@@ -52,7 +62,31 @@ src/pendentes/
   estado.py        o livro de classificação, com carimbo de quem gravou
   snapshot.py      a foto semanal imutável, que nunca é sobrescrita
   escrita.py       a aba formatada, com o formato aplicado ANTES da escrita
-  cli.py           python rodar.py pendentes servicos <arquivos>
+  cli.py           python rodar.py pendentes mercadorias|servicos|resumo|
+                   conhecimento …
+
+src/pendentes/mercadorias/
+  colunas.py       as 27 do XML, as 7 do CE e a ordem das 39 / 36 / 33 / 27 / 28
+  fontes.py        o documento com as 27 colunas, e as DUAS chaves que ele tem
+  limpeza.py       A1 (XML de terceiro), A2 (parceiro), A3 (transporte)
+  roteamento.py    as 4 condições na ordem, e a segregação de `Lançados`
+  conferencia.py   o lookup do CE, as 6 colunas e o farol de três estados
+  classificacao.py a herança pelo livro, B1 (Fiscal) e B2 (split FIS-FAT)
+  vocabulario.py   unidade, categoria e guardião: o que não é reconhecido
+  precategorizacao.py  a base preenche o que está vazio, e a célula sai marcada
+  execucao.py      o pipeline de ponta a ponta e o que a tela mostra
+
+src/pendentes/conhecimento/
+  base.py          os três graus de confiança, e a consulta que respeita eles
+  importacao.py    a lista curada + o histórico medido, sem escolher entre os dois
+  simulacao.py     a base contra um relatório classificado: quanto ela acertaria
+
+src/pendentes/resumo/
+  colunas.py       onde cada coisa fica nas duas abas do painel
+  fontes.py        as abas `Pendentes` e `Servicos` viram uma lista de notas
+  painel.py        a conta — categorias, TOP N, unidade e guardião
+  escrita.py       as duas abas e os três gráficos, sem uma fórmula
+  execucao.py      o painel entra na planilha da semana, gravada ao lado
 
 src/pendentes/servicos/
   colunas.py       o nome de cada coluna lida e a ordem exata das quatro abas
@@ -64,6 +98,38 @@ src/pendentes/servicos/
   inversa.py       Sem Correspondencia ASIS: o que o ASIS deixou de capturar
   execucao.py      o pipeline de ponta a ponta e o que a tela mostra
 ```
+
+## O que o motor de mercadorias responde
+
+*Quais NF-e emitidas contra a Hinove ainda não têm conferência fiscal — e de
+quem é a responsabilidade por cada uma.*
+
+Aqui a chave é natural, e o trabalho não está no cruzamento: está em decidir
+**o que entra no relatório**. É uma sequência de regras cuja ordem é a regra:
+
+```
+limpeza        A1 (XML de terceiro) → A3 (NF-e de transporte) → A2 (parceiro)
+   ↓           o que A1 e A3 tiram vai para a aba `Descartados`, com o motivo
+roteamento     4 condições; a primeira verdadeira consome a linha
+   ↓           CTe · Manifestados · Entradas 3os — e o que sobra é pendência
+conferência    o lookup do CE: 6 colunas, farol de TRÊS estados
+   ↓           `Conf fiscal = Sim` sai para `Lançados`
+classificação  a herança vem do livro → B1 (Fiscal) → B2 (split FIS-FAT)
+```
+
+A saída são sete abas: `Pendentes` (39 colunas) e `PENDENTES FIS-FAT` (36)
+visíveis, e `CTe`, `Manifestados`, `Entradas 3os` (27 cada), `Lançados` (33) e
+`Descartados` (28) ocultas — **ocultas, não apagadas**: elas são evidência para
+auditoria, e reexibem-se por clique direito.
+
+**`Descartados` é a única aba nova do porte.** Hoje as linhas que A1 e A3 tiram
+somem sem rastro, sem contador e sem aba, e não há como medir o volume
+descartado por semana. Agora há.
+
+O que bloqueia o encerramento da semana é a ferramenta não conseguir dizer o
+que uma coisa é: unidade não reconhecida, categoria fora da lista, guardião
+fora da lista cadastrada e chave duplicada no CE cujas linhas divergem. Nota
+que sobra depois das quatro condições **não** bloqueia: ela é o produto.
 
 ## O que o motor de serviços responde
 
@@ -114,12 +180,17 @@ depois não reverte.
 
 ## Como se usa
 
-Pela janela: `Hinove.bat`, ferramenta **GerarServPend**, e arraste os
-relatórios da semana. Pelo terminal, com os arquivos em qualquer ordem:
+Pela janela: `Hinove.bat`, ferramenta **GerarPendentes** ou **GerarServPend**,
+e arraste os relatórios da semana. Pelo terminal, com os arquivos em qualquer
+ordem:
 
 ```
+python rodar.py pendentes mercadorias XML31.xls CE31.xls Pendentes30.xls
 python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
 ```
+
+O código de saída é `1` quando a semana ficou **não encerrável** — há item que
+exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 
 ## Onde as coisas moram
 
@@ -137,8 +208,15 @@ python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
 python -m pytest
 ```
 
-168 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+364 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
+
+**Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido
+contra o relatório de produção da semana 38 e reproduz os seis blocos dele —
+tabela por categoria, os dois TOP 5, valor por unidade e quantidade por
+guardião — dígito a dígito. A conferência está em
+[`docs/pendentes/07-resumo-executivo.md`](../docs/pendentes/07-resumo-executivo.md);
+o arquivo, por ser dado real, não entra no repositório.
 
 **A divergência zero contra a macro ainda não foi provada**, porque os arquivos
 reais de uma semana e a saída correspondente da macro ainda não chegaram. É a
@@ -149,4 +227,4 @@ reais de uma semana e a saída correspondente da macro ainda não chegaram. É a
 
 [`docs/pendentes/`](../docs/pendentes/) — a arquitetura, o registro do porte, o
 que cada relatório responde para o time fiscal, o plano de entrega com a
-viabilidade de cada bloco, e as decisões pendentes.
+viabilidade de cada bloco, as decisões pendentes e o painel semanal.

@@ -56,7 +56,7 @@ e mandando o navegador abrir a página.
 
 ## 4. O contrato de ferramenta
 
-Para aparecer na tela, uma ferramenta declara até quatro coisas em
+Para aparecer na tela, uma ferramenta declara até cinco coisas em
 `central/src/central/ferramentas.py`:
 
 **Quem é** — `id`, `nome`, `resumo` de uma linha, `icone` e `estado`.
@@ -75,6 +75,16 @@ planilha nem em arquivo no git. A ferramenta declara `Secao`s — cada uma uma
 tabela editável, com seus `Campo`s — e duas funções: `ler`, que devolve o que
 está gravado, e `gravar`, que confere e responde `(gravou, problemas)`. Com
 erro não grava; com aviso grava e conta o que vai acontecer.
+
+**Como conferir o que chegou** — `conferir`, opcional, para quem pede mais de
+um relatório e reconhece cada um pelo cabeçalho (GerarServPend e
+GerarPendentes). Recebe os caminhos já enviados e devolve uma `Conferencia`:
+os `Documento`s esperados — cada um `ok`, `falta`, `opcional` ou `repetido`,
+com os arquivos que o preencheram — e os arquivos que não são nenhum deles.
+Com isso a tela deixa de rodar no instante em que o arquivo cai: ela mostra a
+lista dos relatórios, marca cada um conforme chega, deixa anexar **aos poucos**
+e tirar um arquivo errado, e só acende "Gerar planilha" quando nada falta.
+Quem não declara (`DiXML`, `Fiscalbot`) continua rodando ao largar o arquivo.
 
 ```python
 Ferramenta(
@@ -182,6 +192,8 @@ conferido:
 | Arquivo vazio, ou acima de 500 MB | `servidor.py` |
 | Soma dos arquivos acima de 2 GB | `servidor.py` |
 | Nome de arquivo que tente sair da pasta temporária | `_nome_seguro` |
+| "Gerar" com relatório obrigatório faltando, repetido ou ilegível — os anexos ficam, para completar sem reenviar | `servidor.py` (`_executar`) |
+| A saída da própria ferramenta tomada por relatório de origem — a `Sem Correspondencia ASIS` traz as colunas do Portal de Compras, a `CTe` traz as do XML | `pendentes/papeis.py` (`abas_da_saida`) |
 | `.zip` que se expande além de 2 GB descompactados | `dixml/pacote.py` |
 | `.zip` aninhado além de 8 níveis | `dixml/pacote.py` |
 
@@ -191,6 +203,12 @@ depois.
 
 ## 8. O que falta
 
+- **Resumo Executivo — importado, em teste.** A terceira entrada de
+  `pendentes/`, e a única do catálogo que recebe a **saída** de outras
+  ferramentas em vez de um export do ERP: ela lê a planilha da semana, já
+  classificada, e devolve o painel das duas frentes dentro dela. Conferida
+  contra o relatório de produção da semana 38, bloco a bloco. O que falta é a
+  aba `Resumo`, que é a série entre semanas.
 - **GerarServPend — importado, em teste.** O projeto `pendentes/` traz o
   núcleo comum das duas rotinas (reconhecimento de arquivo por âncora de
   cabeçalho, coluna por nome, as normalizações, o livro de classificação, o
@@ -200,11 +218,24 @@ depois.
   roda dentro da janela. **A divergência zero contra a macro ainda não está
   provada** — faltam os arquivos reais de uma semana e a saída que a macro
   gerou a partir deles.
-- **GerarPendentes — em importação.** Falta o motor de mercadorias: limpeza,
-  roteamento, lookup da Conferência de Entradas e o Resumo Executivo. A
-  entrada do catálogo continua `A_IMPORTAR` — botão que não roda é pior do que
-  botão apagado. A ordem e o que trava o quê estão em
+- **GerarPendentes — importado, em teste.** O motor de mercadorias entrou:
+  a limpeza (A1, A2 e A3) com a aba `Descartados`, o roteamento das quatro
+  condições parametrizadas, o lookup da Conferência de Entradas com o farol de
+  três estados, a herança pelo livro, a reclassificação para Fiscal e o split
+  da `PENDENTES FIS-FAT`. A entrada do catálogo está `DISPONIVEL` e roda
+  dentro da janela. **O Resumo Executivo não entrou**: ele saiu do porte por
+  decisão do Compliance Tributário de 15/09/2026 e vira um resumo das duas
+  frentes, com três categorias — ver
+  [`../pendentes/06-proximas-rodadas.md`](../pendentes/06-proximas-rodadas.md).
+  A divergência zero contra a macro também aqui **não está provada**, e o que
+  trava o quê está em
   [`../pendentes/04-plano-de-entrega.md`](../pendentes/04-plano-de-entrega.md).
+- **As duas ferramentas de pendentes entraram sem tela de configuração.** Os
+  parâmetros são lidos da carga de fábrica e da base viva, e os motores os
+  honram; o que falta é a tela que os edita. Enquanto ela não vem, a tabela de
+  unidades e a lista de guardiões só se cadastram editando
+  `dados/pendentes/parametros.yaml` à mão — e, **vazias, elas não validam
+  nada**, que é o comportamento de hoje.
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).
 - O Faturabot está em desenvolvimento e entra pelo mesmo contrato.

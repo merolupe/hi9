@@ -30,14 +30,20 @@ Quem só usa a apuração pode continuar indo direto por **`Apurabot.bat`**.
 | **DiXML** | `dixml/` | Importado | Transforma lote de XMLs em planilha. Permite validar qualquer informação fiscal presente no arquivo da nota. |
 | **Fiscalbot** | `fiscalbot/` | Importado, em teste | Confere o lançamento de cada nota e valida o Livro Fiscal. É o fornecedor do Livro Fiscal validado que o Apurabot consome. |
 | **GerarServPend** | `pendentes/` | Importado, em teste | Confronta as notas de serviço emitidas contra a Hinove (ASIS) com os lançamentos do Sankhya e diz o que ainda não foi lançado, com o pedido de compra e o requisitante por trás de cada pendência. |
-| _GerarPendentes_ | `pendentes/` | Em importação | Confronta dados e gera uma planilha de notas de mercadoria pendente de entrada. Compartilha o núcleo com a de cima — duas ferramentas na tela, um projeto no disco. O motor de mercadorias é a entrega seguinte. |
+| **GerarPendentes** | `pendentes/` | Importado, em teste | Confronta o relatório de importação de XML com a Conferência de Entradas e diz quais NF-e emitidas contra a Hinove ainda não têm entrada, de quem é a responsabilidade e há quantos dias estão paradas. Compartilha o núcleo com a de cima — duas ferramentas na tela, um projeto no disco. |
+| **Resumo Executivo** | `pendentes/` | Importado, em teste | O painel da semana sobre as duas frentes já classificadas: quanto está pendente por categoria, por unidade e por guardião, e as notas mais antigas e mais caras. Entra na própria planilha da semana, depois que as duas de cima rodam. |
+| **Base de conhecimento** | `pendentes/` | Importado, em teste | O que o histórico já respondeu sobre cada parceiro, para **propor** classificação — nunca para decidir por ela. Só o que a lista curada e o histórico afirmam juntos, com lastro, chega a poder preencher célula. |
 | _Faturabot_ | — | Em desenvolvimento | Conferências do time de expedição. Confere e consolida desvios da balança, escrituração de saídas e entradas de diretos. |
 
 As ferramentas que ainda não foram importadas **aparecem na Central**, apagadas,
 com o nome e o que fazem: o time enxerga o que falta em vez de descobrir na hora
-em que for precisar. O GerarPendentes segue apagado enquanto o motor de
-mercadorias não roda — botão que não roda é pior do que botão apagado —, mas o
-texto dele na tela já diz em que pé o porte está.
+em que for precisar. Hoje só o Faturabot está nessa situação — botão que não
+roda é pior do que botão apagado, mas o texto dele na tela já diz em que pé
+está.
+
+O GerarPendentes sai **sem o Resumo Executivo**: o painel deixou de ser porte e
+virou rodada nova, um resumo das duas frentes com três categorias. A planilha
+que vai por e-mail — as abas `Pendentes` e `PENDENTES FIS-FAT` — sai inteira.
 
 ## Como entra a próxima ferramenta
 

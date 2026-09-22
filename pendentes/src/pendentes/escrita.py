@@ -39,8 +39,15 @@ FORMATOS = {
     "texto": "@",
     "valor": "#,##0.00",
     "data": "DD/MM/YYYY",
+    # A coluna que ninguém sabe se é data ou contagem de dias: recebe o mesmo
+    # formato de data, e o valor vai **como veio**. Ver `valor_formatado`.
+    "data_ou_contagem": "DD/MM/YYYY",
     "geral": "General",
 }
+
+#: O fundo da célula que a base de conhecimento preencheu. Âmbar claro: é
+#: "confira isto", e não "isto está errado" — o vermelho já é do que bloqueia.
+COR_DA_PROPOSTA = "FFFFF2CC"
 
 #: Teto e piso de largura de coluna, em caracteres.
 LARGURA_MAXIMA = 60
@@ -121,11 +128,20 @@ def valor_formatado(valor: Any, formato: str) -> Any:
 
     Vazio continua vazio: coluna de valor sem valor não vira zero, porque
     zero é uma afirmação e ausência não é.
+
+    `data_ou_contagem` é a exceção, e existe por uma coluna só: o VBA escreve
+    `Dias Emissão Doc` **sem conversão** e formata a coluna como `DD/MM/YYYY`.
+    Se o valor for contagem de dias, o Excel exibe uma data de 1900 — defeito
+    visível, e preservado até a pendência nº 2 ser respondida. Converter aqui
+    trocaria o defeito por outro: o número viraria uma data de verdade, e a
+    célula deixaria de ser a que a macro produz.
     """
     if formato == "texto":
         return texto_de(valor)
     if valor is None or (isinstance(valor, str) and not valor.strip()):
         return ""
+    if formato == "data_ou_contagem":
+        return valor
     if formato == "valor":
         return numero_br(valor)
     if formato == "data":
@@ -139,13 +155,23 @@ def valor_formatado(valor: Any, formato: str) -> Any:
 
 def escrever_linhas(aba, colunas: Sequence[Coluna],
                     linhas: Iterable[Sequence[Any]], *,
-                    estilo: Estilo | None = None) -> int:
-    """Escreve as linhas de dados. Devolve quantas escreveu."""
+                    estilo: Estilo | None = None,
+                    marcadas: Sequence[set[int]] | None = None) -> int:
+    """Escreve as linhas de dados. Devolve quantas escreveu.
+
+    `marcadas` traz, para cada linha, as posições (base zero) das células que
+    saem **realçadas**. É por onde a célula preenchida pela base de
+    conhecimento se distingue da escrita por uma pessoa — cor, e não coluna
+    nova: coluna mudaria um layout que dezenas de pessoas leem, e a leitura de
+    volta na semana seguinte ignora cor.
+    """
     estilo = estilo or Estilo()
     fonte = Font(name=estilo.fonte, size=estilo.tamanho)
+    realce = PatternFill("solid", fgColor=COR_DA_PROPOSTA)
     formatos = [FORMATOS.get(c.formato, FORMATOS["geral"]) for c in colunas]
     escritas = 0
     for r, linha in enumerate(linhas, start=2):
+        destas = marcadas[r - 2] if marcadas and r - 2 < len(marcadas) else ()
         for i, coluna in enumerate(colunas, start=1):
             bruto = linha[i - 1] if i - 1 < len(linha) else ""
             celula = aba.cell(r, i, valor_formatado(bruto, coluna.formato))
@@ -155,6 +181,8 @@ def escrever_linhas(aba, colunas: Sequence[Coluna],
                 celula.alignment = CENTRO
             if estilo.bordas:
                 celula.border = BORDA
+            if i - 1 in destas:
+                celula.fill = realce
         escritas += 1
     return escritas
 
@@ -186,10 +214,11 @@ def finalizar_aba(aba, colunas: Sequence[Coluna],
 
 def escrever_aba(livro: Workbook, nome: str, colunas: Sequence[Coluna],
                  linhas: Sequence[Sequence[Any]], *, oculta: bool = False,
-                 estilo: Estilo | None = None):
+                 estilo: Estilo | None = None,
+                 marcadas: Sequence[set[int]] | None = None):
     """Aba completa, na ordem certa: formato, cabeçalho, dados, acabamento."""
     aba = preparar_aba(livro, nome, colunas, oculta=oculta, estilo=estilo)
-    escrever_linhas(aba, colunas, linhas, estilo=estilo)
+    escrever_linhas(aba, colunas, linhas, estilo=estilo, marcadas=marcadas)
     finalizar_aba(aba, colunas, linhas)
     return aba
 

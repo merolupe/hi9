@@ -230,3 +230,67 @@ def relatorio(caminho: Path, colunas: list[str], linhas: list[list],
               aba: str = "Plan1") -> Path:
     """Um relatório do jeito que o Sankhya entrega: título antes do cabeçalho."""
     return escrever(caminho, {aba: cabecalho_com_titulo(colunas, linhas)})
+
+
+# -- mercadorias: montagem de linha -----------------------------------------
+
+def chave_de(numero: int) -> str:
+    """Uma chave de acesso inventada e distinta, com os 44 dígitos de sempre."""
+    return CHAVE[:-3] + f"{numero:03d}"
+
+
+def linha_xml(numero, chave, **campos) -> list:
+    """Uma linha do relatório de importação de XML, com as 27 colunas.
+
+    Os valores de fábrica desenham a nota mais comum — de saída, não
+    cancelada, com manifestação lida e sem tomador de CT-e —, que é a que
+    **sobra** depois das quatro condições de roteamento. Cada teste muda só o
+    campo que quer exercitar.
+    """
+    return [
+        numero,
+        campos.get("cod_parceiro", "4"),
+        campos.get("parceiro", "FORNECEDOR EXEMPLO LTDA"),
+        campos.get("emissao", "01/07/2026"),
+        campos.get("cfop", "1102"),
+        campos.get("valor", "1500.00"),
+        campos.get("fantasia", "HINOVE MATRIZ"),
+        chave,
+        campos.get("vencimento", "30/07/2026"),
+        campos.get("manifestacao", "Ciência"),
+        campos.get("situacao", "NF-e autorizada"),
+        campos.get("tipo", "NF-e Normal"),
+        campos.get("evento", "Autorizada"),
+        campos.get("natureza", "COMPRA"),
+        campos.get("entrada_saida", "Saida"),
+        campos.get("tomador", "Não se aplica"),
+        campos.get("dias", 12),
+        campos.get("importacao", "02/07/2026"),
+        campos.get("status", "Importado"),
+        campos.get("usuario", "fulano"),
+        campos.get("papel_no_cte", ""),
+        campos.get("empresa", "1"),
+        campos.get("cnpj", "12345678000199"),
+        campos.get("codigo", "9001"),
+        campos.get("possui_xml", "Sim"),
+        campos.get("importado_dfe", "Sim"),
+        campos.get("serie", "1"),
+    ]
+
+
+#: O HTML de farol que o Sankhya exporta, nos dois códigos que ele usa.
+FAROL_VERDE = '<div><span>&#128994;</span></div>'
+FAROL_VERMELHO = '<div><span>&#128308;</span></div>'
+
+
+def linha_ce(chave, **campos) -> list:
+    """Uma linha da Conferência de Entradas, com as 7 colunas."""
+    return [
+        chave,
+        campos.get("fisica", "Sim"),
+        campos.get("fiscal", "não"),
+        campos.get("incongruencia", ""),
+        campos.get("data", "05/07/2026"),
+        campos.get("pedido", "7788"),
+        campos.get("farol", FAROL_VERDE),
+    ]

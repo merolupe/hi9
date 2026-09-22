@@ -169,6 +169,30 @@ def mapear(cabecalho: Sequence[Any], exigencias: Iterable[Exigencia],
     return Mapa(posicoes, tuple(ausentes))
 
 
+def ate_a_ultima(linhas: Sequence[Sequence[Any]], mapa: "Mapa",
+                 ancora: str) -> list[list[Any]]:
+    """As linhas até a última que tem a coluna-âncora preenchida.
+
+    O relatório costuma trazer rodapé, total ou linha em branco no fim. O VBA
+    resolve com `Cells(Rows.Count, coluna).End(xlUp).Row`, que é exatamente
+    isto: a última linha com aquela coluna preenchida manda, e o que vem
+    depois não existe. Linha vazia **no meio** continua entrando — ela é dado
+    incompleto, não fim de arquivo.
+
+    Está no núcleo porque os dois domínios fazem a mesma coisa com âncoras
+    diferentes: serviços ancora em `Numero NFe` e em `Nro. Unico`, mercadorias
+    em `Nro Nota` e em `Chave Acesso`.
+    """
+    from .texto import texto_de
+
+    indice = mapa[ancora]
+    ultima = -1
+    for i, linha in enumerate(linhas):
+        if 0 <= indice < len(linha) and texto_de(linha[indice]).strip():
+            ultima = i
+    return [list(linha) for linha in linhas[:ultima + 1]]
+
+
 def exigencias_de(declaradas: Iterable[dict]) -> tuple[Exigencia, ...]:
     """As exigências vindas do parâmetro: `nome`, `sinonimos`, `obrigatoria`."""
     saida = []

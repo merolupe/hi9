@@ -27,6 +27,21 @@ está contido no do outro. Então o papel do XML declara, além das âncoras que
 exige, uma âncora que ele **não pode ter**: `Guardião`, coluna que só existe
 na saída. É a única forma honesta de separar — e é um detalhe que o desenho
 original do porte não tinha previsto.
+
+### A aba que a própria ferramenta escreveu
+
+A saída de uma semana volta na seguinte como "planilha da semana anterior" — e
+algumas abas dela são **cópia de relatório de origem**. A `Sem Correspondencia
+ASIS` de serviços devolve as colunas do Portal de Compras tal como vieram; a
+`CTe`, a `Manifestados` e a `Descartados` de mercadorias são o XML cru. Pelas
+âncoras, essas abas *são* o relatório de origem, e o arquivo da semana passada
+era reconhecido como Portal de Compras (ou como XML) ao lado do verdadeiro.
+
+Por isso quem chama declara as `abas_da_saida`: o nome das abas que a própria
+ferramenta escreve. Uma aba com esse nome nunca carrega papel de relatório de
+origem — só o papel que a pede pelo nome (`aba`), que é o da semana anterior.
+O nome da aba é layout de saída, que mora no código ao lado da ordem das
+colunas; não depende de a base viva ter recebido a carga de fábrica nova.
 """
 from __future__ import annotations
 
@@ -122,11 +137,15 @@ class Reconhecimento:
         return recado
 
 
-def _casa(arquivo: Arquivo, papel: Papel) -> tuple[Aba, int] | None:
+def _casa(arquivo: Arquivo, papel: Papel,
+          abas_da_saida: frozenset[str] = frozenset()) -> tuple[Aba, int] | None:
     """A aba e a linha de cabeçalho em que este arquivo satisfaz o papel."""
     alvo_da_aba = chave_de_texto(papel.aba) if papel.aba else ""
     for aba in arquivo.abas:
         if alvo_da_aba and chave_de_texto(aba.nome) != alvo_da_aba:
+            continue
+        # Aba escrita pela própria ferramenta não é relatório de origem.
+        if not alvo_da_aba and chave_de_texto(aba.nome) in abas_da_saida:
             continue
         linha = cab.localizar(aba.linhas, papel.ancoras,
                               linhas_de_busca=LINHAS_PARA_ESPIAR)
@@ -142,17 +161,30 @@ def _casa(arquivo: Arquivo, papel: Papel) -> tuple[Aba, int] | None:
     return None
 
 
-def reconhecer(arquivos: Sequence[Arquivo],
-               papeis: Iterable[Papel]) -> Reconhecimento:
+def _chaves_das_abas(abas_da_saida: Iterable[str]) -> frozenset[str]:
+    return frozenset(chave_de_texto(nome) for nome in abas_da_saida
+                     if chave_de_texto(nome))
+
+
+def casamentos(arquivo: Arquivo, papeis: Iterable[Papel],
+               abas_da_saida: Iterable[str] = ()) -> list[Papel]:
+    """Todos os papéis que este arquivo satisfaz — zero, um ou (erro) vários."""
+    saida = _chaves_das_abas(abas_da_saida)
+    return [papel for papel in papeis if _casa(arquivo, papel, saida) is not None]
+
+
+def reconhecer(arquivos: Sequence[Arquivo], papeis: Iterable[Papel],
+               abas_da_saida: Iterable[str] = ()) -> Reconhecimento:
     """Distribui os arquivos entre os papéis, ou aborta dizendo por quê."""
     papeis = list(papeis)
+    saida = _chaves_das_abas(abas_da_saida)
     achados: dict[str, list[tuple[Arquivo, Aba, int]]] = {p.id: [] for p in papeis}
     papeis_do_arquivo: dict[str, list[Papel]] = {}
 
     for arquivo in arquivos:
         papeis_do_arquivo[arquivo.nome] = []
         for papel in papeis:
-            casou = _casa(arquivo, papel)
+            casou = _casa(arquivo, papel, saida)
             if casou is None:
                 continue
             achados[papel.id].append((arquivo, casou[0], casou[1]))
@@ -216,8 +248,9 @@ def ler_inteiro(reconhecido: Reconhecido) -> Reconhecido:
     return Reconhecido(reconhecido.papel, arquivo, aba, linha)
 
 
-def ler_e_reconhecer(caminhos: Iterable[Path | str],
-                     papeis: Iterable[Papel]) -> tuple[Reconhecimento, list[Arquivo]]:
+def ler_e_reconhecer(caminhos: Iterable[Path | str], papeis: Iterable[Papel],
+                     abas_da_saida: Iterable[str] = ()
+                     ) -> tuple[Reconhecimento, list[Arquivo]]:
     """Espia o cabeçalho de cada arquivo e distribui os papéis.
 
     Lê só as primeiras linhas de cada aba: descobrir o papel não exige
@@ -226,7 +259,67 @@ def ler_e_reconhecer(caminhos: Iterable[Path | str],
     """
     arquivos = [ler(caminho, limite_de_linhas=LINHAS_PARA_ESPIAR)
                 for caminho in caminhos]
-    return reconhecer(arquivos, papeis), arquivos
+    return reconhecer(arquivos, papeis, abas_da_saida), arquivos
+
+
+def _e_saida(arquivo: Arquivo, abas_da_saida: Iterable[str]) -> bool:
+    saida = _chaves_das_abas(abas_da_saida)
+    return any(chave_de_texto(aba.nome) in saida for aba in arquivo.abas)
+
+
+def conferir(caminhos: Sequence[Path | str], papeis: Iterable[Papel],
+             abas_da_saida: Iterable[str] = ()) -> dict:
+    """O que cada arquivo é, **sem abortar** — para a tela mostrar antes de rodar.
+
+    `reconhecer` aborta no primeiro problema, e é o certo na hora de rodar.
+    Na hora de anexar, a pessoa precisa ver o quadro inteiro: o que já veio,
+    o que falta e qual arquivo não serviu, para anexar o resto aos poucos.
+    Devolve texto puro, na ordem dos papéis e na ordem dos arquivos:
+
+    * `documentos` — `id`, `rotulo` e `obrigatorio` de cada papel;
+    * `arquivos` — para cada caminho recebido, o `papel` que ele recebeu (ou
+      vazio), o `problema` quando não recebeu nenhum, e se esse problema
+      `bloqueia` a execução. Arquivo ilegível ou que serve a dois papéis
+      bloqueia; arquivo que não é nenhum dos relatórios só fica de fora, com
+      aviso — é o que `gerar` já faz com ele.
+
+    Dois arquivos no mesmo papel não é problema de um arquivo, é do par: quem
+    mostra a lista enxerga o papel repetido e pede para tirar um.
+    """
+    papeis = list(papeis)
+    arquivos = []
+    for caminho in caminhos:
+        nome = Path(caminho).name
+        try:
+            arquivo = ler(caminho, limite_de_linhas=LINHAS_PARA_ESPIAR)
+        except Exception as erro:                      # noqa: BLE001
+            arquivos.append({"papel": "", "bloqueia": True,
+                             "problema": f"não consegui abrir {nome}: {erro}"})
+            continue
+        casados = casamentos(arquivo, papeis, abas_da_saida)
+        if len(casados) == 1:
+            arquivos.append({"papel": casados[0].id, "bloqueia": False,
+                             "problema": ""})
+        elif casados:
+            rotulos = " e ".join(p.rotulo for p in casados)
+            arquivos.append({"papel": "", "bloqueia": True, "problema": (
+                f"serve tanto para {rotulos}; não escolho por você")})
+        elif _e_saida(arquivo, abas_da_saida):
+            # A planilha que a ferramenta gerou, sem a aba que a semana
+            # seguinte lê — alguém a apagou ou a renomeou antes de guardar.
+            pedidas = sorted({p.aba for p in papeis if p.aba})
+            arquivos.append({"papel": "", "bloqueia": False, "problema": (
+                "é uma planilha gerada pela ferramenta, mas sem a aba "
+                + " / ".join(f"'{a}'" for a in pedidas)
+                + " — é dela que a semana anterior é lida")})
+        else:
+            arquivos.append({"papel": "", "bloqueia": False, "problema": (
+                "não tem o cabeçalho de nenhum dos relatórios esperados")})
+    return {
+        "documentos": [{"id": p.id, "rotulo": p.rotulo,
+                        "obrigatorio": p.obrigatorio} for p in papeis],
+        "arquivos": arquivos,
+    }
 
 
 def papeis_de(declarados: Iterable[dict], dominio: str = "") -> tuple[Papel, ...]:

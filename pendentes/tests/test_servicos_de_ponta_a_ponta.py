@@ -415,3 +415,44 @@ def test_arquivo_que_nao_casa_com_papel_nenhum_aparece_na_tela(semana, tmp_path)
     semana["arquivos"].append(estranho)
     resultado = _rodar(semana)
     assert any("Planilha da Ana.xlsx" in aviso for aviso in resultado.atencoes())
+
+
+# -- a saída da semana passada volta como anexo -----------------------------
+
+def test_a_saida_da_semana_passada_nao_e_tomada_pelo_portal_de_compras(semana):
+    """A `Sem Correspondencia ASIS` traz as colunas do Portal de Compras.
+
+    Era o defeito: a planilha gerada na semana anterior, anexada de volta,
+    casava com o papel do Portal pela aba inversa e a execução abortava com
+    `PapelDuplicado` ao lado do Portal verdadeiro.
+    """
+    primeira = _rodar(semana)
+    livro = openpyxl.load_workbook(primeira.planilha)
+    assert livro["Sem Correspondencia ASIS"].max_row > 1
+
+    semana["arquivos"].append(primeira.planilha)
+    segunda = _rodar(semana)
+
+    assert segunda.ingestao is not None
+
+
+def test_a_saida_sem_a_aba_pendentes_fica_de_fora_com_o_motivo(semana, tmp_path):
+    """Sem `Pendentes` ela não é a semana anterior — e continua não sendo Portal."""
+    from pendentes.servicos.execucao import conferir
+
+    primeira = _rodar(semana)
+    livro = openpyxl.load_workbook(primeira.planilha)
+    del livro["Pendentes"]
+    podada = tmp_path / "Notas_Servico_Pendentes_podada.xlsx"
+    livro.save(podada)
+
+    semana["arquivos"].append(podada)
+    segunda = _rodar(semana)
+    assert segunda.ingestao is None
+    assert any(podada.name in aviso for aviso in segunda.atencoes())
+
+    quadro = conferir(semana["arquivos"], dados=parametros.carregar_fabrica())
+    ultimo = quadro["arquivos"][-1]
+    assert ultimo["papel"] == ""
+    assert not ultimo["bloqueia"]
+    assert "'Pendentes'" in ultimo["problema"]

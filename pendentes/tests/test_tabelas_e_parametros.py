@@ -96,13 +96,17 @@ def test_o_roteamento_vem_com_as_quatro_condicoes_na_ordem():
 
 def test_a_base_viva_nasce_da_fabrica_e_depois_manda(tmp_path):
     base = tmp_path / "parametros.yaml"
-    assert parametros.carregar(base)["categorias"] == ["Diretos", "Indiretos"]
+    de_fabrica = [linha["categoria"]
+                  for linha in parametros.categorias(parametros.carregar(base))]
+    assert de_fabrica == ["Indiretos", "Diretos"]
 
-    parametros.gravar({"categorias": ["Diretos", "Indiretos", "Ativo"]},
-                      "luan", base)
+    parametros.gravar(
+        {"categorias": [{"ordem": 1, "trecho": "ativo", "categoria": "Ativo"}]},
+        "luan", base)
 
-    assert parametros.carregar(base)["categorias"] == \
-        ["Diretos", "Indiretos", "Ativo"]
+    assert [linha["categoria"]
+            for linha in parametros.categorias(parametros.carregar(base))] == \
+        ["Ativo"]
 
 
 def test_gravar_mescla_a_fatia_que_a_tela_mandou(tmp_path):

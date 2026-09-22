@@ -36,8 +36,10 @@ from .farol import tabela_de
 FABRICA = Path(__file__).resolve().parents[2] / "parametros_de_fabrica.yaml"
 
 #: As seções que a tela edita em fatias — `gravar` mescla, nunca substitui.
-SECOES = ("confronto_servicos", "semana", "farol", "roteamento", "categorias",
-          "unidades", "filiais", "guardioes", "papeis", "colunas")
+SECOES = ("confronto_servicos", "excecoes_servicos", "mercadorias",
+          "pre_categorizacao", "resumo", "semana", "farol", "roteamento",
+          "categorias", "unidades", "filiais", "guardioes", "papeis",
+          "colunas")
 
 
 def _raiz() -> Path:
@@ -138,6 +140,110 @@ def roteamento(dados: dict[str, Any]) -> list[dict]:
     return list(dados.get("roteamento") or [])
 
 
+def categorias(dados: dict[str, Any]) -> list[dict]:
+    """A tabela de categorias, na ordem em que foi cadastrada.
+
+    Tabela vazia desliga a validação, que é o comportamento de hoje — e a
+    ordem é a regra: `indireto` antes de `direto`, senão "Indiretos" casa com
+    o trecho "direto" e a categoria indireta vira direta sem aviso.
+    """
+    return list(dados.get("categorias") or [])
+
+
+def guardioes(dados: dict[str, Any]) -> list[str]:
+    """As áreas guardiãs válidas. Nasce **vazia**, e vazia não valida nada.
+
+    É dado da empresa (nome de área), então não vem da fábrica. Enquanto a
+    lista não for cadastrada, qualquer texto entra em `Guardião` — que é o
+    comportamento de hoje. Ver a decisão pendente nº 6.
+    """
+    return [str(g).strip() for g in (dados.get("guardioes") or []) if str(g).strip()]
+
+
+def mercadorias(dados: dict[str, Any]) -> dict[str, Any]:
+    """Os literais que as regras de mercadorias comparam e gravam.
+
+    Nenhum deles é regra tributária, e nenhum é dado da empresa: são o
+    vocabulário do export do Sankhya (`NF-e Destinada a Transporte`, `Sim`) e
+    o das regras B1 e B2 (`Fiscal`, `Faturamento`). Mudam quando o relatório
+    muda de redação — hoje isso quebra em silêncio, e é o defeito 10 do porte.
+
+    O `ausente_da_conferencia` merece nota: é o `"não"` **minúsculo** que o VBA
+    grava em `Conf fisica`, `Conf fiscal` e `Incongruência` quando a nota não
+    está na Conferência de Entradas. Trocá-lo por vazio faria `zero_ou_vazio`
+    devolver `True` e a regra B1 reclassificaria para Fiscal notas que nem
+    foram conferidas. Ver o preservado nº 19 do registro do porte.
+    """
+    bruto = dict(dados.get("mercadorias") or {})
+    return {
+        "tipo_nfe_de_transporte": str(
+            bruto.get("tipo_nfe_de_transporte") or "NF-e Destinada a Transporte"),
+        "ausente_da_conferencia": str(bruto.get("ausente_da_conferencia") or "não"),
+        "conferencia_fisica_confirmada": str(
+            bruto.get("conferencia_fisica_confirmada") or "Sim"),
+        "conf_fiscal_lancada": str(bruto.get("conf_fiscal_lancada") or "Sim"),
+        "sem_pedido_vinculado": str(
+            bruto.get("sem_pedido_vinculado") or "NA Conf Física"),
+        "guardiao_da_reclassificacao": str(
+            bruto.get("guardiao_da_reclassificacao") or "Fiscal"),
+        "guardioes_da_fis_fat": tuple(
+            str(g).strip() for g in (bruto.get("guardioes_da_fis_fat")
+                                     or ("Fiscal", "Faturamento"))),
+    }
+
+
+def resumo(dados: dict[str, Any]) -> dict[str, Any]:
+    """Os ajustes do painel semanal, com o padrão medido no arquivo de origem.
+
+    Nenhum é regra tributária e nenhum muda número: mudam **o que cabe na
+    tela**. Quantas notas cada TOP mostra, quantas barras o gráfico de
+    guardião aguenta e a partir de quantos dias uma nota é destacada são
+    decisões de quem lê o painel toda segunda-feira, não de quem programa.
+
+    `guardioes_fora_do_ranking` nasce vazia pelo mesmo motivo que a lista de
+    guardiões: nome de área é dado da empresa (regra nº 1). No arquivo da
+    semana 38 ela tem três entradas — dois marcadores de que a classificação
+    não fechou e uma área que o time decidiu não rankear.
+    """
+    bruto = dict(dados.get("resumo") or {})
+    return {
+        "linhas_do_top": int(bruto.get("linhas_do_top") or 5),
+        "guardioes_no_grafico": int(bruto.get("guardioes_no_grafico") or 8),
+        "destacar_acima_de_dias": int(bruto.get("destacar_acima_de_dias") or 10),
+        "guardioes_fora_do_ranking": tuple(
+            str(g).strip()
+            for g in (bruto.get("guardioes_fora_do_ranking") or ())
+            if str(g).strip()),
+    }
+
+
+def pre_categorizacao(dados: dict[str, Any]) -> dict[str, str]:
+    """Qual coluna a base de conhecimento preenche, e com que exigência.
+
+    Um valor por coluna: `firme` (só o que a lista curada e o histórico
+    afirmam juntos, com lastro), `sugestao` (também o que tem proposta sem
+    lastro) ou `nao` (não preenche).
+
+    `[FATO]` A carga de fábrica liga as duas colunas em `sugestao`, por
+    decisão do Compliance Tributário de 22/09/2026, tomada depois da medição
+    contra a semana 38 — que mostra categoria acertando 44 de 44 com
+    evidência firme e guardião acertando 77% no grau de sugestão. Não é
+    parâmetro tributário nem dado da empresa: é o quanto de risco de revisão
+    manual o time aceita, e por isso vem da fábrica e é editável na tela.
+
+    A trava que não é parâmetro: **nada sobrescreve célula preenchida**, e
+    toda célula preenchida pela base sai marcada.
+    """
+    bruto = dict(dados.get("pre_categorizacao") or {})
+    from .mercadorias import colunas as col
+
+    return {
+        col.C_CATEGORIA: str(bruto.get("categoria") or "sugestao"),
+        col.C_GUARDIAO: str(bruto.get("guardiao") or "sugestao"),
+        col.C_TIPO_DE_OPERACAO: str(bruto.get("tipo_de_operacao") or "firme"),
+    }
+
+
 def confronto_de_servicos(dados: dict[str, Any]) -> dict[str, Any]:
     """Os limiares do confronto de serviços, com o padrão da fábrica.
 
@@ -156,7 +262,20 @@ def confronto_de_servicos(dados: dict[str, Any]) -> dict[str, Any]:
         "tolerancia_da_razao": float(bruto.get("tolerancia_da_razao") or 0.005),
         "multiplo_minimo": int(bruto.get("multiplo_minimo") or 2),
         "multiplo_maximo": int(bruto.get("multiplo_maximo") or 12),
+        "marca_de_cancelada": str(bruto.get("marca_de_cancelada") or "cancelada"),
     }
+
+
+def excecoes_de_servicos(dados: dict[str, Any]) -> tuple:
+    """Os parceiros e valores que o time decidiu não cobrar. Nasce vazia.
+
+    É cadastro, não regra derivável: alguém decidiu que aquela nota daquele
+    parceiro não vira pendência. Traz código e nome de parceiro real, então é
+    dado da empresa — regra nº 1 — e mora só na base viva.
+    """
+    from .servicos.exclusao import excecoes_de
+
+    return excecoes_de(dados.get("excecoes_servicos") or [])
 
 
 def filiais(dados: dict[str, Any]) -> list[dict]:

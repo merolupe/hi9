@@ -20,7 +20,7 @@ def test_o_menu_traz_todas_as_ferramentas_do_setor(janela):
     por_id = {f["id"]: f for f in dados["ferramentas"]}
     assert set(por_id) == {
         "apurabot", "dixml", "fiscalbot", "gerarpendentes",
-        "gerarservpend", "faturabot",
+        "gerarservpend", "resumoexecutivo", "conhecimento", "faturabot",
     }
 
 
@@ -28,11 +28,14 @@ def test_ferramenta_ainda_nao_importada_aparece_apagada_em_vez_de_sumir(janela):
     """O time enxerga o que falta, em vez de descobrir quando precisar."""
     _, dados = janela.pedir("/ferramentas")
     por_id = {f["id"]: f for f in dados["ferramentas"]}
-    assert por_id["gerarpendentes"]["estado"] == ferramentas.A_IMPORTAR
-    assert por_id["gerarpendentes"]["resumo"]
+    assert por_id["faturabot"]["estado"] == ferramentas.A_IMPORTAR
+    assert por_id["faturabot"]["resumo"]
     assert por_id["dixml"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["fiscalbot"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["gerarservpend"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["gerarpendentes"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["resumoexecutivo"]["estado"] == ferramentas.DISPONIVEL
+    assert por_id["conhecimento"]["estado"] == ferramentas.DISPONIVEL
     assert por_id["apurabot"]["estado"] == ferramentas.JANELA_PROPRIA
 
 
@@ -167,7 +170,7 @@ def test_ferramenta_desconhecida_nao_derruba_a_janela(janela):
 
 
 def test_ferramenta_ainda_nao_importada_nao_finge_que_roda(janela):
-    codigo, dados = janela.postar("/executar", ferramenta="gerarpendentes")
+    codigo, dados = janela.postar("/executar", ferramenta="faturabot")
     assert codigo == 400
     assert "ainda não roda" in dados["erro"]
 
@@ -305,18 +308,9 @@ def _relatorio(caminho: Path, colunas: list[str], linhas: list[list]) -> bytes:
     return caminho.read_bytes()
 
 
-def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
-        janela, tmp_path, monkeypatch):
-    """A prova da costura: os arquivos entram, o Resultado volta para a tela.
-
-    O livro e o snapshot são desviados para uma pasta do teste — eles são
-    dados da empresa e moram fora do git, e um teste não escreve na pasta de
-    quem roda de verdade.
-    """
-    from pendentes import estado, parametros, snapshot
-
-    monkeypatch.setattr(estado, "_raiz", lambda: tmp_path)
-    monkeypatch.setattr(snapshot, "_raiz", lambda: tmp_path)
+def _relatorios_de_servicos(tmp_path) -> tuple[bytes, bytes]:
+    """Um ASIS e um Portal de Compras sintéticos, que casam numa nota."""
+    from pendentes import parametros
 
     # Os nomes das colunas vêm da carga de fábrica, que é onde eles moram —
     # copiá-los para dentro do teste seria manter duas listas em sincronia.
@@ -337,6 +331,23 @@ def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
          1500.00, "REQUISITANTE", "1", "HINOVE MATRIZ", "2020", "SERVICOS",
          "CR 100", cnpj, "11222333000144", "10/08/2026"],
     ])
+    return asis, portal
+
+
+def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
+        janela, tmp_path, monkeypatch):
+    """A prova da costura: os arquivos entram, o Resultado volta para a tela.
+
+    O livro e o snapshot são desviados para uma pasta do teste — eles são
+    dados da empresa e moram fora do git, e um teste não escreve na pasta de
+    quem roda de verdade.
+    """
+    from pendentes import estado, snapshot
+
+    monkeypatch.setattr(estado, "_raiz", lambda: tmp_path)
+    monkeypatch.setattr(snapshot, "_raiz", lambda: tmp_path)
+
+    asis, portal = _relatorios_de_servicos(tmp_path)
 
     for nome, corpo in (("ASIS.xlsx", asis), ("PC27.xlsx", portal)):
         codigo, envio = janela.pedir("/enviar", corpo=corpo,
@@ -356,4 +367,165 @@ def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
     assert codigo == 200
     livro = openpyxl.load_workbook(io.BytesIO(corpo))
     assert livro.sheetnames == ["Lancadas", "Pendentes", "Canceladas",
-                                "Sem Correspondencia ASIS"]
+                                "Sem Correspondencia ASIS", "Fora do relatorio"]
+
+
+def test_a_ferramenta_de_mercadorias_pede_varios_arquivos_em_qualquer_ordem(
+        janela):
+    """Três relatórios, uma caixa só: cada um é reconhecido pelo cabeçalho."""
+    _, dados = janela.pedir("/ferramentas")
+    pendentes = next(f for f in dados["ferramentas"]
+                     if f["id"] == "gerarpendentes")
+    assert pendentes["entrada"]["varios"] is True
+    assert pendentes["entrada"]["extensoes"] == [".xls", ".xlsx", ".xlsm"]
+    assert pendentes["verbo"] and pendentes["detalhe"]
+
+
+def test_o_xml_e_a_conferencia_entram_pela_janela_e_sai_a_planilha(
+        janela, tmp_path, monkeypatch):
+    """A prova da costura do lado de mercadorias, com as sete abas."""
+    from pendentes import estado, parametros, snapshot
+
+    monkeypatch.setattr(estado, "_raiz", lambda: tmp_path)
+    monkeypatch.setattr(snapshot, "_raiz", lambda: tmp_path)
+
+    fabrica = parametros.carregar_fabrica()
+    colunas_de = lambda fonte: [e.nome for e in parametros.colunas_de(fabrica, fonte)]
+
+    chave = "35260612345678000199550010000001231000001234"
+    def nota(numero, chave_da_nota, **campos):
+        return [
+            numero, "4", "FORNECEDOR INVENTADO LTDA", "01/07/2026", "1102",
+            "1500.00", campos.get("fantasia", "HINOVE MATRIZ"), chave_da_nota,
+            "30/07/2026", campos.get("manifestacao", "Ciência"),
+            "NF-e autorizada", "NF-e Normal", "Autorizada", "COMPRA", "Saida",
+            "Não se aplica", 12, "02/07/2026", "Importado", "fulano", "", "1",
+            "12345678000199", "9001", "Sim", "Sim", "1",
+        ]
+
+    xml = _relatorio(tmp_path / "XML31.xlsx", colunas_de("xml"), [
+        nota("1001", chave),
+        nota("1002", chave[:-1] + "5", manifestacao="Desconhecida"),
+        nota("1003", chave[:-1] + "7", fantasia=""),
+    ])
+    ce = _relatorio(tmp_path / "CE31.xlsx",
+                    colunas_de("conferencia_de_entradas"), [
+        [chave, "Sim", "não", "divergência", "05/07/2026", "7788",
+         '<div><span>&#128994;</span></div>'],
+    ])
+
+    for nome, corpo in (("XML31.xlsx", xml), ("CE31.xlsx", ce)):
+        codigo, envio = janela.pedir("/enviar", corpo=corpo,
+                                     ferramenta="gerarpendentes", nome=nome)
+        assert codigo == 200, envio
+
+    codigo, dados = janela.postar("/executar", ferramenta="gerarpendentes")
+    assert codigo == 200, dados
+
+    fichas = {f["rotulo"]: f["valor"] for f in dados["fichas"]}
+    assert fichas["Pendentes (áreas)"] == "1"
+    assert dados["planilha"].startswith("Pendentes")
+    assert "Descartados antes do roteamento" in [l["titulo"]
+                                                 for l in dados["listas"]]
+
+    codigo, corpo = janela.pedir("/baixar")
+    assert codigo == 200
+    livro = openpyxl.load_workbook(io.BytesIO(corpo))
+    assert livro.sheetnames == ["Pendentes", "CTe", "Manifestados",
+                                "Entradas 3os", "Lançados",
+                                "PENDENTES FIS-FAT", "Descartados"]
+    assert livro["Pendentes"].max_column == 39
+    assert livro["Descartados"].max_row == 2
+
+
+# -- anexar aos poucos, vendo o que já veio e o que falta --------------------
+
+def test_quem_reconhece_os_relatorios_declara_que_confere(janela):
+    _, dados = janela.pedir("/ferramentas")
+    por_id = {f["id"]: f for f in dados["ferramentas"]}
+    assert por_id["gerarservpend"]["confere"] is True
+    assert por_id["gerarpendentes"]["confere"] is True
+    assert por_id["dixml"]["confere"] is False
+
+
+def _estados(quadro) -> dict:
+    return {d["id"]: d["estado"] for d in quadro["documentos"]}
+
+
+def test_antes_de_anexar_o_quadro_lista_o_que_a_ferramenta_espera(janela):
+    codigo, quadro = janela.pedir("/conferir", ferramenta="gerarservpend")
+    assert codigo == 200, quadro
+    assert _estados(quadro) == {
+        "asis": "falta", "portal_de_compras": "falta",
+        "conferencia_de_servicos": "opcional",
+        "semana_anterior_servicos": "opcional",
+    }
+    assert quadro["pronta"] is False
+    assert quadro["pendencias"]
+
+
+def test_anexar_aos_poucos_marca_cada_relatorio_e_libera_no_fim(
+        janela, tmp_path):
+    """O defeito que o time pediu para corrigir: anexar parcialmente."""
+    asis, portal = _relatorios_de_servicos(tmp_path)
+
+    janela.pedir("/enviar", corpo=asis, ferramenta="gerarservpend",
+                 nome="ASIS.xlsx")
+    _, quadro = janela.pedir("/conferir", ferramenta="gerarservpend")
+    assert _estados(quadro)["asis"] == "ok"
+    assert _estados(quadro)["portal_de_compras"] == "falta"
+    assert quadro["documentos"][0]["anexos"][0]["nome"] == "ASIS.xlsx"
+    assert any("Portal de Compras" in p for p in quadro["pendencias"])
+
+    # Gerar antes da hora diz o que falta — e não joga fora o que já veio.
+    codigo, dados = janela.postar("/executar", ferramenta="gerarservpend")
+    assert codigo == 400
+    assert "Portal de Compras" in dados["erro"]
+    assert len(janela.sessao.recebidos_de("gerarservpend")) == 1
+
+    janela.pedir("/enviar", corpo=portal, ferramenta="gerarservpend",
+                 nome="PC27.xlsx")
+    _, quadro = janela.pedir("/conferir", ferramenta="gerarservpend")
+    assert quadro["pronta"] is True
+
+
+def test_o_mesmo_relatorio_duas_vezes_trava_ate_tirar_um(janela, tmp_path):
+    asis, portal = _relatorios_de_servicos(tmp_path)
+    for nome, corpo in (("ASIS.xlsx", asis), ("PC27.xlsx", portal),
+                        ("PC27-copia.xlsx", portal)):
+        janela.pedir("/enviar", corpo=corpo, ferramenta="gerarservpend",
+                     nome=nome)
+
+    _, quadro = janela.pedir("/conferir", ferramenta="gerarservpend")
+    assert _estados(quadro)["portal_de_compras"] == "repetido"
+    assert quadro["pronta"] is False
+
+    codigo, _ = janela.pedir("/remover", ferramenta="gerarservpend", indice=2)
+    assert codigo == 200
+    _, quadro = janela.pedir("/conferir", ferramenta="gerarservpend")
+    assert _estados(quadro)["portal_de_compras"] == "ok"
+    assert quadro["pronta"] is True
+
+
+def test_remover_e_anexar_de_novo_nao_troca_um_arquivo_pelo_outro(
+        janela, tmp_path):
+    """A subpasta de cada anexo não pode ser reaproveitada pelo próximo."""
+    asis, portal = _relatorios_de_servicos(tmp_path)
+    janela.pedir("/enviar", corpo=asis, ferramenta="gerarservpend",
+                 nome="ASIS.xlsx")
+    janela.pedir("/enviar", corpo=portal, ferramenta="gerarservpend",
+                 nome="PC27.xlsx")
+    janela.pedir("/remover", ferramenta="gerarservpend", indice=0)
+    janela.pedir("/enviar", corpo=asis, ferramenta="gerarservpend",
+                 nome="ASIS.xlsx")
+
+    recebidos = janela.sessao.recebidos_de("gerarservpend")
+    assert sorted(c.name for c in recebidos) == ["ASIS.xlsx", "PC27.xlsx"]
+    assert all(c.is_file() for c in recebidos)
+
+
+def test_remover_o_que_nao_existe_avisa(janela):
+    codigo, dados = janela.pedir("/remover", ferramenta="gerarservpend",
+                                 indice=7)
+    assert codigo == 400
+    assert dados["erro"]

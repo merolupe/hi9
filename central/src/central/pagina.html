@@ -71,6 +71,10 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.92em}
 #largar .principal{font-size:19px; font-weight:600; margin-bottom:6px}
 #largar .apoio{color:var(--suave); font-size:14.5px}
 #arquivo{display:none}
+/* Com arquivos já anexados, a caixa encolhe e o quadro sobe para a vista. */
+#largar.compacto{padding:18px 24px}
+#largar.compacto .icone,#largar.compacto .apoio{display:none}
+#largar.compacto .principal{font-size:16px; margin:0}
 
 section{
   background:var(--painel); border:1px solid var(--borda); border-radius:12px;
@@ -115,6 +119,39 @@ button.acao{
 .secundario-btn:hover{color:var(--texto); border-color:var(--suave)}
 .acoes{display:flex; gap:12px; flex-wrap:wrap; margin:20px 0 4px}
 .rodape{color:var(--suave); font-size:13px; margin-top:34px; text-align:center}
+
+/* ---------- quadro dos relatórios anexados ---------- */
+#quadro{margin-top:18px}
+.documento{
+  display:flex; gap:12px; align-items:flex-start; padding:11px 2px;
+  border-bottom:1px solid var(--borda);
+}
+.documento:last-child{border-bottom:none}
+.documento .sinal{
+  flex:0 0 26px; height:26px; border-radius:50%; display:flex;
+  align-items:center; justify-content:center; font-weight:700; font-size:14px;
+  border:2px solid var(--borda); color:var(--suave);
+}
+.documento.ok .sinal{background:var(--ok-fundo); border-color:var(--ok); color:var(--ok)}
+.documento.falta .sinal{border-color:var(--erro); color:var(--erro); border-style:dashed}
+.documento.repetido .sinal{background:var(--atencao-fundo); border-color:var(--atencao); color:var(--atencao)}
+.documento.solto .sinal{border-color:var(--suave)}
+.documento.solto.bloqueia .sinal{background:var(--erro-fundo); border-color:var(--erro); color:var(--erro)}
+.documento .corpo{flex:1; min-width:0}
+.documento .titulo{font-weight:600}
+.documento .situacao{font-size:13.5px; color:var(--suave)}
+.documento.falta .situacao{color:var(--erro)}
+.documento.repetido .situacao{color:var(--atencao)}
+.documento.solto.bloqueia .situacao{color:var(--erro)}
+.selo{
+  font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+  padding:1px 7px; border-radius:20px; margin-left:6px; vertical-align:1px;
+  background:var(--marca-clara); color:var(--suave);
+}
+.anexo{display:flex; align-items:center; gap:4px; font-size:14px; word-break:break-all}
+.anexo::before{content:"📄"; margin-right:4px}
+.pendencias{margin:14px 0 0; padding-left:20px; font-size:14px; color:var(--erro)}
+.pendencias li{margin-bottom:4px}
 
 /* ---------- tela de configuração ---------- */
 .explicacao{color:var(--suave); font-size:14px; margin:-6px 0 14px}
@@ -180,6 +217,7 @@ ul.problemas li.aviso{color:var(--atencao)}
         <input type="file" id="arquivo">
       </div>
       <div id="escolhidos" class="oculto"></div>
+      <div id="quadro" class="oculto"></div>
     </div>
 
     <div id="processando" class="oculto">
@@ -228,6 +266,7 @@ let FERRAMENTAS = [];
 let atual = null;          // a ferramenta aberta
 let enviados = [];         // nomes já entregues ao servidor
 let ocupado = false;
+let QUADRO = null;         // a conferência dos anexos, quando a ferramenta confere
 
 // ---------- menu ----------
 
@@ -282,15 +321,20 @@ async function escolher(id){
   campo.accept = f.entrada.extensoes.join(",");
   campo.multiple = !!f.entrada.varios;
   campo.value = "";
+  $("escolhidos").classList.add("oculto");
+  $("quadro").classList.add("oculto");
+  $("largar").classList.remove("compacto");
+  QUADRO = null;
   mostrar("entrada");
   $("menu").classList.add("oculto");
   $("tela").classList.remove("oculto");
+  if (f.confere) atualizarQuadro();
 }
 
 function aoMenu(){
   if (ocupado) return;
   if (atual) fetch(url("/limpar", `&ferramenta=${atual.id}`));
-  atual = null; enviados = [];
+  atual = null; enviados = []; QUADRO = null;
   $("tela").classList.add("oculto");
   $("menu").classList.remove("oculto");
 }
@@ -451,6 +495,9 @@ function recomecar(){
   $("arquivo").value = "";
   $("escolhidos").classList.add("oculto");
   mostrar("entrada");
+  // Com conferência, os anexos que não rodaram continuam lá: a pessoa troca
+  // só o que precisa. Depois de uma execução bem-sucedida o quadro volta vazio.
+  if (atual && atual.confere) atualizarQuadro();
 }
 
 // ---------- receber os arquivos ----------
@@ -487,8 +534,112 @@ async function receber(lista){
   } finally {
     ocupado = false;
   }
+  $("arquivo").value = "";
+  if (atual.confere){ atualizarQuadro(); return; }
   listarEscolhidos();
   executar();
+}
+
+// ---------- o quadro: o que já veio e o que falta ----------
+
+async function atualizarQuadro(){
+  if (!atual) return;
+  const ferramenta = atual.id;
+  ocupado = true;
+  $("processando-verbo").textContent = "Conferindo os arquivos…";
+  mostrar("processando");
+  try{
+    const r = await fetch(url("/conferir", `&ferramenta=${ferramenta}`));
+    const dados = await r.json();
+    if (!atual || atual.id !== ferramenta) return;
+    if (dados.erro){ falhar(dados.erro); return; }
+    QUADRO = dados;
+    desenharQuadro();
+    mostrar("entrada");
+  } catch (e){
+    falhar("A janela perdeu contato com a ferramenta. Ela ainda está aberta?");
+  } finally {
+    ocupado = false;
+  }
+}
+
+function anexoHtml(a){
+  return `<div class="anexo"><span>${esc(a.nome)}</span>
+    <button class="remover" title="tirar este arquivo"
+            onclick="removerAnexo(${a.indice})">✕</button></div>`;
+}
+
+function documentoHtml(d){
+  const sinal = {ok:"✓", falta:"!", opcional:"–", repetido:"2"}[d.estado];
+  const selo = d.obrigatorio ? "" : '<span class="selo">opcional</span>';
+  const situacao = {
+    ok: "",
+    falta: "falta anexar",
+    opcional: "não veio — entra se houver",
+    repetido: "dois arquivos para o mesmo relatório — tire um",
+  }[d.estado];
+  return `
+    <div class="documento ${d.estado}">
+      <span class="sinal">${sinal}</span>
+      <div class="corpo">
+        <div class="titulo">${esc(d.rotulo)}${selo}</div>
+        ${d.anexos.map(anexoHtml).join("")}
+        ${situacao ? `<div class="situacao">${situacao}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+function soltoHtml(a){
+  return `
+    <div class="documento solto ${a.bloqueia ? "bloqueia" : ""}">
+      <span class="sinal">${a.bloqueia ? "✕" : "?"}</span>
+      <div class="corpo">
+        ${anexoHtml(a)}
+        <div class="situacao">${esc(a.problema)}${a.bloqueia ? ""
+          : " — fica de fora da execução"}</div>
+      </div>
+    </div>`;
+}
+
+function desenharQuadro(){
+  const q = QUADRO;
+  const prontos = q.documentos.filter((d) => d.estado === "ok").length;
+  const soltos = q.soltos.length ? `
+    <section><h2>Arquivos que não são nenhum dos relatórios</h2>
+      ${q.soltos.map(soltoHtml).join("")}</section>` : "";
+  const pendencias = q.pendencias.length
+    ? `<ul class="pendencias">${q.pendencias.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`
+    : "";
+  const algum = q.documentos.some((d) => d.anexos.length) || q.soltos.length;
+  $("largar").classList.toggle("compacto", !!algum);
+  $("largar-rotulo").textContent = algum
+    ? "Arraste mais relatórios, ou clique para escolher"
+    : atual.entrada.rotulo;
+  $("quadro").innerHTML = `
+    <section><h2>Relatórios — ${prontos} de ${q.documentos.length} anexados</h2>
+      ${q.documentos.map(documentoHtml).join("")}
+      ${pendencias}
+      <div class="acoes">
+        <button class="acao principal-btn" ${q.pronta ? "" : "disabled"}
+                onclick="executar()">Gerar planilha</button>
+        ${algum ? `<button class="acao secundario-btn" onclick="limparAnexos()">
+                     Tirar todos</button>` : ""}
+      </div>
+    </section>
+    ${soltos}`;
+  $("quadro").classList.remove("oculto");
+}
+
+async function removerAnexo(indice){
+  if (!atual || ocupado) return;
+  await fetch(url("/remover", `&ferramenta=${atual.id}&indice=${indice}`));
+  atualizarQuadro();
+}
+
+async function limparAnexos(){
+  if (!atual || ocupado) return;
+  await fetch(url("/limpar", `&ferramenta=${atual.id}`));
+  atualizarQuadro();
 }
 
 function listarEscolhidos(){
