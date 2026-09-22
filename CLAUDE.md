@@ -2,9 +2,20 @@
 
 Monorepo de automações do time Fiscal/Tributário da Hinove Agrociência S.A.
 A **Central Fiscal** (`central/`) é a tela única que reúne as ferramentas.
-Já dentro dela: **Apurabot** (apuração de ICMS), **DiXML** (lote de XML em
-planilha) e **Fiscalbot** (auditoria do Livro Fiscal, que alimenta o Apurabot).
-A importar, uma a uma: GerarPendentes e GerarServPend.
+Já dentro dela, todas rodando pela tela:
+
+- **Apurabot** (apuração de ICMS) — em janela própria;
+- **DiXML** (lote de XML em planilha);
+- **Fiscalbot** (auditoria do Livro Fiscal, que alimenta o Apurabot);
+- **GerarServPend** (notas de serviço pendentes de lançamento) e
+  **GerarPendentes** (notas de mercadoria pendentes de entrada) — um projeto
+  só, `pendentes/`, com o **Resumo Executivo** e a **Base de conhecimento**
+  como entradas irmãs na tela.
+
+Os motores de `pendentes/` estão **importados, em teste**: rodam e estão
+cobertos por teste, mas a divergência zero contra as macros ainda não foi
+provada com uma semana real (ver `docs/pendentes/04-plano-de-entrega.md`).
+Falta importar: **Faturabot** (em desenvolvimento, aparece apagado na tela).
 
 ## Regras deste repositório
 
@@ -29,6 +40,19 @@ A importar, uma a uma: GerarPendentes e GerarServPend.
 7. **Nenhuma ferramenta importa outra.** Quem costura é a Central. Para entrar
    na tela, a ferramenta declara o que pede e o que devolve — o contrato está
    em `docs/central/01-arquitetura.md`.
+
+## Antes de mexer em `pendentes/`
+
+Leia `docs/pendentes/README.md`. Duas armadilhas que já custaram defeito:
+
+- a planilha que a ferramenta gera volta na semana seguinte como anexo, e
+  algumas abas dela copiam relatório de origem (a `Sem Correspondencia ASIS`
+  traz as colunas do Portal de Compras; `CTe` e `Descartados` trazem as do
+  XML). Toda aba nova de saída entra em `colunas.ABAS` do domínio, que é a
+  lista que o reconhecimento ignora;
+- a carga de fábrica (`parametros_de_fabrica.yaml`) só semeia a base viva na
+  primeira abertura: mudar papel ou âncora ali **não chega** a quem já roda.
+  Correção que precisa valer para todos vai no código.
 
 ## Antes de importar uma ferramenta nova
 
