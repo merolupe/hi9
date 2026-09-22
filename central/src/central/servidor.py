@@ -58,6 +58,14 @@ class Sessao:
     def recebidos_de(self, ferramenta: str) -> list[Path]:
         return self.recebidos.setdefault(ferramenta, [])
 
+    def remover(self, ferramenta: str, indice: int) -> bool:
+        recebidos = self.recebidos_de(ferramenta)
+        if not 0 <= indice < len(recebidos):
+            return False
+        caminho = recebidos.pop(indice)
+        shutil.rmtree(caminho.parent, ignore_errors=True)
+        return True
+
     def esquecer(self, ferramenta: str) -> None:
         for caminho in self.recebidos.pop(ferramenta, []):
             shutil.rmtree(caminho.parent, ignore_errors=True)
@@ -104,6 +112,10 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             self._abrir_janela(consulta)
         elif rota.path == "/configuracao":
             self._ler_configuracao(consulta)
+        elif rota.path == "/conferir":
+            self._conferir(consulta)
+        elif rota.path == "/remover":
+            self._remover(consulta)
         elif rota.path == "/limpar":
             self.sessao.esquecer((consulta.get("ferramenta") or [""])[0])
             self._json(200, {"ok": True})
@@ -266,8 +278,11 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
 
         # Cada arquivo na sua própria subpasta: dois pacotes podem ter o mesmo
         # nome, e o nome precisa ser preservado — ele vai para dentro da saída.
-        pasta = self.sessao.pasta / ferramenta.id / str(len(recebidos))
-        pasta.mkdir(parents=True, exist_ok=True)
+        # Subpasta de nome único, e não numerada: arquivo pode ser removido
+        # antes de rodar, e o próximo não pode cair na pasta de outro.
+        base = self.sessao.pasta / ferramenta.id
+        base.mkdir(parents=True, exist_ok=True)
+        pasta = Path(tempfile.mkdtemp(prefix="anexo-", dir=base))
         destino = pasta / nome
         with destino.open("wb") as arquivo:
             restante = tamanho
@@ -284,6 +299,47 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             "arquivos": [c.name for c in recebidos],
         })
 
+    # -- conferir o que já foi anexado --------------------------------------
+
+    def _quadro(self, ferramenta) -> dict:
+        """A conferência dos anexos, como a página a desenha."""
+        conferencia = ferramenta.conferir(self.sessao.recebidos_de(ferramenta.id))
+        return {
+            "documentos": [
+                {"id": d.id, "rotulo": d.rotulo, "obrigatorio": d.obrigatorio,
+                 "estado": d.estado, "anexos": [asdict(a) for a in d.anexos]}
+                for d in conferencia.documentos
+            ],
+            "soltos": [asdict(a) for a in conferencia.soltos],
+            "pendencias": conferencia.pendencias,
+            "pronta": conferencia.pronta,
+        }
+
+    def _conferir(self, consulta: dict) -> None:
+        ferramenta = self._ferramenta(consulta)
+        if ferramenta is None:
+            return
+        if ferramenta.conferir is None:
+            self._json(400, {"erro": f"{ferramenta.nome} não confere anexos."})
+            return
+        try:
+            self._json(200, self._quadro(ferramenta))
+        except Exception as erro:                     # noqa: BLE001
+            self._json(400, {"erro": self._explicar(erro, ferramenta)})
+
+    def _remover(self, consulta: dict) -> None:
+        ferramenta = self._ferramenta(consulta)
+        if ferramenta is None:
+            return
+        try:
+            indice = int((consulta.get("indice") or ["-1"])[0])
+        except ValueError:
+            indice = -1
+        if not self.sessao.remover(ferramenta.id, indice):
+            self._json(400, {"erro": "Esse arquivo já não está na lista."})
+            return
+        self._json(200, {"ok": True})
+
     # -- executar ----------------------------------------------------------
 
     def _executar(self, consulta: dict) -> None:
@@ -299,14 +355,28 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             self._json(400, {"erro": "Nenhum arquivo foi enviado."})
             return
 
+        # Com conferência, o que falta é dito antes de rodar — e os anexos
+        # ficam: a pessoa acrescenta o que faltou sem reenviar o resto.
+        if ferramenta.conferir is not None:
+            try:
+                pendencias = ferramenta.conferir(recebidos).pendencias
+            except Exception as erro:                 # noqa: BLE001
+                self._json(400, {"erro": self._explicar(erro, ferramenta)})
+                return
+            if pendencias:
+                self._json(400, {"erro": "Ainda não dá para gerar:\n\n  "
+                                          + "\n  ".join(pendencias)})
+                return
+
         saida = self.sessao.pasta / ferramenta.id / "saida"
         try:
             resultado = ferramenta.executar(recebidos, saida)
         except Exception as erro:                     # noqa: BLE001
+            if ferramenta.conferir is None:
+                self.sessao.esquecer(ferramenta.id)
             self._json(400, {"erro": self._explicar(erro, ferramenta)})
             return
-        finally:
-            self.sessao.esquecer(ferramenta.id)
+        self.sessao.esquecer(ferramenta.id)
 
         self.sessao.gerado = resultado.planilha
         self._json(200, {

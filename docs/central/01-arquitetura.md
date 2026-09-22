@@ -56,7 +56,7 @@ e mandando o navegador abrir a página.
 
 ## 4. O contrato de ferramenta
 
-Para aparecer na tela, uma ferramenta declara até quatro coisas em
+Para aparecer na tela, uma ferramenta declara até cinco coisas em
 `central/src/central/ferramentas.py`:
 
 **Quem é** — `id`, `nome`, `resumo` de uma linha, `icone` e `estado`.
@@ -75,6 +75,16 @@ planilha nem em arquivo no git. A ferramenta declara `Secao`s — cada uma uma
 tabela editável, com seus `Campo`s — e duas funções: `ler`, que devolve o que
 está gravado, e `gravar`, que confere e responde `(gravou, problemas)`. Com
 erro não grava; com aviso grava e conta o que vai acontecer.
+
+**Como conferir o que chegou** — `conferir`, opcional, para quem pede mais de
+um relatório e reconhece cada um pelo cabeçalho (GerarServPend e
+GerarPendentes). Recebe os caminhos já enviados e devolve uma `Conferencia`:
+os `Documento`s esperados — cada um `ok`, `falta`, `opcional` ou `repetido`,
+com os arquivos que o preencheram — e os arquivos que não são nenhum deles.
+Com isso a tela deixa de rodar no instante em que o arquivo cai: ela mostra a
+lista dos relatórios, marca cada um conforme chega, deixa anexar **aos poucos**
+e tirar um arquivo errado, e só acende "Gerar planilha" quando nada falta.
+Quem não declara (`DiXML`, `Fiscalbot`) continua rodando ao largar o arquivo.
 
 ```python
 Ferramenta(
@@ -182,6 +192,8 @@ conferido:
 | Arquivo vazio, ou acima de 500 MB | `servidor.py` |
 | Soma dos arquivos acima de 2 GB | `servidor.py` |
 | Nome de arquivo que tente sair da pasta temporária | `_nome_seguro` |
+| "Gerar" com relatório obrigatório faltando, repetido ou ilegível — os anexos ficam, para completar sem reenviar | `servidor.py` (`_executar`) |
+| A saída da própria ferramenta tomada por relatório de origem — a `Sem Correspondencia ASIS` traz as colunas do Portal de Compras, a `CTe` traz as do XML | `pendentes/papeis.py` (`abas_da_saida`) |
 | `.zip` que se expande além de 2 GB descompactados | `dixml/pacote.py` |
 | `.zip` aninhado além de 8 níveis | `dixml/pacote.py` |
 

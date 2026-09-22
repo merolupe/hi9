@@ -8,6 +8,11 @@ do setor aparecer na janela, ela precisa dizer três coisas:
 3. **o que devolve** — números para a tela e, quando houver, uma planilha
    para baixar (`Resultado`).
 
+Quem pede mais de um relatório pode declarar também **como conferir** o que
+chegou (`conferir`, que devolve uma `Conferencia`): a tela passa a mostrar a
+lista dos relatórios esperados, marca cada um conforme o arquivo chega — de
+uma vez ou aos poucos — e só acende o botão de gerar quando nada falta.
+
 Só isso. A ferramenta não sabe que existe navegador, não monta HTML e não
 conhece as outras — quem costura é a central. Foi assim que o DiXML entrou
 sem nenhuma linha de interface própria, e é assim que os próximos entram.
@@ -42,6 +47,90 @@ class Entrada:
     apoio: str
     extensoes: tuple[str, ...]
     varios: bool = False
+
+
+# -- o que cada arquivo anexado é ------------------------------------------
+
+@dataclass(frozen=True)
+class Anexo:
+    """Um arquivo já enviado. `indice` é a posição dele entre os recebidos."""
+
+    indice: int
+    nome: str
+    problema: str = ""
+    bloqueia: bool = False
+
+
+@dataclass(frozen=True)
+class Documento:
+    """Um relatório que a ferramenta espera, e os arquivos que o preencheram."""
+
+    id: str
+    rotulo: str
+    obrigatorio: bool
+    anexos: list[Anexo] = field(default_factory=list)
+
+    @property
+    def estado(self) -> str:
+        """`ok`, `falta` (obrigatório sem arquivo), `opcional` ou `repetido`."""
+        if len(self.anexos) > 1:
+            return "repetido"
+        if self.anexos:
+            return "ok"
+        return "falta" if self.obrigatorio else "opcional"
+
+
+@dataclass(frozen=True)
+class Conferencia:
+    """O quadro da tela de anexar: o que já veio, o que falta, o que sobrou.
+
+    É o **quarto** item do contrato, e é opcional. A ferramenta que pede mais
+    de um relatório e reconhece cada um pelo cabeçalho declara `conferir`; a
+    Central mostra então a lista dos relatórios esperados, marca cada um
+    conforme os arquivos chegam — aos poucos, em quantas levas a pessoa quiser
+    — e só libera o botão de gerar quando nada impede.
+    """
+
+    documentos: list[Documento] = field(default_factory=list)
+    soltos: list[Anexo] = field(default_factory=list)
+
+    @property
+    def pendencias(self) -> list[str]:
+        """O que impede de gerar, em frase. Lista vazia: pode gerar."""
+        recado = []
+        for doc in self.documentos:
+            if doc.estado == "falta":
+                recado.append(f"Falta o {doc.rotulo}.")
+            elif doc.estado == "repetido":
+                nomes = " e ".join(a.nome for a in doc.anexos)
+                recado.append(f"{nomes} são, os dois, o {doc.rotulo}. "
+                              f"Tire um.")
+        for solto in self.soltos:
+            if solto.bloqueia:
+                recado.append(f"{solto.nome}: {solto.problema}.")
+        return recado
+
+    @property
+    def pronta(self) -> bool:
+        return not self.pendencias
+
+
+def _conferencia(respondido: dict, nomes: list[str]) -> Conferencia:
+    """O texto puro da ferramenta vira o quadro da Central."""
+    documentos = [Documento(d["id"], d["rotulo"], bool(d["obrigatorio"]))
+                  for d in respondido.get("documentos") or []]
+    por_id = {d.id: d for d in documentos}
+    soltos = []
+    for indice, (nome, achado) in enumerate(
+            zip(nomes, respondido.get("arquivos") or [])):
+        anexo = Anexo(indice, nome, str(achado.get("problema") or ""),
+                      bool(achado.get("bloqueia")))
+        destino = por_id.get(achado.get("papel") or "")
+        if destino is None:
+            soltos.append(anexo)
+        else:
+            destino.anexos.append(anexo)
+    return Conferencia(documentos, soltos)
 
 
 # -- o que a ferramenta devolve --------------------------------------------
@@ -136,6 +225,9 @@ class Ferramenta:
     detalhe: str = ""
     executar: Callable[[list[Path], Path], Resultado] | None = None
     configuracao: Configuracao | None = None
+    #: Quando declarado, os arquivos são anexados aos poucos e conferidos um a
+    #: um; o botão de gerar só acende quando a `Conferencia` está pronta.
+    conferir: Callable[[list[Path]], Conferencia] | None = None
 
 
 # -- DiXML -----------------------------------------------------------------
@@ -243,6 +335,18 @@ def _rodar_gerarpendentes(arquivos: list[Path], saida: Path) -> Resultado:
                 for titulo, itens, tom in execucao.listas()],
         planilha=execucao.planilha,
     )
+
+
+def _conferir_gerarpendentes(arquivos: list[Path]) -> Conferencia:
+    from pendentes.mercadorias.execucao import conferir
+
+    return _conferencia(conferir(arquivos), [a.name for a in arquivos])
+
+
+def _conferir_gerarservpend(arquivos: list[Path]) -> Conferencia:
+    from pendentes.servicos.execucao import conferir
+
+    return _conferencia(conferir(arquivos), [a.name for a in arquivos])
 
 
 def _rodar_gerarservpend(arquivos: list[Path], saida: Path) -> Resultado:
@@ -409,8 +513,10 @@ FERRAMENTAS: list[Ferramenta] = [
             apoio="o relatório de importação de <code>XML</code> e a "
                   "<code>Conferência de Entradas</code> são obrigatórios; a "
                   "planilha da semana passada, com as classificações "
-                  "preenchidas, entra se houver. Em qualquer ordem: cada "
-                  "arquivo é reconhecido pelo próprio cabeçalho.",
+                  "preenchidas, entra se houver. De uma vez ou aos poucos, em "
+                  "qualquer ordem: cada arquivo é reconhecido pelo próprio "
+                  "cabeçalho, e a lista abaixo mostra o que já veio e o que "
+                  "falta.",
             extensoes=(".xls", ".xlsx", ".xlsm"),
             varios=True,
         ),
@@ -421,6 +527,7 @@ FERRAMENTAS: list[Ferramenta] = [
                 "limpeza descarta passa a aparecer na aba Descartados, com o "
                 "motivo.",
         executar=_rodar_gerarpendentes,
+        conferir=_conferir_gerarpendentes,
     ),
     Ferramenta(
         id="gerarservpend",
@@ -434,8 +541,9 @@ FERRAMENTAS: list[Ferramenta] = [
             apoio="o <code>ASIS</code> (notas emitidas) e o <code>Portal de "
                   "Compras</code> são obrigatórios; a <code>Conferência de "
                   "Serviços</code> e a planilha da semana passada entram se "
-                  "houver. Em qualquer ordem: cada arquivo é reconhecido pelo "
-                  "próprio cabeçalho.",
+                  "houver. De uma vez ou aos poucos, em qualquer ordem: cada "
+                  "arquivo é reconhecido pelo próprio cabeçalho, e a lista "
+                  "abaixo mostra o que já veio e o que falta.",
             extensoes=(".xls", ".xlsx", ".xlsm"),
             varios=True,
         ),
@@ -446,6 +554,7 @@ FERRAMENTAS: list[Ferramenta] = [
                 "perder a planilha da semana passada não apaga mais o "
                 "histórico.",
         executar=_rodar_gerarservpend,
+        conferir=_conferir_gerarservpend,
     ),
     Ferramenta(
         id="resumoexecutivo",
@@ -522,6 +631,7 @@ def catalogo() -> list[dict]:
             "verbo": f.verbo,
             "detalhe": f.detalhe,
             "tem_configuracao": f.configuracao is not None,
+            "confere": f.conferir is not None,
             "resumo_da_configuracao":
                 f.configuracao.resumo if f.configuracao else "",
             "entrada": None if f.entrada is None else {
