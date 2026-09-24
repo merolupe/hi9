@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "mcp__Claude_Code_Remote__subscribe_pr_activity",
+      "mcp__github__subscribe_pr_activity",
+      "mcp__Claude_Code_Remote__send_later",
+      "mcp__Claude_Code_Remote__create_trigger",
+      "mcp__Claude_Code_Remote__fire_trigger",
+      "mcp__Claude_Code_Remote__watch_url",
+      "CronCreate",
+      "ScheduleWakeup"
+    ]
+  }
+}
