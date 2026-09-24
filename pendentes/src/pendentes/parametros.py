@@ -231,6 +231,11 @@ def pre_categorizacao(dados: dict[str, Any]) -> dict[str, str]:
     parâmetro tributário nem dado da empresa: é o quanto de risco de revisão
     manual o time aceita, e por isso vem da fábrica e é editável na tela.
 
+    `Gestor de apoio` entrou em 24/09/2026, também em `sugestao`. O padrão
+    está aqui, e não só na fábrica, porque a fábrica não chega a quem já
+    roda: a base viva que já tem a seção `pre_categorizacao` não ganha a
+    chave nova, e é o padrão do código que liga o gestor para todo mundo.
+
     A trava que não é parâmetro: **nada sobrescreve célula preenchida**, e
     toda célula preenchida pela base sai marcada.
     """
@@ -240,6 +245,7 @@ def pre_categorizacao(dados: dict[str, Any]) -> dict[str, str]:
     return {
         col.C_CATEGORIA: str(bruto.get("categoria") or "sugestao"),
         col.C_GUARDIAO: str(bruto.get("guardiao") or "sugestao"),
+        col.C_GESTOR: str(bruto.get("gestor_de_apoio") or "sugestao"),
         col.C_TIPO_DE_OPERACAO: str(bruto.get("tipo_de_operacao") or "firme"),
     }
 

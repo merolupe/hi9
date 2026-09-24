@@ -438,7 +438,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     # Ver `precategorizacao`, que registra a consequência disso.
     preenchimento = precategorizacao.preencher(
         restantes, conhecimento.carregar(raiz=raiz_dos_dados),
-        minimo_por_coluna=parametros.pre_categorizacao(dados), livro=livro)
+        minimo_por_coluna=parametros.pre_categorizacao(dados), livro=livro,
+        guardioes_sem_gestor=literais["guardioes_da_fis_fat"])
 
     para_fis_fat, pendentes = classificacao.dividir_fis_fat(
         restantes, literais["guardioes_da_fis_fat"])

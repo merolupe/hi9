@@ -19,6 +19,7 @@ from pendentes.mercadorias import colunas as col
 from pendentes.mercadorias import precategorizacao as pre
 from pendentes.mercadorias.execucao import gerar
 from pendentes.mercadorias.fontes import Documento
+from pendentes.texto import chave_de_texto
 from conftest import (COLUNAS_CE, COLUNAS_XML, chave_de, linha_ce, linha_xml,
                       relatorio)
 
@@ -147,6 +148,91 @@ def test_a_unidade_da_nota_escolhe_a_regra_mais_especifica():
         col.POSICAO_DA_CATEGORIZACAO[col.C_GUARDIAO]] == "Balança Registro"
 
 
+# -- o gestor sai do guardião ----------------------------------------------
+
+GESTOR = col.POSICAO_DA_CATEGORIZACAO[col.C_GESTOR]
+GUARDIAO = col.POSICAO_DA_CATEGORIZACAO[col.C_GUARDIAO]
+COM_GESTOR = {**TUDO, col.C_GESTOR: SUGESTAO}
+
+
+def _com_gestor(base: Conhecimento, guardiao: str, gestor: str,
+                alternativas: dict[str, int] | None = None) -> Conhecimento:
+    notas = 5
+    base.gestor_do_guardiao[chave_de_texto(guardiao)] = {
+        "rotulo": guardiao, "proposto": gestor,
+        "evidencia": {"valor": gestor, "notas": notas, "apoio": notas,
+                      "semanas": 3,
+                      "alternativas": alternativas or {gestor: notas}}}
+    return base
+
+
+def test_o_gestor_sai_do_guardiao_que_a_base_acabou_de_propor():
+    base = _com_gestor(conhecimento(p4={"guardiao": ("Almoxarifado", 1, 1)}),
+                       "Almoxarifado", "Joana")
+    doc = documento()
+    pre.preencher([doc], base, minimo_por_coluna=COM_GESTOR)
+    assert doc.categorizacao[GUARDIAO] == "Almoxarifado"
+    assert doc.categorizacao[GESTOR] == "Joana"
+    # O guardião foi só sugerido: o gestor deduzido dele não fica mais firme.
+    assert doc.propostas[col.C_GESTOR] == SUGESTAO
+
+
+def test_o_gestor_sai_do_guardiao_escrito_a_mao_e_firma_sem_empate():
+    base = _com_gestor(Conhecimento(), "Almoxarifado", "Joana")
+    base.parceiros["4"] = {"nome": "PARCEIRO 4"}
+    doc = documento(categorizacao=["", "Almoxarifado", "", "", ""])
+    pre.preencher([doc], base, minimo_por_coluna=COM_GESTOR)
+    assert doc.categorizacao[GESTOR] == "Joana"
+    assert doc.propostas == {col.C_GESTOR: FIRME}
+
+
+def test_gestor_empatado_e_so_sugestao():
+    base = _com_gestor(Conhecimento(), "Almoxarifado", "Joana",
+                       alternativas={"Joana": 5, "Pedro": 5})
+    base.parceiros["4"] = {"nome": "PARCEIRO 4"}
+    doc = documento(categorizacao=["", "Almoxarifado", "", "", ""])
+    pre.preencher([doc], base,
+                  minimo_por_coluna={col.C_GESTOR: FIRME})
+    assert doc.categorizacao[GESTOR] == ""
+
+
+def test_gestor_escrito_por_alguem_nao_e_tocado():
+    base = _com_gestor(Conhecimento(), "Almoxarifado", "Joana")
+    base.parceiros["4"] = {"nome": "PARCEIRO 4"}
+    doc = documento(categorizacao=["", "Almoxarifado", "Carlos", "", ""])
+    pre.preencher([doc], base, minimo_por_coluna=COM_GESTOR)
+    assert doc.categorizacao[GESTOR] == "Carlos"
+    assert doc.propostas == {}
+
+
+def test_sem_guardiao_nao_ha_gestor_a_propor():
+    base = _com_gestor(conhecimento(p999={"guardiao": ("X", 9, 4)}),
+                       "Almoxarifado", "Joana")
+    doc = documento()
+    pre.preencher([doc], base, minimo_por_coluna=COM_GESTOR)
+    assert doc.categorizacao[GESTOR] == ""
+
+
+def test_guardiao_da_fis_fat_nao_ganha_gestor():
+    """A FIS-FAT não tem a coluna, e B1 esvazia o gestor de propósito."""
+    base = _com_gestor(Conhecimento(), "Fiscal", "Joana")
+    base.parceiros["4"] = {"nome": "PARCEIRO 4"}
+    doc = documento(categorizacao=["", " fiscal ", "", "", ""])
+    pre.preencher([doc], base, minimo_por_coluna=COM_GESTOR,
+                  guardioes_sem_gestor=("Fiscal", "Faturamento"))
+    assert doc.categorizacao[GESTOR] == ""
+
+
+def test_gestor_desligado_nao_preenche_e_a_tela_diz():
+    base = _com_gestor(Conhecimento(), "Almoxarifado", "Joana")
+    base.parceiros["4"] = {"nome": "PARCEIRO 4"}
+    doc = documento(categorizacao=["", "Almoxarifado", "", "", ""])
+    relato = pre.preencher([doc], base,
+                           minimo_por_coluna={col.C_GESTOR: "nao"})
+    assert doc.categorizacao[GESTOR] == ""
+    assert col.C_GESTOR in relato.desligadas
+
+
 # -- a marca ---------------------------------------------------------------
 
 def test_a_marca_sai_na_posicao_que_o_layout_daquela_aba_manda():
@@ -259,10 +345,25 @@ def test_a_regra_de_operacao_mais_especifica_usa_a_categoria_recem_preenchida():
 
 # -- a carga de fábrica ----------------------------------------------------
 
-def test_a_fabrica_liga_as_tres_colunas():
+def test_a_fabrica_liga_as_quatro_colunas():
     ligadas = parametros.pre_categorizacao(parametros.carregar_fabrica())
     assert ligadas == {col.C_CATEGORIA: "sugestao", col.C_GUARDIAO: "sugestao",
+                       col.C_GESTOR: "sugestao",
                        col.C_TIPO_DE_OPERACAO: "firme"}
+
+
+def test_a_base_viva_de_antes_do_gestor_liga_o_gestor_pelo_codigo():
+    """A fábrica não chega a quem já roda: a seção já existe na base viva, sem
+    a chave nova. Quem liga o gestor para essa base é o padrão do código."""
+    antiga = {"pre_categorizacao": {"categoria": "sugestao",
+                                    "guardiao": "sugestao",
+                                    "tipo_de_operacao": "firme"}}
+    assert parametros.pre_categorizacao(antiga)[col.C_GESTOR] == "sugestao"
+
+
+def test_quem_desligou_o_gestor_continua_com_ele_desligado():
+    desligado = {"pre_categorizacao": {"gestor_de_apoio": "nao"}}
+    assert parametros.pre_categorizacao(desligado)[col.C_GESTOR] == "nao"
 
 
 # -- de ponta a ponta ------------------------------------------------------
@@ -364,3 +465,16 @@ def test_a_regra_b1_continua_mandando_no_guardiao(tmp_path):
     guardiao = col.indice(col.fis_fat(resultado.semana), col.C_GUARDIAO) + 1
     assert aba.cell(2, guardiao).value == "Fiscal"
     assert aba.cell(2, guardiao).fill.fgColor.rgb != "FFFFF2CC"
+
+
+def test_a_planilha_sai_com_o_gestor_preenchido_e_realcado(semana):
+    base = _com_gestor(conhecimento(p4={"guardiao": ("Almoxarifado", 9, 4)}),
+                       "Almoxarifado", "Joana")
+    bc.gravar(base, raiz=semana["dados"])
+    resultado = _rodar(semana)
+
+    aba = openpyxl.load_workbook(resultado.planilha)["Pendentes"]
+    gestor = col.indice(col.pendentes(resultado.semana), col.C_GESTOR) + 1
+    assert aba.cell(2, gestor).value == "Joana"
+    assert aba.cell(2, gestor).fill.fgColor.rgb == "FFFFF2CC"
+    assert resultado.pre_categorizacao.por_coluna[col.C_GESTOR] == {FIRME: 1}

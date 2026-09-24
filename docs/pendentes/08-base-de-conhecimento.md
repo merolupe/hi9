@@ -95,8 +95,10 @@ concordância, não acerto. Isso é do processo, não do dado.
 `[FATO]` Decisão do Compliance Tributário de 22/09/2026, tomada depois da
 medição acima: **categoria preenche, guardião preenche** — as duas colunas, no
 grau de sugestão —, e **`Tipo de Operação` entrou junto** depois que a
-normalização do conectivo levou a medida dela a 18 de 18. O parâmetro é `pre_categorizacao`, um valor por coluna
-(`firme`, `sugestao` ou `nao`), e é editável sem desenvolvedor.
+normalização do conectivo levou a medida dela a 18 de 18. Em 24/09/2026
+**`Gestor de apoio` foi ligado também**, sem medição — ver "O gestor de apoio
+sai do guardião", abaixo. O parâmetro é `pre_categorizacao`, um valor por
+coluna (`firme`, `sugestao` ou `nao`), e é editável sem desenvolvedor.
 
 Na semana 38 isso teria preenchido **52 categorias, 52 guardiões e 18 tipos
 de operação** das 67 notas. Pelas taxas medidas, cerca de **12 guardiões sairiam errados** — é o
@@ -148,10 +150,38 @@ semana seguinte, sem ninguém cadastrar nada.
 `Tipo de Operação` está ligado em `firme` — e como a base só oferece operação
 quando a regra se repete sem divergência, `firme` e `sugestao` dão no mesmo.
 
-### O que continua desligado
+### O gestor de apoio sai do guardião
 
-`Gestor de apoio`, porque ninguém pediu — e ele sai do guardião, então é uma
-linha quando for a hora.
+`[FATO]` Ligado em 24/09/2026, a pedido do time, em `sugestao` — como o
+guardião. Não é proposto por parceiro: a base guarda o **gestor vigente de
+cada guardião** (o gestor com mais notas na última observação daquele
+guardião), e a pergunta é feita com o guardião que a linha tem depois das
+outras colunas — o herdado, o de B1 ou o que a base acabou de propor.
+
+| Situação da linha | O que acontece com o gestor |
+|---|---|
+| `Gestor de apoio` já preenchido (herança ou pessoa) | nada — só preenche o que está vazio |
+| sem guardião | fica vazio: não há de quem deduzir |
+| guardião `Fiscal` ou `Faturamento` | fica vazio: a nota vai para a `PENDENTES FIS-FAT`, que não tem a coluna, e B1 esvazia o gestor de propósito |
+| guardião escrito por alguém, gestor sem empate no histórico | preenche, **firme** |
+| guardião só sugerido pela base | preenche, e o grau cai para **sugestão** — a dedução não fica mais firme do que aquilo de onde saiu |
+| empate entre dois gestores no histórico | **sugestão** |
+
+A célula sai marcada em âmbar, como as outras, e entra na contagem da tela.
+
+`[FATO]` **O gestor não foi medido.** A medição contra a semana 38 cobriu
+categoria, guardião e operação; o gestor entra sem taxa de acerto conhecida.
+E ele herda o erro do guardião: se o guardião sugerido está errado — uma
+nota a cada quatro, na semana 38 —, o gestor sai do guardião errado.
+
+Onde a lista curada e o histórico discordam do gestor (4 guardiões na carga
+de 22/09/2026, nomeados na tela da importação), quem é proposto é o do
+**histórico**.
+
+O padrão `sugestao` está também no código, e não só na carga de fábrica: a
+base viva que já existia antes desta mudança tem a seção
+`pre_categorizacao` sem a chave nova, e a fábrica não chega a ela. Para
+desligar, `gestor_de_apoio: nao` na base viva.
 
 ## Como se usa
 
