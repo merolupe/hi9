@@ -206,6 +206,12 @@ class Conhecimento:
     #: essa é cadastrada na tela, e enchê-la daqui faria a semana seguinte
     #: bloquear em cima de nome que ninguém conferiu.
     guardioes_observados: list[str] = field(default_factory=list)
+    #: Até que semana o **livro** acrescentou evidência a esta base, e quantas
+    #: notas. Não vai para o disco: é recalculado do livro a cada leitura, que
+    #: é o que torna o aprendizado impossível de contar duas vezes. Ver
+    #: `aprendizado.py`.
+    aprendido_ate: int = 0
+    notas_aprendidas: int = 0
 
     def __len__(self) -> int:
         return len(self.parceiros)
@@ -354,18 +360,27 @@ def caminho_da_base(dominio: str = "mercadorias",
 
 
 def carregar(dominio: str = "mercadorias", raiz: Path | None = None, *,
-             com_ajustes: bool = True) -> Conhecimento:
+             com_ajustes: bool = True, com_aprendizado: bool = True,
+             livro: Any = None) -> Conhecimento:
     """A base do disco, já com as correções da tela por cima.
 
-    `com_ajustes=False` devolve a fotografia crua. Serve para a tela, que
-    precisa mostrar lado a lado o que a importação propôs e o que a pessoa
-    corrigiu — e para quem vai **gravar** a fotografia, que nunca deve levar
-    ajuste dentro.
+    As três camadas são ligáveis uma a uma, e as duas de fora existem por
+    motivos diferentes:
+
+    * `com_aprendizado=False` — só a fotografia importada. Serve para conferir
+      o que veio da importação, sem o que o livro acrescentou depois.
+    * `com_ajustes=False` — **o que a base diz por si**, fotografia mais
+      aprendizado. É o que a tela mostra e é contra isso que ela compara na
+      hora de gravar: valor igual a este não é correção.
+
+    `livro` evita ler do disco duas vezes: quem já tem o livro em mão — a
+    execução da semana tem — passa o que tem. O livro é YAML, e é o arquivo
+    mais pesado do aplicativo.
     """
     caminho = caminho_da_base(dominio, raiz)
     if not caminho.is_file():
-        vazia = Conhecimento(dominio=dominio)
-        return vazia if not com_ajustes else _com_ajustes(vazia, raiz)
+        return _camadas(Conhecimento(dominio=dominio), raiz, livro,
+                        com_ajustes, com_aprendizado)
     bruto = json.loads(caminho.read_text(encoding="utf-8"))
     conhecimento = Conhecimento(
         dominio=str(bruto.get("dominio") or dominio),
@@ -380,15 +395,49 @@ def carregar(dominio: str = "mercadorias", raiz: Path | None = None, *,
         operacoes=dict(bruto.get("operacoes") or {}),
         guardioes_observados=list(bruto.get("guardioes_observados") or []),
     )
-    return conhecimento if not com_ajustes else _com_ajustes(conhecimento, raiz)
+    return _camadas(conhecimento, raiz, livro, com_ajustes, com_aprendizado)
 
 
-def _com_ajustes(conhecimento: Conhecimento, raiz: Path | None) -> Conhecimento:
-    """Importado tarde: `ajustes` importa `base` para achar a pasta."""
-    from . import ajustes as camada
+def _camadas(conhecimento: Conhecimento, raiz: Path | None, livro: Any,
+             com_ajustes: bool, com_aprendizado: bool) -> Conhecimento:
+    """As três camadas, nesta ordem — e a ordem é a regra.
 
-    return camada.aplicar(
-        conhecimento, camada.carregar(conhecimento.dominio, raiz))
+    Fotografia importada → o que o livro ensinou das semanas seguintes →
+    correção humana. A correção vem por último porque vence as duas outras; o
+    aprendizado vem no meio porque **soma evidência** à fotografia e não pode
+    passar por cima de quem corrigiu à mão.
+
+    Os dois módulos são importados tarde: os dois importam `base`.
+    """
+    if com_aprendizado:
+        from . import aprendizado
+
+        conhecimento = aprendizado.aplicar(
+            conhecimento,
+            aprendizado.aprender(
+                livro if livro is not None
+                else _livro(conhecimento.dominio, raiz),
+                conhecimento.ultimo_relatorio_classificado))
+    if com_ajustes:
+        from . import ajustes as camada
+
+        conhecimento = camada.aplicar(
+            conhecimento, camada.carregar(conhecimento.dominio, raiz))
+    return conhecimento
+
+
+def _livro(dominio: str, raiz: Path | None):
+    """O livro de classificação do domínio, ou um vazio.
+
+    Falha de leitura **não** derruba a consulta: sem o livro a base continua
+    valendo pela fotografia, que é o comportamento de antes do aprendizado.
+    """
+    from .. import estado
+
+    try:
+        return estado.carregar(dominio, raiz=raiz)
+    except Exception:                                    # pragma: no cover
+        return estado.Livro(dominio)
 
 
 def gravar(conhecimento: Conhecimento, raiz: Path | None = None) -> Path:

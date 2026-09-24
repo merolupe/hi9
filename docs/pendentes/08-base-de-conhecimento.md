@@ -211,28 +211,35 @@ está decidindo se confia na base: `23 de 65 notas, 21 semanas` responde isso,
 `0,35` não. As alternativas vêm na mesma célula, porque é ali que se vê o
 motivo da dúvida.
 
-### As duas camadas, e por que elas são duas
+### As três camadas, e por que elas são três
 
 A importação **substitui** a base inteira — somar duas fotografias de épocas
 diferentes produziria uma terceira que nunca existiu, com evidência de
 execuções que contaram as mesmas notas. Uma correção feita à mão não pode viver
 dentro dessa fotografia, ou a próxima importação a levaria embora.
 
-Então são dois arquivos, os dois em `dados/pendentes/conhecimento/`:
+Então a base tem três camadas, e a leitura aplica uma sobre a outra **nesta
+ordem**:
 
-| Arquivo | O que é | Quem o escreve |
+| Camada | Onde mora | O que faz |
 |---|---|---|
-| `mercadorias.json` | a fotografia importada, ~660 KB | a importação, substituindo tudo |
-| `mercadorias-ajustes.json` | só o que gente corrigiu, com carimbo | a tela |
+| **fotografia** | `mercadorias.json`, ~660 KB | o que a importação trouxe; substituída inteira a cada importação |
+| **aprendizado** | em nenhum arquivo — refeito do livro a cada leitura | soma evidência das semanas depois da fotografia |
+| **correção** | `mercadorias-ajustes.json` | só o que gente corrigiu, com carimbo; vence as duas |
 
-A leitura aplica o segundo por cima do primeiro. É o mesmo desenho que o resto
-do repositório usa entre carga de fábrica e base viva, com uma diferença: aqui
-o que vem "de fábrica" é a importação, e **quem manda é a pessoa**.
+A correção vem por último porque vence as outras duas. O aprendizado vem no
+meio porque **soma evidência** à fotografia, e não pode passar por cima de quem
+corrigiu à mão. É o mesmo desenho que o resto do repositório usa entre carga de
+fábrica e base viva, com uma diferença: aqui o que vem "de fábrica" é a
+importação, e **quem manda é a pessoa**.
 
 ### Como a tela sabe o que foi corrigido
 
-Ela **compara**, e não marca. Na hora de gravar, valor igual ao da fotografia
-não é ajuste; valor diferente é. Três consequências, todas desejáveis:
+Ela **compara**, e não marca. Na hora de gravar, valor igual ao que a base diz
+por si — fotografia **mais** aprendizado — não é ajuste; valor diferente é. A
+comparação é contra o que a tela mostrou, e não contra a fotografia crua: se
+fosse contra a crua, toda gravação transformaria o aprendizado inteiro em
+correção humana, em silêncio. Isso está travado em teste. Três consequências, todas desejáveis:
 
 * digitar de novo o valor original **desfaz** o ajuste, sem botão de desfazer;
 * reimportar não ressuscita correção que a pessoa já tinha revertido;
@@ -245,6 +252,71 @@ Corrigir parceiro que a importação não trouxe é permitido, e a tela avisa: a
 correção passa a ser a única regra dele. Código repetido na mesma unidade é
 **erro** e não grava nada — correção pela metade classificaria a semana com um
 valor que ninguém escolheu.
+
+## O que a base aprende sozinha
+
+A fotografia vai até uma semana — hoje a 37. Da 38 em diante o time continua
+classificando, e essas decisões entram na base **sem ninguém importar nada**.
+
+### Por que não somando o que a planilha devolve
+
+Porque uma nota pendente aparece na planilha de várias semanas seguidas. Somar
+evidência a cada execução contaria a mesma decisão humana cinco, seis, dez
+vezes, e a base ficaria cada vez mais confiante sem ninguém ter decidido nada
+de novo.
+
+Guardar a lista do que já foi absorvido resolveria, ao preço de dezenas de
+milhares de chaves dentro da base — e de um jeito novo de errar: a lista e a
+evidência podem sair de sincronia.
+
+### O que se faz em vez disso
+
+Aprende-se do **livro de classificação**, não da planilha. O livro já é
+indexado pela nota e guarda **uma linha por nota, para sempre**, com a
+classificação mais recente que uma pessoa deu. Recalcular a evidência a partir
+dele é **idempotente por construção**: rodar duas vezes dá o mesmo número,
+porque a nota é uma linha tanto na primeira vez quanto na segunda.
+
+E para não recontar o que a fotografia já contou, aprende-se **só das semanas
+depois de `ultimo_relatorio_classificado`**. As duas metades não se sobrepõem,
+então somá-las é legítimo — e nenhuma precisa saber da outra.
+
+Para isso o livro passou a guardar o **contexto da nota**: código do parceiro,
+CFOP, unidade e a semana. Sem eles o livro sabe *o que* foi decidido e não
+*sobre o que*, e a evidência não se refaz. O contexto não é julgamento humano:
+o valor mais recente vence em silêncio, e ele não conta como "alterada" na
+ingestão.
+
+### O que ele pode criar, e o que não pode
+
+Ele **soma evidência** a uma regra que existe, e pode **criar** a proposta de
+uma regra que não tinha nenhuma — quando o livro mostra o mesmo valor em três
+notas de duas semanas, sem divergência. É o mesmo limiar da fotografia,
+aplicado aos mesmos dados: decisões humanas. Não é adivinhação (regra nº 4); é
+a leitura de um histórico que agora tem dono. Para a tabela de gestores o
+limiar é o dela — o que impede é o **empate** —, senão uma troca de gestor
+nunca seria aprendida.
+
+O que ele **não** faz é derrubar proposta que já existe. Onde as semanas novas
+discordam da lista curada, a proposta cai para `sugestao` com as alternativas
+ao lado, e quem decide é a pessoa na tela. Uma máquina que trocasse a proposta
+sozinha estaria decidindo classificação.
+
+### Medido no ciclo real
+
+`[FATO]` Fotografia até a semana 37 (488 parceiros) mais as 88 linhas
+classificadas à mão da semana 38:
+
+| O que mudou | Quanto |
+|---|---|
+| parceiros que a fotografia não tinha | **+10** |
+| parceiros cuja evidência de categoria cresceu | **32** |
+| guardiões observados | 20 → **23** |
+| regras de guardião que passaram a existir | **0** — uma semana só dá uma semana, e o limiar pede duas |
+| idempotente sobre os 498 parceiros | **sim** |
+
+A última linha é a que importa: a base aprende, e aprender duas vezes dá o
+mesmo número.
 
 ## Como se usa
 

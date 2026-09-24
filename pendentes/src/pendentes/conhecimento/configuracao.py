@@ -461,18 +461,32 @@ def _gravar_operacoes(linhas, foto, anteriores, novos, problemas, quem,
 
 
 def resumo(dominio: str = "mercadorias", raiz: Path | None = None) -> str:
-    """A frase que a Central mostra no cabeçalho da tela."""
-    foto = conhecido.carregar(dominio, raiz, com_ajustes=False)
+    """A frase que a Central mostra no cabeçalho da tela.
+
+    Ela nomeia as três camadas, porque são três coisas diferentes e quem lê
+    precisa saber de qual delas vem o que está vendo: o que a importação
+    trouxe, o que o livro ensinou depois e o que gente corrigiu.
+    """
+    base = conhecido.carregar(dominio, raiz, com_ajustes=False)
     feitos = camada.carregar(dominio, raiz)
-    if foto.vazia and feitos.vazia:
+    if base.vazia and feitos.vazia:
         return ("Base vazia: importe os dois arquivos de classificação na "
                 "ferramenta Base de conhecimento.")
     unidades = sum(len(p.get("unidades") or {})
-                   for p in foto.parceiros.values())
-    regras = sum(len(n) for n in foto.operacoes.values())
-    return (f"{len(foto.parceiros)} parceiro(s) — {unidades} com regra por "
-            f"unidade —, {regras} regra(s) de operação em "
-            f"{len(foto.operacoes)} CFOP e {len(foto.gestor_do_guardiao)} "
-            f"gestor(es). Aprendeu até a semana "
-            f"{foto.ultimo_relatorio_classificado or '—'}. "
-            f"{feitos.quantos} correção(ões) feitas à mão.")
+                   for p in base.parceiros.values())
+    regras = sum(len(n) for n in base.operacoes.values())
+    partes = [
+        f"{len(base.parceiros)} parceiro(s) — {unidades} com regra por "
+        f"unidade —, {regras} regra(s) de operação em "
+        f"{len(base.operacoes)} CFOP e {len(base.gestor_do_guardiao)} "
+        f"gestor(es).",
+        f"A importação trouxe até a semana "
+        f"{base.ultimo_relatorio_classificado or '—'}.",
+    ]
+    if base.notas_aprendidas:
+        partes.append(
+            f"Do livro, mais {base.notas_aprendidas} nota(s) classificada(s) "
+            f"até a semana {base.aprendido_ate} — essas a ferramenta aprendeu "
+            f"sozinha, das planilhas que voltaram.")
+    partes.append(f"{feitos.quantos} correção(ões) feitas à mão.")
+    return " ".join(partes)

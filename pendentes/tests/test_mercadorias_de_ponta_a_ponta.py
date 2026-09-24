@@ -109,6 +109,11 @@ def linha_da_semana_anterior(chave, *, tipo="", guardiao="", gestor="",
         linha[3], linha[4] = categoria, retorno
     linha[col.indice(layout, col.X_CHAVE)] = chave
     linha[col.indice(layout, col.X_NRO_NOTA)] = "1001"   # para o papel casar
+    # O contexto da nota, que a ingestão grava no livro para a base aprender.
+    # São os mesmos valores de fábrica de `linha_xml`.
+    linha[col.indice(layout, col.X_COD_PARCEIRO)] = "4"
+    linha[col.indice(layout, col.X_CFOP)] = "1102"
+    linha[col.indice(layout, col.X_NOME_FANTASIA)] = "HINOVE MATRIZ"
     return linha
 
 
@@ -615,3 +620,69 @@ def test_b1_5_aparece_no_relato_da_tela(semana):
 
     assert "regra B1.5" in texto
     assert "Suprimentos" in texto
+
+
+# =========================================================================
+# A base aprende do que voltou classificado
+# =========================================================================
+
+def test_o_contexto_da_nota_chega_ao_livro_pela_planilha_devolvida(semana):
+    """Sem código de parceiro, CFOP e unidade, o livro sabe *o que* foi
+    decidido mas não *sobre o que* — e a base não tem como aprender."""
+    from pendentes import estado
+
+    primeira = _rodar(semana)
+    semana["arquivos"].append(planilha_anterior(
+        semana["tmp"] / "Pendentes30.xlsx", primeira.semana - 1,
+        pendentes=[linha_da_semana_anterior(
+            PENDENTE, guardiao="Facilities", categoria="Indiretos",
+            tipo="Compra Uso e Consumo")]))
+
+    _rodar(semana)
+
+    livro = estado.carregar("mercadorias", raiz=semana["dados"])
+    registro = livro.de(PENDENTE)
+    assert registro.codigo_do_parceiro == "4"
+    assert registro.cfop == "1102"
+    assert registro.fantasia == "HINOVE MATRIZ"
+    assert registro.semana == primeira.semana - 1
+
+
+def test_a_base_aprende_do_livro_e_diz_na_tela(semana):
+    """Uma semana devolvida ainda **não** firma regra nova — 3 notas em 2
+    semanas é o limiar —, mas a evidência entra e a tela mostra as duas coisas.
+    """
+    from pendentes.conhecimento import base as conhecido
+    from pendentes.conhecimento import configuracao as tela
+
+    primeira = _rodar(semana)
+    semana["arquivos"].append(planilha_anterior(
+        semana["tmp"] / "Pendentes30.xlsx", primeira.semana - 1,
+        pendentes=[linha_da_semana_anterior(
+            PENDENTE, guardiao="Facilities", categoria="Indiretos")]))
+    segunda = _rodar(semana)
+
+    assert "a base aprendeu" in " ".join(segunda.heranca())
+    base = conhecido.carregar(raiz=semana["dados"])
+    assert base.notas_aprendidas == 1
+    assert base.aprendido_ate == primeira.semana - 1
+    # uma nota não firma, então a base continua sem propor — e diz isso
+    assert not base.propor("4", "categoria")
+
+    linha = next(l for l in tela.ler(raiz=semana["dados"])[tela.PARCEIROS]
+                 if l["codigo"] == "4")
+    assert linha["categoria_evidencia"] == "Indiretos: 1 de 1 notas, 1 semana(s)"
+    assert linha["categoria_proposta"] == ""
+
+
+def test_o_guardiao_novo_entra_nos_observados_pela_planilha_devolvida(semana):
+    from pendentes.conhecimento import base as conhecido
+
+    primeira = _rodar(semana)
+    semana["arquivos"].append(planilha_anterior(
+        semana["tmp"] / "Pendentes30.xlsx", primeira.semana - 1,
+        pendentes=[linha_da_semana_anterior(PENDENTE, guardiao="PCP Registro")]))
+    _rodar(semana)
+
+    assert "PCP Registro" in conhecido.carregar(
+        raiz=semana["dados"]).guardioes_observados

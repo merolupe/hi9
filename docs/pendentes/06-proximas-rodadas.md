@@ -91,7 +91,10 @@ aberto, e agora é decisão de quem lê o painel, não de quem o constrói.
 
 ## 2. Base de conhecimento para pré-categorizar · **a base existe desde 22/09/2026**
 
-> **Feita.** A base foi importada, medida e **ligada**, e está em
+> **Feita, e fechada em 24/09/2026.** A base foi importada, medida e ligada; e
+> desde 24/09 ela é **consultável e editável na tela** e **aprende sozinha** das
+> planilhas que voltam classificadas. As três camadas — fotografia importada,
+> aprendizado do livro e correção humana — e a razão de cada uma estão em
 > [08 — A base de conhecimento](08-base-de-conhecimento.md).
 >
 > `[FATO]` Medida contra a semana 38, que a base não viu: **categoria acerta
