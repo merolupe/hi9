@@ -36,17 +36,32 @@ A alternativa era preencher depois do split, e ela produz um arquivo que se
 contradiz: uma nota na `Pendentes` com `Guardião = Faturamento`. Entre um
 arquivo coerente cuja sugestão pode estar errada, e um arquivo incoerente,
 o primeiro é o que dá para conferir.
+
+### O gestor sai do guardião
+
+`[FATO]` Ligado em 24/09/2026, a pedido do time. O gestor de apoio não é
+proposto por parceiro: a base guarda o gestor vigente de **cada guardião**, e
+a pergunta é feita com o guardião que a linha tem depois das outras colunas —
+o herdado, o de B1 ou o que a base acabou de propor.
+
+Duas consequências, e as duas estão no código abaixo:
+
+* guardião que vai para a `PENDENTES FIS-FAT` não ganha gestor. Aquela aba não
+  tem a coluna, e B1 esvazia o gestor de propósito quando manda a nota para o
+  Fiscal — preencher ali desfaria a regra por baixo;
+* gestor proposto sobre guardião que também foi só sugerido é, no máximo,
+  sugestão. Uma dedução não fica mais firme do que aquilo de onde saiu.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Iterable
 
 from ..conhecimento.base import (FIRME, SUGESTAO, Conhecimento,
                                  chave_de_operacao)
 from ..conhecimento.importacao import cfop_normalizado
 from ..estado import Livro
-from ..texto import aparar
+from ..texto import aparar, chave_de_texto
 from . import colunas as col
 from .fontes import Documento
 
@@ -116,13 +131,17 @@ def grafias_do_livro(livro: Livro | None) -> dict[str, str]:
 
 def preencher(documentos: Iterable[Documento], conhecimento: Conhecimento, *,
               minimo_por_coluna: dict[str, str],
-              livro: Livro | None = None) -> Preenchimento:
+              livro: Livro | None = None,
+              guardioes_sem_gestor: Iterable[str] = ()) -> Preenchimento:
     """Preenche as colunas ligadas, só onde estão vazias. Devolve o que fez.
 
     `minimo_por_coluna` diz, para cada coluna, qual o grau **mínimo** que
     preenche: `firme`, `sugestao` ou `nao`. O parâmetro existe porque os dois
     campos não estão no mesmo estágio, e tratá-los igual erraria nos dois
     sentidos.
+
+    `guardioes_sem_gestor` são os que a regra B2 leva para a `PENDENTES
+    FIS-FAT`: ali não há `Gestor de apoio`, e a linha fica sem proposta.
     """
     relato = Preenchimento()
     ligadas = {}
@@ -132,9 +151,12 @@ def preencher(documentos: Iterable[Documento], conhecimento: Conhecimento, *,
             relato.desligadas.append(coluna)
             continue
         ligadas[coluna] = (campo, GRAUS[grau])
-    operacao = _grau_da_operacao(minimo_por_coluna, relato)
-    if (not ligadas and not operacao) or conhecimento.vazia:
+    gestor = _grau_de(col.C_GESTOR, minimo_por_coluna, relato)
+    operacao = _grau_de(col.C_TIPO_DE_OPERACAO, minimo_por_coluna, relato)
+    if (not ligadas and not gestor and not operacao) or conhecimento.vazia:
         return relato
+
+    sem_gestor = {chave_de_texto(g) for g in guardioes_sem_gestor if aparar(g)}
 
     grafias = grafias_do_livro(livro) if operacao else {}
 
@@ -145,8 +167,11 @@ def preencher(documentos: Iterable[Documento], conhecimento: Conhecimento, *,
                 documento.de(col.X_NOME_FANTASIA))
             _escrever(documento, coluna, proposta, aceitos, relato)
 
+        if gestor:
+            _propor_gestor(documento, conhecimento, gestor, relato, sem_gestor)
+
         if operacao:
-            # Depois das outras duas: a regra mais específica de operação é
+            # Depois das outras: a regra mais específica de operação é
             # por CFOP + parceiro + **categoria**, e a categoria pode ter
             # acabado de ser preenchida nesta mesma passagem.
             proposta = conhecimento.propor_operacao(
@@ -159,14 +184,28 @@ def preencher(documentos: Iterable[Documento], conhecimento: Conhecimento, *,
     return relato
 
 
-def _grau_da_operacao(minimo_por_coluna: dict[str, str],
-                      relato: Preenchimento) -> tuple[str, ...]:
-    grau = str(minimo_por_coluna.get(col.C_TIPO_DE_OPERACAO)
-               or NAO).strip().lower()
+def _grau_de(coluna: str, minimo_por_coluna: dict[str, str],
+             relato: Preenchimento) -> tuple[str, ...]:
+    grau = str(minimo_por_coluna.get(coluna) or NAO).strip().lower()
     if grau == NAO or grau not in GRAUS:
-        relato.desligadas.append(col.C_TIPO_DE_OPERACAO)
+        relato.desligadas.append(coluna)
         return ()
     return GRAUS[grau]
+
+
+def _propor_gestor(documento: Documento, conhecimento: Conhecimento,
+                   aceitos: tuple[str, ...], relato: Preenchimento,
+                   sem_gestor: set[str]) -> None:
+    """O gestor vigente do guardião que a linha tem agora."""
+    guardiao = aparar(
+        documento.categorizacao[col.POSICAO_DA_CATEGORIZACAO[col.C_GUARDIAO]])
+    if not guardiao or chave_de_texto(guardiao) in sem_gestor:
+        return
+    proposta = conhecimento.gestor_de(guardiao)
+    if (proposta.confianca == FIRME
+            and documento.propostas.get(col.C_GUARDIAO) == SUGESTAO):
+        proposta = replace(proposta, confianca=SUGESTAO)
+    _escrever(documento, col.C_GESTOR, proposta, aceitos, relato)
 
 
 def _escrever(documento: Documento, coluna: str, proposta, aceitos,

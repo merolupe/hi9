@@ -116,6 +116,10 @@ mercadorias:
 pre_categorizacao:
   categoria: sugestao
   guardiao: sugestao
+  # O gestor sai do guardião da linha — a base guarda o gestor vigente de cada
+  # guardião. Ligado em 24/09/2026. Guardião que vai para a `PENDENTES
+  # FIS-FAT` não ganha gestor: a aba não tem a coluna.
+  gestor_de_apoio: sugestao
   # A operação só tem proposta quando a regra se repete sem divergência, então
   # `firme` e `sugestao` dão no mesmo — fica `firme` por ser o que descreve.
   # A grafia escrita é a que o livro mais usa, e não a da base: `Compra Uso e
