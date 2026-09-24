@@ -576,3 +576,42 @@ def test_a_saida_da_semana_passada_nao_e_tomada_pelo_xml(semana):
     semana["arquivos"].append(primeira.planilha)
     segunda = _rodar(semana)
     assert segunda.documentos == 10
+
+
+# =========================================================================
+# B1.5 — o pedido de compra, na planilha inteira
+# =========================================================================
+
+def test_b1_5_escreve_suprimentos_na_planilha_e_deixa_a_nota_na_pendentes(semana):
+    """A nota `PENDENTE` do fixture tem o farol vermelho: pedido não confirmado.
+
+    O teste é sobre o arquivo entregue, não sobre a função: ela sai com
+    `Suprimentos` no guardião, **na `Pendentes`** — sem aba própria.
+    """
+    resultado = _rodar(semana)
+
+    linha = next(l for l in _linhas(resultado, "Pendentes") if l[5] == "1001")
+    assert linha[1] == "Suprimentos"
+    assert resultado.suprimentos.nao_confirmado == 1
+    assert "PENDENTES FIS-FAT" in _aba(resultado, "Pendentes").parent.sheetnames
+    assert all(l[1] != "Suprimentos"
+               for l in _linhas(resultado, "PENDENTES FIS-FAT"))
+
+
+def test_b1_5_nao_toca_na_nota_sem_pedido_vinculado(semana):
+    """`SEM_CADASTRO` está no CE com o farol vazio: não há pedido a confirmar."""
+    resultado = _rodar(semana)
+
+    assert resultado.suprimentos.sem_pedido >= 1
+    linha = next((l for l in _linhas(resultado, "Pendentes") if l[5] == "1010"),
+                 None)
+    assert linha is not None
+    assert linha[1] in (None, "")
+
+
+def test_b1_5_aparece_no_relato_da_tela(semana):
+    resultado = _rodar(semana)
+    texto = " ".join(resultado.heranca())
+
+    assert "regra B1.5" in texto
+    assert "Suprimentos" in texto

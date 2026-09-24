@@ -102,6 +102,7 @@ class Execucao:
     sem_classificacao: int = 0
     com_retorno: int = 0
     reclassificadas_para_fiscal: int = 0
+    suprimentos: classificacao.Suprimentos | None = None
     pre_categorizacao: precategorizacao.Preenchimento | None = None
     ingestao: estado.Ingestao | None = None
 
@@ -197,6 +198,15 @@ class Execucao:
             f"{self.reclassificadas_para_fiscal} reclassificada(s) para Fiscal "
             f"pela regra B1",
         ]
+        if self.suprimentos is not None:
+            regra = self.suprimentos
+            itens.append(
+                f"{regra.reclassificadas} reclassificada(s) para Suprimentos "
+                f"pela regra B1.5: {regra.nao_confirmado} com pedido não "
+                f"confirmado, {regra.confirmado_com_incongruencia} confirmado "
+                f"com incongruência · {regra.sem_pedido} sem pedido vinculado, "
+                f"onde a regra não toca"
+            )
         if self.ingestao is not None:
             relato = self.ingestao
             itens.append(
@@ -407,7 +417,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     lancados, restantes = roteamento.segregar_lancados(
         rotas.pendentes, literais["conf_fiscal_lancada"])
 
-    # -- classificação: herança → B1 → B2 ---------------------------------
+    # -- classificação: herança → B1 → B1.5 → B2 --------------------------
     livro = livro if livro is not None else estado.carregar(
         DOMINIO, raiz=raiz_dos_dados)
     relato = None
@@ -432,6 +442,21 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         restantes,
         conferencia_fisica_confirmada=literais["conferencia_fisica_confirmada"],
         guardiao=literais["guardiao_da_reclassificacao"])
+    # B1.5 depois de B1, e de propósito: quando as duas querem a mesma linha,
+    # quem destrava é o Suprimentos — o Fiscal não lança nota cujo pedido não
+    # foi confirmado. Antes da pré-categorização, para que ela reponha o gestor
+    # vigente do Suprimentos no lugar do gestor do guardião que saiu.
+    suprimentos = classificacao.reclassificar_para_suprimentos(
+        restantes,
+        pedido_confirmado=literais["pedido_confirmado"],
+        pedido_nao_confirmado=literais["pedido_nao_confirmado"],
+        guardiao=literais["guardiao_do_pedido"])
+    for rotulo, quantas in sorted(suprimentos.nao_reconhecido.items()):
+        avisos.append(
+            f"`Pedido confirmado?` veio como {rotulo!r} em {quantas} "
+            f"linha(s) — não é o rótulo de confirmado nem o de não "
+            f"confirmado, e a regra do Suprimentos não tocou nelas"
+        )
     # A base de conhecimento preenche o que continuou vazio — depois da
     # herança e de B1, que mandam, e **antes** de B2, para que um guardião
     # proposto encaminhe a nota como encaminharia um guardião escrito à mão.
@@ -458,6 +483,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         herdadas=heranca.herdadas, sem_classificacao=heranca.sem_classificacao,
         com_retorno=heranca.com_retorno,
         reclassificadas_para_fiscal=reclassificadas,
+        suprimentos=suprimentos,
         pre_categorizacao=preenchimento,
         ingestao=relato,
         chaves_duplicadas=len(indice.chaves_duplicadas),
@@ -512,6 +538,13 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
             # ferramenta e não de uma pessoa.
             "pre_categorizacao": (execucao.pre_categorizacao.por_coluna
                                   if execucao.pre_categorizacao else {}),
+            # E o que B1.5 sobrescreveu, pelo mesmo motivo: a semana que vier
+            # não tem outro jeito de saber que aquele `Suprimentos` foi regra.
+            "suprimentos": (
+                {"nao_confirmado": execucao.suprimentos.nao_confirmado,
+                 "confirmado_com_incongruencia":
+                     execucao.suprimentos.confirmado_com_incongruencia}
+                if execucao.suprimentos else {}),
         },
         encerravel=execucao.encerravel,
         raiz=raiz_dos_dados,

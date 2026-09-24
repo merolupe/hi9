@@ -175,20 +175,32 @@ nº 9](05-decisoes-pendentes.md) — o de-para de filiais que some quando a fili
 não tem movimento no período, o caso Microbio. Com base própria, a filial não
 depende de aparecer no recorte da semana.
 
-## 5. Pedido não confirmado é pendência do Suprimentos
+## 5. Pedido não confirmado é pendência do Suprimentos · **feito em 24/09/2026**
 
-**Hoje:** o farol de pedido tem três estados — confirmado, não confirmado e sem
-pedido vinculado —, e o não confirmado não tem dono. Ele aparece na planilha e
-não vira cobrança de ninguém.
-
-**Vai ser:** **pedido de compra não confirmado é pendência do Suprimentos**, com
-guardião próprio, como qualquer outra pendência com responsável, prazo e próxima
-ação esperada.
-
-O que falta decidir: se o Suprimentos entra na lista de guardiões como área
-normal (e então herda, é cobrado e responde pelo retorno) ou se vira uma
-população separada, como o `PENDENTES FIS-FAT` é hoje para Fiscal e Faturamento.
-A segunda forma é a que o VBA já sabe fazer.
+> **Entregue como regra B1.5.** A decisão que faltava foi tomada pelo
+> Compliance Tributário: **o Suprimentos entra como área normal**, na
+> `Pendentes`, sem aba própria — ele herda, é cobrado e responde pelo retorno
+> como qualquer outro guardião. A regra está em `classificacao.py`, com as três
+> portas, e roda depois de B1 e antes da pré-categorização.
+>
+> As três portas, como foram pedidas: **pedido não confirmado** → Suprimentos;
+> **pedido confirmado com incongruência preenchida** → Suprimentos; **pedido em
+> branco** → não se toca na linha.
+>
+> `[FATO]` Medido nas 88 linhas classificadas à mão da semana 38: cinco notas
+> passam pela segunda porta e o time marcou quatro delas como `Suprimentos`; a
+> quinta, como `Manutenção Guará`. A **primeira porta não tem uma linha** naquela
+> semana — entra sem medição, e a primeira semana real é que vai dizer.
+>
+> `[FATO]` Três linhas da `PENDENTES FIS-FAT` da semana 38 têm
+> `NF-e Normal Compra` escrito em `Pedido confirmado?` — colunas deslocadas no
+> arquivo montado à mão. A regra **não classifica** o que não reconhece: conta e
+> avisa na tela (regra nº 4).
+>
+> O que sobrou em aberto está na decisão nº 16 de
+> [05 — Decisões pendentes](05-decisoes-pendentes.md): quando B1 e B1.5 querem a
+> mesma linha, hoje **B1.5 vence**, e esse cruzamento tem zero linhas na
+> semana 38.
 
 ## 6. A aba `Resumo` — a série semanal, que o painel não cobre
 

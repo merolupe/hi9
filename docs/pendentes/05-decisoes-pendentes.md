@@ -7,8 +7,8 @@
 > 🟢 responder quando puder · 🟡 responder antes da entrega que depende dela ·
 > 🔴 **trava a prova do porte**
 >
-> A nº 14 nasceu na entrega do motor de serviços e a nº 15 na de mercadorias;
-> as treze primeiras vêm da leitura do VBA.
+> A nº 14 nasceu na entrega do motor de serviços, a nº 15 na de mercadorias e a
+> nº 16 na regra do Suprimentos; as treze primeiras vêm da leitura do VBA.
 >
 > O que o código já respondeu, e por isso **não** é pendência, está no fim.
 
@@ -252,6 +252,28 @@ de cada valor — a mesma objeção da decisão nº 14: a largura de 38 é invar
 da prova de regressão e alvo provável de PROCX de terceiro. Se a pergunta vier
 a valer a pena, o lugar dela é o livro, não a planilha: o registro já tem
 carimbo de quem gravou, e `gravado_por` poderia dizer `regra B1`.
+
+## 16. 🟡 Quando B1 e B1.5 querem a mesma linha, quem vence?
+
+`[FATO]` As duas regras que sobrescrevem guardião podem pedir a mesma linha:
+**B1** quer `Fiscal` quando a mercadoria foi conferida fisicamente sem
+divergência; **B1.5** quer `Suprimentos` quando o pedido de compra não foi
+confirmado. Uma nota conferida, sem incongruência e com pedido não confirmado
+satisfaz as duas.
+
+`[FATO]` Medido no relatório da semana 38: esse cruzamento tem **zero linhas**.
+Nenhuma das 88 linhas classificadas à mão tem o pedido como não confirmado — o
+farol daquela semana só traz `Sim` e vazio. A decisão está, portanto, **sem uma
+única observação real**.
+
+**Pergunta:** numa nota conferida fisicamente, sem incongruência, cujo pedido de
+compra não foi confirmado, a pendência é do Fiscal ou do Suprimentos?
+
+**Padrão assumido:** **do Suprimentos** — B1.5 roda depois de B1 e sobrescreve.
+A leitura é a do impedimento: o Fiscal não lança nota cujo pedido não foi
+confirmado no ERP, então quem destrava a fila é o Suprimentos. Inverter é mudar
+a ordem de duas chamadas em `execucao.py`, e nada mais. Quando a primeira linha
+desse tipo aparecer numa semana real, é a primeira coisa a conferir.
 
 ---
 

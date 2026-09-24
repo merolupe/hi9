@@ -173,6 +173,13 @@ def mercadorias(dados: dict[str, Any]) -> dict[str, Any]:
     está na Conferência de Entradas. Trocá-lo por vazio faria `zero_ou_vazio`
     devolver `True` e a regra B1 reclassificaria para Fiscal notas que nem
     foram conferidas. Ver o preservado nº 19 do registro do porte.
+
+    Os três de B1.5 são os dois rótulos do farol de pedido e o guardião que a
+    regra grava. Os rótulos **têm de casar com a tabela `farol.pedido`** — é o
+    que ela escreve na coluna, e trocar o ícone do semáforo no Sankhya troca o
+    código, não o rótulo. `Suprimentos` entra pelo mesmo critério que `Fiscal`
+    e `Faturamento`: é nome de função, o vocabulário da regra, e não o
+    organograma desta empresa — que continua nascendo vazio (regra nº 1).
     """
     bruto = dict(dados.get("mercadorias") or {})
     return {
@@ -189,6 +196,11 @@ def mercadorias(dados: dict[str, Any]) -> dict[str, Any]:
         "guardioes_da_fis_fat": tuple(
             str(g).strip() for g in (bruto.get("guardioes_da_fis_fat")
                                      or ("Fiscal", "Faturamento"))),
+        "pedido_confirmado": str(bruto.get("pedido_confirmado") or "Sim"),
+        "pedido_nao_confirmado": str(
+            bruto.get("pedido_nao_confirmado") or "Não"),
+        "guardiao_do_pedido": str(
+            bruto.get("guardiao_do_pedido") or "Suprimentos"),
     }
 
 
