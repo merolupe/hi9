@@ -57,7 +57,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from typing import Iterable
 
-from ..conhecimento.base import (FIRME, SUGESTAO, Conhecimento,
+from ..conhecimento.base import (AJUSTADO, FIRME, SUGESTAO, Conhecimento,
                                  chave_de_operacao)
 from ..conhecimento.importacao import cfop_normalizado
 from ..estado import Livro
@@ -67,8 +67,16 @@ from .fontes import Documento
 
 #: Os graus aceitos por campo, do mais exigente para o mais frouxo. `nao`
 #: desliga o campo.
+#:
+#: `ajustado` entra nos dois graus que preenchem, e não é um terceiro nível de
+#: exigência: correção feita na tela é mais forte do que qualquer contagem de
+#: notas, então onde a coluna preenche, ela preenche. Desligar a coluna
+#: continua desligando tudo — inclusive o ajuste, porque quem desliga a coluna
+#: não quer nada escrito ali.
 NAO = "nao"
-GRAUS = {NAO: (), FIRME: (FIRME,), SUGESTAO: (FIRME, SUGESTAO)}
+GRAUS = {NAO: (),
+         FIRME: (AJUSTADO, FIRME),
+         SUGESTAO: (AJUSTADO, FIRME, SUGESTAO)}
 
 #: Qual campo da base corresponde a cada coluna da planilha, **na ordem em
 #: que as colunas são preenchidas**. Categoria primeiro, porque a proposta de
@@ -202,7 +210,10 @@ def _propor_gestor(documento: Documento, conhecimento: Conhecimento,
     if not guardiao or chave_de_texto(guardiao) in sem_gestor:
         return
     proposta = conhecimento.gestor_de(guardiao)
-    if (proposta.confianca == FIRME
+    # A incerteza do guardião desce para o gestor, inclusive quando o gestor
+    # foi corrigido à mão: a correção diz quem responde por **aquela área**, e
+    # não que a área esteja certa nesta linha.
+    if (proposta.confianca in (AJUSTADO, FIRME)
             and documento.propostas.get(col.C_GUARDIAO) == SUGESTAO):
         proposta = replace(proposta, confianca=SUGESTAO)
     _escrever(documento, col.C_GESTOR, proposta, aceitos, relato)

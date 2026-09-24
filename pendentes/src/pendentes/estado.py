@@ -52,6 +52,13 @@ from .texto import aparar
 #: retorno é o quinto, mas ele é por semana e mora em `retornos`.
 CAMPOS = ("tipo_de_operacao", "guardiao", "gestor_de_apoio", "categoria")
 
+#: O contexto da nota — **não** é julgamento humano, e por isso não entra em
+#: `CAMPOS`: ele não conta como "alterada" na ingestão e o valor mais recente
+#: vence em silêncio. Existe para a base de conhecimento poder aprender do
+#: livro: sem código de parceiro, CFOP, unidade e semana, o livro sabe *o que*
+#: foi decidido mas não *sobre o que*, e a evidência não se refaz.
+CONTEXTO = ("semana", "codigo_do_parceiro", "cfop", "fantasia")
+
 #: Como cada campo se chama na planilha. O primeiro é o nome canônico.
 NOMES_NA_PLANILHA: dict[str, tuple[str, ...]] = {
     "tipo_de_operacao": ("Tipo de Operação", "Tipo de Operacao"),
@@ -85,6 +92,11 @@ class Classificacao:
     #: chave. Hoje isso acontece em silêncio; com o CNPJ gravado, a execução
     #: seguinte vê que o registro mudou de dono e conta o caso.
     cnpj: str = ""
+    #: O contexto da nota, para a base aprender. Ver `CONTEXTO`.
+    semana: int = 0
+    codigo_do_parceiro: str = ""
+    cfop: str = ""
+    fantasia: str = ""
     origem: str = ""
     gravado_por: str = ""
     gravado_em: str = ""
@@ -181,6 +193,10 @@ def carregar(dominio: str, caminho: Path | None = None,
             retornos={int(s): str(v or "")
                       for s, v in (linha.get("retornos") or {}).items()},
             cnpj=str(linha.get("cnpj", "") or ""),
+            semana=int(linha.get("semana") or 0),
+            codigo_do_parceiro=str(linha.get("codigo_do_parceiro", "") or ""),
+            cfop=str(linha.get("cfop", "") or ""),
+            fantasia=str(linha.get("fantasia", "") or ""),
             origem=str(linha.get("origem", "") or ""),
             gravado_por=str(linha.get("gravado_por", "") or ""),
             gravado_em=str(linha.get("gravado_em", "") or ""),
@@ -207,6 +223,10 @@ def para_dicionario(livro: Livro) -> dict[str, Any]:
                 "categoria": r.categoria,
                 "retornos": dict(sorted(r.retornos.items())),
                 "cnpj": r.cnpj,
+                "semana": r.semana,
+                "codigo_do_parceiro": r.codigo_do_parceiro,
+                "cfop": r.cfop,
+                "fantasia": r.fantasia,
                 "origem": r.origem,
                 "gravado_por": r.gravado_por,
                 "gravado_em": r.gravado_em,
@@ -256,6 +276,7 @@ def extrair_da_planilha(
     montar_chave: Callable[[list[Any]], str],
     semana: int | None = None,
     sinonimos: dict[str, Sequence[str]] | None = None,
+    colunas_do_contexto: dict[str, Sequence[str]] | None = None,
 ) -> list[Classificacao]:
     """As classificações que estão numa aba `Pendentes`, lidas por cabeçalho.
 
@@ -263,6 +284,12 @@ def extrair_da_planilha(
     `montar_chave` recebe os valores dessas colunas na linha. É o que permite
     a mesma leitura servir aos dois domínios: mercadorias identifica por
     `Chave Acesso`, serviços por número da nota mais código do parceiro.
+
+    `colunas_do_contexto` diz onde estão código do parceiro, CFOP e unidade
+    naquela aba — os nomes mudam entre os domínios, e quem sabe deles é quem
+    chama. Coluna que não existir na aba simplesmente não vem: o contexto é o
+    que permite a base aprender, e não ter a informação é melhor do que
+    abortar a ingestão da classificação por causa dela.
     """
     sinonimos = sinonimos or {}
     posicoes_da_chave = [
@@ -284,6 +311,13 @@ def extrair_da_planilha(
         if 0 <= coluna_do_retorno < len(cabecalho) else semana
     )
 
+    posicoes_do_contexto = {}
+    for campo, nomes in (colunas_do_contexto or {}).items():
+        nomes = tuple(nomes)
+        achada = cab.achar(cabecalho, nomes[0], nomes[1:])
+        if achada >= 0:
+            posicoes_do_contexto[campo] = achada
+
     def valor(linha: Sequence[Any], posicao: int) -> str:
         return aparar(linha[posicao]) if 0 <= posicao < len(linha) else ""
 
@@ -297,6 +331,12 @@ def extrair_da_planilha(
         registro = Classificacao(chave=chave)
         for campo, posicao in posicoes.items():
             setattr(registro, campo, valor(linha, posicao))
+        if semana:
+            registro.semana = semana
+        for campo, posicao in posicoes_do_contexto.items():
+            lido = valor(linha, posicao)
+            if lido:
+                setattr(registro, campo, lido)
         retorno = valor(linha, coluna_do_retorno)
         if retorno and semana_do_retorno is not None:
             registro.retornos[semana_do_retorno] = retorno
@@ -328,12 +368,18 @@ def ingerir(livro: Livro, classificacoes: Iterable[Classificacao], *,
                 origem=origem or "planilha",
                 gravado_por=quem, gravado_em=carimbo,
             )
-            for campo in CAMPOS:
+            for campo in (*CAMPOS, *CONTEXTO):
                 setattr(novo, campo, getattr(entrada, campo))
             livro.registros[entrada.chave] = novo
             relato.novas += 1
             relato.retornos += len(entrada.retornos)
             continue
+
+        # O contexto não é julgamento: o mais recente vence, sem contar nada.
+        for campo in CONTEXTO:
+            veio = getattr(entrada, campo)
+            if veio:
+                setattr(atual, campo, veio)
 
         mudou = False
         for campo in CAMPOS:

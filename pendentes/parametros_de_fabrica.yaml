@@ -94,6 +94,13 @@ mercadorias:
   sem_pedido_vinculado: "NA Conf Física"
   guardiao_da_reclassificacao: "Fiscal"          # B1 sobrescreve para este
   guardioes_da_fis_fat: ["Fiscal", "Faturamento"]  # B2 move estes dois
+  # B1.5 — o pedido de compra. Os dois rótulos têm de casar com `farol.pedido`,
+  # que é quem os escreve na coluna `Pedido confirmado?`. O terceiro estado do
+  # farol é o vazio, e vazio a regra não toca: nota sem pedido vinculado não
+  # tem pedido a confirmar.
+  pedido_confirmado: "Sim"
+  pedido_nao_confirmado: "Não"
+  guardiao_do_pedido: "Suprimentos"   # B1.5 sobrescreve para este
 
 # -- as categorias válidas ---------------------------------------------------
 # Vocabulário de classificação, não dado da empresa. Tabela vazia desliga a

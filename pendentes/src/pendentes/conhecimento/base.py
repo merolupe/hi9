@@ -32,7 +32,12 @@ from typing import Any
 
 from ..texto import chave_de_texto
 
-#: Os três graus de confiança. Só o primeiro pode preencher célula.
+#: Os graus de confiança, do mais forte para o mais fraco. `ajustado` é
+#: correção humana feita na tela: ela preenche onde `firme` preenche e também
+#: onde só `sugestao` preencheria, porque é a evidência mais forte que a base
+#: pode ter — quem abre a tela para corrigir é exatamente quem viu o histórico
+#: errar. Ver `ajustes.py`.
+AJUSTADO = "ajustado"
 FIRME = "firme"
 SUGESTAO = "sugestao"
 SEM_PROPOSTA = "sem proposta"
@@ -44,6 +49,7 @@ LASTRO_CONFIRMA = "o histórico confirma"
 LASTRO_CURTO = "evidência curta"
 LASTRO_DIVERGE = "o histórico diverge"
 LASTRO_AUSENTE = "sem lastro no histórico"
+LASTRO_HUMANO = "corrigido à mão"
 
 #: O que a fonte chama de "repetida sem divergência", em números: três notas
 #: distintas, em duas semanas, com 100% do mesmo rótulo. É o limiar que separa
@@ -110,7 +116,12 @@ class Proposta:
 
     @property
     def pode_preencher(self) -> bool:
-        return self.confianca == FIRME and bool(self.valor)
+        return self.confianca in (AJUSTADO, FIRME) and bool(self.valor)
+
+    @property
+    def ajustada(self) -> bool:
+        """Veio da tela, não da importação — e por isso manda."""
+        return self.confianca == AJUSTADO
 
 
 #: As palavras que ligam e não classificam. `Compra Uso e Consumo` e
@@ -131,6 +142,25 @@ def chave_de_operacao(valor: Any) -> str:
     palavras = [p for p in chave_de_texto(valor).split()
                 if p not in PALAVRAS_DE_LIGACAO]
     return " ".join(palavras)
+
+
+def _do_bloco(campo: str, bruto: dict[str, Any], nivel: str) -> Proposta:
+    """O que sai de um bloco `{proposto, evidencia, ajustado}` da base.
+
+    A correção humana vem **antes** da proposta importada, e carrega consigo a
+    evidência da fotografia: ela continua interessando a quem lê a tela, mesmo
+    quando a pessoa decidiu contra ela.
+    """
+    evidencia = Evidencia.de(bruto.get("evidencia"))
+    ajuste = bruto.get("ajustado")
+    if isinstance(ajuste, dict) and str(ajuste.get("valor") or "").strip():
+        return Proposta(campo, str(ajuste["valor"]).strip(), AJUSTADO,
+                        LASTRO_HUMANO, nivel, evidencia)
+    valor = str(bruto.get("proposto") or "")
+    if not valor:
+        return Proposta(campo)
+    confianca, lastro = _confianca(valor, evidencia)
+    return Proposta(campo, valor, confianca, lastro, nivel, evidencia)
 
 
 def _confianca(valor: str, evidencia: Evidencia) -> tuple[str, str]:
@@ -176,6 +206,12 @@ class Conhecimento:
     #: essa é cadastrada na tela, e enchê-la daqui faria a semana seguinte
     #: bloquear em cima de nome que ninguém conferiu.
     guardioes_observados: list[str] = field(default_factory=list)
+    #: Até que semana o **livro** acrescentou evidência a esta base, e quantas
+    #: notas. Não vai para o disco: é recalculado do livro a cada leitura, que
+    #: é o que torna o aprendizado impossível de contar duas vezes. Ver
+    #: `aprendizado.py`.
+    aprendido_ate: int = 0
+    notas_aprendidas: int = 0
 
     def __len__(self) -> int:
         return len(self.parceiros)
@@ -209,13 +245,10 @@ class Conhecimento:
                               (parceiro, "parceiro")):
             if not origem:
                 continue
-            bruto = (origem.get(campo) or {})
-            valor = str(bruto.get("proposto") or "")
-            if not valor:
+            proposta = _do_bloco(campo, origem.get(campo) or {}, nivel)
+            if not proposta:
                 continue
-            evidencia = Evidencia.de(bruto.get("evidencia"))
-            confianca, lastro = _confianca(valor, evidencia)
-            return Proposta(campo, valor, confianca, lastro, nivel, evidencia)
+            return proposta
         return Proposta(campo)
 
     def gestor_de(self, guardiao: Any) -> Proposta:
@@ -229,6 +262,11 @@ class Conhecimento:
         bruto = self.gestor_do_guardiao.get(chave_de_texto(guardiao))
         if not bruto:
             return Proposta("gestor")
+        ajuste = bruto.get("ajustado")
+        if isinstance(ajuste, dict) and str(ajuste.get("valor") or "").strip():
+            return Proposta("gestor", str(ajuste["valor"]).strip(), AJUSTADO,
+                            LASTRO_HUMANO, "guardião",
+                            Evidencia.de(bruto.get("evidencia")))
         valor = str(bruto.get("proposto") or "")
         if not valor:
             return Proposta("gestor")
@@ -258,11 +296,7 @@ class Conhecimento:
             bruto = niveis.get(chave)
             if not bruto:
                 continue
-            evidencia = Evidencia.de(bruto.get("evidencia"))
-            valor = str(bruto.get("proposto") or "")
-            confianca, lastro = _confianca(valor, evidencia)
-            return Proposta("operacao", valor, confianca, lastro,
-                            _nivel_do_cfop(chave), evidencia)
+            return _do_bloco("operacao", bruto, _nivel_do_cfop(chave))
         return Proposta("operacao")
 
     def nome_do_parceiro(self, codigo: Any) -> str:
@@ -325,14 +359,30 @@ def caminho_da_base(dominio: str = "mercadorias",
     return base / "pendentes" / "conhecimento" / f"{dominio}.json"
 
 
-def carregar(dominio: str = "mercadorias",
-             raiz: Path | None = None) -> Conhecimento:
-    """A base do disco. Sem base, uma vazia — que não propõe nada."""
+def carregar(dominio: str = "mercadorias", raiz: Path | None = None, *,
+             com_ajustes: bool = True, com_aprendizado: bool = True,
+             livro: Any = None) -> Conhecimento:
+    """A base do disco, já com as correções da tela por cima.
+
+    As três camadas são ligáveis uma a uma, e as duas de fora existem por
+    motivos diferentes:
+
+    * `com_aprendizado=False` — só a fotografia importada. Serve para conferir
+      o que veio da importação, sem o que o livro acrescentou depois.
+    * `com_ajustes=False` — **o que a base diz por si**, fotografia mais
+      aprendizado. É o que a tela mostra e é contra isso que ela compara na
+      hora de gravar: valor igual a este não é correção.
+
+    `livro` evita ler do disco duas vezes: quem já tem o livro em mão — a
+    execução da semana tem — passa o que tem. O livro é YAML, e é o arquivo
+    mais pesado do aplicativo.
+    """
     caminho = caminho_da_base(dominio, raiz)
     if not caminho.is_file():
-        return Conhecimento(dominio=dominio)
+        return _camadas(Conhecimento(dominio=dominio), raiz, livro,
+                        com_ajustes, com_aprendizado)
     bruto = json.loads(caminho.read_text(encoding="utf-8"))
-    return Conhecimento(
+    conhecimento = Conhecimento(
         dominio=str(bruto.get("dominio") or dominio),
         versao_da_fonte=str(bruto.get("versao_da_fonte") or ""),
         ultimo_relatorio_classificado=int(
@@ -345,6 +395,49 @@ def carregar(dominio: str = "mercadorias",
         operacoes=dict(bruto.get("operacoes") or {}),
         guardioes_observados=list(bruto.get("guardioes_observados") or []),
     )
+    return _camadas(conhecimento, raiz, livro, com_ajustes, com_aprendizado)
+
+
+def _camadas(conhecimento: Conhecimento, raiz: Path | None, livro: Any,
+             com_ajustes: bool, com_aprendizado: bool) -> Conhecimento:
+    """As três camadas, nesta ordem — e a ordem é a regra.
+
+    Fotografia importada → o que o livro ensinou das semanas seguintes →
+    correção humana. A correção vem por último porque vence as duas outras; o
+    aprendizado vem no meio porque **soma evidência** à fotografia e não pode
+    passar por cima de quem corrigiu à mão.
+
+    Os dois módulos são importados tarde: os dois importam `base`.
+    """
+    if com_aprendizado:
+        from . import aprendizado
+
+        conhecimento = aprendizado.aplicar(
+            conhecimento,
+            aprendizado.aprender(
+                livro if livro is not None
+                else _livro(conhecimento.dominio, raiz),
+                conhecimento.ultimo_relatorio_classificado))
+    if com_ajustes:
+        from . import ajustes as camada
+
+        conhecimento = camada.aplicar(
+            conhecimento, camada.carregar(conhecimento.dominio, raiz))
+    return conhecimento
+
+
+def _livro(dominio: str, raiz: Path | None):
+    """O livro de classificação do domínio, ou um vazio.
+
+    Falha de leitura **não** derruba a consulta: sem o livro a base continua
+    valendo pela fotografia, que é o comportamento de antes do aprendizado.
+    """
+    from .. import estado
+
+    try:
+        return estado.carregar(dominio, raiz=raiz)
+    except Exception:                                    # pragma: no cover
+        return estado.Livro(dominio)
 
 
 def gravar(conhecimento: Conhecimento, raiz: Path | None = None) -> Path:
@@ -357,6 +450,8 @@ def gravar(conhecimento: Conhecimento, raiz: Path | None = None) -> Path:
     """
     caminho = caminho_da_base(conhecimento.dominio, raiz)
     caminho.parent.mkdir(parents=True, exist_ok=True)
+    # A fotografia não carrega correção humana: essa mora em `-ajustes.json` e
+    # é aplicada na leitura. Quem grava aqui monta a base do zero.
     caminho.write_text(
         json.dumps(conhecimento.como_dicionario(), ensure_ascii=False, indent=1),
         encoding="utf-8")

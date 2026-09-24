@@ -169,6 +169,10 @@ table.grade-config input[type=text]{
 }
 table.grade-config input[type=text]:focus{outline:2px solid var(--marca); outline-offset:-1px}
 table.grade-config tr.alterada input[type=text]{border-color:var(--marca)}
+    table.grade-config td.leitura{
+      color:var(--tom-fraco, #6b7280); font-size:12.5px; line-height:1.35;
+      padding:5px 8px; white-space:normal; vertical-align:middle;
+    }
 .remover{
   background:none; border:none; color:var(--suave); cursor:pointer;
   font-size:15px; padding:2px 6px; line-height:1;
@@ -407,6 +411,13 @@ function linhaHtml(secao, linha, i){
     if (c.tipo === "booleano"){
       return `<td style="text-align:center"><input type="checkbox" ${v ? "checked" : ""}
         onchange="mudou('${secao.id}',${i},'${c.chave}',this.checked)"></td>`;
+    }
+    if (c.tipo === "leitura"){
+      // Campo que a ferramenta mostra e ninguém digita: evidência, nível,
+      // carimbo. Vai como texto, não como input desabilitado, para o filtro
+      // continuar achando por `textContent` e para ninguém tentar editar.
+      return `<td class="leitura" title="${esc(c.ajuda)}"
+        style="max-width:${c.largura}ch">${esc(v === null || v === undefined ? "" : v)}</td>`;
     }
     return `<td><input type="text" style="width:${c.largura}ch"
       value="${esc(v === null || v === undefined ? "" : v)}"

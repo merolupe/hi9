@@ -76,6 +76,11 @@ tabela editável, com seus `Campo`s — e duas funções: `ler`, que devolve o q
 está gravado, e `gravar`, que confere e responde `(gravou, problemas)`. Com
 erro não grava; com aviso grava e conta o que vai acontecer.
 
+Um `Campo` de tipo `leitura` a ferramenta **mostra e ninguém digita** — é como
+a base de conhecimento põe evidência e carimbo na mesma linha do valor
+editável. Ele sai como texto, e não como campo desabilitado: assim o filtro da
+seção continua achando por ele, e ninguém tenta clicar.
+
 **Como conferir o que chegou** — `conferir`, opcional, para quem pede mais de
 um relatório e reconhece cada um pelo cabeçalho (GerarServPend e
 GerarPendentes). Recebe os caminhos já enviados e devolve uma `Conferencia`:
@@ -107,9 +112,14 @@ não monta HTML e não conhece as outras. Quem costura é a central — e há um
 teste que trava isso (`test_nenhuma_ferramenta_importa_outra`).
 
 A configuração segue a mesma disciplina: o Fiscalbot descreve as seções dele
-em dicionários simples (`fiscalbot/configuracao.py`), e é a central que os
+em dicionários simples (`fiscalbot/configuracao.py`), e a base de conhecimento
+as dela em `pendentes/conhecimento/configuracao.py`. É a central que os
 converte nos tipos dela e desenha a tela. Se fosse o contrário, a ferramenta
 precisaria importar a central.
+
+`[FATO]` A tela da base de conhecimento é a maior até aqui: 2.077 linhas em
+três tabelas. Ler leva 69 ms e gravar 29 ms, e o filtro por seção — que a
+página já desenha sozinha acima de dez linhas — é o que torna isso usável.
 
 ### Onde a configuração de uma ferramenta mora
 
@@ -230,12 +240,12 @@ depois.
   A divergência zero contra a macro também aqui **não está provada**, e o que
   trava o quê está em
   [`../pendentes/04-plano-de-entrega.md`](../pendentes/04-plano-de-entrega.md).
-- **As duas ferramentas de pendentes entraram sem tela de configuração.** Os
-  parâmetros são lidos da carga de fábrica e da base viva, e os motores os
-  honram; o que falta é a tela que os edita. Enquanto ela não vem, a tabela de
-  unidades e a lista de guardiões só se cadastram editando
-  `dados/pendentes/parametros.yaml` à mão — e, **vazias, elas não validam
-  nada**, que é o comportamento de hoje.
+- **Os parâmetros de pendentes ainda não têm tela.** A base de conhecimento
+  ganhou a dela em 24/09/2026 — parceiros, gestores e operações, com a
+  evidência ao lado e a correção em camada própria. O que continua sem tela são
+  os **parâmetros** dos dois motores: a tabela de unidades e a lista de
+  guardiões só se cadastram editando `dados/pendentes/parametros.yaml` à mão
+  — e, **vazias, elas não validam nada**, que é o comportamento de hoje.
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).
 - O Faturabot está em desenvolvimento e entra pelo mesmo contrato.

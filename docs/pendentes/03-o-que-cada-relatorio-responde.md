@@ -179,15 +179,39 @@ categoria e não decide tipo de operação. Ela:
 |---|---|
 | diz o que está pendente e há quantos dias | dizer de quem é a culpa |
 | traz a classificação que **você** deu na semana passada | classificar uma nota nova |
-| manda para `PENDENTES FIS-FAT` o que está marcado como Fiscal ou Faturamento | decidir que algo é do Fiscal, salvo a regra abaixo |
+| manda para `PENDENTES FIS-FAT` o que está marcado como Fiscal ou Faturamento | decidir que algo é do Fiscal ou do Suprimentos, salvo as duas regras abaixo |
 | agrupa por unidade, por categoria e por guardião | criar unidade ou categoria que não existe no cadastro |
 
-**A única classificação automática** é a regra que já existe hoje: mercadoria
-com conferência **física = Sim** e **sem incongruência** é pendência de
-lançamento fiscal, não da área requisitante — então o guardião vira `Fiscal` e
-o gestor de apoio é esvaziado. É a única regra que sobrescreve o que uma pessoa
-escreveu, e ela roda **depois** de a classificação da semana passada ser
-aplicada.
+**Duas regras classificam sozinhas**, e as duas sobrescrevem o que uma pessoa
+escreveu. As duas rodam **depois** de a classificação da semana passada ser
+aplicada, e nesta ordem:
+
+**B1 — o lançamento fiscal.** Mercadoria com conferência **física = Sim** e
+**sem incongruência** é pendência de lançamento fiscal, não da área
+requisitante: o guardião vira `Fiscal` e o gestor de apoio é esvaziado.
+
+**B1.5 — o pedido de compra.** Pedido de compra pendente é pendência do
+**Suprimentos**, que fica na `Pendentes` junto com as outras áreas — sem aba
+própria. São três situações, e a terceira é a mais importante:
+
+| `Pedido confirmado?` | `Incongruência` | quem fica com a nota |
+|---|---|---|
+| **Não** | tanto faz | Suprimentos |
+| **Sim** | preenchida | Suprimentos |
+| **em branco** | tanto faz | **ninguém muda** — a nota não tem pedido a confirmar |
+
+O branco é o caso da nota sem pedido vinculado, e da nota que nem apareceu na
+Conferência de Entradas. Nessas a regra não mexe: quem classifica é você, ou a
+base de conhecimento.
+
+Se aparecer na coluna um rótulo que não é nem `Sim` nem `Não`, a regra **não
+classifica** — ela conta e avisa na tela. Foi o que aconteceu com três linhas do
+relatório da semana 38, onde as colunas estavam deslocadas.
+
+Quando as duas regras querem a mesma nota, **o Suprimentos vence**: o Fiscal não
+lança nota cujo pedido não foi confirmado. Essa é a decisão nº 16 de
+[05 — Decisões pendentes](05-decisoes-pendentes.md), e ela ainda não foi vista
+acontecer numa semana real.
 
 ## 5. O ciclo da semana
 

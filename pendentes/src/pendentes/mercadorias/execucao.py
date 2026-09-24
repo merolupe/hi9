@@ -70,6 +70,15 @@ DOMINIO = "mercadorias"
 #: é a `Pendentes`, que é a que o papel do arquivo já exige.
 ABA_FIS_FAT_ANTERIOR = "PENDENTES FIS-FAT"
 
+#: Onde o contexto da nota está na planilha devolvida. É o que permite a base
+#: aprender do livro: sem estas três colunas, o livro guarda a decisão sem
+#: saber sobre qual parceiro, CFOP e unidade ela foi tomada.
+COLUNAS_DO_CONTEXTO = {
+    "codigo_do_parceiro": (col.X_COD_PARCEIRO,),
+    "cfop": (col.X_CFOP,),
+    "fantasia": (col.X_NOME_FANTASIA,),
+}
+
 
 class SemRegistros(Exception):
     """O relatório veio sem nenhuma linha de dado."""
@@ -102,6 +111,11 @@ class Execucao:
     sem_classificacao: int = 0
     com_retorno: int = 0
     reclassificadas_para_fiscal: int = 0
+    suprimentos: classificacao.Suprimentos | None = None
+    #: O que a base aprendeu do livro nesta execução. Vai para a tela porque é
+    #: a única forma de alguém saber que a ferramenta passou a propor algo que
+    #: não estava na importação.
+    base_aprendeu: str = ""
     pre_categorizacao: precategorizacao.Preenchimento | None = None
     ingestao: estado.Ingestao | None = None
 
@@ -197,6 +211,17 @@ class Execucao:
             f"{self.reclassificadas_para_fiscal} reclassificada(s) para Fiscal "
             f"pela regra B1",
         ]
+        if self.suprimentos is not None:
+            regra = self.suprimentos
+            itens.append(
+                f"{regra.reclassificadas} reclassificada(s) para Suprimentos "
+                f"pela regra B1.5: {regra.nao_confirmado} com pedido não "
+                f"confirmado, {regra.confirmado_com_incongruencia} confirmado "
+                f"com incongruência · {regra.sem_pedido} sem pedido vinculado, "
+                f"onde a regra não toca"
+            )
+        if self.base_aprendeu:
+            itens.append(self.base_aprendeu)
         if self.ingestao is not None:
             relato = self.ingestao
             itens.append(
@@ -310,7 +335,8 @@ def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido,
                 estado.extrair_da_planilha(
                     fis_fat.linha(linha), fis_fat.linhas[linha + 1:],
                     colunas_da_chave=(col.X_CHAVE,),
-                    montar_chave=_chave_de_heranca, semana=anterior),
+                    montar_chave=_chave_de_heranca, semana=anterior,
+                    colunas_do_contexto=COLUNAS_DO_CONTEXTO),
                 origem=f"planilha da semana {anterior} (FIS-FAT)",
                 responsavel=responsavel)
         else:
@@ -324,7 +350,8 @@ def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido,
         estado.extrair_da_planilha(
             inteiro.cabecalho, inteiro.dados,
             colunas_da_chave=(col.X_CHAVE,),
-            montar_chave=_chave_de_heranca, semana=anterior),
+            montar_chave=_chave_de_heranca, semana=anterior,
+                    colunas_do_contexto=COLUNAS_DO_CONTEXTO),
         origem=f"planilha da semana {anterior}", responsavel=responsavel)
 
     if relato is None:
@@ -407,7 +434,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     lancados, restantes = roteamento.segregar_lancados(
         rotas.pendentes, literais["conf_fiscal_lancada"])
 
-    # -- classificação: herança → B1 → B2 ---------------------------------
+    # -- classificação: herança → B1 → B1.5 → B2 --------------------------
     livro = livro if livro is not None else estado.carregar(
         DOMINIO, raiz=raiz_dos_dados)
     relato = None
@@ -432,12 +459,30 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         restantes,
         conferencia_fisica_confirmada=literais["conferencia_fisica_confirmada"],
         guardiao=literais["guardiao_da_reclassificacao"])
+    # B1.5 depois de B1, e de propósito: quando as duas querem a mesma linha,
+    # quem destrava é o Suprimentos — o Fiscal não lança nota cujo pedido não
+    # foi confirmado. Antes da pré-categorização, para que ela reponha o gestor
+    # vigente do Suprimentos no lugar do gestor do guardião que saiu.
+    suprimentos = classificacao.reclassificar_para_suprimentos(
+        restantes,
+        pedido_confirmado=literais["pedido_confirmado"],
+        pedido_nao_confirmado=literais["pedido_nao_confirmado"],
+        guardiao=literais["guardiao_do_pedido"])
+    for rotulo, quantas in sorted(suprimentos.nao_reconhecido.items()):
+        avisos.append(
+            f"`Pedido confirmado?` veio como {rotulo!r} em {quantas} "
+            f"linha(s) — não é o rótulo de confirmado nem o de não "
+            f"confirmado, e a regra do Suprimentos não tocou nelas"
+        )
     # A base de conhecimento preenche o que continuou vazio — depois da
     # herança e de B1, que mandam, e **antes** de B2, para que um guardião
     # proposto encaminhe a nota como encaminharia um guardião escrito à mão.
     # Ver `precategorizacao`, que registra a consequência disso.
+    # O livro vai junto: a base aprende dele, e ler YAML duas vezes por
+    # execução seria o arquivo mais pesado do aplicativo, duas vezes.
+    base = conhecimento.carregar(raiz=raiz_dos_dados, livro=livro)
     preenchimento = precategorizacao.preencher(
-        restantes, conhecimento.carregar(raiz=raiz_dos_dados),
+        restantes, base,
         minimo_por_coluna=parametros.pre_categorizacao(dados), livro=livro,
         guardioes_sem_gestor=literais["guardioes_da_fis_fat"])
 
@@ -458,6 +503,12 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         herdadas=heranca.herdadas, sem_classificacao=heranca.sem_classificacao,
         com_retorno=heranca.com_retorno,
         reclassificadas_para_fiscal=reclassificadas,
+        suprimentos=suprimentos,
+        base_aprendeu=(
+            f"a base aprendeu {base.notas_aprendidas} nota(s) classificada(s) "
+            f"do livro, até a semana {base.aprendido_ate} — além do que a "
+            f"importação trouxe"
+            if base.notas_aprendidas else ""),
         pre_categorizacao=preenchimento,
         ingestao=relato,
         chaves_duplicadas=len(indice.chaves_duplicadas),
@@ -512,6 +563,13 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
             # ferramenta e não de uma pessoa.
             "pre_categorizacao": (execucao.pre_categorizacao.por_coluna
                                   if execucao.pre_categorizacao else {}),
+            # E o que B1.5 sobrescreveu, pelo mesmo motivo: a semana que vier
+            # não tem outro jeito de saber que aquele `Suprimentos` foi regra.
+            "suprimentos": (
+                {"nao_confirmado": execucao.suprimentos.nao_confirmado,
+                 "confirmado_com_incongruencia":
+                     execucao.suprimentos.confirmado_com_incongruencia}
+                if execucao.suprimentos else {}),
         },
         encerravel=execucao.encerravel,
         raiz=raiz_dos_dados,
