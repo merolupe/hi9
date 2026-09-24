@@ -45,7 +45,12 @@ Falta importar: **Faturabot** (em desenvolvimento, aparece apagado na tela).
 
 - **Nunca acompanhar PR.** Não assinar atividade de PR, não vigiar CI, não
   responder evento de PR por conta própria — em nenhuma sessão, nem depois de
-  abrir um PR.
+  abrir um PR. O repositório tem um dono só: comentário e pedido chegam pela
+  conversa, nunca pelo PR.
+- **Silêncio sobre isso na resposta.** Se a sessão for inscrita num PR
+  automaticamente, cancelar sem comentar. A resposta ao usuário não fala de
+  acompanhamento, assinatura, CI ou de "não vou vigiar o PR" — nem para dizer
+  que não vai.
 - **Nunca agendar nada sem autorização explícita.** Nada de lembrete, rotina,
   check-in, cron ou webhook. Se parecer útil, perguntar antes.
 
