@@ -41,6 +41,16 @@ Falta importar: **Faturabot** (em desenvolvimento, aparece apagado na tela).
    na tela, a ferramenta declara o que pede e o que devolve — o contrato está
    em `docs/central/01-arquitetura.md`.
 
+## Regras de sessão (decisão do dono do repositório)
+
+- **Nunca acompanhar PR.** Não assinar atividade de PR, não vigiar CI, não
+  responder evento de PR por conta própria — em nenhuma sessão, nem depois de
+  abrir um PR.
+- **Nunca agendar nada sem autorização explícita.** Nada de lembrete, rotina,
+  check-in, cron ou webhook. Se parecer útil, perguntar antes.
+
+As ferramentas correspondentes estão negadas em `.claude/settings.json`.
+
 ## Antes de mexer em `pendentes/`
 
 Leia `docs/pendentes/README.md`. Duas armadilhas que já custaram defeito:
