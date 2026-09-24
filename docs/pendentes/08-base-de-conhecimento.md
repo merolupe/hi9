@@ -29,13 +29,20 @@ dois — é uma pessoa sendo substituída pela área dela.
 A importação, por isso, **não escolhe entre as duas fontes**. Guarda a
 proposta de um lado, a evidência do outro, e deixa o cruzamento visível.
 
-## Os três graus, e o que cada um pode fazer
+## Os quatro graus, e o que cada um pode fazer
 
 | Grau | Quando | O que pode fazer |
 |---|---|---|
+| **ajustado** | alguém corrigiu na tela | preencher célula, **por cima de qualquer contagem** |
 | **firme** | a proposta e o histórico dizem o mesmo, com **3 notas em 2 semanas** e 100% de concordância | preencher célula |
 | **sugestão** | há proposta, mas o lastro é curto, diverge ou não existe | aparecer, com a evidência ao lado |
 | **sem proposta** | nada a oferecer | dizer que não sabe |
+
+`ajustado` não é um quarto nível de exigência, é o **mais forte**: quem abre a
+tela para corrigir é exatamente quem viu o histórico errar. Por isso ele
+preenche onde `firme` preenche e também onde só `sugestao` preencheria.
+Desligar a coluna continua desligando tudo, inclusive o ajuste — quem desliga
+não quer nada escrito ali.
 
 `[FATO]` O limiar de 3 notas em 2 semanas é o que a própria fonte chama de
 "repetida sem divergência". Ele mora em um lugar só, em
@@ -182,6 +189,62 @@ O padrão `sugestao` está também no código, e não só na carga de fábrica: 
 base viva que já existia antes desta mudança tem a seção
 `pre_categorizacao` sem a chave nova, e a fábrica não chega a ela. Para
 desligar, `gestor_de_apoio: nao` na base viva.
+
+## A tela: consultar e corrigir
+
+A base inteira aparece na **tela de configuração** da entrada
+**Base de conhecimento** 🧠, em três tabelas filtráveis: guardião e categoria
+por parceiro (697 linhas na carga de 22/09, contando as regras por unidade),
+gestor vigente de cada área (70) e `Tipo de Operação` por CFOP (1.310).
+
+Cada linha mostra **três coisas lado a lado**, e só a última se digita:
+
+| Coluna | O que é |
+|---|---|
+| `Guardião proposto` | o que a importação propôs — só leitura |
+| `Evidência do guardião` | `Joana M.: 23 de 65 notas, 21 semana(s) · também: Balança 11, Facilities 6` — só leitura |
+| `Guardião (vale)` | **editável**: o que a ferramenta vai escrever na planilha |
+| `Corrigido por` | quem corrigiu e quando — só leitura |
+
+A evidência aparece em português e não em número porque quem abre esta tela
+está decidindo se confia na base: `23 de 65 notas, 21 semanas` responde isso,
+`0,35` não. As alternativas vêm na mesma célula, porque é ali que se vê o
+motivo da dúvida.
+
+### As duas camadas, e por que elas são duas
+
+A importação **substitui** a base inteira — somar duas fotografias de épocas
+diferentes produziria uma terceira que nunca existiu, com evidência de
+execuções que contaram as mesmas notas. Uma correção feita à mão não pode viver
+dentro dessa fotografia, ou a próxima importação a levaria embora.
+
+Então são dois arquivos, os dois em `dados/pendentes/conhecimento/`:
+
+| Arquivo | O que é | Quem o escreve |
+|---|---|---|
+| `mercadorias.json` | a fotografia importada, ~660 KB | a importação, substituindo tudo |
+| `mercadorias-ajustes.json` | só o que gente corrigiu, com carimbo | a tela |
+
+A leitura aplica o segundo por cima do primeiro. É o mesmo desenho que o resto
+do repositório usa entre carga de fábrica e base viva, com uma diferença: aqui
+o que vem "de fábrica" é a importação, e **quem manda é a pessoa**.
+
+### Como a tela sabe o que foi corrigido
+
+Ela **compara**, e não marca. Na hora de gravar, valor igual ao da fotografia
+não é ajuste; valor diferente é. Três consequências, todas desejáveis:
+
+* digitar de novo o valor original **desfaz** o ajuste, sem botão de desfazer;
+* reimportar não ressuscita correção que a pessoa já tinha revertido;
+* o arquivo guarda só o que difere — zero linhas quando ninguém mexeu em nada.
+
+`[FATO]` Medido na carga real: ler as 2.077 linhas das três tabelas leva 69 ms,
+gravar leva 29 ms, e gravar sem mexer em nada produz **zero** ajustes.
+
+Corrigir parceiro que a importação não trouxe é permitido, e a tela avisa: a
+correção passa a ser a única regra dele. Código repetido na mesma unidade é
+**erro** e não grava nada — correção pela metade classificaria a semana com um
+valor que ninguém escolheu.
 
 ## Como se usa
 

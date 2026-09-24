@@ -454,6 +454,48 @@ def _configuracao_do_fiscalbot() -> Configuracao:
     )
 
 
+def _configuracao_do_conhecimento() -> Configuracao:
+    """A tela da base de conhecimento: consultar, filtrar e corrigir.
+
+    O que a pessoa grava aqui **não** entra na fotografia importada: vai para a
+    camada de ajustes, que sobrevive à próxima importação e vence o que ela
+    propuser. Lido tarde, como o Fiscalbot, para a Central abrir mesmo que uma
+    ferramenta esteja quebrada.
+    """
+    def secoes() -> list[Secao]:
+        from pendentes.conhecimento.configuracao import secoes as declaradas
+
+        return [
+            Secao(
+                id=s["id"], titulo=s["titulo"], explicacao=s["explicacao"],
+                fixa=s["fixa"],
+                campos=tuple(
+                    Campo(c["chave"], c["rotulo"], c["largura"], c["ajuda"],
+                          c["tipo"])
+                    for c in s["campos"]
+                ),
+            )
+            for s in declaradas()
+        ]
+
+    def ler() -> dict:
+        from pendentes.conhecimento.configuracao import ler as ler_base
+
+        return ler_base()
+
+    def gravar(dados: dict, responsavel: str) -> tuple[bool, list[dict]]:
+        from pendentes.conhecimento.configuracao import gravar as gravar_base
+
+        return gravar_base(dados, responsavel)
+
+    return Configuracao(
+        resumo="Guardião e categoria por parceiro, gestor vigente de cada área "
+               "e Tipo de Operação por CFOP. Corrigir aqui vence o que a "
+               "importação propôs, e a correção sobrevive à próxima.",
+        secoes=secoes, ler=ler, gravar=gravar,
+    )
+
+
 # -- o catálogo ------------------------------------------------------------
 
 FERRAMENTAS: list[Ferramenta] = [
@@ -598,8 +640,11 @@ FERRAMENTAS: list[Ferramenta] = [
         detalhe="A base propõe; quem classifica é gente. Só o que a lista "
                 "curada e o histórico afirmam juntos, com três notas em duas "
                 "semanas, chega a poder preencher célula — o resto aparece "
-                "como sugestão, com a evidência ao lado.",
+                "como sugestão, com a evidência ao lado. A tela de "
+                "configuração mostra a base inteira e deixa corrigir: a "
+                "correção vence a importação e sobrevive a ela.",
         executar=_rodar_conhecimento,
+        configuracao=_configuracao_do_conhecimento(),
     ),
     Ferramenta(
         id="faturabot",

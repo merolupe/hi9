@@ -49,11 +49,37 @@ def test_a_ferramenta_de_servicos_pede_varios_arquivos_em_qualquer_ordem(janela)
 
 
 def test_so_quem_guarda_estado_declara_configuracao(janela):
-    """O Fiscalbot é a primeira com regras próprias; as outras não têm o que salvar."""
+    """O Fiscalbot e a base de conhecimento guardam estado; o DiXML não."""
     _, dados = janela.pedir("/ferramentas")
     por_id = {f["id"]: f for f in dados["ferramentas"]}
     assert por_id["fiscalbot"]["tem_configuracao"] is True
+    assert por_id["conhecimento"]["tem_configuracao"] is True
     assert por_id["dixml"]["tem_configuracao"] is False
+
+
+def test_a_base_de_conhecimento_abre_na_tela_mesmo_sem_base_no_disco(janela):
+    """Máquina nova: a tela tem que abrir vazia e dizer o que fazer, e não cair."""
+    codigo, dados = janela.pedir("/configuracao", ferramenta="conhecimento")
+
+    assert codigo == 200, dados
+    assert [s["id"] for s in dados["secoes"]] == [
+        "parceiros", "gestores", "operacoes"]
+    for secao in dados["secoes"]:
+        assert secao["explicacao"] and secao["campos"]
+        assert secao["fixa"] is False
+
+
+def test_a_tela_da_base_marca_a_evidencia_como_campo_de_leitura(janela):
+    """Evidência e carimbo se leem; proposta importada não se rasura."""
+    _, dados = janela.pedir("/configuracao", ferramenta="conhecimento")
+    parceiros = next(s for s in dados["secoes"] if s["id"] == "parceiros")
+    por_chave = {c["chave"]: c["tipo"] for c in parceiros["campos"]}
+
+    assert por_chave["guardiao_evidencia"] == "leitura"
+    assert por_chave["guardiao_proposto"] == "leitura"
+    assert por_chave["trilha"] == "leitura"
+    assert por_chave["guardiao"] == "texto"
+    assert por_chave["categoria"] == "texto"
 
 
 def test_quem_roda_na_janela_declara_o_que_pede(janela):
