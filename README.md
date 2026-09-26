@@ -45,6 +45,13 @@ O GerarPendentes sai **sem o Resumo Executivo**: o painel deixou de ser porte e
 virou rodada nova, um resumo das duas frentes com três categorias. A planilha
 que vai por e-mail — as abas `Pendentes` e `PENDENTES FIS-FAT` — sai inteira.
 
+## Vitrine
+
+[`vitrine/index.html`](vitrine/index.html) apresenta a Central e as oito
+ferramentas numa página só, com um instrumento animado para cada uma mostrando
+como ela decide. Abre offline, com dois cliques. Ver
+[`vitrine/README.md`](vitrine/README.md).
+
 ## Como entra a próxima ferramenta
 
 Uma de cada vez, e cada uma já nascendo dentro da Central. Para aparecer na
