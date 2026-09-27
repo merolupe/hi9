@@ -3,7 +3,9 @@
 Quarenta e cinco segundos de motion design, 1080p60 e 128 BPM: a Central Fiscal e as
 oito ferramentas contadas como um reel. São 24 compassos, e cada corte cai numa batida.
 
-▶ **`central-fiscal-reel.mp4`** · ou abra o [`reel.html`](reel.html) para assistir ao vivo
+[![Quadro do reel: a cascata do Fiscalbot](poster.jpg)](central-fiscal-reel.mp4)
+
+▶ **[central-fiscal-reel.mp4](central-fiscal-reel.mp4)** · ou abra o [`reel.html`](reel.html) para assistir ao vivo
 (espaço pausa)
 
 ## Roteiro

@@ -47,14 +47,14 @@
         const a = (k / 120) * TAU, p = cm.project(Math.cos(a) * rad * g, 0, Math.sin(a) * rad * g);
         k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
       }
-      ctx.strokeStyle = R.rgba(C.b1, 0.28); ctx.lineWidth = 1.2;
+      ctx.strokeStyle = R.rgba(C.b1, 0.28 * (1 - clamp(dv * 2.5))); ctx.lineWidth = 1.2;
       if (ri === 1) ctx.setLineDash([3, 9]);
       ctx.stroke(); ctx.setLineDash([]);
       // marcas de régua na órbita de fora
       if (ri === 2) for (let k = 0; k < 72; k++) {
         const a = (k / 72) * TAU, q1 = cm.project(Math.cos(a) * (rad + 22) * g, 0, Math.sin(a) * (rad + 22) * g),
           q2 = cm.project(Math.cos(a) * (rad + (k % 6 ? 36 : 54)) * g, 0, Math.sin(a) * (rad + (k % 6 ? 36 : 54)) * g);
-        R.line(ctx, q1.x, q1.y, q2.x, q2.y, C.b1, 1, 0.3 * g);
+        R.line(ctx, q1.x, q1.y, q2.x, q2.y, C.b1, 1, 0.3 * g * (1 - clamp(dv * 2.5)));
       }
     });
     // planetas atrás, marca, planetas na frente
@@ -66,6 +66,9 @@
     const O = cm.project(0, 0, 0);
     const drawP = q => {
       if (q.pop <= 0) return;
+      const fade = q.i ? 1 - clamp(dv * 3) : 1;
+      if (fade <= 0) return;
+      ctx.save(); ctx.globalAlpha *= fade;
       const r = PR[q.tl.ring] * q.p.s * q.pop;
       R.disc(ctx, q.p.x, q.p.y, r * 2.6, q.tl.c, 0.07);
       R.disc(ctx, q.p.x, q.p.y, r, q.tl.c, 1);
@@ -79,11 +82,12 @@
         R.text(ctx, q.tl.name.slice(0, n).toUpperCase(), q.p.x + r + 14, q.p.y + 6,
           { font: R.font(500, 17, R.MONO), color: C.ink, ls: 3, alpha: (1 - dv * 3) * (q.p.z > 0 ? 1 : 0) });
       }
+      ctx.restore();
     };
     Pl.filter(q => q.p.z > cm.project(0, 0, 0).z).forEach(drawP);
     const core = R.spring(t - T, 1.8, 0.45);
-    R.ring(ctx, O.x, O.y, 150 * O.s * (1 + R.pulse(t, T, 3) * 1.4), C.acc, 1.2, 0.6 * core);
-    R.logo(ctx, O.x, O.y, 118 * O.s * core, { alpha: 1, spread: 1 });
+    R.ring(ctx, O.x, O.y, 150 * O.s * (1 + R.pulse(t, T, 3) * 1.4), C.acc, 1.2, 0.6 * core * (1 - clamp(dv * 3)));
+    R.logo(ctx, O.x, O.y, 118 * O.s * core, { alpha: 1 - clamp(dv * 3), spread: 1 });
     Pl.filter(q => q.p.z <= cm.project(0, 0, 0).z).forEach(drawP);
     ctx.restore();
     if (dv >= 1) R.rect(ctx, -40, -40, 2000, 1160, R.TOOLS[0].c, 1);
