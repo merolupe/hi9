@@ -366,7 +366,7 @@ def test_os_relatorios_da_semana_entram_pela_janela_e_sai_planilha(
     codigo, corpo = janela.pedir("/baixar")
     assert codigo == 200
     livro = openpyxl.load_workbook(io.BytesIO(corpo))
-    assert livro.sheetnames == ["Lancadas", "Pendentes", "Canceladas",
+    assert livro.sheetnames == ["Pendentes", "Lancadas", "Canceladas",
                                 "Sem Correspondencia ASIS", "Fora do relatorio"]
 
 

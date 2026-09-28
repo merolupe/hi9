@@ -94,6 +94,8 @@ src/pendentes/servicos/
   chaves.py        as três chaves do confronto e o índice que CONSOME
   confronto.py     a cascata dos quatro procedimentos, POR PASSOS
   enriquecimento.py cadastro de parceiro, de-para de filial, pedido mais recente
+  historico.py     o Portal de Compras de todas as semanas: parceiro e pedido
+                   que a semana não conhece (o confronto não usa)
   vinculo.py       a nota × o pedido da Conferência de Serviços (colunas 29-36)
   inversa.py       Sem Correspondencia ASIS: o que o ASIS deixou de capturar
   execucao.py      o pipeline de ponta a ponta e o que a tela mostra
@@ -208,7 +210,7 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-379 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+407 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido

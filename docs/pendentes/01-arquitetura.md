@@ -219,7 +219,43 @@ dono de uma chave muda entre execuções — e o número vai para a tela.
 
 Eliminar de vez exige uma coluna nova na aba, o que mexe na largura de 36 e é
 invariante da prova. É a [decisão pendente nº 14](05-decisoes-pendentes.md), e
-o padrão assumido é não mexer.
+o padrão assumido é não mexer. Desde 28/09/2026 a célula `Parceiro` das linhas
+`Sem cadastro` traz o CNPJ — `NOME (CNPJ 12.345.678/0001-90)` —, para quem
+recebe a cobrança poder cadastrar o parceiro; a chave não muda.
+
+### O histórico do Portal de Compras (serviços)
+
+`dados/pendentes/conhecimento/portal_de_compras.json`, fora do git. O
+confronto de serviços descobre código do parceiro, filial e pedido de compra
+mais recente **dentro do Portal de Compras da semana** — e há parceiro que
+manda nota sobre pedido de muitos meses atrás, ou que não teve movimento no
+período exportado. Os dois saíam como `Sem cadastro` e `Nao encontrado`
+embora o Sankhya os conheça.
+
+O histórico guarda, por CNPJ, o que cada Portal de Compras já ensinou:
+parceiro (código e nome), pedido de compra mais recente e filial — sempre
+vencendo o de maior `Nro. Único`. Cresce sozinho a cada execução do
+GerarServPend, e recebe a carga inicial pela entrada **Base de conhecimento**
+(um Portal de Compras de período longo, arrastado sozinho, é reconhecido pelo
+cabeçalho e absorvido sem rodar confronto).
+
+| Pergunta | Quem responde primeiro | Depois |
+|---|---|---|
+| código e nome do parceiro | o Portal da semana | o histórico |
+| pedido de compra mais recente | o de maior `Nro. Único` entre os dois | — |
+| filial do tomador | o Portal da semana | o histórico, depois o cadastro estático |
+| **confronto e aba inversa** | **só o Portal da semana** | — |
+
+O confronto fica de fora de propósito: lançamento de março no confronto de
+setembro mudaria as contagens que a prova de divergência zero compara com a
+macro. `[FATO]` Medido em 28/09/2026 com o Portal de dez/2024 a set/2026
+(16.413 linhas → 1.249 parceiros, 1.102 pedidos): dos 359 prestadores de um
+ASIS real, o histórico conhece 349.
+
+Quando o histórico dá código a uma nota que era `Sem cadastro`, a chave de
+herança muda. A classificação da chave velha é levada para a nova se o livro
+gravou nela o mesmo CNPJ — ou, sem CNPJ gravado, se nenhuma outra nota do ASIS
+da semana tem aquele número. Fora disso, não migra: seria adivinhar.
 
 ### A primeira execução
 

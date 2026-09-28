@@ -232,6 +232,19 @@ def ocultar(aba) -> None:
     aba.sheet_state = "hidden"
 
 
+def abrir_em(livro: Workbook, nome: str) -> None:
+    """A aba em que o Excel abre o arquivo — e a única selecionada.
+
+    Ser a primeira não basta: o Excel abre na aba **ativa**, e com mais de uma
+    marcada como selecionada ele abre com as abas agrupadas, e o que se
+    digita numa vai para todas.
+    """
+    alvo = livro[nome]
+    livro.active = livro.worksheets.index(alvo)
+    for aba in livro.worksheets:
+        aba.sheet_view.tabSelected = aba is alvo
+
+
 def salvar(livro: Workbook, caminho: Path | str) -> Path:
     caminho = Path(caminho)
     caminho.parent.mkdir(parents=True, exist_ok=True)

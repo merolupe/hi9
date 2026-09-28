@@ -1,6 +1,8 @@
 """A leitura das três extensões e a aba formatada antes de receber dado."""
 from __future__ import annotations
 
+import re
+import zipfile
 from datetime import date
 
 import pytest
@@ -161,6 +163,36 @@ def test_xlsx_com_nome_de_xls_e_lido_pelo_conteudo(tmp_path):
 
     arquivo = ler(renomeado)
     assert arquivo.aba("Pendentes").linhas[1] == [CHAVE]
+
+
+def test_xlsx_com_dimensao_errada_e_lido_inteiro(tmp_path):
+    """O export do ASIS declara `<dimension ref="A1"/>` para a aba inteira.
+
+    O Excel ignora a etiqueta; a leitura rápida do openpyxl obedecia a ela e
+    devolvia só a célula A1 — e o relatório não era reconhecido como nenhum.
+    """
+    original = escrever(tmp_path / "original.xlsx", {"Plan1": [
+        ["Processo", "Número NFe", "Código Verificador", "Discriminação"],
+        ["1", "20260001", "ABCD1234", "Serviço"],
+        ["2", "20260002"],
+    ]})
+    caminho = tmp_path / "2919936029.xlsx"
+    with zipfile.ZipFile(original) as origem, \
+            zipfile.ZipFile(caminho, "w", zipfile.ZIP_DEFLATED) as destino:
+        for item in origem.infolist():
+            conteudo = origem.read(item.filename)
+            if item.filename.startswith("xl/worksheets/sheet"):
+                conteudo = re.sub(rb'<dimension ref="[^"]*"\s*/>',
+                                  b'<dimension ref="A1"/>', conteudo)
+                assert b'<dimension ref="A1"/>' in conteudo
+            destino.writestr(item, conteudo)
+
+    for limite in (None, 20):
+        linhas = ler(caminho, limite_de_linhas=limite).primeira.linhas
+        assert linhas[0] == ["Processo", "Número NFe", "Código Verificador",
+                             "Discriminação"]
+        assert linhas[1] == ["1", "20260001", "ABCD1234", "Serviço"]
+        assert linhas[2] == ["2", "20260002", "", ""]   # retangular
 
 
 def test_html_com_nome_de_xls_diz_o_que_fazer(tmp_path):

@@ -569,6 +569,7 @@ def _escrever(caminho: Path, semana: int, *,
         escrita.escrever_aba(caderno, nome, colunas, linhas,
                              oculta=not visivel, estilo=estilo,
                              marcadas=marcas.get(nome))
+    escrita.abrir_em(caderno, col.ABAS[0][0])
     return escrita.salvar(caderno, caminho)
 
 

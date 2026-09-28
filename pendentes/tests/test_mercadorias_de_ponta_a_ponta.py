@@ -576,3 +576,11 @@ def test_a_saida_da_semana_passada_nao_e_tomada_pelo_xml(semana):
     semana["arquivos"].append(primeira.planilha)
     segunda = _rodar(semana)
     assert segunda.documentos == 10
+
+
+def test_a_planilha_abre_na_aba_pendentes(semana):
+    livro = openpyxl.load_workbook(_rodar(semana).planilha)
+    assert livro.sheetnames[0] == "Pendentes"
+    assert livro.active.title == "Pendentes"
+    assert [aba.title for aba in livro.worksheets
+            if aba.sheet_view.tabSelected] == ["Pendentes"]

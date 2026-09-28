@@ -217,6 +217,14 @@ livro continua guardando o CNPJ, e a colisão continua possível — porém cont
 e visível. Se a contagem vier zerada nas primeiras execuções reais, a pergunta
 se responde sozinha.
 
+**Respondida em parte em 28/09/2026:** o time precisa **ver** o CNPJ de quem
+está sem cadastro, para cadastrar o parceiro. Ele entra na célula `Parceiro`
+das linhas `Sem cadastro` — `OFICINA (CNPJ 12.345.678/0001-90)`, ou `CPF …`
+para pessoa física — nas abas `Pendentes`, `Canceladas` e `Fora do
+relatorio`. A largura continua 36 e a identidade entre semanas continua
+`número | Cod Parceiro`, então a colisão segue possível e contada; a coluna 37
+continua em aberto.
+
 ## 15. 🟡 O que a regra B1 escreveu deve voltar para o livro?
 
 `[FATO]` O livro de classificação existe para guardar **julgamento humano**: o

@@ -61,6 +61,33 @@ SEM_PEDIDO = "Nao encontrado"
 FILIAL_NAO_MAPEADA = "CNPJ nao mapeado: "
 
 
+def cnpj_formatado(digitos: str) -> str:
+    """`12345678000190` vira `12.345.678/0001-90`; CPF, `123.456.789-01`.
+
+    O que não tem 14 nem 11 dígitos sai como veio: pontuar um número que não
+    é CNPJ nem CPF seria inventar uma forma que ele não tem.
+    """
+    if len(digitos) == 14 and digitos.isdigit():
+        return (f"{digitos[:2]}.{digitos[2:5]}.{digitos[5:8]}/"
+                f"{digitos[8:12]}-{digitos[12:]}")
+    if len(digitos) == 11 and digitos.isdigit():
+        return f"{digitos[:3]}.{digitos[3:6]}.{digitos[6:9]}-{digitos[9:]}"
+    return digitos
+
+
+def nome_com_cnpj(prestador: object, cnpj: str) -> object:
+    """O nome do prestador seguido do CNPJ — `OFICINA (CNPJ 12.345.678/0001-90)`.
+
+    Sem CNPJ, o nome como veio; sem nome, o CNPJ sozinho.
+    """
+    if not cnpj:
+        return prestador
+    tipo = "CPF" if len(cnpj) == 11 else "CNPJ"
+    rotulo = f"{tipo} {cnpj_formatado(cnpj)}"
+    nome = aparar(prestador)
+    return f"{nome} ({rotulo})" if nome else rotulo
+
+
 @dataclass(frozen=True)
 class Pedido:
     """O pedido de compra mais recente de um parceiro, e o que vem dele."""
@@ -95,6 +122,13 @@ class Cadastro:
     #: Lançamentos de serviço descartados por CNPJ vazio ou zerado. Hoje somem
     #: sem contagem e sem aviso; aqui viram número na tela.
     descartados_por_cnpj: int = 0
+    #: Os CNPJ que a semana não conhecia e o histórico do Portal de Compras
+    #: respondeu — parceiro e pedido. Só para contar na tela.
+    parceiros_do_historico: set[str] = field(default_factory=set)
+    pedidos_do_historico: set[str] = field(default_factory=set)
+
+    def veio_do_historico(self, cnpj: str) -> bool:
+        return cnpj in self.parceiros_do_historico
 
     # -- as consultas que a montagem da planilha faz ------------------------
 
@@ -106,9 +140,18 @@ class Cadastro:
         return parceiro.codigo if parceiro else SEM_CADASTRO
 
     def nome_do_parceiro(self, cnpj: str, prestador: object = "") -> object:
-        """O nome do Sankhya; sem cadastro, o nome que o próprio ASIS trouxe."""
+        """O nome do Sankhya; sem cadastro, o nome do ASIS **com o CNPJ**.
+
+        Quem recebe a linha `Sem cadastro` precisa do CNPJ para cadastrar o
+        parceiro, e a aba não tem coluna de CNPJ. Ele vai na célula do nome,
+        e não numa coluna nova: a largura das abas é invariante (ver
+        `colunas.py`). Não mexe na identidade entre semanas, que é número da
+        nota e `Cod Parceiro`.
+        """
         parceiro = self.parceiros.get(cnpj)
-        return parceiro.nome if parceiro else prestador
+        if parceiro:
+            return parceiro.nome
+        return nome_com_cnpj(prestador, cnpj)
 
     def filial_de(self, cnpj: str) -> object:
         """O nome fantasia da filial, ou o aviso com o CNPJ dentro da célula."""
@@ -147,13 +190,50 @@ def _complementar_filiais(cadastro: Cadastro, complemento: Iterable[dict]) -> No
             cadastro.codigos_de_filial[cnpj] = codigo
 
 
+def _complementar_com_o_historico(cadastro: Cadastro, historico) -> None:
+    """O que a semana não respondeu, o histórico do Portal de Compras responde.
+
+    Parceiro e filial: só onde a semana não conhece — o que o export acabou de
+    dizer é o que está atual. Pedido: vence o de maior `Nro. Único` entre os
+    dois, que é a regra da semana aplicada a um relatório mais longo.
+    """
+    for cnpj, guardado in historico.parceiros.items():
+        if cnpj not in cadastro.parceiros and guardado.get("codigo"):
+            cadastro.parceiros[cnpj] = Parceiro(str(guardado["codigo"]),
+                                                guardado.get("nome", ""))
+            cadastro.parceiros_do_historico.add(cnpj)
+    for cnpj, guardado in historico.pedidos.items():
+        numero_unico = float(guardado.get("numero_unico") or 0)
+        atual = cadastro.pedidos.get(cnpj)
+        if atual is None or numero_unico > atual.numero_unico:
+            cadastro.pedidos[cnpj] = Pedido(
+                numero_unico=numero_unico,
+                comprador=guardado.get("comprador", ""),
+                requisitante=guardado.get("requisitante", ""),
+                natureza=guardado.get("natureza", ""),
+                centro_de_resultado=guardado.get("centro_de_resultado", ""),
+                empresa=str(guardado.get("empresa", "")),
+            )
+            cadastro.pedidos_do_historico.add(cnpj)
+    for cnpj, guardada in historico.filiais.items():
+        if guardada.get("nome") and cnpj not in cadastro.filiais:
+            cadastro.filiais[cnpj] = guardada["nome"]
+        if guardada.get("codigo") and cnpj not in cadastro.codigos_de_filial:
+            cadastro.codigos_de_filial[cnpj] = str(guardada["codigo"])
+
+
 def cadastrar(registros: Sequence[Registro], *, tops: Sequence[str],
               prefixo_de_pedido: str, cnpj_descartado: str = CNPJ_ZERADO,
-              complemento_de_filiais: Iterable[dict] = ()) -> Cadastro:
+              complemento_de_filiais: Iterable[dict] = (),
+              historico=None) -> Cadastro:
     """Monta os quatro mapas num passe único sobre o Portal de Compras.
 
     Um passe só, e não quatro: o relatório tem centenas de colunas e milhares
     de linhas, e é o mesmo laço que o VBA faz.
+
+    `historico` (ver `historico.py`) complementa parceiro, pedido e filial com
+    o que as semanas anteriores ensinaram. Vem antes do complemento estático
+    de filiais, porque é movimento real e mais recente que um cadastro manual.
     """
     cadastro = Cadastro()
     for registro in registros:
@@ -188,6 +268,8 @@ def cadastrar(registros: Sequence[Registro], *, tops: Sequence[str],
             cadastro.lancamentos_por_cnpj[cnpj] = (
                 cadastro.lancamentos_por_cnpj.get(cnpj, 0) + 1)
 
+    if historico:
+        _complementar_com_o_historico(cadastro, historico)
     _complementar_filiais(cadastro, complemento_de_filiais)
     return cadastro
 

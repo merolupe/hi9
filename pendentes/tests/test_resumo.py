@@ -56,13 +56,13 @@ def _linha_de_mercadoria(numero, categoria="Indiretos", guardiao="Suprimentos",
 def _linha_de_servico(numero, guardiao="COMEX", gestor="Tavares",
                       parceiro="PRESTADOR BETA LTDA", valor=500.0,
                       emissao=datetime(2026, 8, 1),
-                      filial="HINOVE (MATRIZ)") -> list:
+                      filial="HINOVE (MATRIZ)", retorno="") -> list:
     rotulos = [c.rotulo for c in serv.PENDENTES]
     linha = ["" for _ in rotulos]
     valores = {
         "Nro Nota": numero, "Guardiao": guardiao, "Gestor de apoio": gestor,
         "Parceiro": parceiro, "Valor NFSe (Valor Bruto)": valor,
-        "Emissao": emissao, "Filial": filial,
+        "Emissao": emissao, "Filial": filial, "Retorno": retorno,
     }
     for rotulo, valor_da_coluna in valores.items():
         linha[rotulos.index(rotulo)] = valor_da_coluna
@@ -417,3 +417,50 @@ def test_montar_nao_depende_de_planilha_nenhuma(tmp_path):
     assert quadro.total.quantidade == 2
     assert quadro.total.valor == pytest.approx(15.0)
     assert quadro.top_dias[0].parceiro == "ALFA"
+
+
+# -- o que o painel não conta ----------------------------------------------
+
+def test_servico_em_fila_de_lancamento_fica_fora_do_painel(tmp_path):
+    """Anexada ao pedido com vínculo exato, a nota só falta lançar."""
+    arquivo = relatorio(tmp_path / "Semana.xlsx", mercadorias=[], servicos=[
+        _linha_de_servico("9001", valor=700.0),
+        _linha_de_servico("9002", valor=100.0,
+                          retorno=serv.RETORNO_EM_FILA),
+        _linha_de_servico("9003", valor=50.0, retorno="aguardando fornecedor"),
+    ])
+    resultado = executar(tmp_path, [arquivo])
+    assert resultado.servicos == 2
+    assert resultado.valor_total == 750.0
+    assert resultado.em_fila == 1
+    assert any("fila de lançamento" in item for item in resultado.atencoes())
+
+
+def test_a_coluna_de_retorno_renomeada_com_a_semana_tambem_vale(tmp_path):
+    arquivo = relatorio(tmp_path / "Semana.xlsx", mercadorias=[], servicos=[
+        _linha_de_servico("9001", retorno=serv.RETORNO_EM_FILA)])
+    livro = openpyxl.load_workbook(arquivo)
+    rotulos = [c.value for c in livro["Servicos"][1]]
+    livro["Servicos"].cell(1, rotulos.index("Retorno") + 1).value = (
+        "Retorno semana 39")
+    livro.save(arquivo)
+    assert executar(tmp_path, [arquivo]).servicos == 0
+
+
+def test_a_aba_pendentes_fis_fat_nao_entra_no_painel(tmp_path):
+    """Só a `Pendentes` de mercadorias conta — a FIS-FAT é de outro fluxo."""
+    rotulos = [c.rotulo for c in merc.fis_fat(SEMANA)]
+    linha_fis_fat = ["" for _ in rotulos]
+    for rotulo, valor in ((merc.X_NRO_NOTA, "7001"), (merc.X_VALOR, 9999.0),
+                          (merc.C_GUARDIAO, "Faturamento")):
+        linha_fis_fat[rotulos.index(rotulo)] = valor
+    arquivo = relatorio(
+        tmp_path / "Semana.xlsx",
+        mercadorias=[_linha_de_mercadoria("1001", valor=1000.0)],
+        servicos=None,
+        outras={"PENDENTES FIS-FAT": [rotulos, linha_fis_fat]})
+
+    resultado = executar(tmp_path, [arquivo])
+    assert resultado.mercadorias == 1
+    assert resultado.valor_total == 1000.0
+    assert all("FIS-FAT" not in aba for aba in resultado.abas_lidas)

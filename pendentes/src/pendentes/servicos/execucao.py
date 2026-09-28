@@ -44,10 +44,10 @@ from typing import Any, Iterable, Sequence
 
 from .. import cabecalho as cab
 from .. import escrita, estado, papeis, parametros, snapshot
-from ..texto import aparar
+from ..texto import aparar, chave_de_texto
 from . import colunas as col
 from . import confronto as casc
-from . import enriquecimento, exclusao, fontes, inversa, vinculo
+from . import enriquecimento, exclusao, fontes, historico, inversa, vinculo
 
 #: O domínio, para o livro e para a pasta de snapshots.
 DOMINIO = "servicos"
@@ -88,6 +88,14 @@ class Execucao:
     numeros_com_corte_de_ano: int = 0
     pedidos_de_outra_filial: int = 0
     colisoes_de_identidade: int = 0
+    #: Pendentes cujo parceiro, ou pedido, só o histórico do Portal de
+    #: Compras conhecia — sem ele, `Sem cadastro` e `Nao encontrado`.
+    parceiros_pelo_historico: int = 0
+    pedidos_pelo_historico: int = 0
+    classificacoes_migradas: int = 0
+    #: Pendentes com vínculo `Exato` ao pedido — o retorno sai
+    #: `Em fila de lançamento`, e o Resumo Executivo não as conta.
+    em_fila_de_lancamento: int = 0
     avisos: list[str] = field(default_factory=list)
     ingestao: estado.Ingestao | None = None
 
@@ -214,11 +222,26 @@ class Execucao:
                 "neutro",
             ))
         saida.append(("Herança da classificação", self.heranca(), "neutro"))
+        if self.parceiros_pelo_historico or self.pedidos_pelo_historico:
+            itens = [
+                f"{self.parceiros_pelo_historico} pendente(s) com parceiro que "
+                f"só o histórico conhecia — sem ele, 'Sem cadastro'",
+                f"{self.pedidos_pelo_historico} pendente(s) com pedido de "
+                f"compra achado no histórico",
+            ]
+            if self.classificacoes_migradas:
+                itens.append(
+                    f"{self.classificacoes_migradas} classificação(ões) "
+                    f"passaram da chave 'Sem cadastro' para o código do "
+                    f"parceiro")
+            saida.append(("Histórico do Portal de Compras", itens, "neutro"))
         if self.vinculadas:
             saida.append((
                 "Vínculo com a Conferência de Serviços",
                 [f"{self.vinculadas} de {self.pendentes} pendentes já estão "
-                 f"anexadas a um pedido de compra"],
+                 f"anexadas a um pedido de compra",
+                 f"{self.em_fila_de_lancamento} com vínculo exato: retorno "
+                 f"'{col.RETORNO_EM_FILA}', fora do Resumo Executivo"],
                 "neutro",
             ))
         return saida
@@ -265,6 +288,34 @@ def _chave_de_heranca(numero: str, codigo_do_parceiro: str) -> str:
     registra a mesma decisão, com as mesmas palavras.
     """
     return f"{numero}|{aparar(codigo_do_parceiro)}"
+
+
+def _migrar_de_sem_cadastro(livro: estado.Livro, numero: str, chave: str,
+                            cnpj: str, cnpjs_do_numero: set[str]) -> bool:
+    """A nota que era `Sem cadastro` e o histórico identificou leva o que tinha.
+
+    Com o histórico, o `Cod Parceiro` de uma nota pode passar de `Sem
+    cadastro` para o código de verdade — e a chave de herança muda junto. Sem
+    isto, o Guardião, o Gestor e o Retorno que o time escreveu na semana
+    passada ficariam presos na chave velha.
+
+    Dois prestadores sem cadastro com o mesmo número dividem a chave velha, e
+    levar a classificação de um para o outro seria adivinhar. Por isso só
+    migra quando o livro gravou o **mesmo CNPJ** nela — ou, se ela veio da
+    planilha devolvida e ainda não tem CNPJ, quando nenhuma outra nota do ASIS
+    desta semana tem aquele número (`cnpjs_do_numero` é só este CNPJ).
+    """
+    if not cnpj or livro.obter(chave) is not None:
+        return False
+    velha = livro.obter(_chave_de_heranca(numero, enriquecimento.SEM_CADASTRO))
+    if velha is None:
+        return False
+    if velha.cnpj != cnpj and (velha.cnpj or cnpjs_do_numero != {cnpj}):
+        return False
+    del livro.registros[velha.chave]
+    velha.chave = chave
+    livro.registros[chave] = velha
+    return True
 
 
 def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido, dados: dict,
@@ -372,6 +423,27 @@ def _linha_cancelada(nota: fontes.NotaDeServico,
     ]
 
 
+def _retorno(classificacao: estado.Classificacao,
+             ligacao: vinculo.Vinculo) -> str:
+    """O retorno que a linha mostra.
+
+    Com vínculo `Exato` ao pedido da Conferência de Serviços, a nota está
+    anexada e falta lançar: o retorno é `Em fila de lançamento`, no lugar do
+    que o time escreveu antes. Sem ele, o último retorno do livro — pulando
+    um `Em fila de lançamento` que tenha voltado na planilha da semana
+    passada: esse foi a ferramenta que escreveu, e se o vínculo deixou de ser
+    exato ele não é mais verdade.
+    """
+    if ligacao.exato:
+        return col.RETORNO_EM_FILA
+    automatico = chave_de_texto(col.RETORNO_EM_FILA)
+    for semana in sorted(classificacao.retornos, reverse=True):
+        texto = classificacao.retornos[semana]
+        if chave_de_texto(texto) != automatico:
+            return texto
+    return ""
+
+
 def _linha_pendente(nota: fontes.NotaDeServico,
                     cadastro: enriquecimento.Cadastro,
                     classificacao: estado.Classificacao,
@@ -384,7 +456,7 @@ def _linha_pendente(nota: fontes.NotaDeServico,
         cadastro.nome_do_parceiro(nota.cnpj_do_prestador, nota.prestador),
         classificacao.guardiao,
         classificacao.gestor_de_apoio,
-        classificacao.ultimo_retorno,
+        _retorno(classificacao, ligacao),
         nota.valor,
         nota.municipio,
         cadastro.filial_de(nota.cnpj_do_tomador),
@@ -452,12 +524,23 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
             "O relatório do Portal de Compras não trouxe nenhuma linha de dados.")
     registros = fontes.ler_registros(linhas_pc, mapa_pc)
 
+    # O cadastro da semana, complementado pelo que as semanas anteriores
+    # ensinaram; depois, o Portal de Compras desta semana entra no histórico
+    # para a seguinte. Ver `historico.py` — o confronto não usa nada disto.
+    memoria = historico.carregar(raiz_dos_dados)
     cadastro = enriquecimento.cadastrar(
         registros, tops=ajuste["tops_de_lancamento"],
         prefixo_de_pedido=ajuste["prefixo_de_pedido"],
         cnpj_descartado=ajuste["cnpj_descartado"],
         complemento_de_filiais=parametros.filiais(dados),
+        historico=memoria,
     )
+    historico.absorver(
+        memoria, registros, prefixo_de_pedido=ajuste["prefixo_de_pedido"],
+        cnpj_descartado=ajuste["cnpj_descartado"],
+        fonte={**historico.impressao(
+            reconhecimento["portal_de_compras"].arquivo.caminho),
+            "como": f"semana {semana}"})
     lancamentos = enriquecimento.lancamentos_de(
         registros, ajuste["tops_de_lancamento"], ajuste["cnpj_descartado"])
     if not lancamentos:
@@ -541,6 +624,10 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     linhas_canceladas: list[list[Any]] = []
     linhas_fora: list[list[Any]] = []
     excecoes = parametros.excecoes_de_servicos(dados)
+    cnpjs_por_numero: dict[str, set[str]] = {}
+    for nota in notas:
+        cnpjs_por_numero.setdefault(nota.numero, set()).add(
+            nota.cnpj_do_prestador)
 
     for posicao, nota in enumerate(notas):
         procedimento = resultado.procedimento[posicao]
@@ -566,6 +653,14 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
                 fora_do_mapa.append(nota.cnpj_do_tomador)
 
         chave = _chave_de_heranca(nota.numero, codigo_do_parceiro)
+        if cadastro.veio_do_historico(nota.cnpj_do_prestador):
+            execucao.parceiros_pelo_historico += 1
+            if _migrar_de_sem_cadastro(livro, nota.numero, chave,
+                                       nota.cnpj_do_prestador,
+                                       cnpjs_por_numero[nota.numero]):
+                execucao.classificacoes_migradas += 1
+        if nota.cnpj_do_prestador in cadastro.pedidos_do_historico:
+            execucao.pedidos_pelo_historico += 1
         classificacao = livro.de(chave)
         if classificacao.guardiao or classificacao.gestor_de_apoio or (
                 classificacao.ultimo_retorno):
@@ -602,6 +697,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         )
         if ligacao.encontrado:
             execucao.vinculadas += 1
+        if ligacao.exato:
+            execucao.em_fila_de_lancamento += 1
         if ligacao.ambiguo:
             execucao.vinculos_ambiguos += 1
 
@@ -622,17 +719,22 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     )
 
     caderno = escrita.novo_livro()
-    escrita.escrever_aba(caderno, col.ABAS[0], col.LANCADAS, linhas_lancadas)
-    escrita.escrever_aba(caderno, col.ABAS[1], col.PENDENTES, linhas_pendentes)
-    escrita.escrever_aba(caderno, col.ABAS[2], col.CANCELADAS, linhas_canceladas)
-    escrita.escrever_aba(caderno, col.ABAS[3], colunas_da_inversa,
+    escrita.escrever_aba(caderno, col.ABA_PENDENTES, col.PENDENTES,
+                         linhas_pendentes)
+    escrita.escrever_aba(caderno, col.ABA_LANCADAS, col.LANCADAS,
+                         linhas_lancadas)
+    escrita.escrever_aba(caderno, col.ABA_CANCELADAS, col.CANCELADAS,
+                         linhas_canceladas)
+    escrita.escrever_aba(caderno, col.ABA_INVERSA, colunas_da_inversa,
                          linhas_da_inversa)
     escrita.escrever_aba(caderno, col.ABA_FORA_DO_RELATORIO,
                          col.FORA_DO_RELATORIO, linhas_fora)
+    escrita.abrir_em(caderno, col.ABA_PENDENTES)
     execucao.planilha = escrita.salvar(
         caderno, Path(saida) / nome_sugerido(agora))
 
     estado.gravar(livro, responsavel, raiz=raiz_dos_dados)
+    historico.gravar(memoria, responsavel, raiz=raiz_dos_dados)
     execucao.pasta_do_snapshot = snapshot.gravar(
         DOMINIO, ano, semana,
         planilha=execucao.planilha, livro=livro,
