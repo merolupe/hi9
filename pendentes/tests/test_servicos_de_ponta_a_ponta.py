@@ -154,6 +154,24 @@ def test_a_pendente_recebe_pedido_comprador_e_vinculo(semana):
     assert linha[35] == "Exato"
 
 
+def test_o_prestador_sem_cadastro_sai_com_o_cnpj_na_celula_do_parceiro(
+        semana, tmp_path):
+    """Quem recebe a linha precisa do CNPJ para cadastrar o parceiro."""
+    semana["arquivos"][0] = relatorio(tmp_path / "ASIS2.xlsx", COLUNAS_ASIS, [
+        linha_asis("1001", CNPJ_F, "77.00"),
+        linha_asis("2002", "12345678000190", "88.00",
+                   prestador="OFICINA SEM CADASTRO"),
+    ])
+    livro = openpyxl.load_workbook(_rodar(semana).planilha)
+    pendentes = {str(l[0]): l for l in livro["Pendentes"].iter_rows(
+        min_row=2, values_only=True)}
+
+    assert livro["Pendentes"].max_column == 36
+    assert pendentes["2002"][2] == "Sem cadastro"
+    assert pendentes["2002"][3] == "OFICINA SEM CADASTRO (CNPJ 12.345.678/0001-90)"
+    assert "CNPJ" not in str(pendentes["1001"][3])      # cadastrado: só o nome
+
+
 def test_a_discriminacao_perde_o_artefato_de_exportacao(semana):
     """`_x000D_` é o retorno de carro escapado do XML, e atravessa como texto."""
     livro = openpyxl.load_workbook(_rodar(semana).planilha)

@@ -8,7 +8,7 @@ Central.
 ## Situação
 
 **As três ferramentas rodam.** O núcleo comum, o motor de serviços, o motor de
-mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 379
+mercadorias e o painel semanal estão no repositório, em `pendentes/`, com 400
 testes de comportamento, e as quatro entradas do catálogo acendem.
 
 O painel voltou em 22/09/2026, e não como estava desenhado: o Resumo Executivo
@@ -35,6 +35,8 @@ e-mail — saem inteiras.
 | **Base de conhecimento** — propõe classificação, com a evidência ao lado | **pronta** ([08](08-base-de-conhecimento.md)) |
 | **Pré-categorização** — categoria, guardião e operação, com a célula marcada | **ligada** em 22/09/2026 |
 | **Pré-categorização do gestor de apoio** — sai do guardião da linha | **ligada** em 24/09/2026, sem medição ([08](08-base-de-conhecimento.md)) |
+| **Histórico do Portal de Compras** — parceiro e pedido além da semana, em serviços | **ligado** em 28/09/2026 ([01](01-arquitetura.md) § 5) |
+| CNPJ do prestador `Sem cadastro` na célula `Parceiro` | **ligado** em 28/09/2026 ([05](05-decisoes-pendentes.md) nº 14) |
 | Aba `Resumo` — a série entre semanas | não entrou ([06](06-proximas-rodadas.md) § 6) |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 

@@ -47,7 +47,7 @@ from .. import escrita, estado, papeis, parametros, snapshot
 from ..texto import aparar
 from . import colunas as col
 from . import confronto as casc
-from . import enriquecimento, exclusao, fontes, inversa, vinculo
+from . import enriquecimento, exclusao, fontes, historico, inversa, vinculo
 
 #: O domínio, para o livro e para a pasta de snapshots.
 DOMINIO = "servicos"
@@ -88,6 +88,11 @@ class Execucao:
     numeros_com_corte_de_ano: int = 0
     pedidos_de_outra_filial: int = 0
     colisoes_de_identidade: int = 0
+    #: Pendentes cujo parceiro, ou pedido, só o histórico do Portal de
+    #: Compras conhecia — sem ele, `Sem cadastro` e `Nao encontrado`.
+    parceiros_pelo_historico: int = 0
+    pedidos_pelo_historico: int = 0
+    classificacoes_migradas: int = 0
     avisos: list[str] = field(default_factory=list)
     ingestao: estado.Ingestao | None = None
 
@@ -214,6 +219,19 @@ class Execucao:
                 "neutro",
             ))
         saida.append(("Herança da classificação", self.heranca(), "neutro"))
+        if self.parceiros_pelo_historico or self.pedidos_pelo_historico:
+            itens = [
+                f"{self.parceiros_pelo_historico} pendente(s) com parceiro que "
+                f"só o histórico conhecia — sem ele, 'Sem cadastro'",
+                f"{self.pedidos_pelo_historico} pendente(s) com pedido de "
+                f"compra achado no histórico",
+            ]
+            if self.classificacoes_migradas:
+                itens.append(
+                    f"{self.classificacoes_migradas} classificação(ões) "
+                    f"passaram da chave 'Sem cadastro' para o código do "
+                    f"parceiro")
+            saida.append(("Histórico do Portal de Compras", itens, "neutro"))
         if self.vinculadas:
             saida.append((
                 "Vínculo com a Conferência de Serviços",
@@ -265,6 +283,34 @@ def _chave_de_heranca(numero: str, codigo_do_parceiro: str) -> str:
     registra a mesma decisão, com as mesmas palavras.
     """
     return f"{numero}|{aparar(codigo_do_parceiro)}"
+
+
+def _migrar_de_sem_cadastro(livro: estado.Livro, numero: str, chave: str,
+                            cnpj: str, cnpjs_do_numero: set[str]) -> bool:
+    """A nota que era `Sem cadastro` e o histórico identificou leva o que tinha.
+
+    Com o histórico, o `Cod Parceiro` de uma nota pode passar de `Sem
+    cadastro` para o código de verdade — e a chave de herança muda junto. Sem
+    isto, o Guardião, o Gestor e o Retorno que o time escreveu na semana
+    passada ficariam presos na chave velha.
+
+    Dois prestadores sem cadastro com o mesmo número dividem a chave velha, e
+    levar a classificação de um para o outro seria adivinhar. Por isso só
+    migra quando o livro gravou o **mesmo CNPJ** nela — ou, se ela veio da
+    planilha devolvida e ainda não tem CNPJ, quando nenhuma outra nota do ASIS
+    desta semana tem aquele número (`cnpjs_do_numero` é só este CNPJ).
+    """
+    if not cnpj or livro.obter(chave) is not None:
+        return False
+    velha = livro.obter(_chave_de_heranca(numero, enriquecimento.SEM_CADASTRO))
+    if velha is None:
+        return False
+    if velha.cnpj != cnpj and (velha.cnpj or cnpjs_do_numero != {cnpj}):
+        return False
+    del livro.registros[velha.chave]
+    velha.chave = chave
+    livro.registros[chave] = velha
+    return True
 
 
 def _ingerir_semana_anterior(reconhecido: papeis.Reconhecido, dados: dict,
@@ -452,12 +498,23 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
             "O relatório do Portal de Compras não trouxe nenhuma linha de dados.")
     registros = fontes.ler_registros(linhas_pc, mapa_pc)
 
+    # O cadastro da semana, complementado pelo que as semanas anteriores
+    # ensinaram; depois, o Portal de Compras desta semana entra no histórico
+    # para a seguinte. Ver `historico.py` — o confronto não usa nada disto.
+    memoria = historico.carregar(raiz_dos_dados)
     cadastro = enriquecimento.cadastrar(
         registros, tops=ajuste["tops_de_lancamento"],
         prefixo_de_pedido=ajuste["prefixo_de_pedido"],
         cnpj_descartado=ajuste["cnpj_descartado"],
         complemento_de_filiais=parametros.filiais(dados),
+        historico=memoria,
     )
+    historico.absorver(
+        memoria, registros, prefixo_de_pedido=ajuste["prefixo_de_pedido"],
+        cnpj_descartado=ajuste["cnpj_descartado"],
+        fonte={**historico.impressao(
+            reconhecimento["portal_de_compras"].arquivo.caminho),
+            "como": f"semana {semana}"})
     lancamentos = enriquecimento.lancamentos_de(
         registros, ajuste["tops_de_lancamento"], ajuste["cnpj_descartado"])
     if not lancamentos:
@@ -541,6 +598,10 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     linhas_canceladas: list[list[Any]] = []
     linhas_fora: list[list[Any]] = []
     excecoes = parametros.excecoes_de_servicos(dados)
+    cnpjs_por_numero: dict[str, set[str]] = {}
+    for nota in notas:
+        cnpjs_por_numero.setdefault(nota.numero, set()).add(
+            nota.cnpj_do_prestador)
 
     for posicao, nota in enumerate(notas):
         procedimento = resultado.procedimento[posicao]
@@ -566,6 +627,14 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
                 fora_do_mapa.append(nota.cnpj_do_tomador)
 
         chave = _chave_de_heranca(nota.numero, codigo_do_parceiro)
+        if cadastro.veio_do_historico(nota.cnpj_do_prestador):
+            execucao.parceiros_pelo_historico += 1
+            if _migrar_de_sem_cadastro(livro, nota.numero, chave,
+                                       nota.cnpj_do_prestador,
+                                       cnpjs_por_numero[nota.numero]):
+                execucao.classificacoes_migradas += 1
+        if nota.cnpj_do_prestador in cadastro.pedidos_do_historico:
+            execucao.pedidos_pelo_historico += 1
         classificacao = livro.de(chave)
         if classificacao.guardiao or classificacao.gestor_de_apoio or (
                 classificacao.ultimo_retorno):
@@ -633,6 +702,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         caderno, Path(saida) / nome_sugerido(agora))
 
     estado.gravar(livro, responsavel, raiz=raiz_dos_dados)
+    historico.gravar(memoria, responsavel, raiz=raiz_dos_dados)
     execucao.pasta_do_snapshot = snapshot.gravar(
         DOMINIO, ano, semana,
         planilha=execucao.planilha, livro=livro,

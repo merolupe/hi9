@@ -400,10 +400,21 @@ def _rodar_conhecimento(arquivos: list[Path], saida: Path) -> Resultado:
     from pendentes.conhecimento import base as conhecido
     from pendentes.conhecimento.importacao import importar
     from pendentes.conhecimento.simulacao import simular
+    from pendentes.servicos import historico
 
     planilhas = [a for a in arquivos
                  if a.suffix.lower() in (".xls", ".xlsx", ".xlsm")]
-    if planilhas and len(planilhas) == len(arquivos):
+    portais = [a for a in planilhas if historico.e_portal_de_compras(a)]
+    if portais:
+        # O Portal de Compras de período longo alimenta o histórico de
+        # parceiros e pedidos que o GerarServPend consulta.
+        if len(portais) != len(arquivos):
+            raise ValueError(
+                "O Portal de Compras vai sozinho: ele alimenta o histórico de "
+                "parceiros e pedidos, e não se mistura com a base de "
+                "classificação nem com a planilha que a mede.")
+        execucao = historico.carregar_relatorios(portais)
+    elif planilhas and len(planilhas) == len(arquivos):
         execucao = simular(planilhas, conhecido.carregar())
     else:
         execucao = importar([a for a in arquivos if a not in planilhas])
@@ -590,7 +601,9 @@ FERRAMENTAS: list[Ferramenta] = [
             apoio="a lista de parceiros (<code>.csv</code>) e as regras "
                   "medidas (<code>.json</code>) refazem a base; uma planilha "
                   "de semana já classificada, sozinha, <b>mede</b> a base "
-                  "contra ela e não altera nada.",
+                  "contra ela e não altera nada. Um <code>Portal de "
+                  "Compras</code> de período longo, sozinho, entra no "
+                  "<b>histórico de parceiros e pedidos</b> dos serviços.",
             extensoes=(".csv", ".json", ".xls", ".xlsx", ".xlsm"),
             varios=True,
         ),

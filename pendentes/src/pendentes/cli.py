@@ -7,6 +7,8 @@
     pendentes resumo <relatório da semana, já classificado> [--saida PASTA]
     pendentes conhecimento <parceiros.csv> <regras.json>   ← importa a base
     pendentes conhecimento <relatório classificado.xlsx>   ← mede a base
+    pendentes conhecimento <Portal de Compras longo.xls>   ← histórico de
+                                                             parceiros e pedidos
 
 Os arquivos entram **em qualquer ordem**: cada um é reconhecido pelo próprio
 cabeçalho, não pelo nome nem pela posição na linha de comando. Quem não usa
@@ -69,10 +71,18 @@ def _conhecimento(args) -> int:
     from .conhecimento import base as conhecido
     from .conhecimento.importacao import ArquivoNaoReconhecido, importar
     from .conhecimento.simulacao import SemRelatorioClassificado, simular
+    from .servicos import historico
 
     planilhas = [a for a in args.arquivos if Path(a).suffix.lower() in EXTENSOES]
+    portais = [a for a in planilhas if historico.e_portal_de_compras(a)]
     try:
-        if planilhas and len(planilhas) == len(args.arquivos):
+        if portais:
+            if len(portais) != len(args.arquivos):
+                print("\nO Portal de Compras vai sozinho: ele alimenta o "
+                      "histórico de parceiros e pedidos.\n", file=sys.stderr)
+                return 2
+            resultado = historico.carregar_relatorios(portais)
+        elif planilhas and len(planilhas) == len(args.arquivos):
             resultado = simular(planilhas, conhecido.carregar())
         elif planilhas:
             print("\nNão misture as fontes da base com o relatório que a mede: "
@@ -80,8 +90,8 @@ def _conhecimento(args) -> int:
             return 2
         else:
             resultado = importar(args.arquivos)
-    except (ArquivoNaoReconhecido, SemRelatorioClassificado,
-            PlanilhaIlegivel, FileNotFoundError) as erro:
+    except (ArquivoNaoReconhecido, SemRelatorioClassificado, ColunasFaltando,
+            CabecalhoNaoEncontrado, PlanilhaIlegivel, FileNotFoundError) as erro:
         print(f"\n{erro}\n", file=sys.stderr)
         return 2
 
