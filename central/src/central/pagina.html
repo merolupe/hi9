@@ -169,6 +169,8 @@ table.grade-config input[type=text]{
 }
 table.grade-config input[type=text]:focus{outline:2px solid var(--marca); outline-offset:-1px}
 table.grade-config tr.alterada input[type=text]{border-color:var(--marca)}
+table.grade-config td.leitura{padding:5px 8px; white-space:nowrap; max-width:48ch;
+  overflow:hidden; text-overflow:ellipsis}
 .remover{
   background:none; border:none; color:var(--suave); cursor:pointer;
   font-size:15px; padding:2px 6px; line-height:1;
@@ -241,7 +243,7 @@ ul.problemas li.aviso{color:var(--atencao)}
     <p class="subtitulo" id="config-resumo"></p>
     <div id="config-recado"></div>
     <div id="config-secoes"></div>
-    <div class="barra-salvar">
+    <div class="barra-salvar" id="config-barra">
       <button class="acao principal-btn" onclick="salvarConfig()">Salvar alterações</button>
       <button class="acao secundario-btn" onclick="carregarConfig(atual.id)">Descartar</button>
       <span class="contagem" id="config-carimbo"></span>
@@ -312,7 +314,7 @@ async function escolher(id){
   $("tela-resumo").textContent = f.resumo;
   $("tela-acoes").innerHTML = f.tem_configuracao
     ? `<button class="acao secundario-btn" onclick="carregarConfig('${f.id}')"
-         title="${esc(f.resumo_da_configuracao)}">⚙ Regras e parâmetros</button>` : "";
+         title="${esc(f.resumo_da_configuracao)}">${esc(f.rotulo_da_configuracao || "⚙ Regras e parâmetros")}</button>` : "";
   $("largar-rotulo").textContent = f.entrada.rotulo;
   // O texto de apoio vem do catálogo do próprio repositório, não de quem usa.
   $("largar-apoio").innerHTML = f.entrada.apoio;
@@ -350,8 +352,10 @@ async function carregarConfig(id){
   const r = await fetch(url("/configuracao", `&ferramenta=${id}`));
   const dados = await r.json();
   if (dados.erro){ alert(dados.erro); return; }
-  CONFIG = {secoes: dados.secoes, dados: dados.dados};
-  $("config-nome").textContent = `Configuração — ${f.nome}`;
+  CONFIG = {secoes: dados.secoes, dados: dados.dados, soLeitura: !!dados.so_leitura};
+  $("config-nome").textContent = `${CONFIG.soLeitura ? "Consulta" : "Configuração"} — ${f.nome}`;
+  // Tela só de consulta não tem o que salvar nem descartar.
+  $("config-barra").classList.toggle("oculto", CONFIG.soLeitura);
   $("config-resumo").textContent = dados.resumo;
   $("config-recado").innerHTML = "";
   desenharSecoes();
@@ -373,11 +377,12 @@ function desenharSecoes(){
 
 function secaoHtml(secao){
   const linhas = CONFIG.dados[secao.id] || [];
+  const editavel = !secao.fixa && !secao.somente_leitura;
   const filtro = !secao.fixa && linhas.length > 10
     ? `<input class="filtro" placeholder="filtrar…" oninput="filtrar('${secao.id}', this.value)">
        <span class="contagem" id="conta-${secao.id}">${linhas.length} linha(s)</span>`
     : "";
-  const acrescentar = secao.fixa ? "" :
+  const acrescentar = !editavel ? "" :
     `<button class="acao secundario-btn" style="margin-top:12px; padding:7px 14px; font-size:13.5px"
              onclick="acrescentarLinha('${secao.id}')">+ acrescentar linha</button>`;
   return `
@@ -390,7 +395,7 @@ function secaoHtml(secao){
           <thead><tr>
             ${secao.campos.map((c) =>
               `<th title="${esc(c.ajuda)}">${esc(c.rotulo)}</th>`).join("")}
-            ${secao.fixa ? "" : "<th></th>"}
+            ${editavel ? "<th></th>" : ""}
           </tr></thead>
           <tbody id="corpo-${secao.id}">
             ${linhas.map((l, i) => linhaHtml(secao, l, i)).join("")}
@@ -402,6 +407,14 @@ function secaoHtml(secao){
 }
 
 function linhaHtml(secao, linha, i){
+  if (secao.somente_leitura){
+    const celulas = secao.campos.map((c) => {
+      const v = linha[c.chave];
+      const texto = v === null || v === undefined ? "" : String(v);
+      return `<td class="leitura" title="${esc(texto)}">${esc(texto)}</td>`;
+    }).join("");
+    return `<tr>${celulas}</tr>`;
+  }
   const celulas = secao.campos.map((c) => {
     const v = linha[c.chave];
     if (c.tipo === "booleano"){

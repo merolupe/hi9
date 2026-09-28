@@ -150,7 +150,7 @@ de unidades da ferramenta, com a ordem que ela já exige (`CORUMB` antes de
 
 Tabela vazia — que é como ela nasce, porque nome de unidade é dado da empresa
 — **não** inventa unidade: o bloco sai vazio, o gráfico não é desenhado e a
-tela diz que são cinco linhas na tela de configuração. Unidade cadastrada sem
+tela manda cadastrar em `⚙ Parâmetros das pendentes`. Unidade cadastrada sem
 pendência aparece **zerada**, porque zero é uma resposta.
 
 ### 4. O "destacar acima de" passa a fazer alguma coisa

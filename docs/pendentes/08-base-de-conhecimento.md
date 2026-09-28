@@ -192,6 +192,12 @@ pendentes conhecimento parceiros.csv regras_classificacao.json   # importa
 pendentes conhecimento Pendentes38.xlsx                          # mede
 ```
 
+Para **ver** o que a base guarda, sem abrir o `.json`: o botão `🔎 Consultar
+as bases`, na mesma entrada. Mostra, só para leitura, os parceiros com o
+guardião e a categoria propostos e o grau de cada um, o gestor por guardião,
+e o histórico do Portal de Compras de serviços (parceiros, pedido mais
+recente, filiais e o que já foi absorvido). Para mudar, importa-se de novo.
+
 Qual das duas coisas acontece é decidido pelo **conteúdo** do que chega —
 planilha é gabarito, `.csv` e `.json` são fonte —, como todo o resto do
 projeto. A importação carimba de onde veio: nome, tamanho e SHA-256 de cada

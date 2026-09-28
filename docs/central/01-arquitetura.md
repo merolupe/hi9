@@ -248,12 +248,16 @@ depois.
   A divergência zero contra a macro também aqui **não está provada**, e o que
   trava o quê está em
   [`../pendentes/04-plano-de-entrega.md`](../pendentes/04-plano-de-entrega.md).
-- **As duas ferramentas de pendentes entraram sem tela de configuração.** Os
-  parâmetros são lidos da carga de fábrica e da base viva, e os motores os
-  honram; o que falta é a tela que os edita. Enquanto ela não vem, a tabela de
-  unidades e a lista de guardiões só se cadastram editando
-  `dados/pendentes/parametros.yaml` à mão — e, **vazias, elas não validam
-  nada**, que é o comportamento de hoje.
+- **As pendentes ganharam tela de parâmetros em 28/09/2026** —
+  `⚙ Parâmetros das pendentes`, a mesma nas três rotinas, porque as três leem o
+  mesmo `parametros.yaml` (`pendentes/configuracao.py`). Fica fora dela o que
+  é vocabulário do export e mecânica das regras (roteamento, farol, papéis,
+  literais de mercadorias); a gravação mescla e não apaga essas seções.
+- **A Base de conhecimento ganhou tela de consulta** — `🔎 Consultar as
+  bases`, só leitura (`pendentes/conhecimento/consulta.py`). O contrato
+  ganhou duas coisas para isso: `Configuracao` sem `gravar` é tela de
+  consulta, sem botão de salvar, e `Secao.somente_leitura` desenha a tabela
+  como texto.
 - Quando a segunda ferramenta com tela própria chegar, hospedar as telas na
   central em vez de abrir janela ao lado (seção 5).
 - O Faturabot está em desenvolvimento e entra pelo mesmo contrato.

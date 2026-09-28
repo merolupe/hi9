@@ -59,6 +59,7 @@ src/pendentes/
   papeis.py        qual arquivo é qual, pelo próprio cabeçalho
   tabelas.py       tabelas em que a ordem das linhas é a regra
   parametros.py    carga de fábrica versionada + base viva fora do git
+  configuracao.py  a tela ⚙ Parâmetros das pendentes: o que mostra e grava
   estado.py        o livro de classificação, com carimbo de quem gravou
   snapshot.py      a foto semanal imutável, que nunca é sobrescrita
   escrita.py       a aba formatada, com o formato aplicado ANTES da escrita
@@ -80,6 +81,7 @@ src/pendentes/conhecimento/
   base.py          os três graus de confiança, e a consulta que respeita eles
   importacao.py    a lista curada + o histórico medido, sem escolher entre os dois
   simulacao.py     a base contra um relatório classificado: quanto ela acertaria
+  consulta.py      a tela 🔎 Consultar as bases: histórico e mercadorias, só leitura
 
 src/pendentes/resumo/
   colunas.py       onde cada coisa fica nas duas abas do painel
@@ -210,7 +212,7 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-407 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+431 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido
