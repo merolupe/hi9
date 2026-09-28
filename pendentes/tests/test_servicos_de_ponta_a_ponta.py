@@ -261,7 +261,28 @@ def test_a_chave_duplicada_no_sankhya_bloqueia_e_vai_para_a_coluna_obs(tmp_path)
 # -- o livro e a semana -----------------------------------------------------
 
 def test_a_classificacao_da_semana_passada_volta_pela_planilha(semana, tmp_path):
-    """A ida e volta: sai do livro, volta para o livro, regera a planilha."""
+    """A ida e volta: sai do livro, volta para o livro, regera a planilha.
+
+    Sem a Conferência de Serviços, para a nota não ter vínculo exato — com
+    ele o retorno é o da fila, e isso tem teste próprio abaixo.
+    """
+    anterior = escrever(tmp_path / "Pendentes37.xlsx", {"Pendentes": [
+        COLUNAS_ANTERIOR_SERVICOS,
+        ["1001", "4001", "Suprimentos", "Maria", "aguardando fornecedor"],
+    ]})
+    semana["arquivos"] = [*semana["arquivos"][:2], anterior]
+    resultado = _rodar(semana)
+
+    linha = [c.value for c in
+             openpyxl.load_workbook(resultado.planilha)["Pendentes"][2]]
+    assert linha[4] == "Suprimentos"
+    assert linha[5] == "Maria"
+    assert linha[6] == "aguardando fornecedor"
+    assert resultado.herdadas == 1
+
+
+def test_vinculo_exato_poe_a_nota_em_fila_de_lancamento(semana, tmp_path):
+    """Anexada a um pedido, a nota não tem mais quem cobrar: falta lançar."""
     anterior = escrever(tmp_path / "Pendentes37.xlsx", {"Pendentes": [
         COLUNAS_ANTERIOR_SERVICOS,
         ["1001", "4001", "Suprimentos", "Maria", "aguardando fornecedor"],
@@ -271,10 +292,42 @@ def test_a_classificacao_da_semana_passada_volta_pela_planilha(semana, tmp_path)
 
     linha = [c.value for c in
              openpyxl.load_workbook(resultado.planilha)["Pendentes"][2]]
-    assert linha[4] == "Suprimentos"
-    assert linha[5] == "Maria"
+    assert linha[35] == "Exato"
+    assert linha[6] == colunas.RETORNO_EM_FILA
+    assert linha[4] == "Suprimentos"                   # o resto continua
+    assert resultado.em_fila_de_lancamento == 1
+    # o que o time escreveu não se perde: fica no livro
+    livro = estado.carregar("servicos", raiz=semana["dados"])
+    assert "aguardando fornecedor" in livro.registros["1001|4001"].retornos.values()
+
+
+def test_a_fila_que_voltou_na_planilha_nao_fica_quando_o_vinculo_some(
+        semana, tmp_path):
+    """`Em fila de lançamento` é da ferramenta; sem vínculo exato, vale o do time."""
+    anterior = escrever(tmp_path / "Pendentes37.xlsx", {"Pendentes": [
+        COLUNAS_ANTERIOR_SERVICOS,
+        ["1001", "4001", "Suprimentos", "Maria", "aguardando fornecedor"],
+    ]})
+    semana["arquivos"] = [*semana["arquivos"][:2], anterior]
+    _rodar(semana)                                     # semana 37 no livro
+
+    livro = estado.carregar("servicos", raiz=semana["dados"])
+    registro = livro.registros["1001|4001"]
+    registro.retornos[max(registro.retornos) + 1] = colunas.RETORNO_EM_FILA
+    estado.gravar(livro, "teste", raiz=semana["dados"])
+
+    semana["arquivos"] = semana["arquivos"][:2]        # sem a Conferência
+    linha = [c.value for c in openpyxl.load_workbook(
+        _rodar(semana).planilha)["Pendentes"][2]]
     assert linha[6] == "aguardando fornecedor"
-    assert resultado.herdadas == 1
+
+
+def test_a_planilha_abre_na_aba_pendentes(semana):
+    livro = openpyxl.load_workbook(_rodar(semana).planilha)
+    assert livro.sheetnames[0] == "Pendentes"
+    assert livro.active.title == "Pendentes"
+    assert [aba.title for aba in livro.worksheets
+            if aba.sheet_view.tabSelected] == ["Pendentes"]
 
 
 def test_a_classificacao_sobrevive_a_execucao_seguinte_sem_o_arquivo(semana,

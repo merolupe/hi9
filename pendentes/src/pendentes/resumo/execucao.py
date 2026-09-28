@@ -60,6 +60,8 @@ class Execucao:
     abas_lidas: list[str] = field(default_factory=list)
     nao_reconhecidos: tuple[str, ...] = ()
     sem_emissao: int = 0
+    #: Notas de serviço em fila de lançamento, que o painel não conta.
+    em_fila: int = 0
     unidades_cadastradas: int = 0
     #: Nomes fantasia/filiais que a tabela de unidades não soube reconhecer.
     unidades_nao_reconhecidas: list[str] = field(default_factory=list)
@@ -107,6 +109,11 @@ class Execucao:
                 f"da média de dias e dos dois TOP 5")
         for nome in self.nao_reconhecidos:
             itens.append(f"não achei aba de pendências em {nome}")
+        if self.em_fila:
+            itens.append(
+                f"{self.em_fila} nota(s) de serviço em fila de lançamento — "
+                f"anexadas ao pedido com vínculo exato — ficaram fora do "
+                f"painel")
         return itens
 
     def composicao(self) -> list[str]:
@@ -238,6 +245,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         painel=quadro, abas_lidas=list(leitura.abas),
         nao_reconhecidos=leitura.nao_reconhecidos,
         sem_emissao=leitura.sem_emissao,
+        em_fila=leitura.em_fila,
         unidades_cadastradas=len(quadro.unidades),
         unidades_nao_reconhecidas=nao_reconhecidas,
     )

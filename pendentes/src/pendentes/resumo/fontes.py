@@ -36,7 +36,8 @@ from typing import Any, Iterable, Sequence
 from .. import cabecalho as cab
 from ..mercadorias import colunas as merc
 from ..planilha import Aba, Arquivo, ler
-from ..texto import aparar
+from ..servicos import colunas as serv
+from ..texto import aparar, chave_de_texto
 from ..valores import data_br, numero_br
 from . import colunas as col
 
@@ -53,6 +54,9 @@ S_GUARDIAO = "Guardiao"
 S_GESTOR = "Gestor de apoio"
 S_VALOR = "Valor NFSe (Valor Bruto)"
 S_FILIAL = "Filial"
+#: Procurada por prefixo, como em toda a ferramenta: a coluna de retorno é a
+#: única que alguém renomeia com o número da semana.
+S_RETORNO = "Retorno"
 
 #: As âncoras que identificam cada aba do relatório pronto. `Categoria` e
 #: `Chave Acesso` juntas só existem na `Pendentes`; `Valor NFSe` e `Filial`
@@ -104,6 +108,10 @@ class Leitura:
     abas: list[str] = None                               # type: ignore[assignment]
     #: Notas sem data de emissão — ficam fora da média e dos TOP N.
     sem_emissao: int = 0
+    #: Notas de serviço com retorno `Em fila de lançamento` — anexadas ao
+    #: pedido, falta só lançar. Não são pendência de ninguém cobrar, e ficam
+    #: fora de todas as contas do painel.
+    em_fila: int = 0
     nao_reconhecidos: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
@@ -165,21 +173,33 @@ def ler_mercadorias(aba: Aba, linha_do_cabecalho: int, unidade_de,
 
 
 def ler_servicos(aba: Aba, linha_do_cabecalho: int, unidade_de,
-                 a_partir_de: int = 0) -> list[Pendencia]:
+                 a_partir_de: int = 0,
+                 leitura: "Leitura | None" = None) -> list[Pendencia]:
     """As linhas da aba `Servicos` viram pendências de serviço.
 
     A categoria não é lida: serviço **é** a categoria. Não há coluna dela no
     relatório de serviços, e inventar uma seria inventar classificação.
+
+    A nota com retorno `Em fila de lançamento` não entra: está anexada ao
+    pedido com vínculo exato e só falta lançar. Ela é contada em `leitura`,
+    para a tela dizer quantas ficaram de fora.
     """
     cabecalho = aba.linha(linha_do_cabecalho)
     mapa = _mapa(cabecalho,
                  (S_NUMERO, S_EMISSAO, S_PARCEIRO, S_GUARDIAO, S_GESTOR,
                   S_VALOR, S_FILIAL),
                  "aba Servicos do relatório da semana")
+    coluna_do_retorno = cab.achar_por_prefixo(cabecalho, S_RETORNO)
+    em_fila = chave_de_texto(serv.RETORNO_EM_FILA)
     linhas = cab.ate_a_ultima(aba.linhas[linha_do_cabecalho + 1:], mapa, S_NUMERO)
     saida = []
     for linha in linhas:
         if not aparar(mapa.valor(linha, S_NUMERO)):
+            continue
+        if 0 <= coluna_do_retorno < len(linha) and (
+                chave_de_texto(linha[coluna_do_retorno]) == em_fila):
+            if leitura is not None:
+                leitura.em_fila += 1
             continue
         saida.append(Pendencia(
             categoria=col.CATEGORIA_DE_SERVICOS,
@@ -221,7 +241,7 @@ def ler_relatorios(caminhos: Iterable[Path | str], unidade_de) -> Leitura:
         achado = _achar_aba(arquivo, ANCORAS_DE_SERVICOS)
         if achado is None:
             continue
-        lidas = ler_servicos(*achado, unidade_de, len(pendencias))
+        lidas = ler_servicos(*achado, unidade_de, len(pendencias), leitura)
         pendencias.extend(lidas)
         leitura.servicos += len(lidas)
         leitura.abas.append(f"{arquivo.nome} · aba '{achado[0].nome}'")

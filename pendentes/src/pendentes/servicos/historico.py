@@ -100,15 +100,12 @@ class Absorcao:
 
 # -- onde mora -------------------------------------------------------------
 
-def _raiz() -> Path:
-    for pasta in Path(__file__).resolve().parents:
-        if (pasta / "vendor" / "openpyxl").is_dir():
-            return pasta
-    return Path(__file__).resolve().parents[4]         # pragma: no cover
-
-
 def caminho(raiz: Path | None = None) -> Path:
-    base = Path(raiz) if raiz else _raiz() / "dados"
+    # A mesma raiz do livro de classificação, e pela mesma função: quem muda
+    # onde o livro mora (a Central nos testes, por exemplo) muda as duas.
+    from .. import estado
+
+    base = Path(raiz) if raiz else estado._raiz() / "dados"
     return base / "pendentes" / "conhecimento" / "portal_de_compras.json"
 
 

@@ -64,6 +64,19 @@ da barra empilhada. Ficaram como estão.
 | emissão | `Dh. Emissão` | `Emissao` |
 | unidade | trecho do `Nome Fantasia` | trecho da `Filial` |
 
+### O que o painel não conta
+
+* **A `PENDENTES FIS-FAT`.** De mercadorias o painel lê só a aba
+  `Pendentes`: ela é achada pelo conjunto `Categoria` + `Chave Acesso` +
+  `Valor da Nota` + `Nome Fantasia`, e a FIS-FAT não tem `Categoria`. Há
+  teste (`test_a_aba_pendentes_fis_fat_nao_entra_no_painel`).
+* **Serviço em fila de lançamento** (desde 28/09/2026). Quando a nota está
+  anexada a um pedido da Conferência de Serviços com vínculo `Exato`, o
+  GerarServPend escreve `Em fila de lançamento` na coluna de retorno — não
+  falta cobrar ninguém, falta lançar. O painel pula essas linhas e a tela diz
+  quantas foram. A coluna é achada pelo começo do nome, então `Retorno` e
+  `Retorno semana 39` valem igual.
+
 ### A média de dias sai da emissão, nas duas frentes
 
 `[FATO]` No arquivo de origem a média de mercadorias vem de `Dias Emissão

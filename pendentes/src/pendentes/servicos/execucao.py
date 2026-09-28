@@ -44,7 +44,7 @@ from typing import Any, Iterable, Sequence
 
 from .. import cabecalho as cab
 from .. import escrita, estado, papeis, parametros, snapshot
-from ..texto import aparar
+from ..texto import aparar, chave_de_texto
 from . import colunas as col
 from . import confronto as casc
 from . import enriquecimento, exclusao, fontes, historico, inversa, vinculo
@@ -93,6 +93,9 @@ class Execucao:
     parceiros_pelo_historico: int = 0
     pedidos_pelo_historico: int = 0
     classificacoes_migradas: int = 0
+    #: Pendentes com vínculo `Exato` ao pedido — o retorno sai
+    #: `Em fila de lançamento`, e o Resumo Executivo não as conta.
+    em_fila_de_lancamento: int = 0
     avisos: list[str] = field(default_factory=list)
     ingestao: estado.Ingestao | None = None
 
@@ -236,7 +239,9 @@ class Execucao:
             saida.append((
                 "Vínculo com a Conferência de Serviços",
                 [f"{self.vinculadas} de {self.pendentes} pendentes já estão "
-                 f"anexadas a um pedido de compra"],
+                 f"anexadas a um pedido de compra",
+                 f"{self.em_fila_de_lancamento} com vínculo exato: retorno "
+                 f"'{col.RETORNO_EM_FILA}', fora do Resumo Executivo"],
                 "neutro",
             ))
         return saida
@@ -418,6 +423,27 @@ def _linha_cancelada(nota: fontes.NotaDeServico,
     ]
 
 
+def _retorno(classificacao: estado.Classificacao,
+             ligacao: vinculo.Vinculo) -> str:
+    """O retorno que a linha mostra.
+
+    Com vínculo `Exato` ao pedido da Conferência de Serviços, a nota está
+    anexada e falta lançar: o retorno é `Em fila de lançamento`, no lugar do
+    que o time escreveu antes. Sem ele, o último retorno do livro — pulando
+    um `Em fila de lançamento` que tenha voltado na planilha da semana
+    passada: esse foi a ferramenta que escreveu, e se o vínculo deixou de ser
+    exato ele não é mais verdade.
+    """
+    if ligacao.exato:
+        return col.RETORNO_EM_FILA
+    automatico = chave_de_texto(col.RETORNO_EM_FILA)
+    for semana in sorted(classificacao.retornos, reverse=True):
+        texto = classificacao.retornos[semana]
+        if chave_de_texto(texto) != automatico:
+            return texto
+    return ""
+
+
 def _linha_pendente(nota: fontes.NotaDeServico,
                     cadastro: enriquecimento.Cadastro,
                     classificacao: estado.Classificacao,
@@ -430,7 +456,7 @@ def _linha_pendente(nota: fontes.NotaDeServico,
         cadastro.nome_do_parceiro(nota.cnpj_do_prestador, nota.prestador),
         classificacao.guardiao,
         classificacao.gestor_de_apoio,
-        classificacao.ultimo_retorno,
+        _retorno(classificacao, ligacao),
         nota.valor,
         nota.municipio,
         cadastro.filial_de(nota.cnpj_do_tomador),
@@ -671,6 +697,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         )
         if ligacao.encontrado:
             execucao.vinculadas += 1
+        if ligacao.exato:
+            execucao.em_fila_de_lancamento += 1
         if ligacao.ambiguo:
             execucao.vinculos_ambiguos += 1
 
@@ -691,13 +719,17 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     )
 
     caderno = escrita.novo_livro()
-    escrita.escrever_aba(caderno, col.ABAS[0], col.LANCADAS, linhas_lancadas)
-    escrita.escrever_aba(caderno, col.ABAS[1], col.PENDENTES, linhas_pendentes)
-    escrita.escrever_aba(caderno, col.ABAS[2], col.CANCELADAS, linhas_canceladas)
-    escrita.escrever_aba(caderno, col.ABAS[3], colunas_da_inversa,
+    escrita.escrever_aba(caderno, col.ABA_PENDENTES, col.PENDENTES,
+                         linhas_pendentes)
+    escrita.escrever_aba(caderno, col.ABA_LANCADAS, col.LANCADAS,
+                         linhas_lancadas)
+    escrita.escrever_aba(caderno, col.ABA_CANCELADAS, col.CANCELADAS,
+                         linhas_canceladas)
+    escrita.escrever_aba(caderno, col.ABA_INVERSA, colunas_da_inversa,
                          linhas_da_inversa)
     escrita.escrever_aba(caderno, col.ABA_FORA_DO_RELATORIO,
                          col.FORA_DO_RELATORIO, linhas_fora)
+    escrita.abrir_em(caderno, col.ABA_PENDENTES)
     execucao.planilha = escrita.salvar(
         caderno, Path(saida) / nome_sugerido(agora))
 

@@ -209,9 +209,20 @@ TRECHO_DE_CIDADE = "CIDADE"
 #: mesmo que precisaria para cobrá-la.
 FORA_DO_RELATORIO: tuple[Coluna, ...] = (*PENDENTES, Coluna("Motivo"))
 
-ABAS = ("Lancadas", "Pendentes", "Canceladas", "Sem Correspondencia ASIS",
-        "Fora do relatorio")
-
+#: `Pendentes` vem **primeiro** e é a aba em que o Excel abre: é ela que vai
+#: anexada ao e-mail e é nela que o time trabalha. A macro abria em `Lancadas`.
+ABA_PENDENTES = "Pendentes"
+ABA_LANCADAS = "Lancadas"
+ABA_CANCELADAS = "Canceladas"
+ABA_INVERSA = "Sem Correspondencia ASIS"
 #: A aba de exclusões, pelo nome — é por ele que a semana seguinte a encontra
 #: no arquivo anterior, como `ABA_FIS_FAT_ANTERIOR` faz em mercadorias.
-ABA_FORA_DO_RELATORIO = ABAS[4]
+ABA_FORA_DO_RELATORIO = "Fora do relatorio"
+
+ABAS = (ABA_PENDENTES, ABA_LANCADAS, ABA_CANCELADAS, ABA_INVERSA,
+        ABA_FORA_DO_RELATORIO)
+
+#: O retorno que a própria ferramenta escreve quando a nota está anexada a um
+#: pedido da Conferência de Serviços com vínculo `Exato`: não falta cobrar
+#: ninguém, falta lançar. O Resumo Executivo não conta essas notas.
+RETORNO_EM_FILA = "Em fila de lançamento"

@@ -210,7 +210,7 @@ exige revisão manual — e `2` quando a execução nem chegou a gerar planilha.
 python -m pytest
 ```
 
-400 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
+407 testes, com planilhas fictícias montadas no próprio teste — CNPJ, chave de
 acesso e nome de fornecedor inventados, regra nº 1 do `CLAUDE.md`.
 
 **Um pedaço deixou de ser só estrutural.** O painel semanal foi conferido
