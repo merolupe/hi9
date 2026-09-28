@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -28,11 +29,15 @@ def _sem_pacotes_instalados(codigo: str) -> subprocess.CompletedProcess:
         "sys.path = [p for p in sys.path\n"
         "            if 'site-packages' not in p and 'dist-packages' not in p]\n"
     )
-    return subprocess.run(
-        [sys.executable, "-S", "-c", limpeza + codigo],
-        capture_output=True, text=True, cwd=RAIZ, timeout=300,
-        env={**os.environ, "PYTHONNOUSERSITE": "1", "PYTHONPATH": ""},
-    )
+    # O `rodar.py` põe os dados em Documentos\\Hinove; aqui, numa pasta
+    # descartável, para o teste não mexer nos dados de quem o roda.
+    with tempfile.TemporaryDirectory(prefix="hinove-dados-") as dados:
+        return subprocess.run(
+            [sys.executable, "-S", "-c", limpeza + codigo],
+            capture_output=True, text=True, cwd=RAIZ, timeout=300,
+            env={**os.environ, "PYTHONNOUSERSITE": "1", "PYTHONPATH": "",
+                 "HINOVE_DADOS": dados},
+        )
 
 
 # -- as bibliotecas estão aqui ---------------------------------------------

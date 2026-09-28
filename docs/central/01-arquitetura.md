@@ -118,6 +118,23 @@ ignorada como `competencias/`. A razão é dupla: parte do conteúdo é dado da
 empresa (as listas de parceiros do Fiscalbot trazem nome de fornecedor real), e
 o time fiscal precisa alterar regra sem passar por commit.
 
+**Fora da pasta do código, também.** Desde 28/09/2026 a Central põe `dados/`
+e `competencias/` em `Documentos\Hinove\`, e publica o caminho na variável
+de ambiente `HINOVE_DADOS` antes de abrir qualquer ferramenta
+(`central/dados.py`, chamado pelo `rodar.py`). O motivo é prático: cada versão
+nova chega como um ZIP extraído noutra pasta, e com os dados dentro do código
+ela começava vazia.
+
+| Quem | O que faz |
+|---|---|
+| a Central | resolve a pasta (a variável já definida vale; senão, Documentos — inclusive redirecionado pelo OneDrive), copia `dados/` e `competencias/` da pasta do código na primeira vez, e publica `HINOVE_DADOS` |
+| cada ferramenta | lê `HINOVE_DADOS` no `_raiz()` de dados; sem a variável, usa a pasta do código, como antes |
+
+A ferramenta não importa a Central para isso: lê uma variável de ambiente,
+que é o contrato. A cópia nunca move nem apaga o original, e se falhar a
+Central fica na pasta do código e diz por quê — abrir numa pasta vazia seria
+abrir sem o trabalho do time.
+
 O que fica versionado é a **carga de fábrica** — `<projeto>/regras_de_fabrica.yaml`
 —, que traz só a parte tributária, sem dado de empresa. Ela existe para a
 ferramenta abrir funcionando numa máquina nova; na primeira abertura a base é
@@ -169,7 +186,8 @@ hi9/
 ├─ dixml/                lote de XML para planilha
 ├─ fiscalbot/            auditoria do Livro Fiscal
 ├─ pendentes/            notas pendentes de entrada: mercadorias e serviços
-├─ dados/                base de regras das ferramentas — ignorada pelo git
+├─ dados/                base das ferramentas quando rodadas sem a Central —
+│                        ignorada pelo git; pela Central, em Documentos\Hinove
 └─ docs/                 esta documentação
 ```
 
