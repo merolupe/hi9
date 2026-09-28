@@ -21,6 +21,20 @@ Só é preciso ter Python 3.10 ou mais novo. Para conferir: `python verificar.py
 
 Quem só usa a apuração pode continuar indo direto por **`Apurabot.bat`**.
 
+### Onde ficam os dados
+
+Tudo o que o time produz e cadastra — livro de classificação, parâmetros,
+bases de conhecimento, regras do Fiscalbot, série do Apurabot — fica em
+**`Documentos\Hinove\`**, fora da pasta do código. Para atualizar a Central,
+baixe a versão nova numa pasta qualquer e abra: os dados já estão lá, não é
+preciso copiar nada.
+
+Na primeira abertura depois desta mudança, a Central copia sozinha as pastas
+`dados\` e `competencias\` da pasta do código para `Documentos\Hinove\` e
+avisa na janela preta. A cópia original não é apagada. Para usar outro lugar
+(uma pasta de rede, por exemplo), defina a variável de ambiente
+`HINOVE_DADOS` com o caminho antes de abrir.
+
 ## Projetos
 
 | Projeto | Pasta | Status | Descrição |
@@ -74,6 +88,8 @@ pela primeira vez, siga o
 
 - **Nenhum dado fiscal no repositório.** Livro Fiscal, XMLs, base de bens e
   apurações ficam em `competencias/`, que é ignorada pelo git (ver `.gitignore`).
+  Pela Central, `competencias/` e `dados/` moram em `Documentos\Hinove\`, fora
+  da pasta do código (`central/dados.py`).
   Teste que precise de nota usa amostra fictícia montada no próprio teste.
 - **Regra tributária é parâmetro, não é código.** Toda regra fica em arquivo
   declarativo, nunca embutida em `.py`. No Apurabot ela é versionada em
