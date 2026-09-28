@@ -199,10 +199,11 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             return
         self._json(200, {
             "resumo": ferramenta.configuracao.resumo,
+            "so_leitura": ferramenta.configuracao.gravar is None,
             "secoes": [
                 {
                     "id": s.id, "titulo": s.titulo, "explicacao": s.explicacao,
-                    "fixa": s.fixa,
+                    "fixa": s.fixa, "somente_leitura": s.somente_leitura,
                     "campos": [asdict(c) for c in s.campos],
                 }
                 for s in secoes
@@ -216,6 +217,10 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             return
         if ferramenta.configuracao is None:
             self._json(400, {"erro": f"{ferramenta.nome} não tem o que configurar."})
+            return
+        if ferramenta.configuracao.gravar is None:
+            self._json(400, {"erro": f"A tela de {ferramenta.nome} é só de "
+                                     f"consulta: nada é gravado por ela."})
             return
         try:
             tamanho = int(self.headers.get("Content-Length") or 0)

@@ -97,7 +97,8 @@ class Execucao:
         if self.unidades_cadastradas == 0:
             itens.append(
                 "a tabela de unidades está vazia: o gráfico por unidade não "
-                "foi desenhado. São cinco linhas na tela de configuração.")
+                "foi desenhado. Cadastre as unidades em '⚙ Parâmetros das "
+                "pendentes', no alto desta tela.")
         elif self.unidades_nao_reconhecidas:
             mostradas = ", ".join(self.unidades_nao_reconhecidas[:3])
             itens.append(

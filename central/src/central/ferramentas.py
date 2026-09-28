@@ -191,6 +191,8 @@ class Secao:
     explicacao: str
     campos: tuple[Campo, ...]
     fixa: bool = False
+    #: Tabela de consulta: a tela mostra, não edita.
+    somente_leitura: bool = False
 
 
 @dataclass(frozen=True)
@@ -208,7 +210,10 @@ class Configuracao:
     resumo: str
     secoes: Callable[[], list[Secao]]
     ler: Callable[[], dict[str, list[dict]]]
-    gravar: Callable[[dict, str], tuple[bool, list[dict]]]
+    #: Sem `gravar`, a tela é só de consulta: não há botão de salvar.
+    gravar: Callable[[dict, str], tuple[bool, list[dict]]] | None = None
+    #: O texto do botão que abre a tela, na página da ferramenta.
+    rotulo: str = "⚙ Regras e parâmetros"
 
 
 @dataclass(frozen=True)
@@ -427,6 +432,25 @@ def _rodar_conhecimento(arquivos: list[Path], saida: Path) -> Resultado:
     )
 
 
+def _secoes_de(declaradas: list[dict]) -> list[Secao]:
+    """As seções que a ferramenta descreve em dicionários, nos tipos da Central.
+
+    A ferramenta não conhece `Secao` nem `Campo` — se conhecesse, importaria
+    a Central. Quem traduz é aqui.
+    """
+    return [
+        Secao(
+            id=s["id"], titulo=s["titulo"], explicacao=s["explicacao"],
+            fixa=s["fixa"], somente_leitura=bool(s.get("somente_leitura")),
+            campos=tuple(
+                Campo(c["chave"], c["rotulo"], c["largura"], c["ajuda"], c["tipo"])
+                for c in s["campos"]
+            ),
+        )
+        for s in declaradas
+    ]
+
+
 def _configuracao_do_fiscalbot() -> Configuracao:
     """A tela de regras do Fiscalbot.
 
@@ -436,17 +460,7 @@ def _configuracao_do_fiscalbot() -> Configuracao:
     def secoes() -> list[Secao]:
         from fiscalbot.configuracao import secoes as declaradas
 
-        return [
-            Secao(
-                id=s["id"], titulo=s["titulo"], explicacao=s["explicacao"],
-                fixa=s["fixa"],
-                campos=tuple(
-                    Campo(c["chave"], c["rotulo"], c["largura"], c["ajuda"], c["tipo"])
-                    for c in s["campos"]
-                ),
-            )
-            for s in declaradas()
-        ]
+        return _secoes_de(declaradas())
 
     def ler() -> dict:
         from fiscalbot.configuracao import ler as ler_base
@@ -463,6 +477,60 @@ def _configuracao_do_fiscalbot() -> Configuracao:
                "alíquotas e as listas de parceiros.",
         secoes=secoes, ler=ler, gravar=gravar,
     )
+
+
+def _configuracao_das_pendentes() -> Configuracao:
+    """A tela de parâmetros das notas pendentes.
+
+    Uma base só para as três rotinas — GerarPendentes, GerarServPend e o
+    Resumo Executivo leem o mesmo `parametros.yaml` —, e por isso a mesma
+    tela nas três. Lida tarde, como a do Fiscalbot.
+    """
+    def secoes() -> list[Secao]:
+        from pendentes.configuracao import secoes as declaradas
+
+        return _secoes_de(declaradas())
+
+    def ler() -> dict:
+        from pendentes.configuracao import ler as ler_base
+
+        return ler_base()
+
+    def gravar(dados: dict, responsavel: str) -> tuple[bool, list[dict]]:
+        from pendentes.configuracao import gravar as gravar_base
+
+        return gravar_base(dados, responsavel)
+
+    return Configuracao(
+        resumo="Unidades, filiais, guardiões, categorias, exceções de "
+               "serviços, confronto, semana, painel, pré-categorização e "
+               "nomes de coluna — a mesma base para as três rotinas.",
+        secoes=secoes, ler=ler, gravar=gravar,
+        rotulo="⚙ Parâmetros das pendentes",
+    )
+
+
+def _consulta_das_bases() -> Configuracao:
+    """A consulta das bases de conhecimento — só leitura."""
+    def secoes() -> list[Secao]:
+        from pendentes.conhecimento.consulta import secoes as declaradas
+
+        return _secoes_de(declaradas())
+
+    def ler() -> dict:
+        from pendentes.conhecimento.consulta import ler as ler_base
+
+        return ler_base()
+
+    return Configuracao(
+        resumo="O que as bases guardam: o histórico do Portal de Compras "
+               "(serviços) e a base de classificação de mercadorias. Só "
+               "consulta — para mudar, importe de novo.",
+        secoes=secoes, ler=ler, rotulo="🔎 Consultar as bases",
+    )
+
+
+CONFIGURACAO_DAS_PENDENTES = _configuracao_das_pendentes()
 
 
 # -- o catálogo ------------------------------------------------------------
@@ -538,6 +606,7 @@ FERRAMENTAS: list[Ferramenta] = [
                 "limpeza descarta passa a aparecer na aba Descartados, com o "
                 "motivo.",
         executar=_rodar_gerarpendentes,
+        configuracao=CONFIGURACAO_DAS_PENDENTES,
         conferir=_conferir_gerarpendentes,
     ),
     Ferramenta(
@@ -565,6 +634,7 @@ FERRAMENTAS: list[Ferramenta] = [
                 "perder a planilha da semana passada não apaga mais o "
                 "histórico.",
         executar=_rodar_gerarservpend,
+        configuracao=CONFIGURACAO_DAS_PENDENTES,
         conferir=_conferir_gerarservpend,
     ),
     Ferramenta(
@@ -588,6 +658,7 @@ FERRAMENTAS: list[Ferramenta] = [
                 "contas são por categoria, e categoria é o que a pessoa "
                 "confirma depois da geração.",
         executar=_rodar_resumo,
+        configuracao=CONFIGURACAO_DAS_PENDENTES,
     ),
     Ferramenta(
         id="conhecimento",
@@ -613,6 +684,7 @@ FERRAMENTAS: list[Ferramenta] = [
                 "semanas, chega a poder preencher célula — o resto aparece "
                 "como sugestão, com a evidência ao lado.",
         executar=_rodar_conhecimento,
+        configuracao=_consulta_das_bases(),
     ),
     Ferramenta(
         id="faturabot",
@@ -644,6 +716,10 @@ def catalogo() -> list[dict]:
             "verbo": f.verbo,
             "detalhe": f.detalhe,
             "tem_configuracao": f.configuracao is not None,
+            "rotulo_da_configuracao":
+                f.configuracao.rotulo if f.configuracao else "",
+            "configuracao_so_leitura":
+                bool(f.configuracao) and f.configuracao.gravar is None,
             "confere": f.conferir is not None,
             "resumo_da_configuracao":
                 f.configuracao.resumo if f.configuracao else "",

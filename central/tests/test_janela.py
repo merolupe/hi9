@@ -529,3 +529,56 @@ def test_remover_o_que_nao_existe_avisa(janela):
                                  indice=7)
     assert codigo == 400
     assert dados["erro"]
+
+
+# -- os parâmetros das pendentes e a consulta das bases --------------------
+
+def test_as_tres_rotinas_das_pendentes_abrem_a_mesma_tela_de_parametros(janela):
+    _, dados = janela.pedir("/ferramentas")
+    por_id = {f["id"]: f for f in dados["ferramentas"]}
+    for id_ in ("gerarpendentes", "gerarservpend", "resumoexecutivo"):
+        assert por_id[id_]["tem_configuracao"] is True
+        assert por_id[id_]["configuracao_so_leitura"] is False
+        assert por_id[id_]["rotulo_da_configuracao"] == "⚙ Parâmetros das pendentes"
+    assert por_id["fiscalbot"]["rotulo_da_configuracao"] == "⚙ Regras e parâmetros"
+
+
+def test_a_tela_de_parametros_das_pendentes_grava(janela, tmp_path, monkeypatch):
+    import json
+    monkeypatch.setenv("HINOVE_DADOS", str(tmp_path))
+    codigo, dados = janela.pedir("/configuracao", ferramenta="gerarservpend")
+    assert codigo == 200, dados
+    assert dados["so_leitura"] is False
+    ids = [s["id"] for s in dados["secoes"]]
+    assert ids[0] == "unidades" and "sinonimos" in ids
+
+    tela = dados["dados"]
+    tela["unidades"] = [{"ordem": 1, "trecho": "MATRIZ", "unidade": "Matriz"}]
+    corpo = json.dumps({"dados": tela}).encode("utf-8")
+    codigo, resposta = janela.pedir("/configuracao", corpo=corpo,
+                                    ferramenta="resumoexecutivo")
+    assert codigo == 200 and resposta["gravou"] is True, resposta
+    assert (tmp_path / "dados/pendentes/parametros.yaml").is_file()
+
+    _, relido = janela.pedir("/configuracao", ferramenta="gerarpendentes")
+    assert relido["dados"]["unidades"][0]["trecho"] == "MATRIZ"
+
+
+def test_a_consulta_das_bases_e_so_leitura(janela, tmp_path, monkeypatch):
+    monkeypatch.setenv("HINOVE_DADOS", str(tmp_path))
+    _, catalogo = janela.pedir("/ferramentas")
+    conhecimento = next(f for f in catalogo["ferramentas"]
+                        if f["id"] == "conhecimento")
+    assert conhecimento["configuracao_so_leitura"] is True
+    assert conhecimento["rotulo_da_configuracao"] == "🔎 Consultar as bases"
+
+    codigo, dados = janela.pedir("/configuracao", ferramenta="conhecimento")
+    assert codigo == 200, dados
+    assert dados["so_leitura"] is True
+    assert all(s["somente_leitura"] for s in dados["secoes"])
+    assert dados["dados"]["portal"][0]["periodo"] == "vazio"
+
+    codigo, resposta = janela.pedir("/configuracao", corpo=b"{}",
+                                    ferramenta="conhecimento")
+    assert codigo == 400
+    assert "só de consulta" in resposta["erro"]
