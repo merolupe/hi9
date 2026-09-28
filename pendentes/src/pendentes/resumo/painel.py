@@ -72,6 +72,10 @@ class Painel:
     categorias: list[LinhaDeCategoria] = field(default_factory=list)
     total: LinhaDeCategoria | None = None
     unidades: list[Corte] = field(default_factory=list)
+    #: Só as unidades com pendência — as que o gráfico mostra. A zerada
+    #: continua em `unidades` e na aba auxiliar: no gráfico ela seria uma
+    #: coluna vazia ocupando lugar.
+    unidades_do_grafico: list[Corte] = field(default_factory=list)
     guardioes: list[Corte] = field(default_factory=list)
     #: Só os guardiões que o gráfico mostra, já cortados no limite.
     guardioes_do_grafico: list[Corte] = field(default_factory=list)
@@ -158,6 +162,8 @@ def montar(pendencias: Sequence[Pendencia], *, referencia: date,
         _corte(nome, [p for p in contadas if p.unidade == nome])
         for nome in _nomes_das_unidades(unidades)
     ]
+    painel.unidades_do_grafico = [u for u in painel.unidades
+                                  if u.total_da_quantidade]
 
     painel.fora_do_ranking = [str(g).strip() for g in fora_do_ranking
                               if str(g).strip()]

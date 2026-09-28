@@ -16,6 +16,7 @@ from pathlib import Path
 
 import openpyxl
 import pytest
+from openpyxl.utils import get_column_letter
 
 from pendentes import parametros
 from pendentes.mercadorias import colunas as merc
@@ -365,13 +366,123 @@ def test_as_outras_abas_atravessam_a_gravacao_como_estavam(tmp_path):
     assert [c.value for c in livro["Lançados"][2]] == ["7777", 12.5]
 
 
-def test_a_celula_de_dias_acima_do_limite_sai_destacada(tmp_path, semana):
-    execucao = executar(tmp_path, [semana], destacar_acima_de_dias=10)
-    aba = openpyxl.load_workbook(str(execucao.planilha))[col.ABA_DO_PAINEL]
-    linha = col.LINHA_DO_TOP_DIAS + 2
-    coluna = col.COLUNA_DA_DIREITA + 6
-    assert aba.cell(linha, coluna).value > 10
-    assert aba.cell(linha, coluna).fill.fgColor.rgb == "FFFFC7CE"
+# -- o desenho, conforme o painel da semana 38 --------------------------------
+
+def _painel(execucao):
+    return openpyxl.load_workbook(str(execucao.planilha))[col.ABA_DO_PAINEL]
+
+
+def test_o_titulo_traz_o_numero_da_semana_numa_barra_escura(tmp_path, semana):
+    aba = _painel(executar(tmp_path, [semana]))
+    titulo = aba.cell(col.LINHA_DO_TITULO, col.COLUNA_DA_ESQUERDA)
+    assert titulo.value == f"Notas Pendentes de Entrada - SEMANA {SEMANA}"
+    assert titulo.fill.fgColor.rgb == "00393939"
+    assert titulo.font.color.rgb == "00FFFFFF" and titulo.font.b
+
+
+def test_cada_categoria_da_tabela_sai_na_cor_da_sua_fatia(tmp_path, semana):
+    aba = _painel(executar(tmp_path, [semana]))
+    cores = {aba.cell(col.LINHA_DA_TABELA + i, col.COLUNA_DA_ESQUERDA).value:
+             aba.cell(col.LINHA_DA_TABELA + i,
+                      col.COLUNA_DA_ESQUERDA).fill.fgColor.rgb
+             for i in range(1, 5)}
+    assert cores == {"Diretos": "00AB99D5", "Indiretos": "00193A62",
+                     "Serviços": "008EACC3", "Total": "00393939"}
+
+
+def test_a_celula_de_dias_nao_e_pintada(tmp_path, semana):
+    """O print da semana 38 não pinta o tempo: a tabela já é das mais antigas."""
+    aba = _painel(executar(tmp_path, [semana]))
+    celula = aba.cell(col.LINHA_DO_TOP_DIAS + 2, col.COLUNA_DA_DIREITA + 6)
+    assert celula.value > 10
+    assert celula.fill.fill_type is None
+
+
+def test_a_pizza_para_antes_da_tabela_e_nao_a_cobre(tmp_path, semana):
+    execucao = executar(tmp_path, [semana])
+    livro = openpyxl.Workbook()
+    livro.remove(livro.active)
+    from pendentes.resumo import escrita
+    aba = escrita.escrever_painel(livro, execucao.painel, semana=SEMANA)
+    auxiliar = escrita.escrever_auxiliar(livro, execucao.painel)
+    escrita.desenhar(aba, auxiliar, execucao.painel)
+    pizza, unidades, guardioes = aba._charts
+    # O marcador conta do zero: `to.row` é a linha 12, a do cabeçalho.
+    assert pizza.anchor.to.row == col.LINHA_DA_TABELA - 1
+    assert pizza.anchor._from.row == col.LINHA_DA_PIZZA
+    for grafico in (pizza, unidades, guardioes):
+        assert grafico.roundedCorners is False
+    # A borda direita do gráfico de guardiões é a da tabela de cima.
+    assert guardioes.anchor.to.col == (col.COLUNA_DA_DIREITA - 1
+                                       + len(col.TABELA_DO_TOP))
+
+
+def test_as_series_saem_na_cor_da_categoria(tmp_path, semana):
+    execucao = executar(tmp_path, [semana])
+    from pendentes.resumo import escrita
+    livro = openpyxl.Workbook()
+    auxiliar = escrita.escrever_auxiliar(livro, execucao.painel)
+    grafico = escrita._barras(auxiliar, col.BLOCO_DO_GRAFICO_DE_GUARDIOES, 2,
+                              deitada=True, formato_do_rotulo="0;-0;;")
+    cores = [s.graphicalProperties.solidFill.srgbClr
+             for s in grafico.series]
+    assert cores == ["193A62", "AB99D5", "8EACC3"]      # Indiretos, Diretos, Serviços
+    # O ranking se lê de cima para baixo, e os eixos aparecem.
+    assert grafico.x_axis.scaling.orientation == "maxMin"
+    assert grafico.x_axis.delete is False and grafico.y_axis.delete is False
+
+
+def test_o_rotulo_grava_o_separador_e_o_formato_como_o_excel_le(tmp_path,
+                                                                semana):
+    from openpyxl.xml.functions import tostring
+    from pendentes.resumo import escrita
+    rotulos = escrita._rotulos(showVal=True, showPercent=True)
+    rotulos.separator = " "
+    rotulos.numFmt = '"R$" #,##0;;;'
+    xml = tostring(rotulos.to_tree()).decode()
+    assert "<separator> </separator>" in xml
+    assert 'sourceLinked="0"' in xml
+    assert '<showVal val="1"' in xml and '<showCatName val="0"' in xml
+
+
+def test_unidade_zerada_fica_na_conta_e_fora_do_grafico(tmp_path, semana):
+    execucao = executar(tmp_path, [semana])
+    no_grafico = [c.nome for c in execucao.painel.unidades_do_grafico]
+    assert "Corumbá" not in no_grafico
+    assert "Corumbá" in [c.nome for c in execucao.painel.unidades]
+
+
+def test_guardiao_sem_gestor_ocupa_as_duas_celulas(tmp_path):
+    arquivo = relatorio(
+        tmp_path / f"Pendentes{SEMANA}.xlsx", mercadorias=[],
+        servicos=[
+            _linha_de_servico("9001", guardiao="Guardião não encontrado",
+                              gestor="Guardião não encontrado",
+                              emissao=datetime(2026, 6, 1)),
+            _linha_de_servico("9002", guardiao="Guardião não encontrado",
+                              gestor="", emissao=datetime(2026, 6, 2)),
+            _linha_de_servico("9003", emissao=datetime(2026, 6, 3)),
+        ])
+    aba = _painel(executar(tmp_path, [arquivo]))
+    primeira = col.LINHA_DO_TOP_DIAS + 2
+    guardiao = col.COLUNA_DA_DIREITA + 1
+    faixas = {str(f) for f in aba.merged_cells.ranges}
+    esperada = (f"{get_column_letter(guardiao)}{primeira}:"
+                f"{get_column_letter(guardiao + 1)}{primeira + 1}")
+    assert esperada in faixas
+    assert aba.cell(primeira, guardiao).value == "Guardião não encontrado"
+    # A terceira tem gestor de verdade: fica em duas células.
+    assert aba.cell(primeira + 2, guardiao + 1).value == "Tavares"
+
+
+def test_parceiro_com_entidade_de_html_sai_legivel_no_painel(tmp_path):
+    arquivo = relatorio(
+        tmp_path / f"Pendentes{SEMANA}.xlsx", mercadorias=[],
+        servicos=[_linha_de_servico("9001", parceiro="ALFA amp; BETA LTDA"),
+                  _linha_de_servico("9002", parceiro="GAMA &amp; DELTA")])
+    execucao = executar(tmp_path, [arquivo])
+    nomes = {p.parceiro for p in execucao.painel.top_valor}
+    assert nomes == {"ALFA & BETA LTDA", "GAMA & DELTA"}
 
 
 def test_as_duas_frentes_podem_chegar_em_arquivos_separados(tmp_path):

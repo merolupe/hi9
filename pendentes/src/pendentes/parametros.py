@@ -205,9 +205,9 @@ def resumo(dados: dict[str, Any]) -> dict[str, Any]:
     """Os ajustes do painel semanal, com o padrão medido no arquivo de origem.
 
     Nenhum é regra tributária e nenhum muda número: mudam **o que cabe na
-    tela**. Quantas notas cada TOP mostra, quantas barras o gráfico de
-    guardião aguenta e a partir de quantos dias uma nota é destacada são
-    decisões de quem lê o painel toda segunda-feira, não de quem programa.
+    tela**. Quantas notas cada TOP mostra e quantas barras o gráfico de
+    guardião aguenta são decisões de quem lê o painel toda segunda-feira, não
+    de quem programa.
 
     `guardioes_fora_do_ranking` nasce vazia pelo mesmo motivo que a lista de
     guardiões: nome de área é dado da empresa (regra nº 1). No arquivo da
@@ -218,7 +218,6 @@ def resumo(dados: dict[str, Any]) -> dict[str, Any]:
     return {
         "linhas_do_top": int(bruto.get("linhas_do_top") or 5),
         "guardioes_no_grafico": int(bruto.get("guardioes_no_grafico") or 8),
-        "destacar_acima_de_dias": int(bruto.get("destacar_acima_de_dias") or 10),
         "guardioes_fora_do_ranking": tuple(
             str(g).strip()
             for g in (bruto.get("guardioes_fora_do_ranking") or ())

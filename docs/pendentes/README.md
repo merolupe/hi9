@@ -40,6 +40,7 @@ e-mail — saem inteiras.
 | CNPJ do prestador `Sem cadastro` na célula `Parceiro` | **ligado** em 28/09/2026 ([05](05-decisoes-pendentes.md) nº 14) |
 | Serviços: vínculo `Exato` → retorno `Em fila de lançamento`, fora do Resumo | **ligado** em 28/09/2026 ([07](07-resumo-executivo.md)) |
 | A planilha abre na aba `Pendentes`, nas duas frentes | **ligado** em 28/09/2026 |
+| Resumo Executivo com o desenho do print da semana 38 — cores, barras escuras, gráficos presos às células | **ligado** em 28/09/2026 ([07](07-resumo-executivo.md)) |
 | Aba `Resumo` — a série entre semanas | não entrou ([06](06-proximas-rodadas.md) § 6) |
 | **Divergência zero contra a macro** | **não provada** — faltam os arquivos reais |
 
