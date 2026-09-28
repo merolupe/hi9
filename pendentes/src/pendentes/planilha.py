@@ -121,11 +121,22 @@ def _ler_xlsx(caminho: Path, limite: int | None) -> list[Aba]:
     try:
         abas = []
         for planilha in livro.worksheets:
+            # No modo de leitura rápida o openpyxl corta cada linha no tamanho
+            # que a etiqueta `<dimension>` do arquivo declara. O export do ASIS
+            # declara `A1` para a aba inteira — o Excel ignora a etiqueta e
+            # mostra tudo, e nós víamos só a célula "Processo". Esquecer a
+            # etiqueta faz cada linha vir até a última célula que ela tem.
+            planilha.reset_dimensions()
             linhas = []
             for linha in planilha.iter_rows(values_only=True):
                 linhas.append([c if c is not None else "" for c in linha])
                 if limite is not None and len(linhas) >= limite:
                     break
+            # Sem a etiqueta, cada linha termina na própria última célula;
+            # a matriz volta a ser retangular, como era com a etiqueta certa.
+            largura = max((len(linha) for linha in linhas), default=0)
+            for linha in linhas:
+                linha.extend([""] * (largura - len(linha)))
             abas.append(Aba(planilha.title, linhas))
         return abas
     finally:
