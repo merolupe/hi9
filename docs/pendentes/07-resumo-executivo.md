@@ -35,7 +35,7 @@ para duas notas, a ferramenta escreve o que está no relatório
 ## O que o painel mostra
 
 ```
-B2  Resumo executivo                        G2   Notas de maior tempo pendente
+B2  Notas Pendentes de Entrada - SEMANA nn  G2   Notas de maior tempo pendente
 B3  [título da pizza]                       G3   cabeçalho
 B4  ┌─ pizza: proporção por categoria       G4:8 as 5 mais antigas
 B12 cabeçalho da tabela                     G10  Notas de maior valor pendente
@@ -43,14 +43,49 @@ B13 Diretos    ┐                            G11  cabeçalho
 B14 Indiretos  ├ quantidade, valor, média   G12:16 as 5 maiores
 B15 Serviços   ┘ de dias pendente
 B16 Total                                   S2   Data de referência: 21/09/2026
-B18 Valor de pendências por Unidade         S3   Destacar acima de (dias): 10
-B19 ┌─ colunas empilhadas                   G19  ┌─ barras empilhadas
+B18 Valor de pendências por Unidade         G18  Quantidade por Guardião
+B19 ┌─ colunas empilhadas (até a linha 35)  G19  ┌─ barras empilhadas
 ```
+
+Cada gráfico é preso às células pelos **dois cantos**: a pizza ocupa B4:E11 e
+para no cabeçalho da tabela; os de baixo vão da linha 19 à 35, cada um com a
+largura exata do bloco de cima. Até 28/09/2026 os gráficos eram medidos em
+centímetro, e a pizza passava da linha 12 e cobria a tabela por categoria.
 
 As três categorias aparecem em duas ordens, e as duas são do arquivo de
 origem: **Diretos, Indiretos, Serviços** na tabela; **Indiretos, Diretos,
-Serviços** nas colunas da aba auxiliar, que é o que decide a cor de cada faixa
-da barra empilhada. Ficaram como estão.
+Serviços** nas colunas da aba auxiliar, que é a ordem da legenda da barra
+empilhada. Ficaram como estão. A cor não depende de nenhuma das duas: cada
+fatia e cada série recebe a cor **pelo nome** da categoria.
+
+## O desenho
+
+`[FATO]` Medido no print do painel da semana 38, pixel a pixel, em 28/09/2026:
+
+| Elemento | Como sai |
+|---|---|
+| Barras de título, cabeçalhos e linha do Total | fundo `393939`, letra branca em negrito |
+| Diretos | `AB99D5` (lilás) — na fatia, na série e na célula da tabela |
+| Indiretos | `193A62` (azul-escuro) — rótulo da barra em branco |
+| Serviços | `8EACC3` (azul-acinzentado) |
+| Grade das tabelas | fina, `D0D0D0` |
+| Moldura e linhas de grade dos gráficos | fina, `898989`, **canto reto** |
+| Rótulo da pizza | quantidade e proporção, fora da fatia: `10 7%` |
+| Rótulo das barras | no meio da faixa; `R$ 147.386` nas unidades, a quantidade nos guardiões; **zero não é escrito** |
+| Eixo do gráfico de guardiões | invertido: o maior no alto, a escala em cima |
+| Legenda | à direita na pizza, embaixo nas barras |
+
+Quando o `Gestor` só repete o `Guardião` — é o caso de `Guardião não
+encontrado`, que o relatório escreve nas duas colunas — as duas células viram
+uma só no TOP N, e linhas seguidas com o mesmo guardião viram um bloco. É o
+que o print mostra.
+
+Duas armadilhas do openpyxl, contornadas no código e com teste: ele grava o
+separador do rótulo como atributo (`<separator val=" "/>`), que o Excel não
+lê, e grava o formato do rótulo sem `sourceLinked="0"` — aí o rótulo herda o
+formato da célula, sai `233122,19` e o zero aparece. E sem `delete = False`
+os eixos não aparecem: foi por isso que o gráfico de unidades saía sem o nome
+das unidades.
 
 ## De onde sai cada número
 
@@ -63,6 +98,11 @@ da barra empilhada. Ficaram como estão.
 | valor | `Valor da Nota` | `Valor NFSe (Valor Bruto)` |
 | emissão | `Dh. Emissão` | `Emissao` |
 | unidade | trecho do `Nome Fantasia` | trecho da `Filial` |
+
+O nome do parceiro passa por um reparo **só no painel**: entidade de HTML
+crua vira o caractere. `[FATO]` Na semana 39 o relatório de serviços trouxe
+`CUSHMAN amp; WAKEFIELD` — o `&amp;` perdeu o `&` num sistema de origem. A aba
+`Servicos` continua como veio; o painel mostra `CUSHMAN & WAKEFIELD`.
 
 ### O que o painel não conta
 
@@ -151,13 +191,20 @@ de unidades da ferramenta, com a ordem que ela já exige (`CORUMB` antes de
 Tabela vazia — que é como ela nasce, porque nome de unidade é dado da empresa
 — **não** inventa unidade: o bloco sai vazio, o gráfico não é desenhado e a
 tela manda cadastrar em `⚙ Parâmetros das pendentes`. Unidade cadastrada sem
-pendência aparece **zerada**, porque zero é uma resposta.
+pendência aparece **zerada** na conta e na aba auxiliar, porque zero é uma
+resposta — mas **não** no gráfico (desde 28/09/2026): com onze unidades
+cadastradas e quatro com pendência, eram sete colunas vazias ocupando o
+gráfico. O gráfico lê o bloco `AI:AL`, que só tem as unidades com pendência.
 
-### 4. O "destacar acima de" passa a fazer alguma coisa
+### 4. O "destacar acima de" saiu
 
 No arquivo de origem ele é um número escrito num canto, e nada acontece com
-ele. Aqui ele pinta a célula de dias das notas acima do limite. Um controle
-que não controla nada é pior que não existir: quem lê supõe que existe regra.
+ele. De 22/09 a 28/09/2026 ele pintou de rosa a célula de dias acima do
+limite; saiu porque o painel passou a seguir o print da semana 38, que não
+pinta nada — e no TOP de tempo pendente, que já são as mais antigas, a
+pintura marcava as cinco linhas. Sem pintura, o controle não controlaria nada,
+e por isso saiu também da tela de parâmetros. Uma base que ainda tenha
+`destacar_acima_de_dias` gravado não quebra: a chave é ignorada.
 
 ## O que bloqueia
 
@@ -181,7 +228,6 @@ tela de quem lê o painel na segunda-feira.
 |---|---|---|
 | `linhas_do_top` | 5 | quantas notas cada TOP mostra |
 | `guardioes_no_grafico` | 8 | quantas barras o gráfico de guardião mostra |
-| `destacar_acima_de_dias` | 10 | acima disso, a célula de dias sai marcada |
 | `guardioes_fora_do_ranking` | `[]` | quem não entra no ranking do gráfico |
 
 `guardioes_fora_do_ranking` nasce vazia porque nome de área é dado da empresa.
@@ -197,7 +243,8 @@ não sair da semana.
   `36`, `37`, `38`), as médias por quinzena e os dois campos de texto de
   atenções e pontos positivos. Ela depende de histórico entre semanas — que é
   exatamente o que o snapshot semanal guarda — e é a próxima rodada natural;
-* **área de impressão e cor por série.** O painel sai com a paleta padrão do
-  Excel. Perseguir a paleta é o único bloco cujo esforço cresce sem limite
-  claro, e não tem teste automático: nenhuma asserção diz "este gráfico está
-  bonito".
+* **área de impressão.** A cor por série entrou em 28/09/2026, medida no
+  print (ver *O desenho*); a área de impressão continua de fora. O que os
+  testes garantem do desenho é o verificável — cor de cada série e célula,
+  canto reto, âncora que não cobre a tabela, eixo visível —, não que o
+  gráfico esteja bonito.

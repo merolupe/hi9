@@ -99,7 +99,11 @@ class Execucao:
                 "a tabela de unidades está vazia: o gráfico por unidade não "
                 "foi desenhado. Cadastre as unidades em '⚙ Parâmetros das "
                 "pendentes', no alto desta tela.")
-        elif self.unidades_nao_reconhecidas:
+        elif self.painel is not None and not self.painel.unidades_do_grafico:
+            itens.append(
+                "nenhuma unidade cadastrada tem pendência nesta semana: o "
+                "gráfico por unidade não foi desenhado")
+        if self.unidades_cadastradas and self.unidades_nao_reconhecidas:
             mostradas = ", ".join(self.unidades_nao_reconhecidas[:3])
             itens.append(
                 f"{len(self.unidades_nao_reconhecidas)} nome(s) fantasia ou "
@@ -251,10 +255,8 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         unidades_nao_reconhecidas=nao_reconhecidas,
     )
 
-    execucao.planilha = _gravar(
-        arquivos, Path(saida), quadro, semana,
-        destacar_acima_de=ajustes["destacar_acima_de_dias"],
-        avisos=execucao.avisos)
+    execucao.planilha = _gravar(arquivos, Path(saida), quadro, semana,
+                                avisos=execucao.avisos)
     return execucao
 
 
@@ -295,7 +297,7 @@ def _base(arquivos: Iterable[Path | str]) -> Path | None:
 
 def _gravar(arquivos: Iterable[Path | str], saida: Path,
             quadro: agregacao.Painel, semana: int, *,
-            destacar_acima_de: int, avisos: list[str]) -> Path:
+            avisos: list[str]) -> Path:
     """Reabre o relatório, troca as duas abas do painel e grava ao lado."""
     import openpyxl
 
@@ -319,8 +321,7 @@ def _gravar(arquivos: Iterable[Path | str], saida: Path,
             if nome in livro.sheetnames:
                 del livro[nome]
 
-    aba = desenho.escrever_painel(livro, quadro,
-                                  destacar_acima_de=destacar_acima_de)
+    aba = desenho.escrever_painel(livro, quadro, semana=semana)
     auxiliar = desenho.escrever_auxiliar(livro, quadro)
     desenho.desenhar(aba, auxiliar, quadro)
     livro.save(str(destino))

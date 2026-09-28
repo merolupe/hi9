@@ -140,7 +140,6 @@ excecoes_servicos: []
 resumo:
   linhas_do_top: 5                # quantas notas cada TOP mostra
   guardioes_no_grafico: 8         # quantas barras o gráfico de guardião mostra
-  destacar_acima_de_dias: 10      # acima disso, a célula de dias sai marcada
   # Guardiões que não entram no ranking do gráfico. Nome de área é dado da
   # empresa, então a lista nasce vazia — cadastrada pela tela.
   guardioes_fora_do_ranking: []

@@ -188,8 +188,6 @@ def secoes() -> list[dict[str, Any]]:
                        "Quantas notas cada TOP mostra.", "numero"),
                 _campo("guardioes_no_grafico", "Guardiões no gráfico", 16,
                        "Quantas barras o gráfico de guardião mostra.", "numero"),
-                _campo("destacar_acima_de_dias", "Destacar acima de (dias)", 18,
-                       "A célula de dias sai marcada acima disso.", "numero"),
                 _campo("guardioes_fora_do_ranking", "Fora do ranking", 30,
                        "Guardiões que não entram no gráfico, separados por "
                        "ponto e vírgula."),
@@ -290,7 +288,6 @@ def ler(dados: dict[str, Any] | None = None) -> dict[str, list[dict]]:
         "resumo": [{
             "linhas_do_top": _numero(resumo.get("linhas_do_top")),
             "guardioes_no_grafico": _numero(resumo.get("guardioes_no_grafico")),
-            "destacar_acima_de_dias": _numero(resumo.get("destacar_acima_de_dias")),
             "guardioes_fora_do_ranking":
                 _junta(resumo.get("guardioes_fora_do_ranking")),
         }],
@@ -512,9 +509,6 @@ def montar(tela: dict[str, Any], atual: dict[str, Any]
         "guardioes_no_grafico": _num(linha.get("guardioes_no_grafico"), relato,
                                      onde, "Guardiões no gráfico",
                                      inteiro=True, minimo=1),
-        "destacar_acima_de_dias": _num(linha.get("destacar_acima_de_dias"),
-                                       relato, onde, "Destacar acima de",
-                                       inteiro=True, minimo=0),
         "guardioes_fora_do_ranking": [
             g.strip() for g in str(linha.get("guardioes_fora_do_ranking") or ""
                                    ).split(";") if g.strip()],

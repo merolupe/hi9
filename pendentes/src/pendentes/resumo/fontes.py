@@ -28,6 +28,8 @@ sobre `Filial` do outro. É o de-para por trecho que a ferramenta já tem —
 """
 from __future__ import annotations
 
+import html
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -119,6 +121,22 @@ class Leitura:
             self.abas = []
 
 
+#: `&amp;` que perdeu o `&` no caminho: `CUSHMAN amp; WAKEFIELD`. O nome do
+#: prestador chega assim do relatório de serviços — é a entidade de XML
+#: escapada duas vezes em algum sistema de origem.
+_ENTIDADE_ORFA = re.compile(r"(?<![&\w])amp;")
+
+
+def _parceiro(valor: Any) -> str:
+    """O nome do parceiro como o painel mostra: sem entidade de HTML crua.
+
+    Só a exibição muda. O painel é o que vai para a diretoria, e
+    `CUSHMAN amp; WAKEFIELD` ali é ruído; a aba de origem fica como veio.
+    """
+    texto = _ENTIDADE_ORFA.sub("&", aparar(valor))
+    return aparar(html.unescape(texto))
+
+
 def _data(valor: Any) -> date | None:
     """A data de emissão, com a hora descartada — é o `INT()` do original."""
     convertida = data_br(valor)
@@ -162,7 +180,7 @@ def ler_mercadorias(aba: Aba, linha_do_cabecalho: int, unidade_de,
             categoria=aparar(mapa.valor(linha, merc.C_CATEGORIA)),
             guardiao=aparar(mapa.valor(linha, merc.C_GUARDIAO)),
             gestor=aparar(mapa.valor(linha, merc.C_GESTOR)),
-            parceiro=aparar(mapa.valor(linha, merc.X_NOME_PARCEIRO)),
+            parceiro=_parceiro(mapa.valor(linha, merc.X_NOME_PARCEIRO)),
             valor=numero_br(mapa.valor(linha, merc.X_VALOR)),
             emissao=_data(mapa.valor(linha, merc.X_EMISSAO)),
             unidade=unidade_de(mapa.valor(linha, merc.X_NOME_FANTASIA)),
@@ -205,7 +223,7 @@ def ler_servicos(aba: Aba, linha_do_cabecalho: int, unidade_de,
             categoria=col.CATEGORIA_DE_SERVICOS,
             guardiao=aparar(mapa.valor(linha, S_GUARDIAO)),
             gestor=aparar(mapa.valor(linha, S_GESTOR)),
-            parceiro=aparar(mapa.valor(linha, S_PARCEIRO)),
+            parceiro=_parceiro(mapa.valor(linha, S_PARCEIRO)),
             valor=numero_br(mapa.valor(linha, S_VALOR)),
             emissao=_data(mapa.valor(linha, S_EMISSAO)),
             unidade=unidade_de(mapa.valor(linha, S_FILIAL)),

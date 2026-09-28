@@ -39,7 +39,8 @@ CATEGORIA_DE_SERVICOS = SERVICOS
 
 # -- os títulos, como estão no arquivo de origem ---------------------------
 
-TITULO = "Resumo executivo"
+#: `{semana}` recebe o número da semana, como no painel da semana 38.
+TITULO = "Notas Pendentes de Entrada - SEMANA {semana}"
 TITULO_DA_PIZZA = ("Proporção de notas pendentes por categoria "
                    "(Indiretos, Diretos e Serviços)")
 TITULO_DAS_UNIDADES = "Valor de pendências por Unidade (Total)"
@@ -47,7 +48,6 @@ TITULO_DOS_GUARDIOES = "Quantidade de pendências por Guardião (Total)"
 TITULO_DO_TOP_DIAS = "Notas de maior tempo pendente"
 TITULO_DO_TOP_VALOR = "Notas de maior valor pendente"
 ROTULO_DA_REFERENCIA = "Data de referência:"
-ROTULO_DO_DESTAQUE = "Destacar acima de (dias):"
 
 #: O cabeçalho da tabela por categoria.
 TABELA_DE_CATEGORIAS = ("Categoria", "Quantidade", "Valor", "Média dias pendente")
@@ -69,11 +69,20 @@ FORMATO_DE_DATA = "DD/MM/YYYY"
 
 COLUNA_DA_ESQUERDA = 2          # B — a coluna do título e da tabela
 COLUNA_DA_DIREITA = 7           # G — a coluna dos dois TOP N
+#: Quantas colunas cada lado ocupa: B:E à esquerda, G:M à direita. As barras
+#: de título e os gráficos têm exatamente essa largura — é o que alinha a
+#: borda do gráfico com a borda da tabela de cima.
+LARGURA_DA_ESQUERDA = 4
+LARGURA_DA_DIREITA = 7
 COLUNA_DOS_AJUSTES = 19         # S — os dois rótulos do canto direito
 LINHA_DO_TITULO = 2
 LINHA_DA_PIZZA = 3              # o título; o gráfico entra na linha seguinte
 LINHA_DA_TABELA = 12            # o cabeçalho; os dados vêm depois
 LINHA_DOS_GRAFICOS_DE_BAIXO = 18
+#: A primeira linha **depois** dos gráficos de baixo. O gráfico é preso às
+#: células (canto a canto), e não medido em centímetro: é isso que impede a
+#: pizza de cobrir a tabela quando a largura de coluna muda.
+LINHA_DO_FIM_DOS_GRAFICOS = 36
 LINHA_DO_TOP_DIAS = 2           # o título; cabeçalho em +1, dados em +2
 LINHA_DO_TOP_VALOR = 10
 
@@ -93,6 +102,7 @@ BLOCO_DA_CONTAGEM_POR_UNIDADE = 4   # D:G — unidade × as três categorias
 BLOCO_DO_VALOR_POR_UNIDADE = 8      # H:K — unidade × as três categorias
 BLOCO_DOS_GUARDIOES = 12        # L:O — guardião × as três categorias
 BLOCO_DO_GRAFICO_DE_GUARDIOES = 30  # AD:AG — só os que entram no gráfico
+BLOCO_DO_GRAFICO_DE_UNIDADES = 35   # AI:AL — só as unidades com pendência
 CABECALHO_DA_UNIDADE = "Unidade"
 CABECALHO_DO_GUARDIAO = "Guardião"
 CABECALHO_DA_QUANTIDADE = "Quantidade"
