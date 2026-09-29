@@ -86,7 +86,7 @@ def calcular(tratada: LinhaTratada, params: Parametros) -> ResultadoEstorno:
             debito=icms, regime=nome_regime, regra="saída — débito de ICMS"
         )
 
-    indevido = _credito_indevido(tratada, regime)
+    indevido = _credito_indevido(tratada, regime, params)
     if indevido is not None:
         return ResultadoEstorno(
             credito_bruto=icms,
@@ -189,9 +189,14 @@ def _aplicar(
     )
 
 
-def _credito_indevido(tratada: LinhaTratada, regime: dict[str, Any]) -> str | None:
-    """Devolve o motivo se o crédito da linha não puder ser apropriado."""
-    for item in regime.get("creditos_indevidos") or []:
+def _credito_indevido(tratada: LinhaTratada, regime: dict[str, Any],
+                      params: Parametros) -> str | None:
+    """Devolve o motivo se o crédito da linha não puder ser apropriado.
+
+    Valem os do regime da filial e os de `regimes.yaml` que valem para todos.
+    """
+    gerais = params.regimes.get("creditos_indevidos") or []
+    for item in (regime.get("creditos_indevidos") or []) + gerais:
         if tratada.origem.cfop_int in set(item.get("cfop") or []):
             pendente = "" if item.get("homologado", True) else " (regra não homologada)"
             motivo = " ".join(str(item.get("motivo", "")).split())
