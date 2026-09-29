@@ -349,3 +349,22 @@ Aplicá-la para trás mudaria o que julho já declarou:
 
 **Respondido em 03/09/2026: julho NÃO é retificado.** Fica como foi declarado, e
 a vigência da regra permanece em `regimes.yaml`.
+
+## 18. 🟡 Amostra grátis — alguma entra na produção?
+
+A primeira amostra grátis apareceu em 08/2026: CFOP 1911, produto 401002431,
+"amostra grátis fertilizante sólido", com ICMS destacado. Caiu em `SEM REGRA`
+porque nem o prefixo 4 do produto nem o CFOP 1911 tinham regra.
+
+**Padrão assumido (29/09/2026):** toda entrada de amostra grátis (1911 e 2911)
+é **crédito indevido** — ver `04-matriz-de-regras-icms.md`, item 5.1.1. A
+amostra, por definição, serve para dar a conhecer a mercadoria e não pode ser
+vendida; na fábrica, o destino esperado é laboratório, teste de campo ou
+avaliação de fornecedor — uso e consumo.
+
+**Pergunta:** alguma amostra é usada como insumo, misturada ao que se produz
+e vende? Se sim, ela deixa de ser amostra na prática, e o crédito segue a
+matéria-prima (mantém em SP, estorno proporcional em MS). Nesse caso o
+caminho certo é o fornecedor emitir a nota como venda ou bonificação, não
+como amostra; enquanto isso não acontece, a exceção vai por produto em
+`produtos.yaml`, e não pelo CFOP.

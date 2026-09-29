@@ -35,7 +35,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.24 | 09/09/2026 | A janela ganha a identidade da Hinove e conta o que está fazendo enquanto apura |
 | 0.1.25 | 09/09/2026 | A marca no tamanho do mockup, o slogan e a abertura sem rodapé |
 | 0.1.26 | 29/09/2026 | Abas AJUSTES A LANÇAR (roteiro do Sankhya) e REGISTRO 1200 (crédito transferido de Rio Brilhante) |
-| **0.1.27** | **29/09/2026** | **Botão Registro em PDF: o Registro de Apuração no desenho do Sankhya, salvo em PDF pelo navegador** |
+| 0.1.27 | 29/09/2026 | Botão Registro em PDF: o Registro de Apuração no desenho do Sankhya, salvo em PDF pelo navegador |
+| **0.1.28** | **29/09/2026** | **Amostra grátis (CFOP 1911/2911) deixa de cair em SEM REGRA: vai para crédito indevido em todo regime** |
 
 ## 0.1.19 — o que mudou, em detalhe
 
