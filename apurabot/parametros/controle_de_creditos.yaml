@@ -1,0 +1,47 @@
+# Controle de créditos fiscais — Registros 1200 e 1210 da EFD ICMS/IPI.
+#
+# O crédito que Rio Brilhante recebe por transferência (NF-e da ADECOAGRO,
+# CFOP 1601, art. 68 do RICMS/MS) não entra todo no mês: vira um estoque, e a
+# apuração usa dele o que decidir. A EFD declara esse estoque como conta
+# corrente no Registro 1200, e cada uso no 1210:
+#
+#   1200  COD_AJ_APUR | SLD_CRED | CRÉD_APR | CRÉD_RECEB | CRÉD_UTIL | SLD_CRED_FIM
+#   1210  TIPO_UTIL | NR_DOC | VL_CRED_UTIL | CHV_DOCe
+#
+#   saldo inicial + apropriado + recebido − utilizado = saldo final
+#
+# De onde vem cada campo:
+#
+#   saldo inicial  declarado por competência em `saldos.yaml`, bloco
+#                  `creditos_controlados` — é o saldo final do mês anterior;
+#   apropriado     zero: o crédito não nasce aqui, chega por transferência;
+#   recebido       as notas do Livro Fiscal do estabelecimento com o CFOP de
+#                  `recebimento` — o valor sai da coluna `campo_do_valor`;
+#   utilizado      o ajuste DECLARADO na linha 006 com a observação padrão de
+#                  `utilizacao` (no Sankhya, 87 — "crédito recebido em
+#                  transferência, art. 68"). Quanto usar é decisão do fiscal,
+#                  não conta da ferramenta.
+#
+# Fonte: EFD de Rio Brilhante de 01 a 07/2026 (planilha "SPED Jan-Jul 2026
+# Consolidado") e o relatório de Ajuste de Apuração do Sankhya de 08/2026.
+# Decisão pendente nº 15 em docs/apurabot/06-decisoes-pendentes.md.
+#
+# RASCUNHO — pendente de homologação da Gerência Fiscal/Tributária.
+
+controles:
+
+  - empresa: 2                          # HINOVE (RIO BRILHANTE)
+    cod_aj_apur: MS090004
+    descricao: >-
+      Apropriação de crédito outorgado com o fim de abatimento de débitos —
+      crédito recebido por transferência, art. 68 do RICMS/MS
+    tipo_util: MS03
+    recebimento:
+      cfop: [1601]
+      # A NF-e traz desconto: em 07/2026, documento de 57.702,40 e mercadorias
+      # de 62.720,00 — e o crédito é 62.720,00. Conferir na primeira rodada se
+      # o "Vlr. contábil" do Livro vem com o valor do crédito.
+      campo_do_valor: valor_contabil
+    utilizacao:
+      observacao_padrao: 87
+    vigencia_inicio: 2026-01-01

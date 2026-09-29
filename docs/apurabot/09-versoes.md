@@ -33,7 +33,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.22 | 03/09/2026 | A centralização passa a lançar as duas pontas: quem transfere zera o próprio Registro |
 | 0.1.23 | 03/09/2026 | O saldo mostrado passa a ser o final, o mesmo do Registro, em todo lugar |
 | 0.1.24 | 09/09/2026 | A janela ganha a identidade da Hinove e conta o que está fazendo enquanto apura |
-| **0.1.25** | **09/09/2026** | **A marca no tamanho do mockup, o slogan e a abertura sem rodapé** |
+| 0.1.25 | 09/09/2026 | A marca no tamanho do mockup, o slogan e a abertura sem rodapé |
+| **0.1.26** | **29/09/2026** | **Abas AJUSTES A LANÇAR (roteiro do Sankhya) e REGISTRO 1200 (crédito transferido de Rio Brilhante)** |
 
 ## 0.1.19 — o que mudou, em detalhe
 

@@ -13,7 +13,8 @@ from openpyxl.utils import get_column_letter
 
 from . import __version__
 from .apuracao import Apuracao, apurar
-from .conferencia import aba_apuracao_efetiva, aba_registro, aba_transferencias
+from .conferencia import (aba_apuracao_efetiva, aba_lancamentos, aba_registro,
+                          aba_registro_1200, aba_transferencias)
 from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
 from .nucleo.atividade import ORDEM as ATIVIDADES_EM_ORDEM
 from .base_tratada import BaseTratada
@@ -503,7 +504,7 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
     from .ajustes import ABA, TITULO_CONFERENCIA, TITULO_PARCELAS
 
     aba = wb.create_sheet(ABA)
-    for coluna, largura in zip("ABCDEFG", (32, 22, 10, 16, 52, 22, 22)):
+    for coluna, largura in zip("ABCDEFGH", (32, 22, 10, 16, 52, 22, 22, 18)):
         aba.column_dimensions[coluna].width = largura
 
     aba.append([f"AJUSTES DA APURAÇÃO — competência {apuracao.competencia}"])
@@ -516,6 +517,9 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
         "discussão, por exemplo): não muda a apuração e sai no relatório.",
         "Ajuste que pertence a uma nota vai na linha dela, na aba BASE "
         "TRATADA — aqui só o que não tem documento.",
+        "A `observação padrão` é o código com que o ajuste entra no Sankhya "
+        "(parametros/lancamentos_sankhya.yaml). Opcional: sem ela o ajuste "
+        "vale igual, e sai sem código na aba AJUSTES A LANÇAR.",
     ):
         aba.append(["", texto])
 
@@ -523,7 +527,7 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
     aba.append([TITULO_PARCELAS])
     aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
     aba.append(["estabelecimento", "atividade", "linha", "valor", "motivo",
-                "responsável", "aprovador"])
+                "responsável", "aprovador", "observação padrão"])
     for celula in aba[aba.max_row]:
         celula.font, celula.fill = TITULO, FUNDO
     primeira = aba.max_row + 1
@@ -534,6 +538,7 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
             ajuste.estabelecimento, ajuste.atividade,
             "ANOTAR" if ajuste.anotacao else f"{ajuste.linha:03d}",
             ajuste.valor, ajuste.motivo, ajuste.responsavel, ajuste.aprovador,
+            ajuste.observacao_padrao or None,
         ])
     for _ in range(12):                 # espaço para escrever
         aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
@@ -564,7 +569,8 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
 
 #: Ordem de leitura das abas — da conclusão para o detalhe.
 ORDEM_DAS_ABAS = [
-    "RESUMO", "REGISTRO", "AJUSTES", "APURAÇÃO EFETIVA", "APURAÇÃO POR FILIAL",
+    "RESUMO", "REGISTRO", "AJUSTES A LANÇAR", "REGISTRO 1200", "AJUSTES",
+    "APURAÇÃO EFETIVA", "APURAÇÃO POR FILIAL",
     "TRANSFERÊNCIAS", "PENDÊNCIAS", "POR ESTABELECIMENTO E CARGA", "BASE TRATADA",
 ]
 
@@ -592,7 +598,9 @@ def escrever(
     _aba_por_carga(wb, base)
     _aba_apuracao(wb, apuracao)
     aba_apuracao_efetiva(wb, apuracao, base.parametros)
-    aba_registro(wb, apuracao, base.parametros, ajustes)
+    registros = aba_registro(wb, apuracao, base.parametros, ajustes)
+    aba_lancamentos(wb, apuracao, base.parametros, registros, ajustes)
+    aba_registro_1200(wb, apuracao, base.parametros, ajustes)
     _aba_ajustes(wb, apuracao)
     aba_transferencias(wb, apuracao)
     _aba_resumo(wb, base)
