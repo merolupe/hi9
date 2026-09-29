@@ -250,7 +250,7 @@ saldo credor, então a hipótese não foi testada contra documento.
 
 **Padrão assumido:** fica fora do cálculo e abate só a dedução.
 
-## 15. 🟡 Crédito outorgado de MS — o controle não está na ferramenta
+## 15. 🟡 Crédito outorgado de MS — o controle entrou; falta a base dos 30%
 
 O benefício de Rio Brilhante tem um **estoque** de crédito outorgado, controlado
 à parte pelo time fiscal sob o código de ajuste **MS090004** — "Apropriação de
@@ -283,9 +283,27 @@ dos 30% contra julho leva a conclusão errada.
    ganhar um bloco próprio, com o utilizado saindo calculado — é a linha 012 do
    Registro, limitada ao que o estoque tem.
 
-**Padrão assumido:** nenhum. O crédito outorgado entra hoje como ajuste
-declarado na aba `AJUSTES`, com o valor que o time fiscal informar. A ferramenta
-não controla o estoque nem confere se o utilizado cabe nele.
+**Onde o estoque mora — resolvido em 29/09/2026 (versão 0.1.26).** O controle
+é o Registro 1200 da EFD de Rio Brilhante (`MS090004`, uso `MS03` no 1210), e
+a ferramenta passou a montá-lo na aba `REGISTRO 1200`:
+
+| Campo | De onde vem |
+|---|---|
+| SLD_CRED | `saldos.yaml`, bloco `creditos_controlados` — 86.091,65 em 08/2026 |
+| CRÉD_RECEB | a NF-e de CFOP 1601 do Livro do mês |
+| CRÉD_UTIL | o ajuste declarado na linha 006 com a observação padrão 87 do Sankhya |
+| SLD_CRED_FIM | a conta; negativo sai pendente |
+
+O resumo da EFD de 01 a 07/2026 foi dado por certo como está — as
+inconsistências de março, junho e julho serão retificadas.
+
+**Padrão assumido:** quanto usar continua sendo decisão do time fiscal, e entra
+declarado. A ferramenta fecha a conta e acusa o uso acima do estoque.
+
+**Ainda em aberto:** o item 1 acima (a base dos 30%), e conferir na primeira
+rodada se o `Vlr. contábil` da NF-e de recebimento no Livro traz o valor do
+crédito (62.720,00) ou o do documento, líquido do desconto (57.702,40). A
+coluna lida é parâmetro (`controle_de_creditos.yaml`, `campo_do_valor`).
 
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 

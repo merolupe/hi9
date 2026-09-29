@@ -42,7 +42,7 @@ from ..erros import FALTA_DE_PARAMETRO, ONDE_CADASTRAR
 from ..nucleo import registro as reg
 from ..saida import escrever
 from .. import serie as ser
-from . import painel
+from . import impressao, painel
 
 PAGINA = Path(__file__).resolve().parent / "pagina.html"
 
@@ -61,6 +61,8 @@ class Sessao:
         self.chave = secrets.token_urlsafe(24)
         self.pasta = Path(tempfile.mkdtemp(prefix="apurabot-"))
         self.planilha: Path | None = None
+        #: O Registro como página de impressão — ver `impressao.py`.
+        self.impressao: Path | None = None
         self.encerrar = threading.Event()
 
     def limpar(self) -> None:
@@ -106,6 +108,10 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
             if not self._autorizado(rota):
                 return
             self._baixar()
+        elif rota.path == "/imprimir":
+            if not self._autorizado(rota):
+                return
+            self._imprimir()
         elif rota.path == "/encerrar":
             if not self._autorizado(rota):
                 return
@@ -227,6 +233,11 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
         escrever(base, planilha, apuracao)
         self.sessao.planilha = planilha
 
+        pagina = self.sessao.pasta / f"Registro_{base.competencia}.html"
+        pagina.write_text(impressao.montar(registros, base.parametros),
+                          encoding="utf-8")
+        self.sessao.impressao = pagina
+
         dados = painel.montar(base, apuracao, registros)
         dados["arquivo"] = nome_original
         dados["planilha"] = planilha.name
@@ -249,6 +260,13 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(corpo)))
         self.end_headers()
         self.wfile.write(corpo)
+
+    def _imprimir(self) -> None:
+        pagina = self.sessao.impressao
+        if pagina is None or not pagina.is_file():
+            self._enviar(404, "text/plain; charset=utf-8", b"nada gerado ainda")
+            return
+        self._enviar(200, "text/html; charset=utf-8", pagina.read_bytes())
 
     # -- resposta ----------------------------------------------------------
 

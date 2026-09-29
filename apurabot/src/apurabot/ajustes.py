@@ -71,6 +71,9 @@ class Ajuste:
     atividade: str = ""
     #: Onde ele foi informado, para a memória de cálculo.
     onde: str = ""
+    #: O código de "Observação padrão" com que ele entra no Sankhya. Opcional:
+    #: sem ele o ajuste vale igual, só sai sem código na aba AJUSTES A LANÇAR.
+    observacao_padrao: str = ""
 
     @property
     def anotacao(self) -> bool:
@@ -160,6 +163,7 @@ def montar(
     aprovador: Any,
     atividade: Any = None,
     onde: str = "",
+    observacao_padrao: Any = None,
 ) -> Ajuste | None:
     """Valida um ajuste informado e o devolve pronto, ou levanta.
 
@@ -173,6 +177,7 @@ def montar(
     if informada is None and numero is None and not motivo:
         return None
     atividade = _atividade(atividade)
+    observacao_padrao = _texto(observacao_padrao)
 
     if informada is None:
         raise AjusteInvalido(
@@ -192,7 +197,7 @@ def montar(
         return Ajuste(
             estabelecimento=estabelecimento, linha=None, valor=numero or 0.0,
             motivo=motivo, responsavel=responsavel, aprovador=aprovador,
-            atividade=atividade, onde=onde,
+            atividade=atividade, onde=onde, observacao_padrao=observacao_padrao,
         )
 
     if numero is None:
@@ -213,7 +218,7 @@ def montar(
     return Ajuste(
         estabelecimento=estabelecimento, linha=int(informada), valor=numero,
         motivo=motivo, responsavel=responsavel, aprovador=aprovador,
-        atividade=atividade, onde=onde,
+        atividade=atividade, onde=onde, observacao_padrao=observacao_padrao,
     )
 
 
@@ -274,7 +279,7 @@ def _interpretar(linhas: list[list[Any]]) -> Declarados:
     declarados = Declarados()
     bloco = ""
     for n, bruta in enumerate(linhas, start=1):
-        celulas = list(bruta) + [None] * (7 - len(bruta))
+        celulas = list(bruta) + [None] * (8 - len(bruta))
         primeira = _texto(celulas[0])
         if primeira.upper() == TITULO_PARCELAS:
             bloco = TITULO_PARCELAS
@@ -291,6 +296,7 @@ def _interpretar(linhas: list[list[Any]]) -> Declarados:
                     estabelecimento=primeira, atividade=celulas[1],
                     linha=celulas[2], valor=celulas[3], motivo=celulas[4],
                     responsavel=celulas[5], aprovador=celulas[6],
+                    observacao_padrao=celulas[7],
                     onde=f"aba {ABA}, linha {n}",
                 )
             except AjusteInvalido as erro:

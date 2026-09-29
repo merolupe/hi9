@@ -5,7 +5,7 @@ Este módulo só lê e valida — não interpreta.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +14,10 @@ import yaml
 PASTA_PADRAO = Path(__file__).resolve().parents[2] / "parametros"
 
 ARQUIVOS = ("filiais", "regimes", "cargas", "classificacao", "produtos", "saldos")
+
+#: Lidos quando existem. Sem eles a apuração fecha igual — o que falta é só o
+#: que o arquivo acrescenta, e isso sai marcado onde for usado.
+OPCIONAIS = ("lancamentos_sankhya", "controle_de_creditos")
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,10 @@ class Parametros:
     produtos: dict[str, Any]
     saldos: dict[str, Any]
     pasta: Path
+    #: Observação padrão do Sankhya de cada ajuste — ver `lancamentos.py`.
+    lancamentos_sankhya: dict[str, Any] = field(default_factory=dict)
+    #: Registros 1200/1210 — ver `controle_de_creditos.py`.
+    controle_de_creditos: dict[str, Any] = field(default_factory=dict)
 
     # -- atalhos usados pelo núcleo ------------------------------------
 
@@ -81,9 +89,26 @@ class Parametros:
             return {int(k): float(v) for k, v in declarados.items()}
         return None
 
+    def saldo_do_controle(self, competencia: str, empresa: int,
+                          codigo: str) -> float | None:
+        """Saldo inicial de um crédito controlado (SLD_CRED do 1200).
+
+        `None` quando a competência não o declara — diferente de zero, pelo
+        mesmo motivo do saldo credor: ninguém disse quanto havia.
+        """
+        for item in self.saldos.get("creditos_controlados") or []:
+            if str(item.get("competencia") or "") != competencia:
+                continue
+            por_codigo = (item.get("por_estabelecimento") or {}).get(empresa)
+            if por_codigo is None:
+                por_codigo = (item.get("por_estabelecimento") or {}).get(str(empresa))
+            valor = (por_codigo or {}).get(codigo)
+            return None if valor is None else float(valor)
+        return None
+
 
 def carregar(pasta: Path | str | None = None) -> Parametros:
-    """Lê os cinco arquivos de parâmetros de `pasta`."""
+    """Lê os arquivos de parâmetros de `pasta` — os obrigatórios e os opcionais."""
     pasta = Path(pasta) if pasta else PASTA_PADRAO
     if not pasta.is_dir():
         raise FileNotFoundError(f"pasta de parâmetros não encontrada: {pasta}")
@@ -94,5 +119,9 @@ def carregar(pasta: Path | str | None = None) -> Parametros:
         if not caminho.is_file():
             raise FileNotFoundError(f"parâmetro obrigatório ausente: {caminho}")
         conteudo[nome] = yaml.safe_load(caminho.read_text(encoding="utf-8")) or {}
+    for nome in OPCIONAIS:
+        caminho = pasta / f"{nome}.yaml"
+        if caminho.is_file():
+            conteudo[nome] = yaml.safe_load(caminho.read_text(encoding="utf-8")) or {}
 
     return Parametros(pasta=pasta, **conteudo)

@@ -59,3 +59,27 @@ saldos_credores:
     por_estabelecimento:
       11: 2215164.28          # HINOVE (FILIAL GUARÁ)
       7: 341004.37            # HINOVE (LONDRINA)
+
+# ---------------------------------------------------------------------------
+# Saldo inicial dos créditos controlados — Registro 1200 da EFD (SLD_CRED).
+# ---------------------------------------------------------------------------
+# O estoque de crédito recebido por transferência de Rio Brilhante atravessa a
+# competência como o saldo credor, e por isso também é declarado aqui. O valor
+# é o SLD_CRED_FIM do 1200 do mês anterior; a planilha entrega o do mês
+# seguinte pronto na aba REGISTRO 1200. O que é cada campo está em
+# `controle_de_creditos.yaml`.
+#
+# Competência ausente deste bloco não é saldo zero: o 1200 sai marcado, com o
+# saldo inicial em aberto (regra 4 do repositório).
+
+creditos_controlados:
+
+  - competencia: "2026-08"
+    homologado: true
+    origem: >
+      SLD_CRED_FIM do Registro 1200 de Rio Brilhante de 07/2026, já com a
+      retificação de julho: 91.845,01 + 62.720,00 − 68.473,36 = 86.091,65.
+      Planilha "SPED Jan-Jul 2026 Consolidado", aba Resumo.
+    por_estabelecimento:
+      2:                      # HINOVE (RIO BRILHANTE)
+        MS090004: 86091.65

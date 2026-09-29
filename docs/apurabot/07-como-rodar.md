@@ -70,7 +70,13 @@ Na página:
 3. o resultado aparece na tela — apuração por estabelecimento, Registro de
    Apuração, transferências a emitir, memória do benefício e as pendências, se
    houver;
-4. **Baixar a planilha** salva o `.xlsx` completo em Downloads.
+4. **Baixar a planilha** salva o `.xlsx` completo em Downloads;
+5. **Registro em PDF** abre o Registro de Apuração numa aba nova, no desenho do
+   PDF que o Sankhya emite — por estabelecimento, uma folha de entradas e
+   saídas por CFOP e uma do resumo. A janela de impressão abre sozinha: escolha
+   o destino **Salvar como PDF**. No alto da página dá para imprimir um
+   estabelecimento só. O PDF é gerado pelo próprio navegador (Edge ou Chrome),
+   sem instalar nada.
 
 Para fechar: feche a janela preta que abriu junto, ou tecle Ctrl+C nela. A pasta temporária com o arquivo enviado é apagada no encerramento — nada do Livro Fiscal fica na máquina.
 
@@ -120,6 +126,8 @@ Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
 |---|---|
 | **RESUMO** | Procedência do arquivo, período que o livro cobre, volume, equalização e categorias |
 | **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
+| **AJUSTES A LANÇAR** | Tudo o que entra no Sankhya como Ajuste de Apuração — calculado e declarado —, um lançamento por linha, com a observação padrão, e a conferência contra o Registro |
+| **REGISTRO 1200** | Os Registros 1200 e 1210 da EFD de Rio Brilhante: o estoque do crédito recebido por transferência |
 | **AJUSTES** | Formulário: as parcelas sem documento e a conferência de cada estabelecimento |
 | **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → carga efetiva → produto, com a operação e o % do crédito estornado |
 | **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
@@ -146,6 +154,24 @@ cálculo em MS; ela está na `BASE TRATADA`. Ver
 
 **BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
 efetiva, categoria, regime e a regra aplicada, em texto.
+
+E duas são roteiro para o que se digita fora da ferramenta:
+
+**AJUSTES A LANÇAR** — *o que digitar no Sankhya?* No Sankhya as linhas 002,
+003, 006, 007 e 012 não se digitam como total: cada parcela é um lançamento de
+Ajuste de Apuração. A aba lista todos — o estorno, o crédito indevido, o DIFAL,
+as duas pontas da centralização e o benefício, que a apuração calcula, mais o
+que foi declarado na aba `AJUSTES` —, nas colunas do relatório de Ajuste de
+Apuração do Sankhya: Nome Fantasia, Tipo apuração, Valor, Observação padrão e
+Observação. O código de cada parcela calculada vem de
+`parametros/lancamentos_sankhya.yaml`; parcela sem código sai em amarelo. No
+fim, a conferência: a soma dos lançamentos de cada linha contra o Registro.
+
+**REGISTRO 1200** — *como fica o estoque do crédito transferido?* Saldo
+inicial (de `saldos.yaml`) + recebido (a NF-e de CFOP 1601 do Livro) −
+utilizado (o ajuste da linha 006 com a observação padrão 87) = saldo final.
+Sai com as linhas `|1200|` e `|1210|` como vão para o arquivo da EFD, e com o
+saldo final a cadastrar como abertura do mês seguinte.
 
 ### Os ajustes, e como devolver o arquivo
 
@@ -184,7 +210,11 @@ Estabelecimento e atividade não se digitam: a linha já diz os dois.
 *Não tem documento* — uma parcela do Registro que não pertence a nota nenhuma.
 Vai na aba **`AJUSTES`**, bloco `PARCELAS SEM DOCUMENTO`, com o estabelecimento
 escrito. Em MS informe também a atividade, porque é ela que dimensiona o
-benefício.
+benefício. A última coluna, `observação padrão`, é o código com que a parcela
+entra no Sankhya — opcional, mas é ela que dá o código na aba
+`AJUSTES A LANÇAR`. O uso do crédito recebido por transferência de Rio Brilhante
+vai aqui, na linha `006`, com a observação padrão `87`: é ele que vira o
+utilizado do `REGISTRO 1200`.
 
 **O sentido vem da linha, não do sinal:**
 

@@ -1,0 +1,133 @@
+# Observação padrão do Sankhya para cada ajuste da apuração.
+#
+# No Sankhya as linhas 002, 003, 006, 007 e 012 do Registro de Apuração não são
+# digitadas como total: cada parcela é um lançamento em "Ajuste de Apuração",
+# com o Tipo apuração (a linha), o valor e uma Observação padrão — um código
+# que carrega o texto legal. A aba AJUSTES A LANÇAR da planilha lista esses
+# lançamentos um a um, e é daqui que ela tira o código de cada um.
+#
+# Duas partes:
+#
+#   observacoes_padrao   o catálogo: código → linha do Registro e texto, como
+#                        o Sankhya mostra. O ajuste declarado na aba AJUSTES
+#                        pode citar qualquer código daqui (coluna H).
+#
+#   calculados           qual código cada parcela que o Apurabot calcula usa.
+#                        Filtra por `regime`, `uf` ou `beneficio` (o que vier
+#                        declarado precisa casar) e tem vigência: trocar de
+#                        código num mês não pode reescrever o mês anterior.
+#
+# Parcela calculada sem código aqui NÃO ganha código por aproximação: sai na
+# aba com a observação padrão em branco e marcada (regra 4 do repositório).
+#
+# Fonte: relatório "Ajuste de Apuração" do Sankhya da competência 08/2026,
+# extraído em 29/09/2026. Por isso a vigência começa em 2026-08-01 — os
+# códigos de meses anteriores não foram vistos.
+#
+# RASCUNHO — pendente de homologação da Gerência Fiscal/Tributária.
+
+observacoes_padrao:
+
+  29:
+    linha: 3
+    texto: >-
+      MT - ESTORNO DE CREDITO DE ICMS VINCULADO AS OPERACOES SUBSEQUENTES
+      AMPARADAS POR DIFERIMENTO, NOS TERMOS DA LEGISLACAO APLICAVEL A OPERACAO.
+  33:
+    linha: 2
+    texto: Diferencial ICMS Entrada.
+  34:
+    linha: 3
+    texto: >-
+      SP - ESTORNO DE CREDITO DE ICMS PARA REGULARIZACAO DA APURACAO, CONFORME
+      MEMORIA DE CALCULO E DOCUMENTACAO SUPORTE DA COMPETENCIA.
+  37:
+    linha: 12
+    texto: >-
+      BENEFÍCIOS FISCAIS - Termo de acordo n. 1190/2018 - Industrialização
+      própria - Incentivo TA/CDI
+  39:
+    linha: 7
+    texto: >-
+      SP - AJUSTE DE ICMS - IMPOSTO INDEVIDAMENTE DEBITADO, COM COMPROVACAO DE
+      NAO APROVEITAMENTO/ANUENCIA DO DESTINATARIO, CONFORME ART. 63 DO
+      RICMS/SP E PORTARIA SRE 84/2022.
+  61:
+    linha: 3
+    texto: Estorno de Crédito ICMS conforme artigo 60, inciso II, do RICMS/2000
+  62:
+    linha: 3
+    texto: >-
+      MS - ESTORNO PROPORCIONAL DE CREDITO DE ICMS EM RAZAO DE SAIDAS COM
+      REDUCAO DE BASE DE CALCULO, CONFORME ART. 72, II, DA LEI 1.810/1997 E
+      ART. 65, II, DO RICMS/MS.
+  79:
+    linha: 6
+    texto: Transferência de saldo devedor para estabelecimento centralizador
+  82:
+    linha: 2
+    texto: Recebimento de saldo devedor - estabelecimento centralizador
+  83:
+    linha: 3
+    texto: >-
+      SP - ESTORNO PROPORCIONAL DE CREDITO DE ICMS EM RAZAO DE SAIDAS COM
+      REDUCAO DE BASE DE CALCULO, CONFORME ART. 67, VI, DO RICMS/SP.
+  87:
+    linha: 6
+    texto: >-
+      MS - CRÉDITO DE ICMS RECEBIDO EM TRANSFERÊNCIA, NOS TERMOS DO ART. 68 DO
+      RICMS/MS.
+  88:
+    linha: 6
+    texto: >-
+      MS - AJUSTE DE CREDITO DE ICMS - CIAP, DECORRENTE DE CONCILIACAO DO
+      CONTROLE DO ATIVO IMOBILIZADO.
+
+calculados:
+
+  # Linha 003 — o estorno que a regra do regime calcula sobre o Livro.
+  - parcela: estorno
+    regime: sp_equilibrio_fiscal
+    observacao_padrao: 83
+    vigencia_inicio: 2026-08-01
+  - parcela: estorno
+    regime: ms_beneficio_rio_brilhante
+    observacao_padrao: 62
+    vigencia_inicio: 2026-08-01
+  - parcela: estorno
+    regime: ms_estorno_proporcional
+    # Corumbá (MS) usa um texto que cita o RICMS/2000 de SP. É o que o Sankhya
+    # lançou em 08/2026; fica registrado como está até o fiscal confirmar.
+    observacao_padrao: 61
+    vigencia_inicio: 2026-08-01
+  - parcela: estorno
+    regime: mt_diferimento
+    observacao_padrao: 29
+    vigencia_inicio: 2026-08-01
+
+  # Linha 003 — o crédito indevido (CFOP 2152, decisão pendente nº 9). O Sankhya
+  # o lança separado do estorno: em 08/2026, R$ 2.560,56 em Corumbá.
+  - parcela: credito_indevido
+    regime: ms_estorno_proporcional
+    observacao_padrao: 34
+    vigencia_inicio: 2026-08-01
+
+  # Linha 002 — DIFAL onde a UF o leva à conta gráfica (`regimes.yaml`, difal).
+  - parcela: difal
+    uf: SP
+    observacao_padrao: 33
+    vigencia_inicio: 2026-08-01
+
+  # Centralização por ajuste de apuração — as duas pontas.
+  - parcela: centralizacao_recebe_debito       # linha 002 da centralizadora
+    observacao_padrao: 82
+    vigencia_inicio: 2026-08-01
+  - parcela: centralizacao_transfere_debito    # linha 006 do centralizado
+    observacao_padrao: 79
+    vigencia_inicio: 2026-08-01
+
+  # Linha 012 — o benefício do Termo de Acordo de Rio Brilhante.
+  - parcela: beneficio
+    beneficio: ms_rio_brilhante
+    observacao_padrao: 37
+    vigencia_inicio: 2026-08-01
