@@ -137,7 +137,8 @@ procedência (do Estado / de outros Estados / do Exterior) e o resumo em catorze
 linhas, de `001` a `014`.
 
 **Confira contra o PDF que o Sankhya emite** para o mesmo estabelecimento e a
-mesma competência. Em Julho/2026, Rio Brilhante fecha assim:
+mesma competência — o botão **Registro em PDF** gera o da ferramenta no mesmo
+desenho, para pôr um ao lado do outro. Em Julho/2026, Rio Brilhante fecha assim:
 
 | | Entradas | Saídas |
 |---|---|---|

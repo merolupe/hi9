@@ -70,7 +70,13 @@ Na página:
 3. o resultado aparece na tela — apuração por estabelecimento, Registro de
    Apuração, transferências a emitir, memória do benefício e as pendências, se
    houver;
-4. **Baixar a planilha** salva o `.xlsx` completo em Downloads.
+4. **Baixar a planilha** salva o `.xlsx` completo em Downloads;
+5. **Registro em PDF** abre o Registro de Apuração numa aba nova, no desenho do
+   PDF que o Sankhya emite — por estabelecimento, uma folha de entradas e
+   saídas por CFOP e uma do resumo. A janela de impressão abre sozinha: escolha
+   o destino **Salvar como PDF**. No alto da página dá para imprimir um
+   estabelecimento só. O PDF é gerado pelo próprio navegador (Edge ou Chrome),
+   sem instalar nada.
 
 Para fechar: feche a janela preta que abriu junto, ou tecle Ctrl+C nela. A pasta temporária com o arquivo enviado é apagada no encerramento — nada do Livro Fiscal fica na máquina.
 
