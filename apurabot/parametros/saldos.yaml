@@ -60,6 +60,32 @@ saldos_credores:
       11: 2215164.28          # HINOVE (FILIAL GUARÁ)
       7: 341004.37            # HINOVE (LONDRINA)
 
+  - competencia: "2026-09"
+    homologado: true
+    origem: >
+      Linha 014 dos Registros de Apuração de 08/2026, um por estabelecimento.
+      Filial Guará (empresa 11), retificado em 28/09/2026: R$ 960.376,58.
+      Londrina (empresa 7): R$ 379.388,66 — a abertura de agosto
+      (R$ 341.004,37) mais o crédito das entradas do próprio agosto
+      (R$ 38.384,29), como em julho (decisão nº 1). Barra do Garças
+      (empresa 8), emitido em 03/09/2026: R$ 3.014,07 — MT difere a saída, o
+      estorno leva o crédito do mês e o saldo que veio passa intacto. Matriz e
+      Corumbá (emitidos em 03/09/2026) e Rio Brilhante (atualizado em
+      09/09/2026) fecham agosto com a linha 014 em R$ 0,00. Registro (empresa
+      4) não teve o documento anexado; fecha em zero porque SP transfere o
+      saldo integral para Guará — a linha 002 de Guará recebe R$ 199.602,07
+      de saldo devedor, e a Matriz não transferiu nada.
+    pendencia: >
+      Os Registros de 08/2026 não abrem agosto com o que a entrada 2026-08
+      acima declara. Guará: linha 009 de R$ 1.376.818,13 no documento
+      retificado, contra R$ 2.215.164,28 da linha 014 de julho. Barra do
+      Garças: linha 009 de R$ 3.014,07, e agosto a declara zerada. Se julho
+      foi retificado, a entrada de agosto tem que acompanhar.
+    por_estabelecimento:
+      11: 960376.58           # HINOVE (FILIAL GUARÁ)
+      7: 379388.66            # HINOVE (LONDRINA)
+      8: 3014.07              # HINOVE (BARRA DO GARÇAS - MT)
+
 # ---------------------------------------------------------------------------
 # Saldo inicial dos créditos controlados — Registro 1200 da EFD (SLD_CRED).
 # ---------------------------------------------------------------------------

@@ -91,6 +91,15 @@ def test_a_abertura_de_agosto_e_a_linha_014_de_julho(parametros):
     }
 
 
+def test_a_abertura_de_setembro_e_a_linha_014_de_agosto(parametros):
+    """Registros de 08/2026: Guará retificado em 28/09, Londrina, Barra do Garças."""
+    assert parametros.saldos_credores("2026-09") == {
+        CODIGO_GUARA: pytest.approx(960_376.58, abs=CENTAVO),
+        CODIGO_LONDRINA: pytest.approx(379_388.66, abs=CENTAVO),
+        8: pytest.approx(3_014.07, abs=CENTAVO),
+    }
+
+
 def test_a_abertura_e_indexada_pelo_codigo_da_empresa(base_julho, parametros):
     """Pelo código, nunca pelo nome — os nomes vêm com espaçamento irregular."""
     p = copy.deepcopy(parametros)

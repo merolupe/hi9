@@ -20,8 +20,9 @@ saldo credor se acumula.** É o que `regimes.yaml` já fazia; o que faltava era 
 confirmação de que o crédito não se perde por falta de débito.
 
 Deixou de ser irrelevante: Londrina saiu de R$ 13.882,40 em 07/2026 para
-R$ 38.384,29 em 08/2026, e o saldo transportado de agosto é a soma dos dois —
-R$ 52.266,69.
+R$ 38.384,29 em 08/2026. O saldo que agosto transporta é a abertura do mês mais
+o crédito dele: 341.004,37 + 38.384,29 = R$ 379.388,66, a linha 014 do Registro
+de 08/2026.
 
 ## 2. 🟢 Itens fora do processo produtivo para o DIFAL
 
