@@ -179,17 +179,17 @@ def test_a_categoria_sai_com_nome_legivel(apuracao):
 # -- a planilha -------------------------------------------------------------
 
 def test_a_planilha_traz_as_tres_abas_de_conferencia(planilha):
-    assert {"APURAÇÃO EFETIVA", "REGISTRO", "TRANSFERÊNCIAS"} <= set(
+    assert {"APURAÇÃO EFETIVA", "REGISTRO DE APURAÇÃO", "TRANSFERÊNCIAS"} <= set(
         planilha.sheetnames
     )
 
 
-def test_as_abas_saem_da_conclusao_para_o_detalhe(planilha):
-    """Quem abre o arquivo cai no resumo, não em seis mil linhas de base."""
+def test_as_abas_saem_por_prioridade(planilha):
+    """Quem abre o arquivo cai no Registro, não em seis mil linhas de base."""
     assert planilha.sheetnames == [
         nome for nome in ORDEM_DAS_ABAS if nome in planilha.sheetnames
     ]
-    assert planilha.sheetnames[0] == "RESUMO"
+    assert planilha.sheetnames[0] == "REGISTRO DE APURAÇÃO"
 
 
 def test_a_aba_de_transferencias_diz_o_que_emitir(planilha):
@@ -205,9 +205,11 @@ def test_a_aba_de_transferencias_diz_o_que_emitir(planilha):
 
 
 def test_a_aba_de_pendencias_nao_cobra_mais_a_nota_de_transferencia(planilha):
+    # A aba só existe quando há pendência.
+    aba = planilha["PENDÊNCIAS"] if "PENDÊNCIAS" in planilha.sheetnames else None
     texto = "\n".join(
         str(c.value)
-        for linha in planilha["PENDÊNCIAS"].iter_rows()
+        for linha in (aba.iter_rows() if aba else [])
         for c in linha
         if c.value
     )
@@ -215,7 +217,7 @@ def test_a_aba_de_pendencias_nao_cobra_mais_a_nota_de_transferencia(planilha):
 
 
 def test_o_registro_tem_um_bloco_por_filial_e_o_totalizador(planilha, apuracao):
-    primeira = [linha[0].value for linha in planilha["REGISTRO"].iter_rows(max_col=1)]
+    primeira = [linha[0].value for linha in planilha["REGISTRO DE APURAÇÃO"].iter_rows(max_col=1)]
     for nome in apuracao.filiais:
         assert nome in primeira
     assert any(

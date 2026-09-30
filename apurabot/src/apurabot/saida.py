@@ -8,16 +8,20 @@ from __future__ import annotations
 from pathlib import Path
 
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from . import __version__
+from .ajustes import ABA as ABA_AJUSTES
 from .apuracao import Apuracao, apurar
-from .conferencia import (aba_apuracao_efetiva, aba_lancamentos, aba_registro,
-                          aba_registro_1200, aba_transferencias)
-from .nucleo.atividade import INTERESTADUAL, INTRAESTADUAL
+from .conferencia import (ABA_1200, ABA_EFETIVA, ABA_LANCAMENTOS, ABA_REGISTRO,
+                          ABA_TRANSFERENCIAS, aba_apuracao_efetiva,
+                          aba_lancamentos, aba_registro, aba_registro_1200,
+                          aba_transferencias)
+from .nucleo.atividade import INDUSTRIAL, INTERESTADUAL, INTRAESTADUAL
 from .nucleo.atividade import ORDEM as ATIVIDADES_EM_ORDEM
 from .base_tratada import BaseTratada
+from .formato import reais
 
 #: Procedência — o que a ferramenta escreve, não o Livro.
 COLUNAS_DE_PROCEDENCIA = [
@@ -89,6 +93,20 @@ FUNDO = PatternFill("solid", fgColor="1F3864")
 MOEDA = "#,##0.00"
 PERCENTUAL = "0.00%"
 
+ABA_BASE = "BASE TRATADA"
+ABA_PENDENCIAS = "PENDÊNCIAS"
+ABA_RESUMO = "RESUMO"
+ABA_POR_CARGA = "POR ESTABELECIMENTO E CARGA"
+ABA_DETALHES = "RESUMO E DETALHES"
+
+#: Saem no arquivo, mas escondidas: os números do RESUMO estão na tela, e a
+#: visão por carga é insumo de conferência, não leitura.
+ABAS_OCULTAS = {ABA_RESUMO, ABA_POR_CARGA}
+
+#: Cinza médio em volta de tudo que é dado ou tabela.
+_CINZA = Side(style="thin", color="808080")
+BORDA = Border(left=_CINZA, right=_CINZA, top=_CINZA, bottom=_CINZA)
+
 
 def _escreve_cabecalho(aba, colunas):
     aba.append([nome for nome, _ in colunas])
@@ -97,7 +115,6 @@ def _escreve_cabecalho(aba, colunas):
         celula = aba.cell(row=1, column=i)
         celula.font, celula.fill = TITULO, FUNDO
         celula.alignment = Alignment(vertical="center", wrap_text=False)
-    aba.freeze_panes = "A2"
 
 
 #: Fundo das colunas que o time fiscal preenche — para não se confundirem com
@@ -106,7 +123,7 @@ FUNDO_DE_AJUSTE = PatternFill("solid", fgColor="7B3F00")
 
 
 def _aba_base(wb, base: BaseTratada) -> None:
-    aba = wb.create_sheet("BASE TRATADA")
+    aba = wb.create_sheet(ABA_BASE)
     _escreve_cabecalho(aba, CABECALHO_BASE)
     for i in range(PRIMEIRA_DE_AJUSTE, PRIMEIRA_DE_AJUSTE + len(COLUNAS_DE_AJUSTE)):
         aba.cell(row=1, column=i).fill = FUNDO_DE_AJUSTE
@@ -151,7 +168,10 @@ def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao) -> None:
     linha de origem, e por isso já ficou de fora daqui uma vez. Quem trabalha
     pela planilha não pode deixar de ver um bloqueio que a tela mostra.
     """
-    aba = wb.create_sheet("PENDÊNCIAS")
+    if not (base.com_pendencia or apuracao.sem_regra_de_atividade
+            or apuracao.bloqueios_de_ajuste):
+        return                          # a aba só existe quando tem o que mostrar
+    aba = wb.create_sheet(ABA_PENDENCIAS)
     colunas = [
         ("linha_origem", 12), ("estabelecimento", 30), ("nro_unico", 12),
         ("cfop", 8), ("produto", 12), ("produto_descricao", 38),
@@ -182,7 +202,7 @@ def _aba_pendencias(wb, base: BaseTratada, apuracao: Apuracao) -> None:
 
 
 def _aba_resumo(wb, base: BaseTratada) -> None:
-    aba = wb.create_sheet("RESUMO")
+    aba = wb.create_sheet(ABA_RESUMO)
     resumo = base.resumo()
     aba.column_dimensions["A"].width = 34
     aba.column_dimensions["B"].width = 30
@@ -237,7 +257,7 @@ def _aba_resumo(wb, base: BaseTratada) -> None:
 
 
 def _aba_por_carga(wb, base: BaseTratada) -> None:
-    aba = wb.create_sheet("POR ESTABELECIMENTO E CARGA")
+    aba = wb.create_sheet(ABA_POR_CARGA)
     colunas = [
         ("estabelecimento", 30), ("entrada_saida", 14), ("carga_efetiva", 14),
         ("linhas", 10), ("valor_contabil", 18), ("base_icms", 18), ("valor_icms", 18),
@@ -258,9 +278,11 @@ def _aba_por_carga(wb, base: BaseTratada) -> None:
 
 
 def _aba_apuracao(wb, apuracao: Apuracao) -> None:
-    aba = wb.create_sheet("APURAÇÃO POR FILIAL")
+    aba = wb.create_sheet(ABA_DETALHES)
+    # `uf` e `linhas` são estreitas na tabela de cima, mas as memórias de
+    # cálculo, mais abaixo, põem valor nessas colunas.
     colunas = [
-        ("estabelecimento", 32), ("uf", 6), ("regime", 28), ("linhas", 9),
+        ("estabelecimento", 32), ("uf", 16), ("regime", 28), ("linhas", 16),
         ("credito_bruto", 16), ("estorno", 16), ("credito_indevido", 17),
         ("credito_mantido", 17), ("debito", 16), ("credito_presumido", 18),
         ("difal", 14), ("saldo credor anterior", 21), ("saldo (credor +)", 18),
@@ -300,48 +322,33 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
         for celula in linha:
             celula.number_format = MOEDA
 
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append([
-        "Saldo na convenção de caixa: positivo é credor — crédito a transportar "
-        "—, negativo é devedor. \"A recolher\" é o que sai do caixa, e o TOTAL "
-        "dela é a soma das filiais, não o saldo do grupo com o sinal trocado. "
-        "O saldo é o FINAL, o mesmo que o Registro de cada estabelecimento "
-        "fecha: já abre com o crédito do mês anterior e já traz o efeito da "
-        "centralização. O saldo antes de centralizar está no bloco de "
-        "Centralização, mais abaixo."
-    ])
-
     _bloco_saldo_credor(aba, apuracao)
     _bloco_ajustes(aba, apuracao)
 
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Memória do benefício fiscal"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-    for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
-        if not f.beneficio:
-            continue
-        aba.append([f.estabelecimento])
-        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-        for passo in f.beneficio.memoria:
-            aba.append(["", passo])
+    _secao(aba, "Memória do benefício fiscal")
+    # Uma linha em branco separa cada memória: é o que diz à borda onde uma
+    # tabela acaba e a outra começa.
+    fruido: dict[str, str] = {}
+    for i, f in enumerate(sorted(
+        (f for f in apuracao.filiais.values() if f.beneficio),
+        key=lambda f: f.estabelecimento,
+    )):
+        if i:
+            aba.append([None])
+        fruido[f.estabelecimento] = _memoria_do_beneficio(aba, f)
 
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Centralização e transferência de saldo"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-    for c in apuracao.centralizacao:
-        for passo in c.memoria:
-            aba.append(["", passo])
+    _secao(aba, "Centralização e transferência de saldo")
+    for i, c in enumerate(apuracao.centralizacao):
+        if i:
+            aba.append([None])
+        _memoria_da_centralizacao(aba, c)
+    aba.append([None])
     aba.append(["", "As transferências a emitir estão na aba TRANSFERÊNCIAS."])
 
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Contribuição ao Pró-Desenvolve / FADEFE — GUIA AVULSA"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    _secao(aba, "Contribuição ao Pró-Desenvolve / FADEFE — GUIA AVULSA")
     aba.append(["", "Informativo: não entra na conta gráfica da apuração."])
-    aba.append(["estabelecimento", "benefício fruído", "%", "a recolher",
-                "% adicional", "adicional a recolher"])
-    for celula in aba[aba.max_row]:
-        celula.font, celula.fill = TITULO, FUNDO
-    primeira = aba.max_row + 1
+    _cabecalho_de_bloco(aba, ["estabelecimento", "benefício fruído", "%",
+                              "a recolher", "% adicional", "adicional a recolher"])
     for f in sorted(apuracao.filiais.values(), key=lambda f: f.estabelecimento):
         if not f.beneficio or not f.beneficio.percentual_fadefe:
             continue
@@ -350,20 +357,21 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
             f.estabelecimento, b.credito_presumido, b.percentual_fadefe / 100,
             b.fadefe, b.percentual_fadefe_adicional / 100, b.fadefe_adicional,
         ])
-    for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
-                               min_col=2, max_col=6):
-        for celula in linha:
-            celula.number_format = PERCENTUAL if celula.column in (3, 5) else MOEDA
+        n = aba.max_row
+        if f.estabelecimento in fruido:
+            # O benefício fruído é o total da memória, logo acima.
+            aba.cell(row=n, column=2).value = f"={fruido[f.estabelecimento]}"
+        aba.cell(row=n, column=4).value = f"=B{n}*C{n}"
+        aba.cell(row=n, column=6).value = f"=B{n}*E{n}"
+        for coluna in range(2, 7):
+            aba.cell(row=n, column=coluna).number_format = (
+                PERCENTUAL if coluna in (3, 5) else MOEDA
+            )
 
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Segregação por atividade (exigida pela GIA de MS)"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-    aba.append(["estabelecimento", "atividade", "linhas", "credito_bruto",
-                "estorno", "credito_mantido", "debito", "debito_intra",
-                "debito_inter", "saldo"])
-    for celula in aba[aba.max_row]:
-        celula.font, celula.fill = TITULO, FUNDO
-    primeira_atividade = aba.max_row + 1
+    _secao(aba, "Segregação por atividade (exigida pela GIA de MS)")
+    _cabecalho_de_bloco(aba, ["estabelecimento", "atividade", "linhas",
+                              "credito_bruto", "estorno", "credito_mantido",
+                              "debito", "debito_intra", "debito_inter", "saldo"])
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         if not f.segrega_por_atividade:
             continue
@@ -376,48 +384,168 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
                 t_.credito_mantido, t_.debito, t_.debito_de(INTRAESTADUAL),
                 t_.debito_de(INTERESTADUAL), t_.saldo,
             ])
-    for linha in aba.iter_rows(min_row=primeira_atividade, max_row=aba.max_row,
-                               min_col=4, max_col=10):
-        for celula in linha:
-            celula.number_format = MOEDA
+            n = aba.max_row
+            aba.cell(row=n, column=10).value = f"=G{n}-F{n}"   # débito − mantido
+            for coluna in range(4, 11):
+                aba.cell(row=n, column=coluna).number_format = MOEDA
 
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Detalhe por carga efetiva"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-    aba.append(["estabelecimento", "carga", "credito_bruto", "estorno",
-                "credito_indevido", "credito_mantido"])
-    for celula in aba[aba.max_row]:
-        celula.font, celula.fill = TITULO, FUNDO
+    _secao(aba, "Detalhe por carga efetiva")
+    _cabecalho_de_bloco(aba, ["estabelecimento", "carga", "credito_bruto", "estorno",
+                              "credito_indevido", "credito_mantido"])
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         for carga, v in sorted(f.por_carga.items(), key=lambda kv: str(kv[0])):
             aba.append([
                 f.estabelecimento, carga, v["credito_bruto"], v["estorno"],
                 v["credito_indevido"], v["credito_mantido"],
             ])
+            n = aba.max_row
+            aba.cell(row=n, column=6).value = f"=C{n}-D{n}-E{n}"
             for coluna in (3, 4, 5, 6):
-                aba.cell(row=aba.max_row, column=coluna).number_format = MOEDA
+                aba.cell(row=n, column=coluna).number_format = MOEDA
+
+
+def _secao(aba, titulo: str) -> None:
+    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
+    aba.append([titulo])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+
+
+def _cabecalho_de_bloco(aba, rotulos: list[str]) -> int:
+    aba.append(rotulos)
+    # Só as colunas da tabela: a linha inteira da aba levaria o fundo (e a
+    # borda) até a última coluna da tabela de cima.
+    for coluna in range(1, len(rotulos) + 1):
+        celula = aba.cell(row=aba.max_row, column=coluna)
+        celula.font, celula.fill = TITULO, FUNDO
+    return aba.max_row
+
+
+def _valor(aba, rotulo: str, valor, formato: str = MOEDA) -> int:
+    """Uma linha da memória: o rótulo numa célula, o valor na do lado."""
+    aba.append([rotulo, valor])
+    aba.cell(row=aba.max_row, column=2).number_format = formato
+    return aba.max_row
+
+
+def _memoria_do_beneficio(aba, filial) -> str:
+    """O crédito presumido passo a passo, com a conta em fórmula.
+
+    Devolve a célula do crédito presumido total, que o quadro do FADEFE usa.
+    As fórmulas refazem a conta do motor (`nucleo/beneficio.py`): o que elas
+    resolvem tem que ser o que ele apurou.
+    """
+    b = filial.beneficio
+    aba.append([filial.estabelecimento])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["Termo", b.documento])
+    aba.append(["Alcance", b.criterio])
+
+    bruto = _valor(aba, "Crédito industrial bruto", b.credito_industrial)
+    deducoes = [_valor(aba, "(−) estorno industrial", b.estorno_industrial)]
+    # O mesmo total de atividade que o motor usou para calcular o benefício.
+    indevido = filial.atividade(INDUSTRIAL).credito_indevido
+    if indevido:
+        deducoes.append(_valor(aba, "(−) crédito indevido industrial", indevido))
+    if b.ajuste_de_credito:
+        deducoes.append(
+            _valor(aba, "(−) estorno de créditos (ajuste)", b.ajuste_de_credito)
+        )
+    credito = _valor(aba, "(=) crédito da parcela incentivada",
+                     b.credito_da_parcela_incentivada)
+    menos = "".join(f"-B{n}" for n in deducoes)
+    aba.cell(row=credito, column=2).value = f"=MAX(B{bruto}{menos},0)"
+
+    aba.append([None])                  # o quadro de rótulo e valor acaba aqui
+    cabecalho = _cabecalho_de_bloco(aba, [
+        "Saída", "Débito", "Crédito rateado", "Base do incentivo",
+        "% presumido", "Crédito presumido",
+    ])
+    intra, inter = cabecalho + 1, cabecalho + 2
+    for nome, parcela in (("intraestadual", b.intra), ("interestadual", b.inter)):
+        aba.append([nome, parcela.debito, parcela.credito_rateado,
+                    parcela.base_do_incentivo, parcela.percentual / 100,
+                    parcela.credito_presumido])
+        n = aba.max_row
+        if b.debito_beneficiado:
+            # O crédito se rateia pela participação de cada destino no débito.
+            aba.cell(row=n, column=3).value = (
+                f"=B{credito}*B{n}/(B{intra}+B{inter})"
+            )
+        aba.cell(row=n, column=4).value = f"=MAX(B{n}-C{n},0)"
+        aba.cell(row=n, column=6).value = f"=D{n}*E{n}"
+    aba.append(["Crédito presumido total", b.debito_beneficiado,
+                b.credito_da_parcela_incentivada, b.base_do_incentivo, None,
+                b.credito_presumido])
+    total = aba.max_row
+    for coluna in "BCDF":
+        aba[f"{coluna}{total}"] = f"=SUM({coluna}{intra}:{coluna}{inter})"
+    for celula in aba[total]:
+        celula.font = Font(bold=True)
+    for n in range(intra, total + 1):
+        for coluna in range(2, 7):
+            aba.cell(row=n, column=coluna).number_format = (
+                PERCENTUAL if coluna == 5 else MOEDA
+            )
+    return f"F{total}"
+
+
+def _memoria_da_centralizacao(aba, grupo) -> None:
+    """Quem transfere quanto para a centralizadora, com a conta em fórmula."""
+    from .nucleo.centralizacao import MECANISMOS
+
+    aba.append([
+        f"Centralização de {grupo.uf} em {grupo.centralizadora}"
+        + ("" if grupo.homologado else "  (NÃO HOMOLOGADA)")
+    ])
+    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    aba.append(["Regra de transferência",
+                f"{grupo.regra} por "
+                + MECANISMOS.get(grupo.mecanismo, grupo.mecanismo)])
+    proprio = _valor(aba, "Saldo próprio da centralizadora", grupo.saldo_proprio)
+
+    aba.append([None])
+    cabecalho = _cabecalho_de_bloco(aba, ["Origem", "Saldo", "Transfere",
+                                          "Residual", "Observação"])
+    for t in grupo.transferencias:
+        teto = (
+            f"teto: {reais(t.retido_pelo_teto)} de crédito não coube no saldo "
+            "devedor da centralizadora" if t.retido_pelo_teto else None
+        )
+        aba.append([t.origem, t.saldo_individual, t.valor_transferido,
+                    t.saldo_residual, teto])
+        n = aba.max_row
+        aba.cell(row=n, column=4).value = f"=B{n}-C{n}"
+        for coluna in (2, 3, 4):
+            aba.cell(row=n, column=coluna).number_format = MOEDA
+    ultima = aba.max_row
+
+    aba.append([None])
+    recebido = _valor(aba, "Recebido pela centralizadora", grupo.total_recebido)
+    if ultima > cabecalho:
+        aba.cell(row=recebido, column=2).value = (
+            f"=SUM(C{cabecalho + 1}:C{ultima})"
+        )
+    final = _valor(aba, "Saldo final do grupo", grupo.saldo_final)
+    aba.cell(row=final, column=2).value = f"=B{proprio}+B{recebido}"
+    aba.cell(row=final, column=1).font = Font(bold=True)
 
 
 def _bloco_ajustes(aba, apuracao: Apuracao) -> None:
     """A memória dos ajustes: o que entrou, de onde veio e quem aprovou.
 
-    Junta as duas origens numa lista só — a aba AJUSTES é o formulário, esta é
-    a prestação de contas. E traz o que ficou marcado sem ser lançado, que não
-    muda número nenhum mas não pode sumir.
+    Junta as duas origens numa lista só — a aba AJUSTES MANUAIS é o formulário,
+    esta é a prestação de contas. E traz o que ficou marcado sem ser lançado,
+    que não muda número nenhum mas não pode sumir.
     """
     a = apuracao.ajustes
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Ajustes declarados"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    _secao(aba, "Ajustes declarados")
     if not a.lancamentos:
-        aba.append(["", "Nenhum. As linhas 002, 003, 006 e 007 do registro saem "
-                        "marcadas até alguém assinar a conferência."])
+        aba.append(["", "Nenhum ajuste declarado."])
     else:
-        aba.append(["estabelecimento", "atividade", "linha", "valor", "motivo",
-                    "responsável", "aprovador", "onde foi informado"])
-        for celula in aba[aba.max_row]:
-            celula.font, celula.fill = TITULO, FUNDO
-        primeira = aba.max_row + 1
+        primeira = _cabecalho_de_bloco(aba, [
+            "estabelecimento", "atividade", "linha", "valor", "motivo",
+            "responsável", "aprovador", "onde foi informado",
+        ]) + 1
         for x in a.lancamentos:
             aba.append([x.estabelecimento, x.atividade, f"{x.linha:03d}", x.valor,
                         x.motivo, x.responsavel, x.aprovador, x.onde])
@@ -427,23 +555,22 @@ def _bloco_ajustes(aba, apuracao: Apuracao) -> None:
                 celula.number_format = MOEDA
 
     if a.anotacoes:
-        aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-        aba.append([f"Marcado, não lançado — {len(a.anotacoes)} linha(s)"])
-        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+        _secao(aba, f"Marcado, não lançado — {len(a.anotacoes)} linha(s)")
         aba.append(["", "Não entra na apuração; fica aqui para não se perder."])
-        aba.append(["estabelecimento", "", "", "valor", "motivo", "responsável",
-                    "", "onde foi informado"])
-        for celula in aba[aba.max_row]:
-            celula.font, celula.fill = TITULO, FUNDO
-        primeira = aba.max_row + 1
+        primeira = _cabecalho_de_bloco(aba, [
+            "estabelecimento", "", "", "valor", "motivo", "responsável", "",
+            "onde foi informado",
+        ]) + 1
         for x in a.anotacoes:
             aba.append([x.estabelecimento, "", "", x.valor, x.motivo,
                         x.responsavel, "", x.onde])
-        for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
+        ultima = aba.max_row
+        for linha in aba.iter_rows(min_row=primeira, max_row=ultima,
                                    min_col=4, max_col=4):
             for celula in linha:
                 celula.number_format = MOEDA
         aba.append(["", "Total marcado e não lançado", "", a.marcado_nao_lancado])
+        aba.cell(row=aba.max_row, column=4).value = f"=SUM(D{primeira}:D{ultima})"
         aba.cell(row=aba.max_row, column=4).number_format = MOEDA
         aba.cell(row=aba.max_row, column=2).font = Font(bold=True)
 
@@ -456,9 +583,7 @@ def _bloco_saldo_credor(aba, apuracao: Apuracao) -> None:
     duas linhas do registro à mão.
     """
     anterior, seguinte = apuracao.competencia_anterior, apuracao.competencia_seguinte
-    aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
-    aba.append(["Saldo credor — linhas 009 e 014 do Registro de Apuração"])
-    aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+    _secao(aba, "Saldo credor — linhas 009 e 014 do Registro de Apuração")
     if not apuracao.saldos_declarados:
         aba.append([
             "",
@@ -466,22 +591,21 @@ def _bloco_saldo_credor(aba, apuracao: Apuracao) -> None:
             "parametros/saldos.yaml — a apuração rodou com todos os "
             "estabelecimentos abrindo o mês zerados.",
         ])
-    aba.append([
+    _cabecalho_de_bloco(aba, [
         "estabelecimento", f"veio de {anterior}", "apurado no mês",
         f"vai para {seguinte}",
     ])
-    for celula in aba[aba.max_row]:
-        celula.font, celula.fill = TITULO, FUNDO
-    primeira = aba.max_row + 1
     for f in sorted(apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)):
         if not (f.saldo_credor_anterior or f.credor):
             continue
         aba.append([f.estabelecimento, f.saldo_credor_anterior, f.saldo_do_periodo,
                     f.credor])
-    for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
-                               min_col=2, max_col=4):
-        for celula in linha:
-            celula.number_format = MOEDA
+        n = aba.max_row
+        # Só se transporta saldo credor: o devedor sai do caixa.
+        aba.cell(row=n, column=4).value = f"=MAX(B{n}+C{n},0)"
+        for coluna in (2, 3, 4):
+            aba.cell(row=n, column=coluna).number_format = MOEDA
+    aba.append([None])
     aba.append([
         "",
         f"A coluna \"vai para {seguinte}\" é a abertura da competência seguinte: "
@@ -519,7 +643,7 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
         "TRATADA — aqui só o que não tem documento.",
         "A `observação padrão` é o código com que o ajuste entra no Sankhya "
         "(parametros/lancamentos_sankhya.yaml). Opcional: sem ela o ajuste "
-        "vale igual, e sai sem código na aba AJUSTES A LANÇAR.",
+        "vale igual, e sai sem código na aba AJUSTES NO SANKHYA.",
     ):
         aba.append(["", texto])
 
@@ -543,9 +667,11 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
     for _ in range(12):                 # espaço para escrever
         aba.append([None])   # linha em branco: `append([])` não avança no openpyxl
     for linha in aba.iter_rows(min_row=primeira, max_row=aba.max_row,
-                               min_col=4, max_col=4):
+                               min_col=1, max_col=8):
         for celula in linha:
-            celula.number_format = MOEDA
+            celula.border = BORDA       # a grade vazia é o formulário
+            if celula.column == 4:
+                celula.number_format = MOEDA
 
     aba.append([TITULO_CONFERENCIA])
     aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
@@ -567,17 +693,79 @@ def _aba_ajustes(wb, apuracao: Apuracao) -> None:
                     "mostrar AGUARDA AJUSTE — inclusive sem nenhum ajuste."])
 
 
-#: Ordem de leitura das abas — da conclusão para o detalhe.
+#: Ordem das abas — por prioridade de leitura. O Registro abre o arquivo, a
+#: APURAÇÃO EFETIVA é o coração da conta, e os ajustes do Sankhya vêm por
+#: último, porque só se usam depois de fechados os ajustes manuais. As ocultas
+#: ficam no fim.
 ORDEM_DAS_ABAS = [
-    "RESUMO", "REGISTRO", "AJUSTES A LANÇAR", "REGISTRO 1200", "AJUSTES",
-    "APURAÇÃO EFETIVA", "APURAÇÃO POR FILIAL",
-    "TRANSFERÊNCIAS", "PENDÊNCIAS", "POR ESTABELECIMENTO E CARGA", "BASE TRATADA",
+    ABA_REGISTRO, ABA_EFETIVA, ABA_DETALHES, ABA_1200, ABA_AJUSTES,
+    ABA_TRANSFERENCIAS, ABA_PENDENCIAS, ABA_BASE, ABA_LANCAMENTOS,
+    ABA_RESUMO, ABA_POR_CARGA,
 ]
 
 
 def _ordenar_abas(wb) -> None:
     posicao = {nome: i for i, nome in enumerate(ORDEM_DAS_ABAS)}
     wb._sheets.sort(key=lambda aba: posicao.get(aba.title, len(posicao)))
+
+
+def _acabamento(wb) -> None:
+    """O que vale para o arquivo inteiro: nada congelado, bordas, abas ocultas."""
+    for aba in wb.worksheets:
+        aba.freeze_panes = None
+        _bordas(aba)
+        if aba.title in ABAS_OCULTAS:
+            aba.sheet_state = "hidden"
+    # Aba oculta não pode ser a ativa: o arquivo abre na primeira visível.
+    visiveis = [i for i, aba in enumerate(wb.worksheets)
+                if aba.sheet_state == "visible"]
+    if visiveis:
+        wb.active = visiveis[0]
+        for i, aba in enumerate(wb.worksheets):
+            aba.sheet_view.tabSelected = i == visiveis[0]
+
+
+def _ocupada(celula) -> bool:
+    return celula.value not in (None, "") or celula.fill.fill_type == "solid"
+
+
+def _bordas(aba) -> None:
+    """Cinza médio em volta de tudo que é dado ou tabela.
+
+    Linha de tabela é a que tem mais de uma célula preenchida, a que tem fundo
+    (os cabeçalhos e as faixas de título) e qualquer linha que venha depois de
+    um cabeçalho, no mesmo bloco — é o caso da conferência, que só traz o nome
+    do estabelecimento até alguém assinar. A borda vai da primeira à última
+    coluna da tabela, para a grade sair inteira mesmo onde a linha tem célula
+    vazia. Texto solto numa célula só antes da tabela — título da aba, nota,
+    instrução — fica sem borda: riscado, ele só fica mais difícil de ler.
+    """
+    bloco: list[tuple[tuple, list[int]]] = []
+
+    def fechar() -> None:
+        tabela, depois_do_cabecalho = [], False
+        for linha, ocupadas in bloco:
+            fundo = any(c.fill.fill_type == "solid"
+                        for c in linha if c.column in ocupadas)
+            if fundo or len(ocupadas) > 1 or depois_do_cabecalho:
+                tabela.append((linha, ocupadas))
+            depois_do_cabecalho = depois_do_cabecalho or fundo
+        if tabela:
+            primeira = min(o[0] for _, o in tabela)
+            ultima = max(o[-1] for _, o in tabela)
+            for linha, _ in tabela:
+                n = linha[0].row
+                for coluna in range(primeira, ultima + 1):
+                    aba.cell(row=n, column=coluna).border = BORDA
+        bloco.clear()
+
+    for linha in aba.iter_rows():
+        ocupadas = [c.column for c in linha if _ocupada(c)]
+        if ocupadas:
+            bloco.append((linha, ocupadas))
+        else:
+            fechar()
+    fechar()
 
 
 def escrever(
@@ -605,5 +793,6 @@ def escrever(
     aba_transferencias(wb, apuracao)
     _aba_resumo(wb, base)
     _ordenar_abas(wb)
+    _acabamento(wb)
     wb.save(destino)
     return destino

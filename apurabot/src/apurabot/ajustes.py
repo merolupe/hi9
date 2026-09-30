@@ -11,7 +11,7 @@ Elas chegam por duas portas, que somam na mesma linha do Registro:
 da BASE TRATADA, na própria linha. É a porta preferida, porque o estabelecimento
 e a atividade saem da linha: ninguém precisa digitá-los, e ninguém os erra.
 
-**A aba AJUSTES.** Quando o ajuste não tem dono — uma parcela do Registro que
+**A aba AJUSTES MANUAIS.** Quando o ajuste não tem dono — uma parcela do Registro que
 não pertence a nota alguma —, não há linha onde pendurá-lo. Vai para a aba, com
 o estabelecimento escrito à mão.
 
@@ -50,7 +50,11 @@ LINHA_DO_REGISTRO = {
 ANOTAR = "ANOTAR"
 
 #: Nome da aba onde vão as parcelas sem documento e a conferência.
-ABA = "AJUSTES"
+ABA = "AJUSTES MANUAIS"
+
+#: Os nomes que a aba já teve. Arquivo gerado antes da troca continua sendo
+#: lido quando volta preenchido.
+NOMES_ANTERIORES = ("AJUSTES",)
 
 TITULO_PARCELAS = "PARCELAS SEM DOCUMENTO"
 TITULO_CONFERENCIA = "CONFERÊNCIA"
@@ -72,7 +76,7 @@ class Ajuste:
     #: Onde ele foi informado, para a memória de cálculo.
     onde: str = ""
     #: O código de "Observação padrão" com que ele entra no Sankhya. Opcional:
-    #: sem ele o ajuste vale igual, só sai sem código na aba AJUSTES A LANÇAR.
+    #: sem ele o ajuste vale igual, só sai sem código na aba AJUSTES NO SANKHYA.
     observacao_padrao: str = ""
 
     @property
@@ -237,7 +241,7 @@ def da_linha(dados: dict[str, Any], estabelecimento: str, onde: str) -> Ajuste |
 
 @dataclass
 class Declarados:
-    """O que a aba AJUSTES trouxe."""
+    """O que a aba AJUSTES MANUAIS trouxe."""
 
     parcelas: list[Ajuste] = field(default_factory=list)
     conferencia: dict[str, Conferencia] = field(default_factory=dict)
@@ -248,7 +252,7 @@ class Declarados:
 
 
 def ler_aba(caminho) -> Declarados:
-    """Lê a aba AJUSTES de um arquivo devolvido. Sem a aba, devolve vazio.
+    """Lê a aba AJUSTES MANUAIS de um arquivo devolvido. Sem a aba, devolve vazio.
 
     A aba tem dois blocos, e cada um é achado pelo seu título — não pela linha
     em que está, porque quem preenche insere e apaga linhas.
@@ -266,9 +270,12 @@ def ler_aba(caminho) -> Declarados:
     except Exception:                                       # noqa: BLE001
         return Declarados()
     try:
-        if ABA not in wb.sheetnames:
+        nome = next(
+            (n for n in (ABA, *NOMES_ANTERIORES) if n in wb.sheetnames), None
+        )
+        if nome is None:
             return Declarados()
-        linhas = [list(linha) for linha in wb[ABA].iter_rows(values_only=True)]
+        linhas = [list(linha) for linha in wb[nome].iter_rows(values_only=True)]
     finally:
         wb.close()
 

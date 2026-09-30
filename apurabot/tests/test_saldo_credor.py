@@ -326,7 +326,7 @@ def test_a_planilha_entrega_a_abertura_do_mes_seguinte(base_julho, parametros, t
 
     destino = tmp_path / "com_saldo.xlsx"
     escrever(base_julho, destino, apurar(base_julho, parametros))
-    aba = openpyxl.load_workbook(destino)["APURAÇÃO POR FILIAL"]
+    aba = openpyxl.load_workbook(destino)["RESUMO E DETALHES"]
     celulas = [c.value for linha in aba.iter_rows() for c in linha]
     texto = "\n".join(str(v) for v in celulas if v)
 

@@ -1,4 +1,4 @@
-"""AJUSTES A LANÇAR e REGISTRO 1200 — o que se digita no Sankhya e na EFD.
+"""AJUSTES NO SANKHYA e REGISTRO 1200 — o que se digita no Sankhya e na EFD.
 
 A maior parte dos testes roda sobre um Livro Fiscal sintético de Rio Brilhante,
 sem dado real: uma venda que gera débito e benefício, e a NF-e de recebimento
@@ -40,7 +40,7 @@ def agosto(parametros, tmp_path_factory):
 
 
 def _devolver(base, apuracao, pasta, valor=UTILIZADO, codigo="87"):
-    """A planilha devolvida com o uso do crédito declarado na aba AJUSTES."""
+    """A planilha devolvida com o uso do crédito declarado na aba AJUSTES MANUAIS."""
     destino = escrever(base, pasta / "saida.xlsx", apuracao)
     wb = openpyxl.load_workbook(destino)
     aba = wb[aj.ABA]
@@ -64,14 +64,15 @@ def reapurado(agosto, parametros, tmp_path_factory):
     return base, apurar(base, parametros, ajustes=ler_ajustes(devolvido))
 
 
-# -- AJUSTES A LANÇAR -------------------------------------------------------
+# -- AJUSTES NO SANKHYA -----------------------------------------------------
 
-def test_as_duas_abas_vem_logo_depois_do_registro(agosto, tmp_path):
+def test_ajustes_no_sankhya_fica_por_ultimo(agosto, tmp_path):
+    """Só se usa depois de fechados os ajustes manuais: é a última visível."""
     base, apuracao = agosto
     planilha = openpyxl.load_workbook(escrever(base, tmp_path / "x.xlsx", apuracao))
     nomes = planilha.sheetnames
-    assert nomes.index("AJUSTES A LANÇAR") == nomes.index("REGISTRO") + 1
-    assert nomes.index("REGISTRO 1200") == nomes.index("AJUSTES A LANÇAR") + 1
+    visiveis = [a.title for a in planilha.worksheets if a.sheet_state == "visible"]
+    assert visiveis[-1] == "AJUSTES NO SANKHYA"
     assert [n for n in ORDEM_DAS_ABAS if n in nomes] == nomes
 
 
