@@ -39,8 +39,10 @@ controles:
     recebimento:
       cfop: [1601]
       # A NF-e traz desconto: em 07/2026, documento de 57.702,40 e mercadorias
-      # de 62.720,00 — e o crédito é 62.720,00. Conferir na primeira rodada se
-      # o "Vlr. contábil" do Livro vem com o valor do crédito.
+      # de 62.720,00 — e o crédito é 62.720,00. Em 08/2026 o Registro de
+      # Apuração traz o 1601 com valor contábil de 57.702,40 e o 1200 registra
+      # 62.720,00: esta coluna fica 5.017,60 abaixo. Falta saber em qual coluna
+      # do Livro o crédito aparece (decisão pendente nº 15).
       campo_do_valor: valor_contabil
     utilizacao:
       observacao_padrao: 87

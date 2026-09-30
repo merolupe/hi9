@@ -433,6 +433,13 @@ e passa a ser leitura de documento. A linha 014 de cada um:
 
 Barra do Garças (8) não tem registro emitido no período.
 
+**Guará foi retificado em 25/09/2026.** O Registro retificado de 07/2026
+acrescenta à linha 003 R$ 838.346,15 de "outros estornos de crédito — art. 62
+do RICMS", e a linha 014 cai para **R$ 1.376.818,13** — que é a abertura de
+agosto em `saldos.yaml` e a linha 009 do Registro de 08/2026. A referência da
+regressão de julho continua sendo o documento original, acima. Barra do Garças
+abre agosto com R$ 3.014,07, pela linha 009 do Registro de 08/2026.
+
 **Londrina é a conta gráfica inteira num documento só.** PR difere a saída, então
 o mês não tem débito e a linha 014 é a soma da abertura com o crédito das
 entradas: 327.121,97 + 13.882,40 = 341.004,37. O motor reproduz as três linhas,
