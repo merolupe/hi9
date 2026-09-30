@@ -290,7 +290,7 @@ a ferramenta passou a montá-lo na aba `REGISTRO 1200`:
 
 | Campo | De onde vem |
 |---|---|
-| SLD_CRED | `saldos.yaml`, bloco `creditos_controlados` — 86.091,65 em 08/2026 |
+| SLD_CRED | `saldos.yaml`, bloco `creditos_controlados` — 108.426,33 em 08/2026, 62.287,65 em 09/2026 |
 | CRÉD_RECEB | a NF-e de CFOP 1601 do Livro do mês |
 | CRÉD_UTIL | o ajuste declarado na linha 006 com a observação padrão 87 do Sankhya |
 | SLD_CRED_FIM | a conta; negativo sai pendente |
@@ -301,10 +301,21 @@ inconsistências de março, junho e julho serão retificadas.
 **Padrão assumido:** quanto usar continua sendo decisão do time fiscal, e entra
 declarado. A ferramenta fecha a conta e acusa o uso acima do estoque.
 
-**Ainda em aberto:** o item 1 acima (a base dos 30%), e conferir na primeira
-rodada se o `Vlr. contábil` da NF-e de recebimento no Livro traz o valor do
-crédito (62.720,00) ou o do documento, líquido do desconto (57.702,40). A
-coluna lida é parâmetro (`controle_de_creditos.yaml`, `campo_do_valor`).
+**Agosto conferido contra a EFD (30/09/2026).** A tela do 1200 de 08/2026 abre
+com SLD_CRED de **108.426,33** — R$ 22.334,68 acima dos 86.091,65 da planilha
+consolidada de 01 a 07/2026; vale a EFD — e fecha:
+
+```
+108.426,33 + 62.720,00 recebidos − 108.858,68 utilizados = 62.287,65
+```
+
+**Ainda em aberto:** o item 1 acima (a base dos 30%), e a coluna do recebido.
+O Registro de Apuração de 08/2026 de Rio Brilhante traz o CFOP 1601 com valor
+contábil de **57.702,40** — líquido do desconto —, e o 1200 registra o crédito
+de **62.720,00**. Lendo `valor_contabil`, como está hoje em
+`controle_de_creditos.yaml` (`campo_do_valor`), a ferramenta fica 5.017,60
+abaixo da EFD. Falta saber em que coluna do extrato do Livro os 62.720,00
+aparecem.
 
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 

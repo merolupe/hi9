@@ -84,10 +84,15 @@ def test_a_abertura_de_julho_vem_do_registro_do_erp(parametros):
 
 
 def test_a_abertura_de_agosto_e_a_linha_014_de_julho(parametros):
-    """A virada do mês: o que julho transporta é o que agosto recebe."""
+    """A virada do mês: o que julho transporta é o que agosto recebe.
+
+    Guará pelo Registro de julho retificado em 25/09/2026; Barra do Garças pela
+    linha 009 do Registro de agosto.
+    """
     assert parametros.saldos_credores("2026-08") == {
-        CODIGO_GUARA: pytest.approx(2_215_164.28, abs=CENTAVO),
+        CODIGO_GUARA: pytest.approx(1_376_818.13, abs=CENTAVO),
         CODIGO_LONDRINA: pytest.approx(A_TRANSPORTAR_LONDRINA, abs=CENTAVO),
+        8: pytest.approx(3_014.07, abs=CENTAVO),
     }
 
 
