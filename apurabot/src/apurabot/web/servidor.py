@@ -223,7 +223,7 @@ class Manipulador(http.server.BaseHTTPRequestHandler):
         base = tratar(entrada)
         # O arquivo pode ser o Livro do Sankhya ou uma saída da ferramenta
         # devolvida com os ajustes preenchidos. Nos dois casos o caminho é o
-        # mesmo: quando não há aba AJUSTES, `ler_ajustes` devolve vazio.
+        # mesmo: quando não há aba AJUSTES MANUAIS, `ler_ajustes` devolve vazio.
         apuracao = apurar(base, ajustes=ler_ajustes(entrada))
         registros = reg.montar(apuracao, base.parametros)
         if len(registros) > 1:

@@ -129,7 +129,7 @@ from apurabot.nucleo import atividade as ativ            # noqa: E402
 RB = "HINOVE (RIO BRILHANTE)"
 
 # Linha 003 do Registro: "Estorno de créditos para ajuste de apuração do ICMS".
-# Não nasce de documento no Livro Fiscal: é declarado na aba AJUSTES.
+# Não nasce de documento no Livro Fiscal: é declarado na aba AJUSTES MANUAIS.
 AJUSTE_ESTORNO_INDUSTRIAL = 3_865.30
 
 # GIA - Apuração Final, quadros "Débitos de ICMS" e "Créditos de ICMS".

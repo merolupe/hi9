@@ -25,7 +25,7 @@ from .parametros import Parametros
 
 
 def de_declarados(declarados: aj.Declarados) -> AjustesDaApuracao:
-    """Converte o que a aba AJUSTES trouxe no que a apuração consome."""
+    """Converte o que a aba AJUSTES MANUAIS trouxe no que a apuração consome."""
     ajustes = AjustesDaApuracao()
     for parcela in declarados.parcelas:
         ajustes.somar(parcela)
@@ -35,7 +35,7 @@ def de_declarados(declarados: aj.Declarados) -> AjustesDaApuracao:
 
 
 def ler_ajustes(caminho) -> AjustesDaApuracao:
-    """Os ajustes da aba AJUSTES de um arquivo devolvido pelo time fiscal."""
+    """Os ajustes da aba AJUSTES MANUAIS de um arquivo devolvido pelo time fiscal."""
     return de_declarados(aj.ler_aba(caminho))
 
 
@@ -335,7 +335,7 @@ class Apuracao:
     #: Os ajustes que de fato valeram: os que chegaram de fora somados aos que
     #: vieram escritos nas linhas do Livro. É esta a versão que o Registro usa.
     ajustes: AjustesDaApuracao = field(default_factory=lambda: AjustesDaApuracao())
-    #: Parcela da aba AJUSTES sem atividade, onde a UF exige a segregação.
+    #: Parcela da aba AJUSTES MANUAIS sem atividade, onde a UF exige a segregação.
     ajustes_sem_atividade: list[aj.Ajuste] = field(default_factory=list)
 
     @property

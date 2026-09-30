@@ -6,7 +6,7 @@ Tipo apuração (a linha), o valor e uma Observação padrão — o código que 
 o texto legal. É esse o relatório que o Sankhya devolve ("Ajuste de Apuração":
 Nome Fantasia, Tipo apuração, Valor, Observação padrão, Observação).
 
-A aba AJUSTES da planilha só mostra o que alguém declarou. Mas a maior parte do
+A aba AJUSTES MANUAIS da planilha só mostra o que alguém declarou. Mas a maior parte do
 que se lança é o que a própria apuração calculou — estorno, crédito indevido,
 DIFAL, as duas pontas da centralização e o benefício. Este módulo junta as duas
 coisas numa lista só, um lançamento por linha, na forma do relatório do Sankhya:
@@ -121,7 +121,7 @@ def montar(apuracao, params, registros: list[reg.Registro] | None = None,
            ajustes=None) -> Roteiro:
     """Um lançamento por parcela, estabelecimento a estabelecimento.
 
-    `registros` e `ajustes` são os mesmos que a aba REGISTRO usou — passar os
+    `registros` e `ajustes` são os mesmos que a aba REGISTRO DE APURAÇÃO usou — passar os
     dois garante que a conferência compara com o Registro que saiu na planilha.
     """
     ajustes = ajustes if ajustes is not None else apuracao.ajustes
