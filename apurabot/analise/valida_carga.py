@@ -4,7 +4,8 @@ A carga bruta (ICMS / valor contábil) traz artefatos porque o valor contábil
 inclui parcelas fora da base do ICMS. A equalização traz o valor para a carga
 nominal mais próxima, limitada pela alíquota do ICMS.
 
-Resultado em Julho/2026: 2.333 de 2.336 linhas (99,87%).
+Primeira rodada, Julho/2026: 3 linhas divergiram, e o erro estava na apuração
+manual, não no algoritmo.
 """
 import collections
 from _comum import abrir, leitor
