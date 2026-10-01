@@ -43,7 +43,7 @@ todas de CST sem crédito/débito:
 **Nenhuma dessas linhas tem ICMS diferente de zero.** O filtro é seguro e
 automatizável sem julgamento humano.
 
-## 3. A equalização de carga efetiva é reproduzível — 99,87% de acerto
+## 3. A equalização de carga efetiva é reproduzível por algoritmo
 
 Este era o ponto de maior incerteza do projeto: transformar a carga bruta
 (`ICMS ÷ valor contábil`, que produz 0,100315 · 0,105467 · 0,106649…) em carga
@@ -60,13 +60,17 @@ candidatas  = cargas nominais ≤ alíquota do ICMS      # {4, 7, 12, 17, 18, 19
 carga_efetiva = candidata mais próxima da carga_bruta
 ```
 
-**Resultado: 2.333 de 2.336 linhas idênticas à classificação manual (99,87%).**
+**Resultado: o algoritmo reproduz a classificação manual em todas as linhas,
+menos três — e nessas três o erro estava na apuração manual.**
 
-E as 3 divergências **não são falha do algoritmo**: são as três notas da ICL
-Aditivos (Rio Brilhante, CFOP 2101, CST 00, alíquota 7%) que foram
-*manualmente reclassificadas* para 4% e tratadas via ajuste na aba *Controle
-Ajustes Docs* — estorno de R$ 1.232,12 + 1.322,39 + 1.310,79, exatamente
-`ICMS × 3/7`, que é a regra de MS de limitar o crédito mantido a 4%.
+São as três notas da ICL Aditivos (Rio Brilhante, CFOP 2101, CST 00, alíquota
+7%). A planilha manual as passou para 4%, mas o limite de crédito de MS já
+estava tratado por ajuste na aba *Controle Ajustes Docs* — estorno de
+R$ 1.232,12 + 1.322,39 + 1.310,79, exatamente `ICMS × 3/7`. A carga da nota é
+7%, que é o que o algoritmo dá.
+
+> Esta foi a primeira rodada de conferência, e serviu para validar o algoritmo.
+> Não é taxa de acerto: as divergências não eram do algoritmo.
 
 > **Conclusão importante:** aquilo que hoje é ajuste manual em MS é, na verdade,
 > a regra de estorno de MS aplicada no documento. Parametrizada, deixa de ser
@@ -156,7 +160,7 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 | Risco do escopo v1.0 | Situação em 25/08/2026 |
 |---|---|
 | Volume elevado / desempenho | **Descartado.** 6,5 mil linhas. |
-| Equalização de carga exige julgamento humano | **Resolvido.** 99,87% por algoritmo, e as 3 divergências são intervenção manual, não erro. |
+| Equalização de carga exige julgamento humano | **Resolvido.** É algoritmo; as 3 divergências da primeira rodada eram erro da apuração manual. |
 | Classificação exige julgamento humano | **Muito reduzido.** Julho fecha com zero pendências, e o extrato novo traz o TOP, que nomeia a operação. |
 | Regra tributária não mapeada | **Reduzido.** Tratado com `SEM REGRA` bloqueando o fechamento; nada pendente em Julho. |
 | Automação de MS prematura | **Resolvido.** Corumbá e Rio Brilhante reproduzem exato, e o benefício de RB confere com a GIA retificadora ao centavo. |
@@ -166,10 +170,10 @@ Linha de totais da aba APURAÇÃO, que a ferramenta precisa reproduzir:
 
 Dois números desta análise estavam errados e só apareceram ao escrever o motor:
 
-**O denominador do 99,87%.** O script de análise pulava em silêncio 6 linhas de
-`COMPLEMENTO DE ICMS` (R$ 17.490,73) que chegam com valor contábil zero. Com o
-denominador completo o índice inicial era 99,62%; tratadas por parâmetro, voltou
-a 99,87% — desta vez sobre as 2.345 linhas.
+**O universo da conferência de carga.** O script de análise pulava em silêncio
+6 linhas de `COMPLEMENTO DE ICMS` (R$ 17.490,73) que chegam com valor contábil
+zero. Com elas tratadas por parâmetro, a conferência passou a cobrir as 2.345
+linhas, e as únicas divergências continuaram sendo as três notas da ICL.
 
 **A ordem da classificação.** O CFOP de compra vencia a categoria do produto, e
 embalagem comprada com CFOP 1101 virava matéria-prima. O CFOP diz *para que* a
@@ -271,12 +275,12 @@ Registro de Apuração.
 |---|---|
 | Linhas lidas do Livro Fiscal | 6.555 |
 | Linhas relevantes para ICMS | **2.345** — igual à aba `ICMS` da planilha manual |
-| Carga efetiva × classificação manual | **2.342 de 2.345 (99,87%)** |
+| Carga efetiva × classificação manual | igual em todas, menos as 3 notas da ICL — erro da apuração manual |
 | Totais por estabelecimento × entrada/saída × carga | idênticos à aba `Dinamica` |
 | Pendências | **0** |
 | Alertas (não bloqueiam) | 30 |
 
-As 3 divergências de carga são as notas da ICL Aditivos, reclassificadas à mão.
+As 3 divergências de carga são as notas da ICL Aditivos, passadas a 4% por erro na apuração manual.
 O teste **exige** que a diferença seja essa e de R$ 9.019,01 — qualquer outra o
 quebra.
 
