@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark" class="pre">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="A Central Fiscal da Hinove: oito ferramentas do time Fiscal/Tributário numa tela só, sem instalar nada." />
+<title>Hinove · Central Fiscal</title>
+<style>
+/* ==========================================================================
+   HINOVE — Central Fiscal · vitrine
+   Linguagem herdada do mockup órbita: grade editorial, fios de 1px, tipo
+   grande, cantos retos. O que muda: aqui cada ferramenta é de verdade, e cada
+   uma ganhou um instrumento próprio que mostra COMO ela decide.
+   Uma página só. Nada de CDN: as fontes viajam em ./fontes e, se faltarem,
+   o sistema assume.
+   ========================================================================== */
+@font-face{font-family:"Inter";font-weight:400;font-display:swap;src:url(fontes/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;font-display:swap;src:url(fontes/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;font-display:swap;src:url(fontes/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:700;font-display:swap;src:url(fontes/inter-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-display:swap;src:url(fontes/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:500;font-display:swap;src:url(fontes/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
+
+:root{
+  /* as três bolas da marca */
+  --b1:#8FAFCB; --b2:#343F73; --b3:#2A9165;
+
+  --f:"Inter","Segoe UI Variable Text","Segoe UI",Helvetica,Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+  --ease:cubic-bezier(.22,.9,.24,1);
+  --ease-io:cubic-bezier(.6,.02,.16,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+
+  --gut:clamp(1rem,4vw,2.5rem);
+  --rule:1px;
+  --nav-h:57px;
+}
+html[data-theme="dark"]{
+  --bg:#07090E; --bg-2:#0B0E15; --bg-3:#10141D;
+  --ink:#F3F5F9; --ink-2:#9AA3B3; --ink-3:#5C6474;
+  --line:#1A1F29; --line-2:#2B323F;
+  --acc:#35C285; --acc-ink:#04140C;
+  --web:143,175,203;
+  --shade:rgba(255,255,255,.025);
+  --warn:#E3B04B; --bad:#E0795E; --manual:#A78BFA;
+  /* uma cor por ferramenta, todas derivadas da família da marca */
+  --t-fiscal:#35C285; --t-apura:#8FAFCB; --t-dixml:#8C98EA; --t-pend:#E3B04B;
+  --t-serv:#E0795E; --t-base:#4EC3C7; --t-resumo:#B98CE0; --t-fatura:#F29BB5;
+}
+html[data-theme="light"]{
+  --bg:#FBFBF9; --bg-2:#FFFFFF; --bg-3:#F2F2EE;
+  --ink:#0E1116; --ink-2:#555C68; --ink-3:#8A919C;
+  --line:#E4E4E0; --line-2:#C9CAC4;
+  --acc:#1E7A55; --acc-ink:#FFFFFF;
+  --web:52,63,115;
+  --shade:rgba(10,14,22,.028);
+  --warn:#B7801A; --bad:#C0512F; --manual:#6D4FD8;
+  --t-fiscal:#1E8A5C; --t-apura:#4D7598; --t-dixml:#4E5CC0; --t-pend:#B7801A;
+  --t-serv:#C0512F; --t-base:#1D8C90; --t-resumo:#8453B8; --t-fatura:#C24A74;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+button{appearance:none;-webkit-appearance:none;background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+html{scrollbar-gutter:stable;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+html.pre{overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+  transition:background .45s var(--ease),color .45s var(--ease)}
+::selection{background:var(--acc);color:var(--acc-ink)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+svg text{font-family:var(--f-mono)}
+
+#web{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{width:100%;max-width:1320px;margin-inline:auto;padding-inline:var(--gut)}
+main{position:relative;z-index:1}
+
+h1,h2,h3,h4{font-weight:600;letter-spacing:-.035em;line-height:1.04}
+h1 em,h2 em,h3 em{font-style:normal;color:var(--acc)}
+.mono{font-family:var(--f-mono);font-size:.688rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+code{font-family:var(--f-mono);font-size:.86em;padding:.05em .35em;background:var(--shade);border:1px solid var(--line)}
+
+[data-in]{opacity:0;transform:translateY(16px);transition:opacity .8s var(--ease),transform .9s var(--ease)}
+[data-in].on{opacity:1;transform:none}
+
+/* barra de leitura no topo */
+#prog{position:fixed;left:0;top:0;height:2px;width:100%;z-index:120;transform-origin:left;transform:scaleX(0);
+  background:linear-gradient(90deg,var(--b1),var(--b3) 55%,var(--acc))}
+
+/* ==========================================================================
+   ABERTURA — as três bolas chegam de longe e se encaixam na marca
+   ========================================================================== */
+#intro{position:fixed;inset:0;z-index:300;background:var(--bg);display:grid;place-content:center;
+  justify-items:center;gap:2rem;padding:var(--gut);text-align:center;cursor:pointer;
+  transition:opacity .6s var(--ease),visibility .6s}
+#intro.out{opacity:0;visibility:hidden}
+html.no-intro #intro{display:none}
+.imark{width:clamp(84px,14vh,120px);overflow:visible}
+.imark circle{transform-box:fill-box;transform-origin:center}
+.imark .i1{animation:fly1 1.1s var(--ease) backwards}
+.imark .i2{animation:fly2 1.1s var(--ease) .08s backwards}
+.imark .i3{animation:fly3 1.1s var(--ease) .16s backwards}
+@keyframes fly1{from{transform:translate(-260px,-120px) scale(.2);opacity:0}}
+@keyframes fly2{from{transform:translate(280px,-40px) scale(.2);opacity:0}}
+@keyframes fly3{from{transform:translate(-40px,240px) scale(.2);opacity:0}}
+.imark .ring{fill:none;stroke:var(--acc);stroke-width:1;opacity:0;transform-origin:60px 52px;
+  animation:ringout 1.3s var(--ease) .9s forwards}
+@keyframes ringout{0%{opacity:.8;transform:scale(.6)}100%{opacity:0;transform:scale(2.4)}}
+.intro-say{font-size:clamp(1.2rem,2.8vh,1.8rem);font-weight:500;letter-spacing:-.03em;line-height:1.3;max-width:24ch;
+  animation:rise .8s var(--ease) .5s backwards}
+.intro-say b{font-weight:600;color:var(--acc)}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}}
+.intro-foot{display:grid;justify-items:center;gap:.9rem;animation:rise .8s var(--ease) .7s backwards}
+.intro-bar{width:120px;height:1px;background:var(--line-2);position:relative;overflow:hidden}
+.intro-bar::after{content:"";position:absolute;inset:0;background:var(--acc);transform:scaleX(0);transform-origin:left;animation:fill 2.2s linear forwards}
+@keyframes fill{to{transform:scaleX(1)}}
+.intro-skip{color:var(--ink-2);font-family:var(--f-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;padding:.4rem .6rem}
+.intro-skip:hover{color:var(--ink)}
+
+/* ==========================================================================
+   NAV
+   ========================================================================== */
+header.nav{position:sticky;top:0;z-index:80;background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:var(--rule) solid var(--line)}
+.nav-in{display:flex;align-items:center;gap:1rem;height:var(--nav-h)}
+.logo{display:flex;align-items:center;gap:.62rem;text-decoration:none;color:inherit;flex:none}
+.logo svg{display:block;height:24px;width:auto;overflow:visible}
+.logo:hover .lg1{transform:translate(-2px,-2px)}
+.logo:hover .lg2{transform:translate(3px,1px)}
+.logo:hover .lg3{transform:translate(-1px,3px)}
+.logo circle{transition:transform .4s var(--spring)}
+.logo .wm{display:flex;flex-direction:column;line-height:1}
+.logo b{font-size:.95rem;font-weight:600;letter-spacing:-.01em}
+.logo i{font-style:normal;font-family:var(--f-mono);font-size:.58rem;letter-spacing:.15em;color:var(--ink-3);text-transform:uppercase;margin-top:3px}
+.nav-links{display:flex;align-items:center;gap:.1rem;margin-left:auto;min-width:0;overflow-x:auto;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 86%,transparent);mask-image:linear-gradient(90deg,#000 86%,transparent)}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{font-family:var(--f-mono);font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;padding:.45rem .6rem;white-space:nowrap;transition:color .22s}
+.nav-links a:hover,.nav-links a.here{color:var(--ink)}
+.nav-links a .i{color:var(--line-2);margin-right:.42em;transition:color .22s}
+.nav-links a.here .i{color:var(--acc)}
+.toggle{width:34px;height:34px;flex:none;margin-left:.5rem;border:var(--rule) solid var(--line);color:var(--ink-2);
+  display:grid;place-items:center;transition:color .22s,border-color .22s}
+.toggle:hover{color:var(--ink);border-color:var(--line-2)}
+.toggle svg{width:15px;height:15px}
+html[data-theme="light"] .toggle .ic-moon,html[data-theme="dark"] .toggle .ic-sun{display:none}
+
+/* ==========================================================================
+   SEÇÕES
+   ========================================================================== */
+section{scroll-margin-top:var(--nav-h)}
+.sec{padding-block:clamp(4.5rem,12vh,8.5rem)}
+.sec-head{display:flex;align-items:baseline;gap:clamp(1.2rem,4vw,3.5rem);padding-bottom:1.6rem;
+  border-bottom:var(--rule) solid var(--line);margin-bottom:clamp(2rem,5vh,3.4rem)}
+.sec-head .idx{flex:none;padding-top:.35rem}
+.sec-head h2{font-size:clamp(1.75rem,3.8vw,3rem);max-width:21ch;letter-spacing:-.045em}
+.sec-head .lead{margin-left:auto;max-width:36ch;color:var(--ink-2);font-size:.95rem;line-height:1.62}
+
+/* ==========================================================================
+   HERÓI — o sistema: a marca no centro, as oito ferramentas em órbita
+   ========================================================================== */
+.hero{position:relative;padding-top:clamp(2.5rem,8vh,5.5rem);padding-bottom:clamp(2rem,6vh,4rem)}
+.hero-meta{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;padding-bottom:1.3rem;border-bottom:var(--rule) solid var(--line)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:clamp(1rem,4vw,3rem);align-items:center;
+  margin-top:clamp(1.5rem,4vh,2.5rem)}
+.hero h1{font-size:clamp(2.7rem,7.4vw,6.6rem);letter-spacing:-.058em;line-height:.93;max-width:11ch}
+.hero h1 .ln{display:block;overflow:hidden;padding-bottom:.06em}
+.hero h1 .ln>span{display:inline-block;transform:translateY(105%);transition:transform 1.1s var(--ease)}
+.hero.on h1 .ln>span{transform:none}
+.hero.on h1 .ln:nth-child(2)>span{transition-delay:.1s}
+.hero.on h1 .ln:nth-child(3)>span{transition-delay:.2s}
+.hero .sub{margin-top:clamp(1.4rem,3.5vh,2.2rem);color:var(--ink-2);font-size:clamp(1rem,1.2vw,1.1rem);line-height:1.68;max-width:44ch}
+.hero .sub b{color:var(--ink);font-weight:500}
+.hero-cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.8rem}
+.btn{display:inline-flex;align-items:center;gap:.6rem;padding:.8rem 1.1rem;border:var(--rule) solid var(--line-2);
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none;
+  transition:border-color .25s,background .25s,color .25s,transform .25s var(--ease)}
+.btn:hover{border-color:var(--ink-3);transform:translateY(-2px)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn .ar{transition:transform .3s var(--ease)}
+.btn:hover .ar{transform:translateX(4px)}
+
+.orbit-wrap{position:relative;aspect-ratio:1/1;width:100%;max-width:640px;justify-self:center;perspective:1200px}
+.orbit-wrap svg{width:100%;height:100%;display:block;overflow:visible;transition:transform .8s var(--ease)}
+.orbit-ring{fill:none;stroke:rgb(var(--web));stroke-opacity:.22;stroke-width:1}
+.orbit-ring.dash{stroke-dasharray:2 6}
+.orbit-tick{stroke:rgb(var(--web));stroke-opacity:.35}
+.pl{cursor:pointer}
+.pl .pb{transition:r .35s var(--spring)}
+.pl .ph{fill:none;stroke-width:1;opacity:0;transition:opacity .3s}
+.pl:hover .ph,.pl.hot .ph{opacity:.9}
+.pl text{font-size:10.5px;letter-spacing:.12em;fill:var(--ink-2);text-transform:uppercase;pointer-events:none;transition:fill .25s}
+.pl:hover text,.pl.hot text{fill:var(--ink)}
+.core-pulse{fill:none;stroke:var(--acc);stroke-width:1;transform-origin:300px 300px;transform-box:view-box;animation:pulse 4s var(--ease) infinite}
+.core-pulse.b{animation-delay:2s}
+@keyframes pulse{0%{opacity:.55;transform:scale(.55)}100%{opacity:0;transform:scale(1.7)}}
+.core-spin{transform-origin:300px 300px;transform-box:view-box;animation:spin 60s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.core-lbl{font-size:10px;letter-spacing:.2em;fill:var(--ink-3);text-anchor:middle}
+.orbit-card{position:absolute;left:50%;bottom:2%;transform:translate(-50%,8px);min-width:min(92%,330px);max-width:92%;
+  padding:.7rem .9rem;background:color-mix(in srgb,var(--bg-2) 90%,transparent);border:var(--rule) solid var(--line-2);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s,transform .4s var(--ease)}
+.orbit-card.on{opacity:1;transform:translate(-50%,0)}
+.orbit-card b{display:flex;align-items:center;gap:.5rem;font-weight:600;letter-spacing:-.02em}
+.orbit-card b i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.orbit-card span{display:block;color:var(--ink-2);font-size:.86rem;line-height:1.45;margin-top:.25rem}
+
+/* letreiro corrido de fatos */
+.ticker{position:relative;z-index:1;border-block:var(--rule) solid var(--line);overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ticker-in{display:flex;gap:3rem;width:max-content;padding-block:1rem;animation:marq 55s linear infinite}
+.ticker:hover .ticker-in{animation-play-state:paused}
+@keyframes marq{to{transform:translateX(-50%)}}
+.ticker span{display:flex;align-items:center;gap:.8rem;white-space:nowrap;font-family:var(--f-mono);font-size:.74rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-2)}
+.ticker span b{color:var(--ink);font-weight:500}
+.ticker span i{width:6px;height:6px;border-radius:50%;background:var(--c,var(--acc))}
+
+/* ==========================================================================
+   01 · CENTRAL — o contrato: quem é, o que pede, o que devolve
+   ========================================================================== */
+.contract{display:grid;grid-template-columns:repeat(4,1fr);border-top:var(--rule) solid var(--line-2);border-bottom:var(--rule) solid var(--line)}
+.ct{padding:clamp(1.3rem,2.6vw,2rem) clamp(1rem,2vw,1.6rem) clamp(1.3rem,2.6vw,2rem) 0;border-right:var(--rule) solid var(--line);position:relative}
+.ct:not(:first-child){padding-left:clamp(1rem,2vw,1.6rem)}
+.ct:last-child{border-right:0}
+.ct .n{font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;color:var(--acc)}
+.ct h3{font-size:clamp(1.15rem,1.8vw,1.45rem);letter-spacing:-.03em;margin-top:.7rem}
+.ct p{margin-top:.55rem;color:var(--ink-2);font-size:.9rem;line-height:1.55}
+.ct svg{display:block;width:100%;height:92px;margin-top:1.2rem;overflow:visible}
+.ct .glyph *{vector-effect:non-scaling-stroke}
+
+.stage{scroll-margin-top:calc(var(--nav-h) + 16px);position:relative;margin-top:clamp(2rem,5vh,3rem);border:var(--rule) solid var(--line);background:var(--bg-2);overflow:hidden}
+.stage::before,.stage::after{content:"";position:absolute;width:14px;height:14px;z-index:3;border:var(--rule) solid var(--line-2);pointer-events:none}
+.stage::before{left:10px;top:10px;border-right:0;border-bottom:0}
+.stage::after{right:10px;bottom:10px;border-left:0;border-top:0}
+.stage-bar{display:flex;align-items:center;gap:.9rem;padding:.7rem 1rem;border-bottom:var(--rule) solid var(--line);position:relative;z-index:2;background:var(--bg-2)}
+.stage-bar .dots{display:flex;gap:6px}
+.stage-bar .dots i{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+.stage-bar .url{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.08em;color:var(--ink-3);padding:.25rem .6rem;border:var(--rule) solid var(--line)}
+.stage-bar .url b{color:var(--acc);font-weight:500}
+.stage-bar .lock{margin-left:auto}
+
+/* a Central de verdade, em miniatura e rodando sozinha */
+.mini{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);min-height:360px}
+.mini-list{border-right:var(--rule) solid var(--line);padding:.6rem}
+.mini-list button{width:100%;display:flex;align-items:center;gap:.7rem;padding:.62rem .7rem;text-align:left;font-size:.88rem;color:var(--ink-2);
+  border:var(--rule) solid transparent;transition:background .25s,color .25s,border-color .25s}
+.mini-list button .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.mini-list button .nm{flex:1;font-weight:500;letter-spacing:-.015em}
+.mini-list button .st{font-family:var(--f-mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.mini-list button.on{background:var(--shade);color:var(--ink);border-color:var(--line-2)}
+.mini-list button:hover{color:var(--ink)}
+.mini-run{position:relative;padding:clamp(1rem,2.5vw,1.8rem);display:flex;flex-direction:column;gap:1rem}
+.mini-run h4{font-size:1.35rem;letter-spacing:-.035em}
+.mini-run .rs{color:var(--ink-2);font-size:.9rem;margin-top:.35rem}
+.drop{position:relative;border:1px dashed var(--line-2);padding:1.1rem;display:flex;align-items:center;gap:.9rem;min-height:76px;transition:border-color .3s,background .3s}
+.drop.hit{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 7%,transparent)}
+.drop .ico{width:34px;height:40px;flex:none}
+.drop .txt{font-size:.86rem;color:var(--ink-2);line-height:1.4}
+.drop .txt b{color:var(--ink);font-weight:500;display:block}
+.file-fly{position:absolute;right:12%;top:-60px;width:30px;height:36px;opacity:0;pointer-events:none}
+.drop.fly .file-fly{animation:filefall .9s var(--ease) forwards}
+@keyframes filefall{0%{opacity:0;transform:translate(40px,-30px) rotate(12deg)}30%{opacity:1}100%{opacity:1;transform:translate(0,72px) rotate(0)}}
+.runbar{height:2px;background:var(--line);position:relative;overflow:hidden}
+.runbar i{position:absolute;inset:0;background:var(--acc);transform:scaleX(0);transform-origin:left}
+.verb{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;color:var(--ink-3);min-height:1.1em}
+.res{display:grid;grid-template-columns:repeat(3,1fr);border-top:var(--rule) solid var(--line);opacity:0;transform:translateY(8px);transition:opacity .5s,transform .6s var(--ease)}
+.res.on{opacity:1;transform:none}
+.res div{padding:.7rem .7rem .2rem 0;border-right:var(--rule) solid var(--line)}
+.res div:not(:first-child){padding-left:.7rem}
+.res div:last-child{border-right:0}
+.res b{display:block;font-size:1.3rem;letter-spacing:-.04em;font-weight:600}
+.res span{display:block;color:var(--ink-3);font-size:.76rem;line-height:1.3;margin-top:.2rem}
+.dl{align-self:flex-start;display:inline-flex;gap:.55rem;align-items:center;padding:.5rem .8rem;border:var(--rule) solid var(--line-2);
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);opacity:0;transition:opacity .5s .25s}
+.res.on + .dl{opacity:1}
+.dl i{width:7px;height:7px;background:var(--acc)}
+
+/* ==========================================================================
+   02 · FLUXO — de onde vem, por onde passa, o que sai
+   ========================================================================== */
+.flow-wrap{position:relative;border:var(--rule) solid var(--line);background:var(--bg-2);overflow-x:auto;scrollbar-width:thin}
+.flow-wrap svg{display:block;width:100%;min-width:900px;height:auto}
+.fcol{font-size:10px;letter-spacing:.2em;fill:var(--ink-3)}
+.fn rect{fill:var(--bg-3);stroke:var(--line-2);stroke-width:1;transition:stroke .3s,fill .3s}
+.fn .t1{font-family:var(--f);font-size:13px;font-weight:500;fill:var(--ink);letter-spacing:-.01em}
+.fn .t2{font-size:9px;letter-spacing:.14em;fill:var(--ink-3)}
+.fn.tool rect{fill:color-mix(in srgb,var(--c) 12%,var(--bg-2));stroke:color-mix(in srgb,var(--c) 55%,transparent)}
+.fn.tool .sw{fill:var(--c)}
+.fn.tool{cursor:pointer}
+.fe{fill:none;stroke:var(--line-2);stroke-width:1.2;transition:stroke .3s,opacity .3s,stroke-width .3s}
+.fe.dash{stroke-dasharray:4 5}
+.fp{transition:opacity .3s}
+.flow-wrap.focus .fe:not(.hot){opacity:.18}
+.flow-wrap.focus .fp:not(.hot){opacity:0}
+.flow-wrap.focus .fn:not(.hot){opacity:.35}
+.fn{transition:opacity .3s}
+.fe.hot{stroke:var(--c);stroke-width:1.8}
+.flabel{font-size:9px;letter-spacing:.12em;fill:var(--ink-3)}
+.flow-legend{display:flex;flex-wrap:wrap;gap:.5rem 1.6rem;margin-top:1rem}
+.flow-legend span{display:flex;align-items:center;gap:.5rem;color:var(--ink-2);font-size:.85rem}
+.flow-legend i{width:22px;height:0;border-top:1.5px solid var(--ink-3)}
+.flow-legend i.d{border-top-style:dashed}
+.flow-legend i.p{width:7px;height:7px;border:0;border-radius:50%;background:var(--acc)}
+
+/* ==========================================================================
+   03 · FERRAMENTAS — um capítulo por ferramenta
+   ========================================================================== */
+.rail{position:sticky;top:var(--nav-h);z-index:40;background:color-mix(in srgb,var(--bg) 90%,transparent);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:var(--rule) solid var(--line)}
+.rail-in{display:flex;overflow-x:auto;scrollbar-width:none}
+.rail-in::-webkit-scrollbar{display:none}
+.rail a{position:relative;display:flex;align-items:center;gap:.5rem;padding:.8rem .95rem;white-space:nowrap;text-decoration:none;
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);transition:color .25s}
+.rail a i{width:7px;height:7px;border-radius:50%;background:var(--c);opacity:.5;transition:opacity .25s,transform .3s var(--spring)}
+.rail a::after{content:"";position:absolute;left:.95rem;right:.95rem;bottom:-1px;height:2px;background:var(--c);transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease)}
+.rail a:hover,.rail a.here{color:var(--ink)}
+.rail a.here i{opacity:1;transform:scale(1.3)}
+.rail a.here::after{transform:scaleX(1)}
+
+.tool{--c:var(--acc);padding-block:clamp(3.5rem,10vh,7rem);border-bottom:var(--rule) solid var(--line);scroll-margin-top:calc(var(--nav-h) + 44px)}
+.tool-grid{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:clamp(1.8rem,5vw,4.5rem);align-items:start}
+.tool.flip .tool-copy{order:2}
+.tool-top{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.tool-top .ix{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.14em;color:var(--c)}
+.pill{display:inline-flex;align-items:center;gap:.45rem;padding:.3rem .62rem;border:var(--rule) solid var(--line-2);color:var(--ink-2);
+  font-family:var(--f-mono);font-size:.58rem;letter-spacing:.13em;text-transform:uppercase}
+.pill i{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 0 var(--acc);animation:live 2.4s infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 60%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+.tool h3{font-size:clamp(2.3rem,5.4vw,4.4rem);letter-spacing:-.058em;line-height:.95;margin-top:1rem;display:flex;align-items:center;gap:.9rem}
+.tool h3 .orb{width:.42em;height:.42em;border-radius:50%;background:var(--c);flex:none;
+  box-shadow:0 0 0 .1em color-mix(in srgb,var(--c) 18%,transparent),0 0 40px -6px var(--c)}
+.tool .q{margin-top:1.1rem;font-size:clamp(1.08rem,1.5vw,1.3rem);letter-spacing:-.025em;line-height:1.38;color:var(--ink);max-width:30ch}
+.tool .q em{font-style:normal;color:var(--c)}
+.tool .d{margin-top:1rem;color:var(--ink-2);font-size:.95rem;line-height:1.66;max-width:46ch}
+.tool .d b{color:var(--ink);font-weight:500}
+.io{display:grid;grid-template-columns:auto 1fr;gap:.55rem 1rem;margin-top:1.5rem;padding-top:1.1rem;border-top:var(--rule) solid var(--line)}
+.io .k{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);padding-top:.3rem}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{padding:.25rem .55rem;border:var(--rule) solid var(--line-2);font-size:.8rem;color:var(--ink-2);white-space:nowrap}
+.chip.out{border-color:color-mix(in srgb,var(--c) 50%,transparent);color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);margin-top:1.6rem;border-top:var(--rule) solid var(--line-2)}
+.kpi{padding:.9rem .8rem 0 0;border-right:var(--rule) solid var(--line)}
+.kpi:not(:first-child){padding-left:.8rem}
+.kpi:last-child{border-right:0}
+.kpi b{display:block;font-size:clamp(1.5rem,2.6vw,2.1rem);font-weight:600;letter-spacing:-.05em;line-height:1}
+.kpi b small{font-size:.55em;color:var(--c);margin-left:.05em}
+.kpi>span{display:block;margin-top:.4rem;color:var(--ink-3);font-size:.8rem;line-height:1.35}
+
+/* painel do instrumento */
+.inst{position:relative;border:var(--rule) solid var(--line);background:var(--bg-2);overflow:hidden}
+.inst::before,.inst::after{content:"";position:absolute;width:14px;height:14px;z-index:3;border:var(--rule) solid var(--line-2);pointer-events:none}
+.inst::before{left:10px;top:10px;border-right:0;border-bottom:0}
+.inst::after{right:10px;bottom:10px;border-left:0;border-top:0}
+.inst-h{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem 1rem .75rem 1.9rem;border-bottom:var(--rule) solid var(--line)}
+.inst-h .mono{color:var(--ink-2)}
+.inst-h .rec{display:flex;align-items:center;gap:.45rem;min-width:0;white-space:nowrap}
+.inst-h .rec span{overflow:hidden;text-overflow:ellipsis}
+.inst-h>.mono:first-child{white-space:nowrap}
+.inst-h .rec i{width:6px;height:6px;border-radius:50%;background:var(--c);animation:blip 1.6s ease-in-out infinite}
+@keyframes blip{50%{opacity:.25}}
+.inst svg.v{display:block;width:100%;height:auto;overflow:visible}
+.inst-f{display:flex;flex-wrap:wrap;gap:.35rem;padding:.8rem 1rem;border-top:var(--rule) solid var(--line)}
+.inst-f .tag{padding:.22rem .5rem;border:var(--rule) solid var(--line);font-family:var(--f-mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);transition:color .2s,border-color .2s,background .2s}
+.inst-f .tag.flash{color:var(--ink);border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.cap{margin-top:.8rem;color:var(--ink-3);font-size:.82rem;line-height:1.5}
+.cap b{color:var(--ink-2);font-weight:500}
+
+/* textos dentro dos instrumentos */
+.v .lb{font-size:10px;letter-spacing:.14em;fill:var(--ink-3);text-transform:uppercase}
+.v .lb2{font-size:9px;letter-spacing:.12em;fill:var(--ink-3)}
+.v .val{font-family:var(--f);font-weight:600;letter-spacing:-.03em;fill:var(--ink)}
+.v .grid line{stroke:var(--line);stroke-width:1}
+.v .band{fill:var(--shade);stroke:var(--line);stroke-width:1;transition:fill .25s}
+.v .band.lit{fill:color-mix(in srgb,var(--c) 14%,transparent)}
+
+/* tabela de conferência que acende linha a linha */
+.checks{border-top:var(--rule) solid var(--line)}
+.checks div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:.9rem;align-items:center;padding:.52rem 1rem;border-bottom:var(--rule) solid var(--line);font-size:.86rem;color:var(--ink-3);transition:color .4s}
+.checks div:last-child{border-bottom:0}
+.checks div .uf{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em}
+.checks div .ok{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;display:flex;align-items:center;gap:.45rem;opacity:.25;transition:opacity .4s}
+.checks div .ok::before{content:"";width:12px;height:12px;border-radius:50%;border:1.5px solid var(--acc);background:transparent;transition:background .3s}
+.checks div.on{color:var(--ink)}
+.checks div.on .ok{opacity:1;color:var(--acc)}
+.checks div.on .ok::before{background:var(--acc);box-shadow:inset 0 0 0 2.5px var(--bg-2)}
+
+/* célula de chave: notação científica vira texto */
+.keycell{display:grid;grid-template-columns:auto 1fr;gap:.2rem 1rem;padding:.9rem 1rem;border-top:var(--rule) solid var(--line);align-items:center}
+.keycell .k{font-family:var(--f-mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.keycell .bad{font-family:var(--f-mono);font-size:.85rem;color:var(--bad);position:relative;justify-self:start}
+.keycell .bad::after{content:"";position:absolute;left:-2px;right:-2px;top:50%;height:1.5px;background:var(--bad);transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease)}
+.keycell.x .bad::after{transform:scaleX(1)}
+.keycell .good{font-family:var(--f-mono);font-size:clamp(.62rem,1.4vw,.8rem);color:var(--acc);letter-spacing:.02em;word-break:break-all;min-height:1.2em}
+.keycell .good::after{content:"▍";animation:blip .8s steps(1) infinite;color:var(--ink-3)}
+
+/* planilha âmbar da base de conhecimento */
+.sheet{width:100%;border-collapse:collapse;font-size:.8rem}
+.sheet th{font-family:var(--f-mono);font-weight:500;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:.5rem .6rem;border-bottom:var(--rule) solid var(--line-2);background:var(--bg-3)}
+.sheet td{padding:.48rem .6rem;border-bottom:var(--rule) solid var(--line);border-right:var(--rule) solid var(--line);color:var(--ink);height:2.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0;transition:background .5s}
+.sheet td:last-child{border-right:0}
+.sheet td.nf{color:var(--ink-3);font-family:var(--f-mono);font-size:.7rem}
+.sheet td.amb{background:color-mix(in srgb,#F2C35B 26%,transparent)}
+.sheet td.sug{background:color-mix(in srgb,#F2C35B 11%,transparent);outline:1px dashed color-mix(in srgb,#F2C35B 60%,transparent);outline-offset:-3px}
+.sheet td.hum{color:var(--ink-2)}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;padding:.8rem 1rem;border-top:var(--rule) solid var(--line)}
+.legend span{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--ink-2)}
+.legend i{width:12px;height:12px;flex:none}
+
+/* extrator de OC */
+.ocx{padding:.9rem 1rem;border-top:var(--rule) solid var(--line);display:grid;gap:.5rem}
+.ocx .obs{font-family:var(--f-mono);font-size:clamp(.66rem,1.5vw,.8rem);color:var(--ink-2);letter-spacing:.02em;line-height:1.6;word-break:break-word}
+.ocx .obs span{transition:background .3s,color .3s;padding:.05em 0}
+.ocx .obs .anc{background:color-mix(in srgb,var(--c) 26%,transparent);color:var(--ink)}
+.ocx .obs .dig{background:var(--acc);color:var(--acc-ink)}
+.ocx .obs .rej{background:color-mix(in srgb,var(--bad) 28%,transparent);color:var(--ink);text-decoration:line-through}
+.ocx .out{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;font-family:var(--f-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);min-height:1.6rem}
+.ocx .out b{color:var(--ink);font-weight:500;padding:.2rem .45rem;border:var(--rule) solid var(--line-2)}
+
+/* ==========================================================================
+   04 · PRINCÍPIOS
+   ========================================================================== */
+.rules{display:grid;grid-template-columns:repeat(3,1fr);border-top:var(--rule) solid var(--line-2)}
+.rule{padding:clamp(1.4rem,2.8vw,2.2rem) clamp(1rem,2vw,1.8rem) clamp(1.6rem,3vw,2.4rem) 0;border-right:var(--rule) solid var(--line);border-bottom:var(--rule) solid var(--line)}
+.rule:nth-child(3n+2),.rule:nth-child(3n){padding-left:clamp(1rem,2vw,1.8rem)}
+.rule:nth-child(3n){border-right:0}
+.rule svg{display:block;width:100%;height:130px;overflow:visible;margin-bottom:1.3rem}
+.rule .n{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.14em;color:var(--acc)}
+.rule h4{font-size:clamp(1.12rem,1.6vw,1.34rem);letter-spacing:-.03em;margin-top:.5rem;line-height:1.2}
+.rule p{margin-top:.55rem;color:var(--ink-2);font-size:.9rem;line-height:1.58}
+.g-stroke{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.g-soft{fill:var(--shade);stroke:var(--line-2);stroke-width:1}
+.g-txt{font-size:9.5px;letter-spacing:.1em;fill:var(--ink-3)}
+.g-acc{fill:var(--acc)}
+
+/* animações dos princípios — só rodam com .run (quando entram na tela) */
+.r-click .rp{fill:none;stroke:var(--acc);stroke-width:1.2;opacity:0;transform-box:fill-box;transform-origin:center}
+.run .r-click .rp{animation:ripple 3.6s var(--ease) infinite}
+.run .r-click .rp.b{animation-delay:.25s}
+@keyframes ripple{0%,8%{opacity:0;transform:scale(.3)}12%{opacity:.9}30%,100%{opacity:0;transform:scale(1.6)}}
+.r-click .win{transform-box:fill-box;transform-origin:left bottom;opacity:0}
+.run .r-click .win{animation:winopen 3.6s var(--ease) infinite}
+@keyframes winopen{0%,32%{opacity:0;transform:scale(.4)}46%,88%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.r-click .cur{transform-box:fill-box}
+.run .r-click .cur{animation:curmove 3.6s var(--ease) infinite}
+@keyframes curmove{0%{transform:translate(40px,30px)}14%,100%{transform:translate(0,0)}}
+
+.r-yaml .val2{opacity:0}
+.run .r-yaml .val1{animation:swapA 5s steps(1) infinite}
+.run .r-yaml .val2{animation:swapB 5s steps(1) infinite}
+@keyframes swapA{0%,45%{opacity:1}46%,100%{opacity:0}}
+@keyframes swapB{0%,45%{opacity:0}46%,100%{opacity:1}}
+.r-yaml .caret{fill:var(--acc)}
+.run .r-yaml .caret{animation:blip .7s steps(1) infinite}
+.r-yaml .newv{opacity:0}
+.run .r-yaml .newv{animation:swapB 5s steps(1) infinite}
+
+.r-lock .shackle{transform-box:fill-box;transform-origin:right bottom}
+.run .r-lock .shackle{animation:lockit 4.4s var(--ease) infinite}
+@keyframes lockit{0%,35%{transform:translateY(-7px)}45%,90%{transform:none}100%{transform:translateY(-7px)}}
+.r-lock .doc.bad rect{transition:fill .3s}
+.run .r-lock .doc.bad rect{animation:badfill 4.4s steps(1) infinite}
+@keyframes badfill{0%,25%{fill:var(--shade);stroke:var(--line-2)}26%,92%{fill:color-mix(in srgb,var(--bad) 30%,transparent);stroke:var(--bad)}}
+.r-lock .semregra{opacity:0}
+.run .r-lock .semregra{animation:swapB2 4.4s steps(1) infinite}
+@keyframes swapB2{0%,25%{opacity:0}26%,92%{opacity:1}100%{opacity:0}}
+.r-lock .lockbody{transition:fill .3s}
+.run .r-lock .lockbody{animation:lockcol 4.4s steps(1) infinite}
+@keyframes lockcol{0%,40%{fill:var(--line-2)}41%,92%{fill:var(--bad)}}
+
+.r-time .head{transform-box:fill-box}
+.run .r-time .head{animation:scrub 7s var(--ease-io) infinite}
+@keyframes scrub{0%,8%{transform:translateX(0)}40%,55%{transform:translateX(180px)}88%,100%{transform:translateX(0)}}
+
+.r-star .forbid{stroke:var(--bad);stroke-dasharray:3 4;opacity:0}
+.run .r-star .forbid{animation:forbid 4s var(--ease) infinite}
+@keyframes forbid{0%,20%{opacity:0}30%,60%{opacity:.9}70%,100%{opacity:0}}
+.r-star .xmark{opacity:0}
+.run .r-star .xmark{animation:xm 4s var(--ease) infinite}
+@keyframes xm{0%,40%{opacity:0}48%,62%{opacity:1}72%,100%{opacity:0}}
+.r-star .spoke{stroke:var(--line-2);stroke-width:1}
+.r-star .pkt{fill:var(--acc)}
+
+/* ==========================================================================
+   05 · NÚMEROS
+   ========================================================================== */
+.big4{display:grid;grid-template-columns:repeat(4,1fr);border-top:var(--rule) solid var(--line-2);border-bottom:var(--rule) solid var(--line)}
+.b4{padding:clamp(1.4rem,3vw,2.3rem) 1rem clamp(1.4rem,3vw,2.3rem) 0;border-right:var(--rule) solid var(--line)}
+.b4:not(:first-child){padding-left:clamp(1rem,2vw,1.6rem)}
+.b4:last-child{border-right:0}
+.b4 b{display:block;font-size:clamp(2.6rem,6.2vw,5.2rem);font-weight:600;letter-spacing:-.065em;line-height:.9}
+.b4 b small{font-size:.42em;letter-spacing:-.03em;color:var(--acc);margin-left:.08em}
+.b4>span{display:block;margin-top:.7rem;color:var(--ink-2);font-size:.92rem;line-height:1.45;max-width:22ch}
+
+.bars{margin-top:clamp(2rem,5vh,3rem);display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(1.5rem,4vw,3.5rem);align-items:center}
+.bars h3{font-size:clamp(1.3rem,2.4vw,1.9rem);letter-spacing:-.04em;line-height:1.12}
+.bars p{margin-top:.9rem;color:var(--ink-2);line-height:1.66;font-size:.95rem;max-width:44ch}
+.hb{display:grid;gap:.7rem}
+.hb-row{display:grid;grid-template-columns:7.5rem minmax(0,1fr) 3.2rem;gap:.9rem;align-items:center}
+.hb-row .k{font-size:.88rem;color:var(--ink-2);display:flex;align-items:center;gap:.5rem}
+.hb-row .k i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
+.hb-row .tr{height:26px;background:var(--shade);border-left:2px solid var(--line-2);position:relative}
+.hb-row .fl{position:absolute;inset:0 auto 0 0;width:0;background:color-mix(in srgb,var(--c) 70%,transparent);transition:width 1.3s var(--ease-io)}
+.hb.on .fl{width:var(--w)}
+.hb-row .v{font-family:var(--f-mono);font-size:.8rem;color:var(--ink);text-align:right}
+
+/* ==========================================================================
+   HORIZONTE + RODAPÉ
+   ========================================================================== */
+.finale{position:relative;overflow:hidden;padding-top:clamp(4rem,12vh,8rem)}
+.finale h2{font-size:clamp(2.2rem,6.4vw,5.6rem);letter-spacing:-.06em;line-height:.95;max-width:14ch}
+.finale p{margin-top:1.4rem;color:var(--ink-2);max-width:48ch;line-height:1.68}
+.arc{position:relative;height:clamp(230px,38vh,380px);margin-top:clamp(2rem,6vh,4rem);width:100vw;margin-left:calc(50% - 50vw);overflow:hidden}
+.arc svg{position:absolute;left:50%;bottom:0;width:max(130%,900px);height:100%;transform:translateX(-50%)}
+.arc .limb{fill:none;stroke:var(--acc);stroke-width:1.2;opacity:.55}
+.arc .sunball{transform-box:fill-box;transform-origin:center;transition:transform 2.4s var(--ease)}
+.arc:not(.on) .sunball{transform:translateY(120px)}
+.arc.on .s2{transition-delay:.15s}
+.arc.on .s3{transition-delay:.3s}
+footer{border-top:var(--rule) solid var(--line);padding-block:1.6rem 2.4rem;position:relative;z-index:2;background:var(--bg)}
+.foot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+
+/* ==========================================================================
+   ESTREITO
+   ========================================================================== */
+@media (max-width:1000px){
+  .hero-grid{grid-template-columns:minmax(0,1fr)}
+  .orbit-wrap{max-width:540px;margin-top:.5rem}
+  .tool-grid{grid-template-columns:minmax(0,1fr)}
+  .tool.flip .tool-copy{order:0}
+  .contract{grid-template-columns:repeat(2,1fr)}
+  .ct:nth-child(2){border-right:0}
+  .ct:nth-child(-n+2){border-bottom:var(--rule) solid var(--line)}
+  .ct:nth-child(3){padding-left:0}
+  .rules{grid-template-columns:repeat(2,1fr)}
+  .rule{padding-left:0!important;padding-right:clamp(1rem,2vw,1.8rem)!important;border-right:var(--rule) solid var(--line)!important}
+  .rule:nth-child(2n){padding-left:clamp(1rem,2vw,1.8rem)!important;border-right:0!important}
+  .big4{grid-template-columns:repeat(2,1fr)}
+  .b4:nth-child(2){border-right:0}
+  .b4:nth-child(-n+2){border-bottom:var(--rule) solid var(--line)}
+  .b4:nth-child(3){padding-left:0}
+  .bars{grid-template-columns:minmax(0,1fr)}
+  .mini{grid-template-columns:minmax(0,1fr)}
+  .mini-list{border-right:0;border-bottom:var(--rule) solid var(--line);display:flex;overflow-x:auto;scrollbar-width:none;gap:.2rem}
+  .mini-list button{width:auto;flex:none}
+  .mini-list button .st{display:none}
+}
+@media (max-width:680px){
+  :root{--gut:1rem}
+  .logo i{display:none}
+  .nav-links a{padding:.45rem .4rem;letter-spacing:.08em}
+  .nav-links a .i{display:none}
+  .sec-head{flex-wrap:wrap}
+  .sec-head .lead{margin-left:0;flex-basis:100%}
+  .contract,.rules,.big4{grid-template-columns:1fr}
+  .ct,.rule,.b4{border-right:0!important;padding-left:0!important;padding-right:0!important;border-bottom:var(--rule) solid var(--line)}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi:nth-child(2){border-right:0}
+  .kpi:nth-child(3){grid-column:1/-1;padding-left:0;border-top:var(--rule) solid var(--line);padding-top:.8rem;margin-top:.8rem}
+  .hb-row{grid-template-columns:6rem minmax(0,1fr) 2.6rem;gap:.6rem}
+  .res b{font-size:1.1rem}
+  .tool h3{font-size:clamp(1.9rem,10vw,2.5rem);overflow-wrap:anywhere}
+  .chip{white-space:normal}
+  .file-fly{right:8px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.12s!important}
+  [data-in]{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+  .ticker-in{animation:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="web" aria-hidden="true"></canvas>
+<div id="prog" aria-hidden="true"></div>
+
+<!-- ============ ABERTURA ============ -->
+<div id="intro" role="dialog" aria-label="Abertura">
+  <svg class="imark" viewBox="0 0 120 104" aria-hidden="true">
+    <circle class="ring" cx="60" cy="52" r="46"/>
+    <circle class="i1" cx="40" cy="38" r="38" fill="#8FAFCB"/>
+    <circle class="i2" cx="74" cy="52" r="34" fill="#343F73" opacity=".92"/>
+    <circle class="i3" cx="45" cy="72" r="26" fill="#2A9165" opacity=".92"/>
+  </svg>
+  <p class="intro-say">Oito ferramentas. <b>Uma tela.</b><br>Nenhuma instalação.</p>
+  <div class="intro-foot">
+    <span class="intro-bar" aria-hidden="true"></span>
+    <button class="intro-skip" type="button" id="introSkip">Entrar</button>
+  </div>
+</div>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top" aria-label="Hinove — Central Fiscal">
+      <svg viewBox="0 0 120 100" aria-hidden="true">
+        <circle class="lg1" cx="40" cy="38" r="38" fill="#8FAFCB"/>
+        <circle class="lg2" cx="74" cy="52" r="34" fill="#343F73" opacity=".9"/>
+        <circle class="lg3" cx="45" cy="72" r="26" fill="#2A9165" opacity=".9"/>
+      </svg>
+      <span class="wm"><b>Hinove</b><i>Central Fiscal</i></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#central"><span class="i">01</span>Central</a>
+      <a href="#fluxo"><span class="i">02</span>Fluxo</a>
+      <a href="#ferramentas"><span class="i">03</span>Ferramentas</a>
+      <a href="#principios"><span class="i">04</span>Princípios</a>
+      <a href="#numeros"><span class="i">05</span>Números</a>
+    </nav>
+    <button class="toggle" id="themeBtn" type="button" aria-label="Alternar tema claro/escuro">
+      <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2l1.8 1.8M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg>
+      <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============ HERÓI ============ -->
+<section class="hero wrap" id="hero">
+  <div class="hero-grid">
+    <div>
+      <h1><span class="ln"><span>O fiscal</span></span><span class="ln"><span>inteiro numa</span></span><span class="ln"><span><em>tela só.</em></span></span></h1>
+      <p class="sub" data-in>Oito ferramentas. <b>Dois cliques. Nada instalado.</b></p>
+      <div class="hero-cta" data-in>
+        <a class="btn pri" href="#ferramentas">Ver as ferramentas <span class="ar">→</span></a>
+        <a class="btn" href="#fluxo">O fluxo inteiro <span class="ar">→</span></a>
+      </div>
+    </div>
+    <div class="orbit-wrap" id="orbitWrap">
+      <svg id="orbit" viewBox="-40 -10 680 620" role="img" aria-label="As oito ferramentas em órbita em volta da Central Fiscal"></svg>
+      <div class="orbit-card" id="orbitCard" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 01 · CENTRAL ============ -->
+<section class="sec wrap" id="central">
+  <div class="sec-head">
+    <span class="mono idx">01</span>
+    <h2 data-in>Uma janela. Cada ferramenta <em>declara o que pede e o que devolve.</em></h2>
+  </div>
+
+  <div class="contract" id="contract">
+    <div class="ct" data-in>
+      <span class="n">01 · quem é</span>
+      <h3>Nome, resumo e estado</h3>
+      <svg viewBox="0 0 200 92" aria-hidden="true" class="glyph">
+        <rect x="2" y="16" width="196" height="60" class="g-soft"/>
+        <circle cx="28" cy="46" r="11" fill="var(--t-fiscal)"/>
+        <rect x="50" y="36" width="90" height="7" fill="var(--ink-3)" opacity=".6"/>
+        <rect x="50" y="50" width="60" height="5" fill="var(--line-2)"/>
+        <rect x="150" y="38" width="38" height="16" fill="none" stroke="var(--acc)"/>
+        <text x="169" y="49.5" text-anchor="middle" class="g-txt" style="fill:var(--acc);font-size:7px">PRONTA</text>
+      </svg>
+    </div>
+    <div class="ct" data-in>
+      <span class="n">02 · o que pede</span>
+      <h3>Extensões e quantos arquivos</h3>
+      <svg viewBox="0 0 200 92" aria-hidden="true" class="glyph">
+        <rect x="2" y="10" width="196" height="72" fill="none" stroke="var(--line-2)" stroke-dasharray="4 4"/>
+        <g><path d="M70 26h26l10 10v34H70z" class="g-soft"/><text x="88" y="60" text-anchor="middle" class="g-txt">XLS</text></g>
+        <g><path d="M112 22h26l10 10v34h-36z" class="g-soft"/><text x="130" y="56" text-anchor="middle" class="g-txt">ZIP</text></g>
+        <path d="M40 46h18m-6-6 6 6-6 6" class="g-stroke" style="stroke:var(--acc)"/>
+      </svg>
+    </div>
+    <div class="ct" data-in>
+      <span class="n">03 · o que devolve</span>
+      <h3>Números, listas e a planilha</h3>
+      <svg viewBox="0 0 200 92" aria-hidden="true" class="glyph">
+        <rect x="2" y="12" width="60" height="44" class="g-soft"/><rect x="70" y="12" width="60" height="44" class="g-soft"/><rect x="138" y="12" width="60" height="44" class="g-soft"/>
+        <rect x="12" y="24" width="30" height="9" fill="var(--ink)"/><rect x="80" y="24" width="22" height="9" fill="var(--ink)"/><rect x="148" y="24" width="34" height="9" fill="var(--ink)"/>
+        <rect x="12" y="40" width="40" height="4" fill="var(--line-2)"/><rect x="80" y="40" width="36" height="4" fill="var(--line-2)"/><rect x="148" y="40" width="30" height="4" fill="var(--line-2)"/>
+        <rect x="2" y="66" width="70" height="18" fill="none" stroke="var(--line-2)"/><rect x="9" y="72" width="6" height="6" fill="var(--acc)"/><rect x="21" y="73" width="42" height="4" fill="var(--ink-3)"/>
+      </svg>
+    </div>
+    <div class="ct" data-in>
+      <span class="n">04 · o que se configura</span>
+      <h3>Regra na tela, com carimbo</h3>
+      <svg viewBox="0 0 200 92" aria-hidden="true" class="glyph">
+        <rect x="2" y="8" width="196" height="76" class="g-soft"/>
+        <line x1="14" y1="30" x2="186" y2="30" stroke="var(--line-2)"/><line x1="14" y1="50" x2="186" y2="50" stroke="var(--line-2)"/><line x1="14" y1="70" x2="186" y2="70" stroke="var(--line-2)"/>
+        <text x="16" y="24" class="g-txt">CFOP 1101;2101</text><text x="16" y="44" class="g-txt">CST EM:00,20</text><text x="16" y="64" class="g-txt">ALIQ TABELAUF</text>
+        <circle cx="172" cy="21" r="6" fill="none" stroke="var(--acc)"/><path d="M169 21l2 2 4-4" stroke="var(--acc)" fill="none"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="stage" data-in id="stage">
+    <div class="stage-bar">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="url"><b>127.0.0.1</b> · Central Fiscal</span>
+    </div>
+    <div class="mini">
+      <div class="mini-list" id="miniList"></div>
+      <div class="mini-run" id="miniRun">
+        <div><h4 id="mrName">Fiscalbot</h4><p class="rs" id="mrSum"></p></div>
+        <div class="drop" id="mrDrop">
+          <svg class="ico" viewBox="0 0 34 40" aria-hidden="true"><path d="M2 2h20l10 10v26H2z" fill="var(--shade)" stroke="var(--line-2)"/><path d="M22 2v10h10" fill="none" stroke="var(--line-2)"/></svg>
+          <div class="txt"><b id="mrDropT">Arraste aqui o arquivo</b><span id="mrDropS"></span></div>
+          <svg class="file-fly" viewBox="0 0 34 40" aria-hidden="true"><path d="M2 2h20l10 10v26H2z" fill="var(--bg-3)" stroke="var(--acc)"/><path d="M22 2v10h10" fill="none" stroke="var(--acc)"/><rect x="7" y="22" width="20" height="3" fill="var(--acc)"/><rect x="7" y="29" width="14" height="3" fill="var(--acc)" opacity=".5"/></svg>
+        </div>
+        <div class="runbar"><i id="mrBar"></i></div>
+        <div class="verb" id="mrVerb"></div>
+        <div class="res" id="mrRes"></div>
+        <span class="dl"><i></i><span id="mrDl">baixar planilha</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · FLUXO ============ -->
+<section class="sec wrap" id="fluxo">
+  <div class="sec-head">
+    <span class="mono idx">02</span>
+    <h2 data-in>De onde vem, por onde passa, <em>o que sai.</em></h2>
+  </div>
+  <div class="flow-wrap" id="flowWrap" data-in>
+    <svg id="flow" viewBox="0 0 1200 700" role="img" aria-label="Mapa: relatórios de origem, as ferramentas e o que cada uma entrega"></svg>
+  </div>
+</section>
+
+<!-- ============ 03 · FERRAMENTAS ============ -->
+<section id="ferramentas">
+  <div class="wrap sec" style="padding-bottom:clamp(2rem,5vh,3rem)">
+    <div class="sec-head" style="margin-bottom:0">
+      <span class="mono idx">03</span>
+      <h2 data-in>Oito ferramentas, <em>cada uma com o seu jeito de decidir.</em></h2>
+    </div>
+  </div>
+  <nav class="rail" aria-label="Ferramentas"><div class="wrap rail-in" id="rail"></div></nav>
+
+  <!-- T1 · FISCALBOT -->
+  <article class="tool wrap" id="t-fiscalbot" style="--c:var(--t-fiscal)" data-nome="Fiscalbot">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·01</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>Fiscalbot</h3>
+        <p class="q" data-in>Cada lançamento do Livro Fiscal está <em>enquadrado como deveria?</em></p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num" data-count="7">0</b><span>camadas</span></div>
+          <div class="kpi"><b class="num" data-count="6">0</b><span>dimensões</span></div>
+          <div class="kpi"><b class="num" data-count="3">0</b><span>veredictos</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">A cascata de decisão</span><span class="mono rec"><i></i>ao vivo</span></div>
+          <svg class="v" id="vFiscal" viewBox="0 0 560 470" aria-label="Registros descendo pelas sete camadas até os três veredictos"></svg>
+          <div class="inst-f" id="fiscalDims">
+            <span class="tag">! CST</span><span class="tag">! Valor ICMS</span><span class="tag">! Produto</span>
+            <span class="tag">! Aliquota</span><span class="tag">! Carga Efetiva</span><span class="tag">! Outros</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T2 · APURABOT -->
+  <article class="tool wrap flip" id="t-apurabot" style="--c:var(--t-apura)" data-nome="Apurabot">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·02</span><span class="pill"><i></i>Janela própria</span></div>
+        <h3 data-in><span class="orb"></span>Apurabot</h3>
+        <p class="q" data-in>Quanto de ICMS a Hinove apura no mês — <em>e de onde sai cada centavo?</em></p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num"><span data-count="99.87" data-dec="2">0</span><small>%</small></b><span>equalização da carga</span></div>
+          <div class="kpi"><b class="num" data-count="7">0</b><span>filiais, diferença zero</span></div>
+          <div class="kpi"><b class="num" data-count="239">0</b><span>testes</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">Equalização da carga efetiva</span><span class="mono rec"><i></i><span id="apPhase">carga bruta</span></span></div>
+          <svg class="v" id="vApura" viewBox="0 0 560 380" aria-label="Pontos de carga bruta se encaixando nas cargas nominais"></svg>
+          <div class="checks" id="apChecks"></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T3 · DIXML -->
+  <article class="tool wrap" id="t-dixml" style="--c:var(--t-dixml)" data-nome="DiXML">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·03</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>DiXML</h3>
+        <p class="q" data-in>O que está <em>de verdade</em> no arquivo da nota — sem depender do que o relatório quis mostrar?</p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num" data-count="8">0</b><span>níveis de .zip</span></div>
+          <div class="kpi"><b class="num" data-count="44">0</b><span>dígitos, como texto</span></div>
+          <div class="kpi"><b class="num">0</b><span>colunas para manter</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">Desempacotando o lote</span><span class="mono rec"><i></i><span id="dxPath">lote.zip</span></span></div>
+          <svg class="v" id="vDixml" viewBox="0 0 560 340" aria-label="Pacotes aninhados se abrindo e virando linhas de planilha"></svg>
+          <div class="keycell" id="dxKey">
+            <span class="k">No Excel</span><span class="bad">3,52604E+43</span>
+            <span class="k">No DiXML</span><span class="good" id="dxGood"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T4 · GERARPENDENTES -->
+  <article class="tool wrap flip" id="t-gerarpendentes" style="--c:var(--t-pend)" data-nome="GerarPendentes">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·04</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>GerarPendentes</h3>
+        <p class="q" data-in>Quais NF-e emitidas contra a Hinove <em>ainda não entraram</em>, de quem é a vez e há quantos dias?</p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num" data-count="5">0</b><span>portas de saída</span></div>
+          <div class="kpi"><b class="num" data-count="2">0</b><span>abas no e-mail</span></div>
+          <div class="kpi"><b class="num" data-count="370">0</b><span>testes</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">A esteira da semana</span><span class="mono rec"><i></i>roteando</span></div>
+          <svg class="v" id="vPend" viewBox="0 0 560 380" aria-label="Notas passando por portas de saída; o que sobra é pendência"></svg>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T5 · GERARSERVPEND -->
+  <article class="tool wrap" id="t-gerarservpend" style="--c:var(--t-serv)" data-nome="GerarServPend">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·05</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>GerarServPend</h3>
+        <p class="q" data-in>Quais notas de serviço ainda não foram lançadas — e <em>qual pedido e qual requisitante</em> estão por trás?</p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num" data-count="4">0</b><span>passos de confronto</span></div>
+          <div class="kpi"><b class="num" data-count="1">0</b><span>casamento por lado</span></div>
+          <div class="kpi"><b class="num" data-count="127">0</b><span>sem contraparte no ASIS</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">Quatro peneiras</span><span class="mono rec"><i></i><span id="svStep">passo 1</span></span></div>
+          <svg class="v" id="vServ" viewBox="0 0 560 420" aria-label="Notas do ASIS ligadas a lançamentos do Sankhya em quatro passos"></svg>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T6 · BASE DE CONHECIMENTO -->
+  <article class="tool wrap flip" id="t-conhecimento" style="--c:var(--t-base)" data-nome="Base de conhecimento">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·06</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>Base de conhecimento</h3>
+        <p class="q" data-in>O que a gente já sabe sobre este parceiro — <em>para propor, nunca para decidir?</em></p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num"><span data-count="44">0</span><small>/44</small></b><span>categoria firme</span></div>
+          <div class="kpi"><b class="num"><span data-count="18">0</span><small>/18</small></b><span>operação firme</span></div>
+          <div class="kpi"><b class="num"><span data-count="77">0</span><small>%</small></b><span>guardião — só sugere</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">A planilha da semana, pré-categorizada</span><span class="mono rec"><i></i>propondo</span></div>
+          <div style="padding:.9rem 1rem .2rem;overflow:hidden">
+            <svg class="v" id="vBase" viewBox="0 0 560 170" aria-label="Medidores de acerto por campo e grau"></svg>
+          </div>
+          <table class="sheet" id="baseSheet" aria-label="Planilha de exemplo com células preenchidas pela base">
+            <thead><tr><th style="width:18%">Nota</th><th>Categoria</th><th>Guardião</th><th>Tipo de Operação</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T7 · RESUMO EXECUTIVO -->
+  <article class="tool wrap" id="t-resumoexecutivo" style="--c:var(--t-resumo)" data-nome="Resumo Executivo">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·07</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>Resumo Executivo</h3>
+        <p class="q" data-in>Onde a pendência <em>dói</em> — em qual categoria, em qual unidade, com qual guardião?</p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num" data-count="141">0</b><span>notas</span></div>
+          <div class="kpi"><b class="num" data-count="3">0</b><span>categorias</span></div>
+          <div class="kpi"><b class="num"><span data-count="6">0</span><small>/6</small></b><span>blocos conferidos</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">Semana 38 · a conferência</span><span class="mono rec"><i></i>montando</span></div>
+          <svg class="v" id="vResumo" viewBox="0 0 560 260" aria-label="Painel com rosca por frente e barras por unidade"></svg>
+          <div class="checks" id="rsChecks"></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- T8 · FATURABOT -->
+  <article class="tool wrap flip" id="t-faturabot" style="--c:var(--t-fatura)" data-nome="Faturabot">
+    <div class="tool-grid">
+      <div class="tool-copy">
+        <div class="tool-top"><span class="ix">T·08</span><span class="pill"><i></i>Na Central</span></div>
+        <h3 data-in><span class="orb"></span>Faturabot</h3>
+        <p class="q" data-in>O peso da nota <em>bate com o peso da balança</em>, caminhão a caminhão?</p>
+        <div class="kpis" data-in>
+          <div class="kpi"><b class="num" data-count="4">0</b><span>relatórios</span></div>
+          <div class="kpi"><b class="num"><span data-count="24">0</span><small>/24</small></b><span>autoteste da OC</span></div>
+          <div class="kpi"><b class="num"><span data-count="0.5" data-dec="2">0</span><small>%</small></b><span>tolerância</span></div>
+        </div>
+      </div>
+      <div data-in>
+        <div class="inst">
+          <div class="inst-h"><span class="mono">Balança de Guará</span><span class="mono rec"><i></i><span id="ftTicket">ticket</span></span></div>
+          <svg class="v" id="vFatura" viewBox="0 0 560 330" aria-label="Caminhão sobre a balança, peso da balança contra peso da nota"></svg>
+          <div class="ocx" id="ocx">
+            <span class="mono">Observação da pesagem → OC</span>
+            <div class="obs" id="ocObs"></div>
+            <div class="out" id="ocOut"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ 04 · PRINCÍPIOS ============ -->
+<section class="sec wrap" id="principios">
+  <div class="sec-head">
+    <span class="mono idx">04</span>
+    <h2 data-in>Seis regras que <em>não se negociam.</em></h2>
+  </div>
+  <div class="rules" id="rules">
+    <div class="rule" data-in>
+      <svg viewBox="0 0 240 130" class="r-click" aria-hidden="true">
+        <g transform="translate(30 34)"><path d="M0 0h34l12 12v48H0z" class="g-soft"/><path d="M34 0v12h12" class="g-stroke"/><text x="23" y="42" text-anchor="middle" class="g-txt">.BAT</text></g>
+        <circle class="rp" cx="53" cy="64" r="22"/><circle class="rp b" cx="53" cy="64" r="22"/>
+        <g class="cur"><path d="M66 82l0 18 5-5 4 9 4-2-4-9 7 0z" fill="var(--ink)" stroke="var(--bg)" stroke-width="1"/></g>
+        <g class="win"><rect x="120" y="22" width="112" height="86" class="g-soft"/><line x1="120" y1="36" x2="232" y2="36" stroke="var(--line-2)"/>
+          <circle cx="128" cy="29" r="2.5" fill="var(--line-2)"/><circle cx="136" cy="29" r="2.5" fill="var(--line-2)"/>
+          <circle cx="140" cy="58" r="7" fill="#8FAFCB"/><circle cx="148" cy="62" r="6" fill="#343F73"/><circle cx="141" cy="67" r="4.5" fill="#2A9165"/>
+          <rect x="162" y="54" width="56" height="5" fill="var(--ink-3)" opacity=".6"/><rect x="162" y="64" width="40" height="4" fill="var(--line-2)"/>
+          <rect x="130" y="82" width="92" height="16" fill="none" stroke="var(--acc)"/><rect x="134" y="87" width="40" height="6" fill="var(--acc)"/></g>
+      </svg>
+      <span class="n">R·01</span>
+      <h4>Dois cliques, nada instalado.</h4>
+    </div>
+    <div class="rule" data-in>
+      <svg viewBox="0 0 240 130" id="rBox" aria-hidden="true">
+        <rect x="18" y="14" width="204" height="102" fill="none" stroke="var(--acc)" stroke-width="1.2" stroke-dasharray="5 4"/>
+        <text x="26" y="28" class="g-txt" style="fill:var(--acc)">127.0.0.1</text>
+        <g id="rBoxDots"></g>
+      </svg>
+      <span class="n">R·02</span>
+      <h4>O dado não sai da máquina.</h4>
+    </div>
+    <div class="rule" data-in>
+      <svg viewBox="0 0 240 130" class="r-yaml" aria-hidden="true">
+        <rect x="10" y="10" width="220" height="110" class="g-soft"/>
+        <text x="22" y="32" class="g-txt"><tspan style="fill:var(--t-apura)">regime:</tspan> ms_estorno</text>
+        <text x="22" y="52" class="g-txt"><tspan style="fill:var(--t-apura)">vigencia:</tspan> 2026-07-01</text>
+        <text x="22" y="72" class="g-txt"><tspan style="fill:var(--t-apura)">credito_mantido:</tspan> <tspan class="val1">4</tspan></text>
+        <text x="22" y="72" class="g-txt val2" style="fill:var(--acc)"><tspan fill="transparent">credito_mantido: </tspan>7</text>
+        <rect class="caret" x="138" y="64" width="5" height="10"/>
+        <text x="22" y="98" class="g-txt newv" style="fill:var(--acc)">+ nova vigência, mês antigo intacto</text>
+      </svg>
+      <span class="n">R·03</span>
+      <h4>Regra tributária é parâmetro, não é código.</h4>
+    </div>
+    <div class="rule" data-in>
+      <svg viewBox="0 0 240 130" class="r-lock" aria-hidden="true">
+        <g class="doc"><rect x="14" y="30" width="30" height="38" fill="var(--shade)" stroke="var(--line-2)"/></g>
+        <g class="doc"><rect x="52" y="30" width="30" height="38" fill="var(--shade)" stroke="var(--line-2)"/></g>
+        <g class="doc bad"><rect x="90" y="30" width="30" height="38" fill="var(--shade)" stroke="var(--line-2)"/></g>
+        <g class="doc"><rect x="128" y="30" width="30" height="38" fill="var(--shade)" stroke="var(--line-2)"/></g>
+        <text x="105" y="84" text-anchor="middle" class="g-txt semregra" style="fill:var(--bad)">SEM REGRA</text>
+        <g transform="translate(184 38)"><path class="shackle" d="M6 18v-8a10 10 0 0 1 20 0v8" fill="none" stroke="var(--ink-3)" stroke-width="3"/>
+          <rect class="lockbody" x="0" y="18" width="32" height="26" fill="var(--line-2)"/></g>
+        <text x="200" y="100" text-anchor="middle" class="g-txt">FECHAMENTO</text>
+      </svg>
+      <span class="n">R·04</span>
+      <h4>Nada de classificação por adivinhação.</h4>
+    </div>
+    <div class="rule" data-in>
+      <svg viewBox="0 0 240 130" class="r-time" aria-hidden="true">
+        <line x1="20" y1="70" x2="220" y2="70" stroke="var(--line-2)"/>
+        <g class="g-txt"><text x="20" y="92">JAN</text><text x="80" y="92">ABR</text><text x="140" y="92">JUL</text><text x="196" y="92">OUT</text></g>
+        <rect x="20" y="58" width="70" height="8" fill="var(--t-apura)" opacity=".35"/><text x="22" y="52" class="g-txt">v1</text>
+        <rect x="90" y="58" width="60" height="8" fill="var(--t-apura)" opacity=".6"/><text x="92" y="52" class="g-txt">v2</text>
+        <rect x="150" y="58" width="70" height="8" fill="var(--t-apura)"/><text x="152" y="52" class="g-txt">v3</text>
+        <g class="head"><line x1="30" y1="28" x2="30" y2="80" stroke="var(--acc)" stroke-width="1.5"/><circle cx="30" cy="28" r="4" fill="var(--acc)"/></g>
+        <text x="120" y="118" text-anchor="middle" class="g-txt">mês antigo reproduz a regra da época</text>
+      </svg>
+      <span class="n">R·05</span>
+      <h4>Toda regra tem vigência.</h4>
+    </div>
+    <div class="rule" data-in>
+      <svg viewBox="0 0 240 130" class="r-star" aria-hidden="true">
+        <g id="starG"></g>
+      </svg>
+      <span class="n">R·06</span>
+      <h4>Nenhuma ferramenta importa outra.</h4>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 · NÚMEROS ============ -->
+<section class="sec wrap" id="numeros">
+  <div class="sec-head">
+    <span class="mono idx">05</span>
+    <h2 data-in>O tamanho da coisa, <em>medido.</em></h2>
+  </div>
+  <div class="big4">
+    <div class="b4" data-in><b class="num" data-count="8">0</b><span>ferramentas, uma tela</span></div>
+    <div class="b4" data-in><b class="num" data-count="742">0</b><span>testes automáticos</span></div>
+    <div class="b4" data-in><b class="num"><span data-count="19.5" data-dec="1">0</span><small>mil</small></b><span>linhas de motor</span></div>
+    <div class="b4" data-in><b class="num">0</b><span>instalações</span></div>
+  </div>
+  <div class="bars">
+    <div data-in>
+      <h3>Onde mora o cuidado.</h3>
+    </div>
+    <div class="hb" id="hbars" data-in></div>
+  </div>
+</section>
+
+<!-- ============ HORIZONTE ============ -->
+<section class="finale wrap" id="fim">
+  <h2 data-in>Menos procurar erro. <em>Mais analisar número.</em></h2>
+  <div class="arc" id="arc">
+    <svg viewBox="0 0 1600 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs>
+        <radialGradient id="glow" cx="50%" cy="100%" r="60%"><stop offset="0" stop-color="var(--acc)" stop-opacity=".22"/><stop offset="1" stop-color="var(--acc)" stop-opacity="0"/></radialGradient>
+        <linearGradient id="below" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--bg-2)"/><stop offset="1" stop-color="var(--bg)"/></linearGradient>
+      </defs>
+      <rect x="0" y="0" width="1600" height="400" fill="url(#glow)"/>
+      <circle class="sunball s1" cx="760" cy="170" r="60" fill="#8FAFCB"/>
+      <circle class="sunball s2" cx="838" cy="202" r="54" fill="#343F73" opacity=".92"/>
+      <circle class="sunball s3" cx="772" cy="238" r="42" fill="#2A9165" opacity=".92"/>
+      <path d="M-200 400 Q800 180 1800 400Z" fill="url(#below)"/>
+      <path class="limb" d="M-200 400 Q800 180 1800 400"/>
+    </svg>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="mono">Hinove Agrociência S.A. · Fiscal/Tributário</span>
+    <span class="mono">Central Fiscal · repositório hi9</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+'use strict';
+/* ==========================================================================
+   Utilidades
+   ========================================================================== */
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const NS = 'http://www.w3.org/2000/svg';
+function S(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'text') e.textContent = attrs[k];
+    else if (k === 'style') e.setAttribute('style', attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const eio = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const eout = t => 1 - Math.pow(1 - t, 3);
+const ein = t => t * t * t;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const fmt = (v, d = 0) => v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+function pick(w) {
+  let r = Math.random() * w.reduce((a, b) => a + b[1], 0);
+  for (const [k, p] of w) { if ((r -= p) <= 0) return k; }
+  return w[w.length - 1][0];
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const root = document.documentElement;
+
+/* ==========================================================================
+   O catálogo — o mesmo de central/src/central/ferramentas.py, mais o Faturabot
+   ========================================================================== */
+const TOOLS = [
+  { id: 'fiscalbot', nome: 'Fiscalbot', c: '--t-fiscal', ring: 0, a: .5, st: 'Na Central',
+    res: 'Confere o lançamento de cada nota e valida o Livro Fiscal.' },
+  { id: 'apurabot', nome: 'Apurabot', c: '--t-apura', ring: 0, a: 3.6, st: 'Janela própria',
+    res: 'Apuração mensal de ICMS a partir do Livro Fiscal.' },
+  { id: 'dixml', nome: 'DiXML', c: '--t-dixml', ring: 1, a: 1.1, st: 'Na Central',
+    res: 'Lote de XML de nota em planilha, para conferir qualquer campo.' },
+  { id: 'gerarpendentes', nome: 'GerarPendentes', c: '--t-pend', ring: 1, a: 3.2, st: 'Na Central',
+    res: 'Notas de mercadoria emitidas contra a Hinove que ainda não têm entrada.' },
+  { id: 'gerarservpend', nome: 'GerarServPend', c: '--t-serv', ring: 1, a: 5.2, st: 'Na Central',
+    res: 'Notas de serviço emitidas contra a Hinove que ainda não foram lançadas.' },
+  { id: 'conhecimento', nome: 'Base de conhecimento', c: '--t-base', ring: 2, a: .15, st: 'Na Central',
+    res: 'O que o histórico já respondeu sobre cada parceiro — para propor, nunca para decidir.' },
+  { id: 'resumoexecutivo', nome: 'Resumo Executivo', c: '--t-resumo', ring: 2, a: 2.25, st: 'Na Central',
+    res: 'O painel da semana sobre as duas frentes, já classificadas.' },
+  { id: 'faturabot', nome: 'Faturabot', c: '--t-fatura', ring: 2, a: 4.3, st: 'Na Central',
+    res: 'Conferências da expedição: desvios de balança, saídas e diretos.' },
+];
+const cv = t => `var(${t.c})`;
+const byId = Object.fromEntries(TOOLS.map(t => [t.id, t]));
+function goTool(id) {
+  const el = document.getElementById('t-' + id);
+  if (el) el.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' });
+}
+
+/* ==========================================================================
+   Tema
+   ========================================================================== */
+(function theme() {
+  let t = null;
+  try { t = localStorage.getItem('cf-tema'); } catch (e) {}
+  if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  root.dataset.theme = t;
+  $('#themeBtn').addEventListener('click', () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('cf-tema', root.dataset.theme); } catch (e) {}
+    webColor();
+  });
+})();
+
+/* ==========================================================================
+   Abertura — uma vez por sessão, pulável
+   ========================================================================== */
+(function intro() {
+  let seen = false;
+  try { seen = sessionStorage.getItem('cf-intro') === '1'; } catch (e) {}
+  const hero = $('#hero');
+  const done = () => {
+    if (!root.classList.contains('pre')) return;
+    $('#intro').classList.add('out');
+    root.classList.remove('pre');
+    try { sessionStorage.setItem('cf-intro', '1'); } catch (e) {}
+    setTimeout(() => hero.classList.add('on'), 120);
+  };
+  if (seen || RM) {
+    root.classList.add('no-intro'); root.classList.remove('pre');
+    requestAnimationFrame(() => hero.classList.add('on'));
+  } else {
+    setTimeout(done, 2600);
+    $('#intro').addEventListener('click', done);
+    addEventListener('keydown', done, { once: true });
+  }
+})();
+
+/* ==========================================================================
+   Entradas e contadores
+   ========================================================================== */
+function countUp(n) {
+  if (n.dataset.done) return;
+  n.dataset.done = '1';
+  const to = parseFloat(n.dataset.count), d = +(n.dataset.dec || 0);
+  if (RM) { n.textContent = fmt(to, d); return; }
+  const t0 = performance.now(), dur = 1500;
+  (function f(now) {
+    const t = clamp((now - t0) / dur, 0, 1);
+    n.textContent = fmt(to * eout(t), d);
+    if (t < 1) requestAnimationFrame(f);
+  })(t0);
+}
+const rio = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add('on');
+  rio.unobserve(e.target);
+  $$('[data-count]', e.target).forEach(countUp);
+}), { threshold: .12, rootMargin: '0px 0px -6% 0px' });
+$$('[data-in]').forEach(n => rio.observe(n));
+const runIO = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('run', 'on'); }
+}), { threshold: .2 });
+$$('.rule').forEach(n => runIO.observe(n));
+runIO.observe($('#arc'));
+
+/* ==========================================================================
+   O relógio único: cada instrumento só anda quando está na tela
+   ========================================================================== */
+const actors = [];
+const aio = new IntersectionObserver(es => es.forEach(e => {
+  const a = e.target.__actor;
+  a.visible = e.isIntersecting;
+  if (a.visible && !a.started) { a.started = true; a.start && a.start(); }
+}), { threshold: .05 });
+function actor(node, obj) {
+  obj.node = node; obj.visible = false; obj.t = 0;
+  node.__actor = obj; actors.push(obj); aio.observe(node);
+  return obj;
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (!document.hidden) for (const a of actors) if (a.visible && a.tick) { a.t += dt; a.tick(dt, a.t); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ==========================================================================
+   Fundo — a teia, com algumas estrelas nas cores da marca
+   ========================================================================== */
+const web = $('#web'), wctx = web.getContext('2d');
+let WW = 0, WH = 0, pts = [], webRGB = '143,175,203';
+function webColor() {
+  webRGB = getComputedStyle(root).getPropertyValue('--web').trim() || webRGB;
+}
+function webSize() {
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  WW = innerWidth; WH = innerHeight;
+  web.width = WW * dpr; web.height = WH * dpr;
+  wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const n = Math.round(clamp(WW * WH / 21000, 28, 88));
+  const brand = ['143,175,203', '42,145,101', '108,123,196'];
+  pts = Array.from({ length: n }, () => ({
+    x: Math.random() * WW, y: Math.random() * WH,
+    vx: rnd(-.1, .1), vy: rnd(-.1, .1), r: rnd(.5, 1.5),
+    c: Math.random() < .14 ? brand[Math.floor(Math.random() * 3)] : null
+  }));
+}
+function webDraw() {
+  if (!document.hidden) {
+    wctx.clearRect(0, 0, WW, WH);
+    const off = (scrollY * .06) % WH;
+    const P = pts.map(p => {
+      if (!RM) { p.x += p.vx; p.y += p.vy; }
+      if (p.x < -10) p.x = WW + 10; if (p.x > WW + 10) p.x = -10;
+      if (p.y < -10) p.y = WH + 10; if (p.y > WH + 10) p.y = -10;
+      let y = p.y - off; if (y < -10) y += WH + 20;
+      return [p.x, y, p];
+    });
+    const R = 130;
+    for (let i = 0; i < P.length; i++) {
+      for (let j = i + 1; j < P.length; j++) {
+        const dx = P[i][0] - P[j][0], dy = P[i][1] - P[j][1], d = dx * dx + dy * dy;
+        if (d < R * R) {
+          wctx.strokeStyle = `rgba(${webRGB},${(1 - Math.sqrt(d) / R) * .13})`;
+          wctx.lineWidth = 1;
+          wctx.beginPath(); wctx.moveTo(P[i][0], P[i][1]); wctx.lineTo(P[j][0], P[j][1]); wctx.stroke();
+        }
+      }
+    }
+    for (const [x, y, p] of P) {
+      wctx.fillStyle = p.c ? `rgba(${p.c},.75)` : `rgba(${webRGB},.45)`;
+      wctx.beginPath(); wctx.arc(x, y, p.c ? p.r + .8 : p.r, 0, 6.283); wctx.fill();
+    }
+  }
+  if (!RM) requestAnimationFrame(webDraw);
+}
+webColor(); webSize(); webDraw();
+let rsz; addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(webSize, 150); });
+
+/* ==========================================================================
+   Barra de leitura, nav e trilho das ferramentas
+   ========================================================================== */
+const prog = $('#prog');
+function onScroll() {
+  const h = document.documentElement.scrollHeight - innerHeight;
+  prog.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
+}
+addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+const navA = $$('#navLinks a');
+const secIO = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  navA.forEach(a => a.classList.toggle('here', a.getAttribute('href') === '#' + e.target.id));
+}), { rootMargin: '-40% 0px -55% 0px' });
+['central', 'fluxo', 'ferramentas', 'principios', 'numeros'].forEach(id => secIO.observe(document.getElementById(id)));
+
+const rail = $('#rail');
+const articles = $$('article.tool');
+articles.forEach((art, i) => {
+  const t = byId[art.id.slice(2)];
+  const a = document.createElement('a');
+  a.href = '#' + art.id; a.style.setProperty('--c', cv(t));
+  a.innerHTML = `<i></i>${String(i + 1).padStart(2, '0')} ${t.nome}`;
+  rail.appendChild(a);
+});
+const railA = $$('a', rail);
+const artIO = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  railA.forEach(a => {
+    const on = a.getAttribute('href') === '#' + e.target.id;
+    a.classList.toggle('here', on);
+    if (on) rail.scrollTo({ left: a.offsetLeft - rail.clientWidth / 2 + a.offsetWidth / 2, behavior: RM ? 'auto' : 'smooth' });
+  });
+}), { rootMargin: '-35% 0px -60% 0px' });
+articles.forEach(a => artIO.observe(a));
+
+/* ==========================================================================
+   Letreiro
+   ========================================================================== */
+(function ticker() {
+  if (!$('#ticker')) return;
+  const F = [
+    ['--t-apura', 'Livro Fiscal de Julho/2026', '6.504 linhas'],
+    ['--t-apura', 'equalização da carga', '99,87%'],
+    ['--acc', 'estorno das sete filiais', 'diferença 0,00'],
+    ['--t-fiscal', 'camadas do Fiscalbot', '7'],
+    ['--t-dixml', '.zip dentro de .zip', '8 níveis'],
+    ['--t-base', 'categoria firme', '44 de 44'],
+    ['--t-serv', 'passos de confronto', '4'],
+    ['--t-fatura', 'autoteste da OC', '24/24'],
+    ['--t-fatura', 'tolerância da balança', '±0,50%'],
+    ['--acc', 'testes automáticos', '742'],
+    ['--acc', 'instalações', 'nenhuma'],
+    ['--b1', 'servidor', '127.0.0.1'],
+  ];
+  const html = F.map(([c, k, v]) => `<span style="--c:var(${c})"><i></i>${k} <b>${v}</b></span>`).join('');
+  $('#ticker').innerHTML = html + html;
+})();
+
+/* ==========================================================================
+   HERÓI — o sistema em órbita
+   ========================================================================== */
+(function orbit() {
+  const svg = $('#orbit'), card = $('#orbitCard'), wrap = $('#orbitWrap');
+  const CX = 300, CY = 300, TILT = -14 * Math.PI / 180, cT = Math.cos(TILT), sT = Math.sin(TILT);
+  const RINGS = [{ rx: 148, ry: 56, sp: .15, r: 12 }, { rx: 212, ry: 80, sp: .1, r: 10.5 }, { rx: 276, ry: 104, sp: .068, r: 9.5 }];
+  const gR = S('g', { transform: `rotate(-14 ${CX} ${CY})` }, svg);
+  RINGS.forEach((r, i) => S('ellipse', { cx: CX, cy: CY, rx: r.rx, ry: r.ry, class: 'orbit-ring' + (i === 1 ? ' dash' : '') }, gR));
+  for (let k = 0; k < 48; k++) {
+    const a = k / 48 * 6.283, r = RINGS[2];
+    const x1 = CX + (r.rx + 6) * Math.cos(a), y1 = CY + (r.ry + 6 * r.ry / r.rx) * Math.sin(a);
+    const x2 = CX + (r.rx + (k % 4 ? 10 : 16)) * Math.cos(a), y2 = CY + (r.ry + (k % 4 ? 10 : 16) * r.ry / r.rx) * Math.sin(a);
+    S('line', { x1, y1, x2, y2, class: 'orbit-tick', 'stroke-width': k % 4 ? .6 : 1 }, gR);
+  }
+  const back = S('g', null, svg);
+  const core = S('g', null, svg);
+  S('circle', { cx: CX, cy: CY, r: 70, class: 'core-pulse' }, core);
+  S('circle', { cx: CX, cy: CY, r: 70, class: 'core-pulse b' }, core);
+  const spin = S('g', { class: 'core-spin' }, core);
+  const k = 1.12, ox = CX - 57 * k, oy = CY - 55 * k;
+  const logo = S('g', { transform: `translate(${ox} ${oy}) scale(${k})` }, spin);
+  S('circle', { cx: 40, cy: 38, r: 38, fill: '#8FAFCB' }, logo);
+  S('circle', { cx: 74, cy: 52, r: 34, fill: '#343F73', opacity: .92 }, logo);
+  S('circle', { cx: 45, cy: 72, r: 26, fill: '#2A9165', opacity: .92 }, logo);
+  const front = S('g', null, svg);
+
+  let hot = null, slow = 1;
+  const P = TOOLS.map(t => {
+    const g = S('g', { class: 'pl', tabindex: 0, role: 'button', 'aria-label': t.nome }, back);
+    g.style.setProperty('--c', cv(t));
+    const R = RINGS[t.ring].r;
+    S('circle', { r: R * 1.9, class: 'ph', style: `stroke:${cv(t)}` }, g);
+    S('circle', { r: R * 2.8, fill: 'transparent' }, g); // alvo maior
+    S('circle', { r: R, class: 'pb', style: `fill:${cv(t)}` }, g);
+    S('circle', { r: R * .35, cx: -R * .35, cy: -R * .35, fill: '#fff', opacity: .22 }, g);
+    const tx = S('text', { x: 0, y: R + 17, 'text-anchor': 'middle', text: t.nome.toUpperCase() }, g);
+    const enter = () => {
+      hot = t; g.classList.add('hot');
+      card.style.setProperty('--c', cv(t));
+      card.innerHTML = `<b><i></i>${t.nome}<span class="mono" style="margin:0 0 0 auto;display:inline">${t.st}</span></b><span>${t.res}</span>`;
+      card.classList.add('on');
+    };
+    const leave = () => { hot = null; g.classList.remove('hot'); card.classList.remove('on'); };
+    g.addEventListener('mouseenter', enter); g.addEventListener('focus', enter);
+    g.addEventListener('mouseleave', leave); g.addEventListener('blur', leave);
+    g.addEventListener('click', () => goTool(t.id));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTool(t.id); } });
+    return { t, g, tx, a: t.a, inFront: false };
+  });
+  function place(dt) {
+    slow = lerp(slow, hot ? .12 : 1, clamp(dt * 5, 0, 1));
+    for (const p of P) {
+      const r = RINGS[p.t.ring];
+      if (!RM) p.a += r.sp * dt * slow;
+      const lx = r.rx * Math.cos(p.a), ly = r.ry * Math.sin(p.a);
+      const x = CX + lx * cT - ly * sT, y = CY + lx * sT + ly * cT;
+      const depth = (Math.sin(p.a) + 1) / 2;
+      const sc = .7 + .45 * depth;
+      p.g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${sc.toFixed(3)})`);
+      p.g.style.opacity = (.5 + .5 * depth).toFixed(3);
+      const f = Math.sin(p.a) > 0;
+      if (f !== p.inFront) { (f ? front : back).appendChild(p.g); p.inFront = f; }
+    }
+  }
+  place(0);
+  actor(wrap, { tick: dt => place(dt) });
+  if (!RM) {
+    const hero = $('#hero');
+    hero.addEventListener('pointermove', e => {
+      const b = wrap.getBoundingClientRect();
+      const nx = (e.clientX - (b.left + b.width / 2)) / b.width, ny = (e.clientY - (b.top + b.height / 2)) / b.height;
+      svg.style.transform = `rotateY(${(nx * 10).toFixed(2)}deg) rotateX(${(-ny * 8).toFixed(2)}deg)`;
+    });
+    hero.addEventListener('pointerleave', () => { svg.style.transform = ''; });
+  }
+})();
+
+/* ==========================================================================
+   01 · a Central em miniatura
+   ========================================================================== */
+(function mini() {
+  const DEMO = {
+    fiscalbot: ['Arraste aqui o Movimento Livros Fiscais', 'o relatório extraído do Sankhya — .xls ou .xlsx', 'Auditando o Livro Fiscal…',
+      [['6.504', 'registros auditados'], ['7', 'camadas percorridas'], ['0', 'registros sem status']], 'Livro_Fiscal_auditado.xlsx'],
+    apurabot: ['Arraste aqui o Livro Fiscal validado', 'abre em janela própria, com a tela de conferência', 'Apurando por estabelecimento…',
+      [['7', 'estabelecimentos'], ['0,00', 'diferença no estorno'], ['0', 'pendências de regra']], 'Apuracao_ICMS_2026-07.xlsx'],
+    dixml: ['Arraste aqui os pacotes de XML', 'um ou mais .zip — pode haver .zip dentro de .zip', 'Lendo os XMLs…',
+      [['1.248', 'notas'], ['4.910', 'linhas de item'], ['37', 'eventos listados']], 'Lote_XML.xlsx'],
+    gerarpendentes: ['Arraste os relatórios da semana', 'importação de XML e Conferência de Entradas, em qualquer ordem', 'Cruzando o XML com a Conferência de Entradas…',
+      [['67', 'notas pendentes'], ['2', 'abas para o e-mail'], ['5', 'portas de saída']], 'Pendentes_semana.xlsx'],
+    gerarservpend: ['Arraste os relatórios da semana', 'ASIS e Portal de Compras; Conferência de Serviços se houver', 'Confrontando o ASIS com os lançamentos do Sankhya…',
+      [['74', 'notas pendentes'], ['4', 'passos de confronto'], ['127', 'sem correspondência']], 'Servicos_semana.xlsx'],
+    conhecimento: ['Arraste a base, ou uma planilha classificada', 'lista .csv e regras .json refazem; planilha sozinha mede', 'Lendo o que o histórico já respondeu…',
+      [['44/44', 'categoria firme'], ['18/18', 'operação firme'], ['77%', 'guardião — sugere']], 'Base_medida.xlsx'],
+    resumoexecutivo: ['Arraste a planilha da semana', 'depois de classificada — Pendentes e Servicos', 'Montando o painel da semana…',
+      [['141', 'notas no painel'], ['3', 'categorias'], ['6/6', 'blocos conferidos']], 'Semana_com_painel.xlsx'],
+    faturabot: ['Arraste os relatórios da expedição', 'pesagens, agendas, Portal de Vendas, PMI e MIC', 'Cruzando pesagens com agendas e notas…',
+      [['312', 'pesagens'], ['94%', 'casadas por OC'], ['6', 'divergências']], 'Faturabot_Desvio_Balanca.xlsx'],
+  };
+  const list = $('#miniList');
+  const btns = TOOLS.map(t => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.style.setProperty('--c', cv(t));
+    b.innerHTML = `<span class="dot"></span><span class="nm">${t.nome}</span><span class="st">${t.st}</span>`;
+    b.addEventListener('click', () => { user = performance.now(); run(t.id); });
+    list.appendChild(b);
+    return b;
+  });
+  const nm = $('#mrName'), sm = $('#mrSum'), drop = $('#mrDrop'), dT = $('#mrDropT'), dS = $('#mrDropS'),
+    bar = $('#mrBar'), verb = $('#mrVerb'), res = $('#mrRes'), dl = $('#mrDl');
+  let timers = [], idx = 0, user = -1e9, cur = null;
+  const later = (f, ms) => timers.push(setTimeout(f, RM ? 0 : ms));
+  function run(id) {
+    timers.forEach(clearTimeout); timers = [];
+    cur = id; idx = TOOLS.findIndex(t => t.id === id);
+    const t = byId[id], d = DEMO[id];
+    btns.forEach((b, i) => b.classList.toggle('on', i === idx));
+    nm.textContent = t.nome; sm.textContent = t.res;
+    dT.textContent = d[0]; dS.textContent = d[1];
+    drop.classList.remove('fly', 'hit'); res.classList.remove('on');
+    bar.style.transition = 'none'; bar.style.transform = 'scaleX(0)'; verb.textContent = '';
+    res.innerHTML = d[3].map(([v, k]) => `<div><b class="num">${v}</b><span>${k}</span></div>`).join('');
+    dl.textContent = d[4];
+    later(() => { void drop.offsetWidth; drop.classList.add('fly'); }, 350);
+    later(() => drop.classList.add('hit'), 1150);
+    later(() => {
+      let i = 0; const s = d[2];
+      const ty = () => { verb.textContent = s.slice(0, ++i); if (i < s.length) later(ty, 22); };
+      ty();
+      bar.style.transition = 'transform 1.6s cubic-bezier(.6,.02,.16,1)'; bar.style.transform = 'scaleX(1)';
+    }, 1350);
+    later(() => { res.classList.add('on'); verb.textContent = 'Pronto.'; }, 3100);
+  }
+  const stage = $('#stage');
+  let acc = 0;
+  actor(stage, {
+    start() { run('fiscalbot'); },
+    tick(dt) {
+      if (performance.now() - user < 12000) return;
+      acc += dt;
+      if (acc > 6.4) { acc = 0; run(TOOLS[(idx + 1) % TOOLS.length].id); }
+    }
+  });
+})();
+
+/* ==========================================================================
+   02 · o mapa do fluxo
+   ========================================================================== */
+(function flow() {
+  const svg = $('#flow'), wrap = $('#flowWrap');
+  const SW = 240, SH = 48, TW = 190, TH = 54;
+  S('text', { x: 20, y: 22, class: 'fcol', text: 'ORIGEM' }, svg);
+  S('text', { x: 420, y: 22, class: 'fcol', text: 'FERRAMENTA' }, svg);
+  S('text', { x: 940, y: 12, class: 'fcol', text: 'ENTREGA' }, svg);
+  const edges = S('g', null, svg), pk = S('g', null, svg), nodes = S('g', null, svg);
+  const src = {
+    s1: [48, 'Movimento Livros Fiscais', 'Sankhya'],
+    s2: [128, 'Lote de XML de NF-e e CT-e', 'SEFAZ · .zip'],
+    s3: [214, 'Importação de XML', 'Sankhya'],
+    s4: [270, 'Conferência de Entradas', 'Sankhya'],
+    s5: [398, 'ASIS · notas de serviço', 'Portal Nacional'],
+    s6: [454, 'Portal de Compras', 'Sankhya'],
+    s7: [560, 'Pesagens por período', 'Balança de Guará'],
+    s8: [616, 'Agendas, Vendas, PMI e MIC', 'Sankhya · MIC'],
+  };
+  const tl = {
+    fiscalbot: [420, 45], apurabot: [680, 45], dixml: [420, 125], gerarpendentes: [420, 240],
+    conhecimento: [420, 330], gerarservpend: [420, 424], resumoexecutivo: [680, 330], faturabot: [420, 586],
+  };
+  const out = {
+    o1: [24, 'Apuração de ICMS', '8 abas · memória de cálculo', 'apurabot'],
+    o2: [96, 'Livro Fiscal auditado', '9 colunas de auditoria', 'fiscalbot'],
+    o3: [158, 'Planilha NFe + CTe', 'uma linha por item', 'dixml'],
+    o4: [226, 'Pendentes + FIS-FAT', 'vai no e-mail da semana', 'gerarpendentes'],
+    o5: [333, 'Painel da semana', 'aba Resumo Executivo', 'resumoexecutivo'],
+    o6: [440, 'Lançadas · Pendentes · Avesso', 'três respostas', 'gerarservpend'],
+    o7: [560, 'Desvio de balança', 'caminhão a caminhão', 'faturabot'],
+    o8: [616, 'Consolidado · Saídas · Diretos', 'relatórios da semana', 'faturabot'],
+  };
+  const nodeEls = {};
+  function node(key, x, y, w, h, t1, t2, tool) {
+    const g = S('g', { class: 'fn' + (tool ? ' tool' : ''), transform: `translate(${x} ${y})` }, nodes);
+    if (tool) g.style.setProperty('--c', cv(tool));
+    S('rect', { width: w, height: h }, g);
+    if (tool) S('rect', { class: 'sw', width: 3, height: h }, g);
+    S('text', { x: tool ? 16 : 12, y: h / 2 - 2, class: 't1', text: t1 }, g);
+    S('text', { x: tool ? 16 : 12, y: h / 2 + 13, class: 't2', text: t2.toUpperCase() }, g);
+    nodeEls[key] = g;
+    return g;
+  }
+  for (const k in src) node(k, 20, src[k][0], SW, SH, src[k][1], src[k][2]);
+  for (const id in tl) { const t = byId[id]; node(id, tl[id][0], tl[id][1], TW, TH, t.nome, t.st, t); }
+  for (const k in out) node(k, 940, out[k][0], SW, SH, out[k][1], out[k][2]);
+
+  const E = [];
+  let n = 0;
+  function edge(d, from, to, tools, dash, label, lx, ly) {
+    const id = 'fe' + (n++);
+    const c = cv(byId[tools[0]]);
+    const p = S('path', { id, d, class: 'fe' + (dash ? ' dash' : '') }, edges);
+    p.style.setProperty('--c', c);
+    if (label) S('text', { x: lx, y: ly, class: 'flabel', 'text-anchor': 'middle', text: label }, edges);
+    const dots = [];
+    if (!RM) {
+      const cnt = dash ? 1 : 2;
+      for (let i = 0; i < cnt; i++) {
+        const dot = S('circle', { r: 3, class: 'fp', style: `fill:${c}` }, pk);
+        const dur = rnd(2.6, 4.2);
+        const am = S('animateMotion', { dur: dur + 's', repeatCount: 'indefinite', begin: (-rnd(0, dur)).toFixed(2) + 's', rotate: 'auto' }, dot);
+        S('mpath', { href: '#' + id }, am);
+        dots.push(dot);
+      }
+    }
+    E.push({ p, dots, from, to, tools });
+  }
+  const C = (x1, y1, x2, y2) => { const dx = (x2 - x1) * .5; return `M${x1} ${y1} C${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`; };
+  const R = k => 20 + SW, SY = (k, o = 0) => src[k][0] + SH / 2 + o;
+  const TL = id => tl[id][0], TR = id => tl[id][0] + TW, TY = (id, o = 0) => tl[id][1] + TH / 2 + o;
+  const OY = k => out[k][0] + SH / 2;
+  edge(C(R(), SY('s1'), TL('fiscalbot'), TY('fiscalbot')), 's1', 'fiscalbot', ['fiscalbot']);
+  edge(C(TR('fiscalbot'), TY('fiscalbot'), TL('apurabot'), TY('apurabot')), 'fiscalbot', 'apurabot', ['apurabot', 'fiscalbot'], false, 'LIVRO VALIDADO', 645, 36);
+  edge(C(R(), SY('s2'), TL('dixml'), TY('dixml')), 's2', 'dixml', ['dixml']);
+  edge(C(R(), SY('s3'), TL('gerarpendentes'), TY('gerarpendentes', -8)), 's3', 'gerarpendentes', ['gerarpendentes']);
+  edge(C(R(), SY('s4'), TL('gerarpendentes'), TY('gerarpendentes', 8)), 's4', 'gerarpendentes', ['gerarpendentes']);
+  edge(`M515 ${tl.conhecimento[1]} L515 ${tl.gerarpendentes[1] + TH}`, 'conhecimento', 'gerarpendentes', ['conhecimento', 'gerarpendentes'], true, 'PROPÕE', 548, 316);
+  edge(C(R(), SY('s5'), TL('gerarservpend'), TY('gerarservpend', -8)), 's5', 'gerarservpend', ['gerarservpend']);
+  edge(C(R(), SY('s6'), TL('gerarservpend'), TY('gerarservpend', 8)), 's6', 'gerarservpend', ['gerarservpend']);
+  edge(C(TR('gerarpendentes'), TY('gerarpendentes', 6), TL('resumoexecutivo'), TY('resumoexecutivo', -8)), 'gerarpendentes', 'resumoexecutivo', ['resumoexecutivo', 'gerarpendentes']);
+  edge(C(TR('gerarservpend'), TY('gerarservpend'), TL('resumoexecutivo'), TY('resumoexecutivo', 8)), 'gerarservpend', 'resumoexecutivo', ['resumoexecutivo', 'gerarservpend']);
+  edge(C(R(), SY('s7'), TL('faturabot'), TY('faturabot', -8)), 's7', 'faturabot', ['faturabot']);
+  edge(C(R(), SY('s8'), TL('faturabot'), TY('faturabot', 8)), 's8', 'faturabot', ['faturabot']);
+  // entregas
+  edge(C(TR('apurabot'), TY('apurabot'), 940, OY('o1')), 'apurabot', 'o1', ['apurabot']);
+  edge(`M${TR('fiscalbot')} ${TY('fiscalbot', 14)} C650 ${TY('fiscalbot', 14)} 650 124 700 124 L890 124 C915 124 915 ${OY('o2')} 940 ${OY('o2')}`, 'fiscalbot', 'o2', ['fiscalbot']);
+  edge(C(TR('dixml'), TY('dixml'), 940, OY('o3')), 'dixml', 'o3', ['dixml']);
+  edge(C(TR('gerarpendentes'), TY('gerarpendentes', -8), 940, OY('o4')), 'gerarpendentes', 'o4', ['gerarpendentes']);
+  edge(C(TR('resumoexecutivo'), TY('resumoexecutivo'), 940, OY('o5')), 'resumoexecutivo', 'o5', ['resumoexecutivo']);
+  edge(C(TR('gerarservpend'), TY('gerarservpend', 10), 940, OY('o6')), 'gerarservpend', 'o6', ['gerarservpend']);
+  edge(C(TR('faturabot'), TY('faturabot', -8), 940, OY('o7')), 'faturabot', 'o7', ['faturabot']);
+  edge(C(TR('faturabot'), TY('faturabot', 8), 940, OY('o8')), 'faturabot', 'o8', ['faturabot']);
+
+  function focus(id) {
+    if (!id) { wrap.classList.remove('focus'); $$('.hot', svg).forEach(e => e.classList.remove('hot')); return; }
+    wrap.classList.add('focus');
+    $$('.hot', svg).forEach(e => e.classList.remove('hot'));
+    nodeEls[id].classList.add('hot');
+    for (const e of E) {
+      if (!e.tools.includes(id)) continue;
+      e.p.classList.add('hot'); e.p.style.setProperty('--c', cv(byId[id]));
+      e.dots.forEach(d => d.classList.add('hot'));
+      nodeEls[e.from].classList.add('hot'); nodeEls[e.to].classList.add('hot');
+    }
+  }
+  for (const id in tl) {
+    const g = nodeEls[id];
+    g.addEventListener('mouseenter', () => focus(id));
+    g.addEventListener('mouseleave', () => focus(null));
+    g.addEventListener('click', () => goTool(id));
+  }
+})();
+
+/* ==========================================================================
+   T·01 · Fiscalbot — a cascata
+   ========================================================================== */
+(function fiscal() {
+  const svg = $('#vFiscal');
+  const L = [
+    ['1 · Cancelada', 'conforme, e encerra'],
+    ['2 · Frete Simples Nac.', 'CT-e da lista → CST 90'],
+    ['3 · Cavaco', 'MP 1101/2101 da lista'],
+    ['4 · Identificação', 'exatamente uma regra'],
+    ['5 · Seis dimensões', 'da regra que casou'],
+    ['6 · Camada 0', 'CST×ICMS · CFOP×UF'],
+    ['7 · Camada Ind', 'Ind. só em 1124/1125'],
+  ];
+  const Y0 = 16, BH = 36, GAP = 6;
+  const bands = L.map(([a, b], i) => {
+    const y = Y0 + i * (BH + GAP);
+    const r = S('rect', { x: 16, y, width: 528, height: BH, class: 'band' }, svg);
+    S('text', { x: 30, y: y + 22, class: 'lb', text: a.toUpperCase() }, svg);
+    return { r, until: 0, on: false };
+  });
+  const BIN = [
+    { k: 'conf', nome: 'Conforme', c: 'var(--acc)', x: 16 },
+    { k: 'adv', nome: 'Advertência', c: 'var(--warn)', x: 196 },
+    { k: 'man', nome: 'Validação manual', c: 'var(--manual)', x: 376 },
+  ];
+  const BY = 330;
+  BIN.forEach(b => {
+    b.cx = b.x + 84; b.n = 0;
+    b.r = S('rect', { x: b.x, y: BY, width: 168, height: 120, class: 'band' }, svg);
+    S('rect', { x: b.x, y: BY, width: 168, height: 3, style: `fill:${b.c}` }, svg);
+    S('text', { x: b.x + 14, y: BY + 26, class: 'lb', text: b.nome.toUpperCase() }, svg);
+    b.t = S('text', { x: b.x + 14, y: BY + 78, class: 'val', 'font-size': 34, text: '0' }, svg);
+    b.until = 0;
+  });
+  const dims = $$('#fiscalDims .tag');
+  const layer = S('g', null, svg);
+  const ps = [];
+  let spawn = 0;
+  const bottom = Y0 + 7 * (BH + GAP) - GAP;
+  function add() {
+    const out = pick([['conf', 78], ['adv', 14], ['man', 8]]);
+    const cancel = out === 'conf' && Math.random() < .09;
+    ps.push({
+      x: rnd(210, 350), y: -6, v: rnd(95, 135), out, cancel,
+      advAt: Math.random() < .6 ? 4 : 5, li: -1, st: 'fall', col: 'var(--ink-2)',
+      el: S('circle', { r: 3.4, style: 'fill:var(--ink-2)' }, layer)
+    });
+  }
+  const setCol = (p, c) => { if (p.col !== c) { p.col = c; p.el.style.fill = c; } };
+  actor(svg, {
+    tick(dt, t) {
+      if (RM) return;
+      spawn -= dt;
+      if (spawn <= 0) { add(); spawn = rnd(.2, .38); }
+      for (let i = ps.length - 1; i >= 0; i--) {
+        const p = ps[i];
+        if (p.st === 'fall') {
+          p.y += p.v * dt;
+          const li = Math.floor((p.y - Y0) / (BH + GAP));
+          if (li !== p.li && li >= 0 && li < 7 && (p.y - Y0) % (BH + GAP) < BH) {
+            p.li = li; bands[li].until = t + .16;
+            if (li === 3 && p.out === 'man') setCol(p, 'var(--manual)');
+            if (li === p.advAt && p.out === 'adv') {
+              setCol(p, 'var(--warn)');
+              if (li === 4) { const d = dims[Math.floor(Math.random() * dims.length)]; d.classList.add('flash'); setTimeout(() => d.classList.remove('flash'), 420); }
+            }
+          }
+          if (p.cancel && p.y > Y0 + BH * .6) { p.st = 'fly'; setCol(p, 'var(--acc)'); }
+          if (p.y >= bottom) { p.st = 'fly'; if (p.out === 'conf') setCol(p, 'var(--acc)'); }
+        } else {
+          const b = BIN.find(b => b.k === p.out);
+          const tx = b.cx + (p.x - 280) * .25, ty = BY + 50;
+          const k = clamp(dt * (p.cancel ? 3.2 : 7), 0, 1);
+          if (p.cancel) p.x = lerp(p.x, 120, k * .6);
+          p.x = lerp(p.x, tx, k); p.y = lerp(p.y, ty, k);
+          if (Math.abs(p.y - ty) < 5 && Math.abs(p.x - tx) < 8) {
+            p.el.remove(); ps.splice(i, 1);
+            b.n++; if (b.n > 9999) BIN.forEach(q => q.n = 0);
+            b.t.textContent = fmt(b.n); b.until = t + .2;
+            continue;
+          }
+        }
+        p.el.setAttribute('cx', p.x.toFixed(1)); p.el.setAttribute('cy', p.y.toFixed(1));
+      }
+      for (const b of bands) { const on = t < b.until; if (on !== b.on) { b.on = on; b.r.classList.toggle('lit', on); } }
+      for (const b of BIN) { const on = t < b.until; if (on !== b.on) { b.on = on; b.r.classList.toggle('lit', on); } }
+    }
+  });
+  if (RM) { BIN[0].t.textContent = '78'; BIN[1].t.textContent = '14'; BIN[2].t.textContent = '8'; }
+})();
+
+/* ==========================================================================
+   T·02 · Apurabot — a carga bruta se encaixa na nominal
+   ========================================================================== */
+(function apura() {
+  const svg = $('#vApura'), ph = $('#apPhase');
+  const X0 = 50, X1 = 472, yOf = c => 300 - c * 11.6;
+  const NOM = [4, 7, 12, 17, 18, 20.5];
+  S('line', { x1: X0, y1: yOf(0) + 8, x2: X1, y2: yOf(0) + 8, stroke: 'var(--line-2)' }, svg);
+  const lines = NOM.map(n => {
+    const l = S('line', { x1: X0, y1: yOf(n), x2: X1, y2: yOf(n), stroke: 'var(--line-2)', 'stroke-dasharray': '3 5' }, svg);
+    S('text', { x: X1 + 8, y: yOf(n) + 3.5, class: 'lb2', text: fmt(n, n % 1 ? 1 : 0) + '%' }, svg);
+    return l;
+  });
+  const sweep = S('line', { x1: X0, y1: 30, x2: X0, y2: yOf(0) + 8, stroke: 'var(--c)', 'stroke-width': 1.2, opacity: 0 }, svg);
+  const g = S('g', null, svg);
+  const big = S('text', { x: X0, y: 352, class: 'val', 'font-size': 30, text: '0,00%' }, svg);
+  S('text', { x: X0 + 124, y: 338, class: 'lb2', text: '2.333 / 2.336' }, svg);
+  const tag = S('text', { x: X1 + 30, y: 22, class: 'lb2', 'text-anchor': 'end', style: 'fill:var(--warn)', opacity: 0, text: '3 NOTAS → REGRA DE MS' }, svg);
+  const D = [];
+  function seed() {
+    g.innerHTML = ''; D.length = 0;
+    for (let i = 0; i < 150; i++) {
+      const n = pick([[4, 40], [7, 10], [12, 20], [17, 8], [18, 14], [20.5, 8]]);
+      D.push({ n, raw: n * rnd(.84, .985), x: rnd(X0 + 8, X1 - 8), sp: false });
+    }
+    for (let i = 0; i < 3; i++) D.push({ n: 4, raw: 7 * rnd(.95, .985), x: rnd(X0 + 60, X1 - 60), sp: true });
+    for (const d of D) d.el = S('circle', { cx: d.x.toFixed(1), cy: yOf(d.raw).toFixed(1), r: d.sp ? 4.2 : 2.8, style: `fill:${d.sp ? 'var(--warn)' : 'var(--ink-3)'}`, opacity: 0 }, g);
+  }
+  const EST = [['Registro', 'SP'], ['Guará', 'SP'], ['Matriz', 'SP'], ['Barra do Garças', 'MT'], ['Londrina', 'PR'], ['Corumbá', 'MS'], ['Rio Brilhante', 'MS']];
+  const ck = $('#apChecks');
+  ck.innerHTML = EST.map(([n, u]) => `<div><span>${n}</span><span class="uf">${u}</span><span class="ok num">diferença 0,00</span></div>`).join('');
+  const rows = $$('div', ck);
+  const P = 10.5;
+  let phase = '';
+  function setPh(s) { if (s !== phase) { phase = s; ph.textContent = s; } }
+  function draw(t) {
+    const fadeIn = clamp(t / 1, 0, 1), fadeOut = 1 - clamp((t - 9.6) / .8, 0, 1);
+    const s0 = 1.4;
+    for (const d of D) {
+      const dl = (d.x - X0) / (X1 - X0) * .7;
+      const k = eio(clamp((t - s0 - dl) / .9, 0, 1));
+      d.el.setAttribute('cy', lerp(yOf(d.raw), yOf(d.n), k).toFixed(1));
+      d.el.setAttribute('opacity', (Math.min(fadeIn, fadeOut) * (d.sp ? 1 : .85)).toFixed(2));
+      if (!d.sp) d.el.style.fill = k > .95 ? 'var(--c)' : 'var(--ink-3)';
+    }
+    const sw = clamp((t - s0) / 1.6, 0, 1);
+    sweep.setAttribute('x1', lerp(X0, X1, sw)); sweep.setAttribute('x2', lerp(X0, X1, sw));
+    sweep.setAttribute('opacity', sw > 0 && sw < 1 ? .8 : 0);
+    const pc = clamp((t - s0) / 1.8, 0, 1);
+    big.textContent = fmt(99.87 * eout(pc), 2) + '%';
+    tag.setAttribute('opacity', t > 3.4 && t < 9.8 ? 1 : 0);
+    lines.forEach(l => l.setAttribute('stroke', t > 3 && t < 9.8 ? 'var(--c)' : 'var(--line-2)'));
+    setPh(t < s0 ? 'carga bruta' : t < 3.1 ? 'equalizando' : 'carga efetiva');
+    rows.forEach((r, i) => r.classList.toggle('on', t > 3.2 + i * .32 && t < 10));
+  }
+  seed();
+  if (RM) { draw(6); return; }
+  actor(svg, {
+    tick(dt) {
+      if (this.t >= P) { this.t = 0; seed(); }
+      draw(this.t);
+    }
+  });
+})();
+
+/* ==========================================================================
+   T·03 · DiXML — pacotes dentro de pacotes viram linhas
+   ========================================================================== */
+(function dixml() {
+  const svg = $('#vDixml'), path = $('#dxPath'), keyBox = $('#dxKey'), good = $('#dxGood');
+  const CX = 140, CY = 168;
+  const NAMES = ['lote.zip', 'contabilidade.zip', 'jul.zip', 'filial_02.zip', 'nfe.zip', 'semana_4.zip', 'dia_28.zip', 'lote_3.zip'];
+  const boxes = NAMES.map((n, i) => {
+    const s = 244 - i * 26;
+    return S('rect', { x: CX - s / 2, y: CY - s / 2, width: s, height: s, fill: 'none', stroke: 'var(--c)', 'stroke-width': 1, opacity: .18 }, svg);
+  });
+  const lvl = S('text', { x: CX, y: CY - 130, class: 'lb2', 'text-anchor': 'middle', text: 'NÍVEL 0 / 8' }, svg);
+  const doc = S('g', { opacity: 0 }, svg);
+  S('path', { d: `M${CX - 14} ${CY - 18}h20l8 8v28h-28z`, fill: 'var(--bg-3)', stroke: 'var(--c)' }, doc);
+  S('text', { x: CX, y: CY + 6, class: 'lb2', 'text-anchor': 'middle', style: 'fill:var(--c)', text: 'XML' }, doc);
+  const TX = [292, 392, 434, 478];
+  ['CHAVE', 'ITEM', 'CFOP', 'VPROD'].forEach((h, i) => S('text', { x: TX[i], y: 30, class: 'lb2', text: h }, svg));
+  S('line', { x1: 286, y1: 38, x2: 548, y2: 38, stroke: 'var(--line-2)' }, svg);
+  const CF = ['5101', '6101', '1101', '2102', '5905', '6118'];
+  const rows = [], NR = 10;
+  for (let j = 0; j < NR; j++) {
+    const y = 58 + j * 27;
+    const g = S('g', { opacity: 0 }, svg);
+    S('rect', { x: 286, y: y - 15, width: 262, height: 24, fill: 'var(--shade)' }, g);
+    const nota = 1240 + Math.floor(j / 3);
+    S('text', { x: TX[0], y, class: 'lb2', style: 'fill:var(--ink-2)', text: `3526…${String(nota).padStart(4, '0')}` }, g);
+    S('text', { x: TX[1], y, class: 'lb2', style: 'fill:var(--ink-2)', text: String(j % 3 + 1) }, g);
+    S('text', { x: TX[2], y, class: 'lb2', style: 'fill:var(--ink)', text: CF[j % CF.length] }, g);
+    S('text', { x: TX[3], y, class: 'lb2', style: 'fill:var(--ink)', text: fmt(rnd(800, 48000), 2) }, g);
+    const dot = S('circle', { r: 3, style: 'fill:var(--c)', opacity: 0 }, svg);
+    rows.push({ g, y, dot });
+  }
+  const KEY = '35260712345678000190550010000123451000012345'.replace(/(\d{4})(?=\d)/g, '$1 ');
+  const P = 12.5;
+  function draw(t) {
+    const open = t / .34;
+    boxes.forEach((b, i) => {
+      const k = clamp(open - i, 0, 1), after = clamp(open - i - 1, 0, 1);
+      b.setAttribute('opacity', (.18 + .82 * k - .6 * after).toFixed(2));
+      b.setAttribute('stroke-dasharray', after > 0 ? '3 5' : 'none');
+    });
+    const lv = clamp(Math.floor(open) + 1, 0, 8);
+    lvl.textContent = `NÍVEL ${t < .1 ? 0 : lv} / 8`;
+    path.textContent = lv <= 1 ? NAMES[0] : lv < 8 ? '… › ' + NAMES[lv - 1] : '… › ' + NAMES[7] + ' › nota.xml';
+    const t2 = t - 3;
+    doc.setAttribute('opacity', t2 > 0 && t < 11.8 ? 1 : 0);
+    rows.forEach((r, j) => {
+      const s = t2 - j * .45;
+      const f = clamp(s / .45, 0, 1);
+      r.dot.setAttribute('opacity', f > 0 && f < 1 ? 1 : 0);
+      r.dot.setAttribute('cx', lerp(CX + 14, 290, eio(f)).toFixed(1));
+      r.dot.setAttribute('cy', (lerp(CY, r.y - 4, eio(f)) - Math.sin(f * Math.PI) * 30).toFixed(1));
+      r.g.setAttribute('opacity', t > 11.8 ? 0 : f >= 1 ? 1 : 0);
+    });
+    keyBox.classList.toggle('x', t > 2.4 && t < 11.8);
+    const n = Math.floor(clamp((t - 3) / 4.2, 0, 1) * KEY.length);
+    const txt = t < 11.8 ? KEY.slice(0, n) : '';
+    if (good.textContent !== txt) good.textContent = txt;
+  }
+  if (RM) { draw(10); return; }
+  actor(svg, { tick() { if (this.t >= P) this.t = 0; draw(this.t); } });
+})();
+
+/* ==========================================================================
+   T·04 · GerarPendentes — a esteira com portas
+   ========================================================================== */
+(function pend() {
+  const svg = $('#vPend');
+  const BY = 150, BH = 170, CY = 74;
+  const belt = S('line', { x1: 16, y1: CY, x2: 544, y2: CY, stroke: 'var(--line-2)', 'stroke-width': 6, 'stroke-dasharray': '2 10' }, svg);
+  S('line', { x1: 16, y1: CY - 5, x2: 544, y2: CY - 5, stroke: 'var(--line-2)' }, svg);
+  S('line', { x1: 16, y1: CY + 5, x2: 544, y2: CY + 5, stroke: 'var(--line-2)' }, svg);
+  const G = [
+    { k: 'Descarte', o: '0', x: 58, w: 6, c: 'var(--ink-3)' },
+    { k: 'CT-e', o: '1', x: 142, w: 13, c: 'var(--t-dixml)' },
+    { k: 'Manifest.', o: '2', x: 226, w: 8, c: 'var(--manual)' },
+    { k: '3os', o: '3', x: 310, w: 10, c: 'var(--t-apura)' },
+    { k: 'Lançados', o: '4', x: 394, w: 44, c: 'var(--acc)' },
+    { k: 'Pendentes', o: '→', x: 486, w: 19, c: 'var(--t-pend)' },
+  ];
+  const FAROL = [['var(--acc)', 40], ['var(--warn)', 35], ['var(--bad)', 25]];
+  G.forEach((g, i) => {
+    const pend = i === G.length - 1;
+    const bw = pend ? 76 : 56;
+    g.bx = g.x - bw / 2; g.bw = bw;
+    S('line', { x1: g.x, y1: CY - 16, x2: g.x, y2: CY + 16, stroke: pend ? 'var(--c)' : 'var(--ink-3)', 'stroke-width': 1.5 }, svg);
+    S('text', { x: g.x, y: CY - 24, class: 'lb2', 'text-anchor': 'middle', text: g.o }, svg);
+    S('path', { d: `M${g.x} ${CY + 18} L${g.x} ${BY - 6}`, stroke: 'var(--line)', 'stroke-dasharray': '2 4' }, svg);
+    S('rect', { x: g.bx, y: BY, width: bw, height: BH, class: 'band' }, svg);
+    g.fill = pend ? FAROL.map(f => S('rect', { x: g.bx + 1, y: BY + BH, width: bw - 2, height: 0, style: `fill:${f[0]}`, opacity: .55 }, svg))
+      : [S('rect', { x: g.bx + 1, y: BY + BH, width: bw - 2, height: 0, style: `fill:${g.c}`, opacity: .45 }, svg)];
+    g.nt = S('text', { x: g.x, y: BY - 12, class: 'val', 'font-size': 15, 'text-anchor': 'middle', text: '0' }, svg);
+    S('text', { x: g.x, y: BY + BH + 20, class: 'lb2', 'text-anchor': 'middle', style: pend ? 'fill:var(--c)' : '', text: g.k.toUpperCase() }, svg);
+    g.n = 0; g.f = [0, 0, 0];
+  });
+  const layer = S('g', null, svg);
+  const ps = [];
+  let spawn = 0, off = 0;
+  const CAP = 70;
+  function level(g) {
+    if (g.fill.length === 3) {
+      let acc = 0;
+      g.fill.forEach((r, i) => {
+        const h = g.f[i] / CAP * (BH - 2); acc += h;
+        r.setAttribute('y', (BY + BH - 1 - acc).toFixed(1)); r.setAttribute('height', h.toFixed(1));
+      });
+    } else {
+      const h = g.n / CAP * (BH - 2);
+      g.fill[0].setAttribute('y', (BY + BH - 1 - h).toFixed(1)); g.fill[0].setAttribute('height', h.toFixed(1));
+    }
+  }
+  function reset() { G.forEach(g => { g.n = 0; g.f = [0, 0, 0]; g.nt.textContent = '0'; level(g); }); }
+  actor(svg, {
+    tick(dt) {
+      if (RM) return;
+      off -= dt * 90; belt.setAttribute('stroke-dashoffset', off.toFixed(1));
+      spawn -= dt;
+      if (spawn <= 0) {
+        spawn = rnd(.14, .26);
+        const gi = pick(G.map((g, i) => [i, g.w]));
+        ps.push({ x: 12, y: CY, vy: 0, g: G[gi], st: 'belt', el: S('circle', { r: 3.4, cx: 12, cy: CY, style: 'fill:var(--ink-2)' }, layer) });
+      }
+      for (let i = ps.length - 1; i >= 0; i--) {
+        const p = ps[i];
+        if (p.st === 'belt') {
+          p.x += 120 * dt;
+          if (p.x >= p.g.x) {
+            p.x = p.g.x; p.st = 'drop';
+            if (p.g.fill.length === 3) { p.fi = pick(FAROL.map((f, j) => [j, f[1]])); p.el.style.fill = FAROL[p.fi][0]; }
+            else p.el.style.fill = p.g.c;
+            p.tx = p.g.bx + 8 + Math.random() * (p.g.bw - 16);
+          }
+        } else {
+          p.vy += 900 * dt; p.y += p.vy * dt; p.x = lerp(p.x, p.tx, clamp(dt * 6, 0, 1));
+          const top = p.g.fill.length === 3 ? BY + BH - (p.g.f[0] + p.g.f[1] + p.g.f[2]) / CAP * BH : BY + BH - p.g.n / CAP * BH;
+          if (p.y >= top - 3) {
+            p.el.remove(); ps.splice(i, 1);
+            p.g.n++; if (p.g.fill.length === 3) p.g.f[p.fi]++;
+            p.g.nt.textContent = p.g.n; level(p.g);
+            if (G.some(g => g.n >= CAP)) reset();
+            continue;
+          }
+        }
+        p.el.setAttribute('cx', p.x.toFixed(1)); p.el.setAttribute('cy', p.y.toFixed(1));
+      }
+    }
+  });
+  if (RM) { const W = [4, 9, 5, 7, 31, 13]; G.forEach((g, i) => { g.n = W[i]; g.f = [5, 5, 3]; g.nt.textContent = g.n; level(g); }); }
+})();
+
+/* ==========================================================================
+   T·05 · GerarServPend — quatro peneiras
+   ========================================================================== */
+(function serv() {
+  const svg = $('#vServ'), stepLbl = $('#svStep');
+  const N = 12, LX = 128, RX = 432, Y = i => 64 + i * 25;
+  S('text', { x: LX, y: 30, class: 'lb', 'text-anchor': 'middle', text: 'ASIS · EMITIDAS' }, svg);
+  S('text', { x: RX, y: 30, class: 'lb', 'text-anchor': 'middle', text: 'SANKHYA · LANÇADAS' }, svg);
+  const STEPS = [
+    ['1', 'nota + CNPJ', 'var(--acc)', false],
+    ['2', 'RPS + CNPJ', 'var(--acc)', false],
+    ['3', 'CNPJ + valor', 'var(--t-apura)', false],
+    ['4', 'nota + valor', 'var(--warn)', true],
+  ];
+  const lg = S('g', null, svg);
+  const Ld = [], Rd = [], Lt = [], Rt = [];
+  for (let i = 0; i < N; i++) {
+    Ld.push(S('circle', { cx: LX, cy: Y(i), r: 5, style: 'fill:var(--ink-3)' }, svg));
+    Rd.push(S('circle', { cx: RX, cy: Y(i), r: 5, style: 'fill:var(--ink-3)' }, svg));
+    Lt.push(S('text', { x: LX - 14, y: Y(i) + 3.5, class: 'lb2', 'text-anchor': 'end', opacity: 0, text: '' }, svg));
+    Rt.push(S('text', { x: RX + 14, y: Y(i) + 3.5, class: 'lb2', opacity: 0, text: '' }, svg));
+  }
+  const boxes = STEPS.map((s, i) => {
+    const x = 16 + i * 133;
+    const r = S('rect', { x, y: 372, width: 127, height: 34, class: 'band' }, svg);
+    S('rect', { x, y: 372, width: 127, height: 2, style: `fill:${s[2]}` }, svg);
+    S('text', { x: x + 10, y: 393, class: 'lb2', style: 'fill:var(--ink-2)', text: `${s[0]} · ${s[1].toUpperCase()}` }, svg);
+    return r;
+  });
+  let M = [];
+  function plan() {
+    lg.innerHTML = '';
+    const L = shuffle([...Array(N).keys()]), R = shuffle([...Array(N).keys()]);
+    const counts = [5, 2, 2, 1];
+    M = []; let k = 0;
+    counts.forEach((c, s) => { for (let j = 0; j < c; j++, k++) M.push({ l: L[k], r: R[k], s }); });
+    for (const m of M) {
+      const st = STEPS[m.s];
+      m.el = S('line', { x1: LX, y1: Y(m.l), x2: LX, y2: Y(m.l), stroke: st[2], 'stroke-width': m.s < 2 ? 1.7 : 1.3, 'stroke-dasharray': st[3] ? '4 4' : 'none', opacity: .9 }, lg);
+    }
+    M.uL = L.slice(k); M.uR = R.slice(k);
+    for (let i = 0; i < N; i++) { Ld[i].style.fill = 'var(--ink-3)'; Rd[i].style.fill = 'var(--ink-3)'; Lt[i].setAttribute('opacity', 0); Rt[i].setAttribute('opacity', 0); }
+  }
+  const P = 13, ST = .6, SD = 1.8;
+  let lastLbl = '';
+  function draw(t) {
+    const cur = clamp(Math.floor((t - ST) / SD), -1, 4);
+    const lbl = cur < 0 ? 'preparando' : cur < 4 ? `passo ${cur + 1} · ${STEPS[cur][1]}` : 'o que sobrou';
+    if (lbl !== lastLbl) { lastLbl = lbl; stepLbl.textContent = lbl; }
+    boxes.forEach((b, i) => b.classList.toggle('lit', i === cur));
+    const within = {};
+    for (const m of M) {
+      within[m.s] = (within[m.s] || 0) + 1;
+      const s0 = ST + m.s * SD + (within[m.s] - 1) * .14;
+      const k = eio(clamp((t - s0) / .7, 0, 1));
+      m.el.setAttribute('x2', lerp(LX, RX, k).toFixed(1));
+      m.el.setAttribute('y2', lerp(Y(m.l), Y(m.r), k).toFixed(1));
+      m.el.setAttribute('opacity', t > P - .8 ? 0 : .9);
+      const on = k >= 1, col = on ? STEPS[m.s][2] : 'var(--ink-3)';
+      Ld[m.l].style.fill = col; Rd[m.r].style.fill = col;
+      if (m.s === 3) { Lt[m.l].textContent = 'REVISÃO'; Lt[m.l].style.fill = 'var(--warn)'; Lt[m.l].setAttribute('opacity', on && t < P - .8 ? 1 : 0); }
+    }
+    const endOn = t > ST + 4 * SD && t < P - .8;
+    for (const l of M.uL) { Ld[l].style.fill = endOn ? 'var(--bad)' : 'var(--ink-3)'; Lt[l].textContent = 'PENDENTE'; Lt[l].style.fill = 'var(--bad)'; Lt[l].setAttribute('opacity', endOn ? 1 : 0); }
+    for (const r of M.uR) { Rd[r].style.fill = endOn ? 'var(--t-apura)' : 'var(--ink-3)'; Rt[r].textContent = 'SEM CORRESP.'; Rt[r].style.fill = 'var(--t-apura)'; Rt[r].setAttribute('opacity', endOn ? 1 : 0); }
+  }
+  plan();
+  if (RM) { draw(ST + 4 * SD + .5); return; }
+  actor(svg, { tick() { if (this.t >= P) { this.t = 0; plan(); } draw(this.t); } });
+})();
+
+/* ==========================================================================
+   T·06 · Base de conhecimento — medidores e a célula âmbar
+   ========================================================================== */
+(function base() {
+  const svg = $('#vBase');
+  const GA = [
+    { cx: 94, p: 1, v: '100%', s: '44 DE 44', k: 'CATEGORIA · FIRME', c: 'var(--c)' },
+    { cx: 280, p: .77, v: '77%', s: '40 DE 52', k: 'GUARDIÃO · SUGESTÃO', c: 'var(--warn)' },
+    { cx: 466, p: 1, v: '100%', s: '18 DE 18', k: 'OPERAÇÃO · FIRME', c: 'var(--c)' },
+  ];
+  const R = 50, CIRC = 2 * Math.PI * R;
+  GA.forEach(g => {
+    S('circle', { cx: g.cx, cy: 70, r: R, fill: 'none', stroke: 'var(--line)', 'stroke-width': 7 }, svg);
+    g.arc = S('circle', { cx: g.cx, cy: 70, r: R, fill: 'none', stroke: g.c, 'stroke-width': 7, 'stroke-dasharray': CIRC.toFixed(1), 'stroke-dashoffset': CIRC.toFixed(1), transform: `rotate(-90 ${g.cx} 70)`, 'stroke-linecap': 'butt' }, svg);
+    g.t = S('text', { x: g.cx, y: 76, class: 'val', 'font-size': 22, 'text-anchor': 'middle', text: '0%' }, svg);
+    S('text', { x: g.cx, y: 92, class: 'lb2', 'text-anchor': 'middle', text: g.s }, svg);
+    S('text', { x: g.cx, y: 148, class: 'lb2', 'text-anchor': 'middle', style: 'fill:var(--ink-2)', text: g.k }, svg);
+  });
+  const ROWS = [
+    ['NF 18.204', ['Diretos', 'amb'], ['Suprimentos', 'sug'], ['Compra p/ Industrialização', 'amb']],
+    ['NF 18.211', ['Indiretos', 'hum'], ['Manutenção', 'hum'], ['Compra Uso e Consumo', 'amb']],
+    ['NF 18.230', ['Diretos', 'amb'], ['Faturamento', 'sug'], ['', '']],
+    ['NF 18.245', ['Indiretos', 'amb'], ['', ''], ['Compra Uso e Consumo', 'amb']],
+    ['NF 18.262', ['Diretos', 'hum'], ['Logística', 'sug'], ['Remessa p/ Armazém', 'hum']],
+    ['NF 18.277', ['', ''], ['', ''], ['', '']],
+  ];
+  const tb = $('#baseSheet tbody');
+  const cells = [];
+  ROWS.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="nf">${r[0]}</td>`;
+    r.slice(1).forEach(([v, k]) => {
+      const td = document.createElement('td');
+      if (k === 'hum') { td.className = 'hum'; td.textContent = v; }
+      else if (k) cells.push({ td, v, k });
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  cells.forEach((c, i) => c.at = 1.3 + i * .42);
+  const P = 11;
+  function draw(t) {
+    GA.forEach(g => {
+      const k = eout(clamp(t / 1.4, 0, 1)) * (t > P - .6 ? 0 : 1);
+      g.arc.setAttribute('stroke-dashoffset', (CIRC * (1 - g.p * k)).toFixed(1));
+      g.t.textContent = Math.round(g.p * 100 * k) + '%';
+    });
+    for (const c of cells) {
+      const s = t - c.at, on = s > 0 && t < P - .6;
+      c.td.classList.toggle(c.k, on);
+      const txt = on ? c.v.slice(0, Math.floor(s * 45)) : '';
+      if (c.td.textContent !== txt) c.td.textContent = txt;
+    }
+  }
+  if (RM) { draw(8); return; }
+  actor(svg, { tick() { if (this.t >= P) this.t = 0; draw(this.t); } });
+})();
+
+/* ==========================================================================
+   T·07 · Resumo Executivo — o painel se monta e se confere
+   ========================================================================== */
+(function resumo() {
+  const svg = $('#vResumo');
+  const CX = 116, CY = 118, R = 70, CIRC = 2 * Math.PI * R;
+  S('circle', { cx: CX, cy: CY, r: R, fill: 'none', stroke: 'var(--line)', 'stroke-width': 20 }, svg);
+  const TOT = 141, A = 67 / TOT;
+  const a1 = S('circle', { cx: CX, cy: CY, r: R, fill: 'none', stroke: 'var(--t-pend)', 'stroke-width': 20, 'stroke-dasharray': `0 ${CIRC}`, transform: `rotate(-90 ${CX} ${CY})` }, svg);
+  const a2 = S('circle', { cx: CX, cy: CY, r: R, fill: 'none', stroke: 'var(--t-serv)', 'stroke-width': 20, 'stroke-dasharray': `0 ${CIRC}`, transform: `rotate(${-90 + A * 360} ${CX} ${CY})` }, svg);
+  const tt = S('text', { x: CX, y: CY + 6, class: 'val', 'font-size': 30, 'text-anchor': 'middle', text: '0' }, svg);
+  S('text', { x: CX, y: CY + 24, class: 'lb2', 'text-anchor': 'middle', text: 'NOTAS' }, svg);
+  S('rect', { x: 30, y: 222, width: 8, height: 8, style: 'fill:var(--t-pend)' }, svg);
+  S('text', { x: 44, y: 230, class: 'lb2', text: 'MERCADORIA 67' }, svg);
+  S('rect', { x: 132, y: 222, width: 8, height: 8, style: 'fill:var(--t-serv)' }, svg);
+  S('text', { x: 146, y: 230, class: 'lb2', text: 'SERVIÇO 74' }, svg);
+  const BASE = 204, SER = ['var(--t-pend)', 'var(--t-apura)', 'var(--t-serv)'];
+  const H = [[60, 22, 30], [34, 40, 18], [88, 16, 44], [22, 30, 26]];
+  const bars = H.map((hs, u) => {
+    const x = 284 + u * 66;
+    S('text', { x: x + 20, y: BASE + 18, class: 'lb2', 'text-anchor': 'middle', text: 'UNID. ' + 'ABCD'[u] }, svg);
+    return hs.map((h, s) => ({ h, s, x, r: S('rect', { x, y: BASE, width: 40, height: 0, style: `fill:${SER[s]}`, opacity: .75 }, svg) }));
+  });
+  S('line', { x1: 276, y1: BASE, x2: 548, y2: BASE, stroke: 'var(--line-2)' }, svg);
+  ['Diretos', 'Indiretos', 'Serviços'].forEach((n, i) => {
+    S('rect', { x: 284 + i * 84, y: 38, width: 8, height: 8, style: `fill:${SER[i]}` }, svg);
+    S('text', { x: 298 + i * 84, y: 46, class: 'lb2', text: n.toUpperCase() }, svg);
+  });
+  const ck = $('#rsChecks');
+  const C = [['Tabela por categoria', 'igual'], ['Total das três', 'igual'], ['TOP 5 por tempo pendente', 'mesma ordem'],
+    ['TOP 5 por valor', 'mesma ordem'], ['Valor por unidade · 3×4', 'célula a célula'], ['Quantidade por guardião', 'mesma ordem']];
+  ck.innerHTML = C.map(([a, b]) => `<div><span>${a}</span><span></span><span class="ok">${b}</span></div>`).join('');
+  const rows = $$('div', ck);
+  const P = 10;
+  function draw(t) {
+    const off = t > P - .6 ? 0 : 1;
+    const k = eio(clamp(t / 1.3, 0, 1)) * off;
+    a1.setAttribute('stroke-dasharray', `${(CIRC * A * k).toFixed(1)} ${CIRC}`);
+    const k2 = eio(clamp((t - .9) / 1.1, 0, 1)) * off;
+    a2.setAttribute('stroke-dasharray', `${(CIRC * (1 - A) * k2 - 3).toFixed(1)} ${CIRC}`);
+    tt.textContent = Math.round(TOT * eout(clamp(t / 2, 0, 1)) * off);
+    bars.forEach((st, u) => {
+      let acc = 0;
+      st.forEach(b => {
+        const kk = eout(clamp((t - .6 - u * .15 - b.s * .2) / .8, 0, 1)) * off;
+        const h = b.h * kk; acc += h;
+        b.r.setAttribute('y', (BASE - acc).toFixed(1)); b.r.setAttribute('height', h.toFixed(1));
+      });
+    });
+    rows.forEach((r, i) => r.classList.toggle('on', t > 2.2 + i * .45 && t < P - .6));
+  }
+  if (RM) { draw(7); return; }
+  actor(svg, { tick() { if (this.t >= P) this.t = 0; draw(this.t); } });
+})();
+
+/* ==========================================================================
+   T·08 · Faturabot — o caminhão, a balança e a nota
+   ========================================================================== */
+(function fatura() {
+  const svg = $('#vFatura'), tk = $('#ftTicket');
+  const GY = 262;
+  // chão, fosso e plataforma
+  S('line', { x1: 0, y1: GY, x2: 560, y2: GY, stroke: 'var(--line-2)' }, svg);
+  S('rect', { x: 150, y: GY, width: 262, height: 16, fill: 'var(--bg-3)', stroke: 'var(--line)' }, svg);
+  for (let i = 0; i < 14; i++) S('line', { x1: 158 + i * 18, y1: GY + 16, x2: 168 + i * 18, y2: GY + 4, stroke: 'var(--line-2)', 'stroke-width': .8 }, svg);
+  const plat = S('rect', { x: 150, y: GY - 6, width: 262, height: 6, fill: 'var(--line-2)' }, svg);
+  // caminhão (desenhado com a frente para a direita)
+  const truck = S('g', null, svg);
+  const TB = GY - 6;
+  S('rect', { x: 0, y: TB - 66, width: 166, height: 52, fill: 'var(--bg-3)', stroke: 'var(--ink-3)' }, truck);
+  S('rect', { x: 0, y: TB - 18, width: 166, height: 4, style: 'fill:var(--c)' }, truck);
+  [['#8FAFCB', 10], ['#343F73', 62], ['#2A9165', 114]].forEach(([c, x]) => S('rect', { x, y: TB - 62, width: 44, height: 40, rx: 6, fill: c, opacity: .9 }, truck));
+  S('path', { d: `M172 ${TB - 14} V${TB - 52} H204 L222 ${TB - 34} V${TB - 14} Z`, fill: 'var(--bg-3)', stroke: 'var(--ink-3)' }, truck);
+  S('path', { d: `M178 ${TB - 46} H202 L214 ${TB - 34} H178 Z`, fill: 'var(--c)', opacity: .35 }, truck);
+  S('rect', { x: 166, y: TB - 22, width: 8, height: 6, fill: 'var(--ink-3)' }, truck);
+  const wheels = [26, 56, 138, 196].map(x => {
+    const w = S('g', { transform: `translate(${x} ${TB - 6})` }, truck);
+    S('circle', { r: 10, fill: 'var(--bg)', stroke: 'var(--ink-2)', 'stroke-width': 2 }, w);
+    const sp = S('g', null, w);
+    S('line', { x1: -6, y1: 0, x2: 6, y2: 0, stroke: 'var(--ink-3)', 'stroke-width': 1.4 }, sp);
+    S('line', { x1: 0, y1: -6, x2: 0, y2: 6, stroke: 'var(--ink-3)', 'stroke-width': 1.4 }, sp);
+    return sp;
+  });
+  // mostrador
+  const DX = 300, DY = 14;
+  S('rect', { x: DX, y: DY, width: 246, height: 150, fill: 'var(--bg)', stroke: 'var(--line-2)' }, svg);
+  const placa = S('text', { x: DX + 12, y: DY + 20, class: 'lb2', text: 'PLACA' }, svg);
+  const rowsY = [48, 76, 104];
+  ['BALANÇA', 'NOTA', 'DESVIO'].forEach((k, i) => {
+    S('text', { x: DX + 12, y: DY + rowsY[i], class: 'lb', text: k }, svg);
+    S('line', { x1: DX + 12, y1: DY + rowsY[i] + 8, x2: DX + 234, y2: DY + rowsY[i] + 8, stroke: 'var(--line)' }, svg);
+  });
+  const vF = S('text', { x: DX + 234, y: DY + 48, class: 'val', 'font-size': 18, 'text-anchor': 'end', text: '—' }, svg);
+  const vH = S('text', { x: DX + 234, y: DY + 76, class: 'val', 'font-size': 18, 'text-anchor': 'end', text: '—' }, svg);
+  const vL = S('text', { x: DX + 234, y: DY + 104, class: 'val', 'font-size': 18, 'text-anchor': 'end', text: '—' }, svg);
+  const stR = S('rect', { x: DX + 12, y: DY + 118, width: 222, height: 22, fill: 'var(--shade)' }, svg);
+  const stT = S('text', { x: DX + 123, y: DY + 133, class: 'lb2', 'text-anchor': 'middle', text: 'AGUARDANDO PESAGEM' }, svg);
+  // régua de tolerância
+  const GX0 = 24, GX1 = 270, GYy = 70, gx = v => lerp(GX0, GX1, (clamp(v, -3, 3) + 3) / 6);
+  S('rect', { x: gx(-.5), y: GYy - 12, width: gx(.5) - gx(-.5), height: 24, fill: 'var(--acc)', opacity: .18 }, svg);
+  S('line', { x1: GX0, y1: GYy, x2: GX1, y2: GYy, stroke: 'var(--line-2)' }, svg);
+  [-3, -2, -1, 0, 1, 2, 3].forEach(v => {
+    S('line', { x1: gx(v), y1: GYy - (v ? 5 : 9), x2: gx(v), y2: GYy + (v ? 5 : 9), stroke: 'var(--ink-3)' }, svg);
+    S('text', { x: gx(v), y: GYy + 24, class: 'lb2', 'text-anchor': 'middle', text: (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%' }, svg);
+  });
+  S('text', { x: gx(0), y: GYy - 18, class: 'lb2', 'text-anchor': 'middle', style: 'fill:var(--acc)', text: '±0,50%' }, svg);
+  const mk = S('path', { d: 'M0 0 l-6 -10 h12 z', style: 'fill:var(--ink)', transform: `translate(${gx(0)} ${GYy - 2})`, opacity: 0 }, svg);
+  const over = S('text', { x: GX1, y: GYy + 44, class: 'lb2', 'text-anchor': 'end', style: 'fill:var(--warn)', opacity: 0, text: 'ACIMA DA TRAVA DE 25% »' }, svg);
+
+  const SC = [
+    { p: 'SFE-5B10', F: 34540, H: 34620 },
+    { p: 'QRT-7C42', F: 31200, H: 32010 },
+    { p: 'MKD-3F19', F: 29980, H: 29870 },
+    { p: 'BRA-2E77', F: 28460, H: 37900 },
+  ];
+  let si = -1, ticket = 48213, cur = null, lastF = '', mx = gx(0);
+  const PARK = 169, P = 7.2;
+  function next() {
+    si = (si + 1) % SC.length; cur = SC[si]; ticket++;
+    tk.textContent = 'ticket ' + ticket;
+    placa.textContent = 'PLACA ' + cur.p + ' · COLETA';
+    cur.L = cur.H / cur.F - 1;
+    const a = Math.abs(cur.L) * 100;
+    cur.st = a > 25 ? ['ANALISAR CONFRONTO DE PESO', 'var(--warn)'] : a > .5 ? ['DIVERGENTE', 'var(--bad)'] : ['CONFORME', 'var(--acc)'];
+  }
+  function draw(t) {
+    let x;
+    if (t < 1.7) x = lerp(-250, PARK, eout(t / 1.7));
+    else if (t < 5.9) x = PARK;
+    else x = lerp(PARK, 620, ein(clamp((t - 5.9) / 1.3, 0, 1)));
+    truck.setAttribute('transform', `translate(${x.toFixed(1)} ${t > 1.6 && t < 6 ? 1.5 : 0})`);
+    plat.setAttribute('y', t > 1.6 && t < 6 ? GY - 4.5 : GY - 6);
+    const rot = x * 2.2;
+    wheels.forEach(w => w.setAttribute('transform', `rotate(${rot.toFixed(1)})`));
+    const f = clamp((t - 1.8) / .9, 0, 1), h = clamp((t - 2.8) / .8, 0, 1);
+    const on = t < 6.6;
+    const fs = t > 1.8 && on ? fmt(Math.round(cur.F * eout(f))) + ' kg' : '—';
+    if (fs !== lastF) { vF.textContent = fs; lastF = fs; }
+    vH.textContent = t > 2.8 && on ? fmt(Math.round(cur.H * eout(h))) + ' kg' : '—';
+    const show = t > 3.7 && on;
+    vL.textContent = show ? (cur.L >= 0 ? '+' : '−') + fmt(Math.abs(cur.L) * 100, 2) + '%' : '—';
+    vL.style.fill = show ? cur.st[1] : 'var(--ink)';
+    stR.style.fill = show ? cur.st[1] : 'var(--shade)';
+    stR.setAttribute('opacity', show ? .25 : 1);
+    stT.textContent = show ? cur.st[0] : t > 1.8 && on ? 'PESANDO…' : 'AGUARDANDO PESAGEM';
+    stT.style.fill = show ? cur.st[1] : 'var(--ink-3)';
+    const target = show ? gx(cur.L * 100) : gx(0);
+    mx = lerp(mx, target, .12);
+    mk.setAttribute('transform', `translate(${mx.toFixed(1)} ${GYy - 2})`);
+    mk.setAttribute('opacity', show ? 1 : .25);
+    mk.style.fill = show ? cur.st[1] : 'var(--ink)';
+    over.setAttribute('opacity', show && Math.abs(cur.L) > .25 ? 1 : 0);
+  }
+  next();
+  // extrator de OC
+  const EX = [
+    { txt: 'CARREG. LIBERADO — ORDEM DE CARREGAMENTO: 71.145 / MOTORISTA CIENTE', anc: 'ORDEM DE CARREGAMENTO', dig: '71.145', out: ['OC 71145', 'ANCORA_OC', 'confiança alta'] },
+    { txt: 'PALETES NO BLOCO 3 · O.C. 402188 · LACRE 5521', rej: 'BLOCO', anc: 'O.C.', dig: '402188', out: ['OC 402188', 'ANCORA_OC', '“BLOCO” não é âncora'] },
+    { txt: 'NF 88213 PESO CONFERIDO NA PORTARIA', out: ['sem OC', 'SEM_ANCORA', 'cruza pela placa'] },
+    { txt: 'ORD CARREG 12 — REVISAR NA SAÍDA', anc: 'ORD CARREG', dig: '12', bad: true, out: ['descartada', 'TAMANHO_INVALIDO', 'de 4 a 8 dígitos'] },
+  ];
+  const obs = $('#ocObs'), oo = $('#ocOut');
+  let ei = -1, spans = null, E = null, phase = -1;
+  function nextEx() {
+    ei = (ei + 1) % EX.length; E = EX[ei]; phase = -1;
+    const marks = [];
+    if (E.rej) marks.push({ s: E.rej, c: 'rej', p: 0, i: E.txt.indexOf(E.rej) });
+    if (E.anc) {
+      const ai = E.txt.indexOf(E.anc, E.rej ? E.txt.indexOf(E.rej) + E.rej.length : 0);
+      marks.push({ s: E.anc, c: 'anc', p: 1, i: ai });
+      marks.push({ s: E.dig, c: E.bad ? 'rej' : 'dig', p: 2, i: E.txt.indexOf(E.dig, ai + E.anc.length) });
+    }
+    marks.sort((a, b) => a.i - b.i);
+    let h = '', pos = 0;
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    for (const m of marks) { h += esc(E.txt.slice(pos, m.i)) + `<span data-c="${m.c}" data-p="${m.p}">${esc(m.s)}</span>`; pos = m.i + m.s.length; }
+    h += esc(E.txt.slice(pos));
+    obs.innerHTML = h; spans = $$('span', obs); oo.innerHTML = '';
+  }
+  function ocDraw(t) {
+    const p = t < .5 ? -1 : t < 1.1 ? 0 : t < 1.7 ? 1 : t < 2.3 ? 2 : 3;
+    if (p === phase) return; phase = p;
+    spans.forEach(s => s.className = +s.dataset.p <= p ? s.dataset.c : '');
+    oo.innerHTML = p >= 3 ? E.out.map((o, i) => i ? `<span>${o}</span>` : `<b>${o}</b>`).join('<span>·</span>') : '';
+  }
+  nextEx();
+  if (RM) { draw(4.5); ocDraw(3); return; }
+  let ot = 0;
+  actor(svg, {
+    tick(dt) {
+      if (this.t >= P) { this.t = 0; next(); }
+      draw(this.t);
+      ot += dt; if (ot > 4.2) { ot = 0; nextEx(); }
+      ocDraw(ot);
+    }
+  });
+})();
+
+/* ==========================================================================
+   Princípios — a caixa 127.0.0.1 e a estrela sem atalhos
+   ========================================================================== */
+(function box() {
+  const svg = $('#rBox'), g = $('#rBoxDots');
+  const C = ['#8FAFCB', '#2A9165', '#6C7BC4', 'var(--acc)', 'var(--t-pend)'];
+  const X0 = 24, X1 = 216, Y0 = 36, Y1 = 110;
+  const D = Array.from({ length: 16 }, (_, i) => ({ x: rnd(X0, X1), y: rnd(Y0, Y1), vx: rnd(-50, 50), vy: rnd(-40, 40), el: S('circle', { r: i % 5 ? 2.4 : 3.4, style: `fill:${C[i % C.length]}` }, g) }));
+  const draw = dt => { for (const d of D) {
+    d.x += d.vx * dt; d.y += d.vy * dt;
+    if (d.x < X0 || d.x > X1) { d.vx *= -1; d.x = clamp(d.x, X0, X1); }
+    if (d.y < Y0 || d.y > Y1) { d.vy *= -1; d.y = clamp(d.y, Y0, Y1); }
+    d.el.setAttribute('cx', d.x.toFixed(1)); d.el.setAttribute('cy', d.y.toFixed(1));
+  } };
+  draw(0);
+  if (!RM) actor(svg, { tick: draw });
+})();
+(function star() {
+  const g = $('#starG');
+  const CX = 120, CY = 62, N = 6;
+  const nodes = TOOLS.slice(0, N).map((t, i) => {
+    const a = -Math.PI / 2 + i / N * 6.283;
+    return { t, x: CX + 92 * Math.cos(a), y: CY + 44 * Math.sin(a) };
+  });
+  nodes.forEach(n => S('line', { x1: CX, y1: CY, x2: n.x, y2: n.y, class: 'spoke' }, g));
+  const a = nodes[1], b = nodes[2];
+  S('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'forbid', 'stroke-width': 1.4 }, g);
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const xm = S('g', { class: 'xmark' }, g);
+  S('circle', { cx: mx, cy: my, r: 8, fill: 'var(--bg-2)', stroke: 'var(--bad)' }, xm);
+  S('path', { d: `M${mx - 3.5} ${my - 3.5}l7 7m0 -7l-7 7`, stroke: 'var(--bad)', 'stroke-width': 1.5 }, xm);
+  const lg = S('g', { transform: `translate(${CX - 17} ${CY - 15}) scale(.3)` }, g);
+  S('circle', { cx: 40, cy: 38, r: 38, fill: '#8FAFCB' }, lg);
+  S('circle', { cx: 74, cy: 52, r: 34, fill: '#343F73', opacity: .92 }, lg);
+  S('circle', { cx: 45, cy: 72, r: 26, fill: '#2A9165', opacity: .92 }, lg);
+  nodes.forEach(n => S('circle', { cx: n.x, cy: n.y, r: 6.5, style: `fill:${cv(n.t)}` }, g));
+  const pk = nodes.map((n, i) => ({ n, s: i / N, el: S('circle', { r: 2.2, class: 'pkt' }, g) }));
+  const draw = (dt, t) => pk.forEach(p => {
+    const u = ((t || 0) * .35 + p.s) % 1;
+    const k = u < .5 ? u * 2 : 2 - u * 2;
+    p.el.setAttribute('cx', lerp(p.n.x, CX, k).toFixed(1)); p.el.setAttribute('cy', lerp(p.n.y, CY, k).toFixed(1));
+  });
+  draw(0, 0);
+  if (!RM) actor($('#rules'), { tick: draw });
+})();
+
+/* ==========================================================================
+   Números — testes por projeto
+   ========================================================================== */
+(function bars() {
+  const B = [['Pendentes', 370, '--t-pend'], ['Apurabot', 239, '--t-apura'], ['Fiscalbot', 59, '--t-fiscal'], ['Central', 43, '--b1'], ['DiXML', 31, '--t-dixml']];
+  $('#hbars').innerHTML = B.map(([k, v, c]) =>
+    `<div class="hb-row" style="--c:var(${c});--w:${(v / 370 * 100).toFixed(1)}%"><span class="k"><i></i>${k}</span><span class="tr"><span class="fl"></span></span><span class="v num">${v}</span></div>`).join('');
+})();
+})();
+
+</script>
+</body>
+</html>
