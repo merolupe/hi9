@@ -409,6 +409,25 @@ documento, não a leitura gerencial.
 Sobrescrever o saldo credor à mão continua possível, mas é exceção registrada, não
 rotina.
 
+### 5.1.1. Amostra grátis não dá crédito
+
+Entrada de amostra grátis (**CFOP 1911 e 2911**) vai inteira para **crédito
+indevido**, em qualquer UF e regime — linha 003 do Registro, fora do estorno.
+
+- A amostra que cumpre o Convênio ICMS 29/90 — diminuto ou nenhum valor
+  comercial, quantidade estritamente necessária para dar a conhecer a
+  mercadoria, embalagem com "amostra grátis" — sai **isenta** (RICMS/SP e
+  RICMS/MS, Anexo I, art. 3º). Isenção não gera crédito na entrada.
+- A que chega com ICMS destacado não cumpriu essas condições e foi tributada
+  na saída. Mas o que decide o crédito é o destino, e o destino da amostra é
+  teste e avaliação, não o produto vendido: é **uso e consumo**, sem crédito
+  (LC 87/96, art. 33, I).
+
+Parametrizado em `classificacao.yaml` (categoria `amostra_gratis`) e em
+`regimes.yaml` (`creditos_indevidos` que valem para todos os regimes). Em MS a
+amostra entra na atividade "Prestacional/Outras". **Não homologado** — ver a
+decisão pendente nº 18.
+
 ### 5.2. Os ajustes: quatro linhas, e o sentido vem da linha
 
 As linhas **002, 003, 006 e 007** do Registro não nascem de documento. São

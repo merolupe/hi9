@@ -102,6 +102,25 @@ regimes:
     vigencia_inicio: 2025-01-01
     formula_estorno: nenhum
 
+# ---------------------------------------------------------------------------
+# Créditos indevidos que valem em todo regime
+# ---------------------------------------------------------------------------
+# Somam-se aos `creditos_indevidos` de cada regime. O crédito da linha vai
+# inteiro para a coluna de crédito indevido (linha 003 do Registro), fora do
+# estorno.
+creditos_indevidos:
+  - cfop: [1911, 2911]
+    motivo: >
+      Entrada de amostra grátis. A amostra que atende ao Convênio ICMS 29/90
+      (diminuto valor, quantidade só para dar a conhecer a mercadoria, venda
+      proibida) sai isenta — RICMS/SP Anexo I art. 3º, RICMS/MS Anexo I art.
+      3º — e isenção não gera crédito. A que veio com ICMS destacado não
+      cumpriu essas condições, mas continua sendo amostra, destinada a teste
+      ou avaliação, e não a integrar o produto: é uso e consumo, sem crédito
+      (LC 87/96, art. 33, I). Se a amostra entrar na produção, a regra muda —
+      ver decisão pendente nº 18.
+    homologado: false
+
 beneficios_fiscais:
 
   ms_rio_brilhante:
@@ -275,7 +294,8 @@ atividades:
                   1923, 2923]                # armazém: transmissão de propriedade
       prestacional_outras:
         debito: [5910, 6910, 5911, 6911, 5949, 6949]
-        credito: [1604, 2604, 1949, 2949]
+        credito: [1604, 2604, 1949, 2949,
+                  1911, 2911]                # amostra grátis: outras entradas
 
 # ---------------------------------------------------------------------------
 # DIFAL — diferencial de alíquota nas entradas de uso, consumo e ativo

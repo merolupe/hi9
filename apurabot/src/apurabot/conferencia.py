@@ -59,6 +59,7 @@ TITULO_LANCAMENTOS = (
 #: A BASE TRATADA continua com o nome interno de propósito — é por ele que a
 #: ferramenta relê o próprio arquivo.
 ROTULO_DA_CATEGORIA = {
+    "amostra_gratis": "Amostra Grátis",
     "ativo_imobilizado": "Ativo Imobilizado",
     "ciap": "CIAP",
     "complemento_icms": "Complemento de ICMS",

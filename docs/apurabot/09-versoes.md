@@ -36,7 +36,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.25 | 09/09/2026 | A marca no tamanho do mockup, o slogan e a abertura sem rodapé |
 | 0.1.26 | 29/09/2026 | Abas AJUSTES A LANÇAR (roteiro do Sankhya) e REGISTRO 1200 (crédito transferido de Rio Brilhante) |
 | 0.1.27 | 29/09/2026 | Botão Registro em PDF: o Registro de Apuração no desenho do Sankhya, salvo em PDF pelo navegador |
-| **0.1.28** | **30/09/2026** | **A planilha enxuta: abas por prioridade, nomes novos, memórias em fórmula, nada congelado e borda em toda tabela** |
+| 0.1.28 | 30/09/2026 | A planilha enxuta: abas por prioridade, nomes novos, memórias em fórmula, nada congelado e borda em toda tabela |
+| **0.1.29** | **05/10/2026** | **Amostra grátis (CFOP 1911/2911) deixa de cair em SEM REGRA: vai para crédito indevido em todo regime** |
 
 ## 0.1.28 — a planilha enxuta
 
