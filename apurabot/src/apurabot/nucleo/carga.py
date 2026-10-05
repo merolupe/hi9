@@ -4,8 +4,9 @@ A carga bruta (ICMS ÷ valor contábil) traz artefatos — 0,100315 · 0,105467 
 porque o valor contábil inclui parcelas fora da base do ICMS: frete, pedágio,
 IPI, descontos. A equalização traz o valor para a carga nominal.
 
-Aderência medida contra a classificação manual de Julho/2026: 99,87%.
-Ver docs/apurabot/05-achados-julho-2026.md.
+É algoritmo, sem julgamento humano. Na primeira conferência contra a
+classificação manual, as únicas divergências eram erro da apuração manual —
+ver docs/apurabot/05-achados-julho-2026.md § 3.
 """
 from __future__ import annotations
 

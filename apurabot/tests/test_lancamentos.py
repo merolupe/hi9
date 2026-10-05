@@ -1,4 +1,4 @@
-"""AJUSTES A LANÇAR e REGISTRO 1200 — o que se digita no Sankhya e na EFD.
+"""AJUSTES NO SANKHYA e REGISTRO 1200 — o que se digita no Sankhya e na EFD.
 
 A maior parte dos testes roda sobre um Livro Fiscal sintético de Rio Brilhante,
 sem dado real: uma venda que gera débito e benefício, e a NF-e de recebimento
@@ -22,7 +22,7 @@ from sintetico import CHAVE, RB, RECEBIDO
 from sintetico import livro as _livro
 
 CENTAVO = 0.005
-ABERTURA_DE_AGOSTO = 86_091.65          # parametros/saldos.yaml
+ABERTURA_DE_AGOSTO = 108_426.33         # parametros/saldos.yaml
 UTILIZADO = 108_858.68                  # Ajuste de Apuração do Sankhya, 08/2026
 
 
@@ -40,7 +40,7 @@ def agosto(parametros, tmp_path_factory):
 
 
 def _devolver(base, apuracao, pasta, valor=UTILIZADO, codigo="87"):
-    """A planilha devolvida com o uso do crédito declarado na aba AJUSTES."""
+    """A planilha devolvida com o uso do crédito declarado na aba AJUSTES MANUAIS."""
     destino = escrever(base, pasta / "saida.xlsx", apuracao)
     wb = openpyxl.load_workbook(destino)
     aba = wb[aj.ABA]
@@ -64,14 +64,15 @@ def reapurado(agosto, parametros, tmp_path_factory):
     return base, apurar(base, parametros, ajustes=ler_ajustes(devolvido))
 
 
-# -- AJUSTES A LANÇAR -------------------------------------------------------
+# -- AJUSTES NO SANKHYA -----------------------------------------------------
 
-def test_as_duas_abas_vem_logo_depois_do_registro(agosto, tmp_path):
+def test_ajustes_no_sankhya_fica_por_ultimo(agosto, tmp_path):
+    """Só se usa depois de fechados os ajustes manuais: é a última visível."""
     base, apuracao = agosto
     planilha = openpyxl.load_workbook(escrever(base, tmp_path / "x.xlsx", apuracao))
     nomes = planilha.sheetnames
-    assert nomes.index("AJUSTES A LANÇAR") == nomes.index("REGISTRO") + 1
-    assert nomes.index("REGISTRO 1200") == nomes.index("AJUSTES A LANÇAR") + 1
+    visiveis = [a.title for a in planilha.worksheets if a.sheet_state == "visible"]
+    assert visiveis[-1] == "AJUSTES NO SANKHYA"
     assert [n for n in ORDEM_DAS_ABAS if n in nomes] == nomes
 
 
@@ -171,14 +172,14 @@ def test_sem_uso_declarado_o_estoque_so_cresce(agosto, parametros):
 
 
 def test_agosto_fecha_como_o_resumo_do_sped(reapurado, parametros):
-    """86.091,65 + 62.720,00 − 108.858,68 = 39.952,97."""
+    """108.426,33 + 62.720,00 − 108.858,68 = 62.287,65 — a tela do 1200 de 08/2026."""
     _, apuracao = reapurado
     (controle,) = cc.montar(apuracao, parametros)
     assert controle.utilizado == pytest.approx(UTILIZADO)
-    assert controle.saldo_final == pytest.approx(39_952.97, abs=CENTAVO)
+    assert controle.saldo_final == pytest.approx(62_287.65, abs=CENTAVO)
     assert controle.pendencias == []
     assert controle.linha_1200() == (
-        "|1200|MS090004|86091,65|0|62720|108858,68|39952,97|")
+        "|1200|MS090004|108426,33|0|62720|108858,68|62287,65|")
     assert controle.linha_1210() == f"|1210|MS03||108858,68|{CHAVE}|"
 
 
@@ -193,8 +194,8 @@ def test_uso_acima_do_estoque_fica_pendente(agosto, parametros, tmp_path):
 
 
 def test_competencia_sem_saldo_declarado_fica_pendente(parametros, tmp_path):
-    """Setembro ainda não tem abertura em saldos.yaml: não é zero, é aberto."""
-    base = tratar(_livro(tmp_path / "setembro.xlsx", mes=9), parametros=parametros)
+    """Outubro ainda não tem abertura em saldos.yaml: não é zero, é aberto."""
+    base = tratar(_livro(tmp_path / "outubro.xlsx", mes=10), parametros=parametros)
     (controle,) = cc.montar(apurar(base, parametros), parametros)
     assert controle.saldo_inicial is None
     assert any("não declarado" in p for p in controle.pendencias)
@@ -204,7 +205,7 @@ def test_a_aba_traz_as_linhas_da_efd(reapurado, tmp_path):
     base, apuracao = reapurado
     planilha = openpyxl.load_workbook(escrever(base, tmp_path / "z.xlsx", apuracao))
     texto = [c for linha in _linhas(planilha["REGISTRO 1200"]) for c in linha]
-    assert "|1200|MS090004|86091,65|0|62720|108858,68|39952,97|" in texto
+    assert "|1200|MS090004|108426,33|0|62720|108858,68|62287,65|" in texto
     assert f"|1210|MS03||108858,68|{CHAVE}|" in texto
 
 

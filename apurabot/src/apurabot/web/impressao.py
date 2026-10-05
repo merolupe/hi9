@@ -10,7 +10,7 @@ a máquina sem administrador não instala (regra 6 do repositório). Quem gera o
 PDF é o próprio navegador: a página abre a janela de impressão, e o destino
 "Salvar como PDF" existe no Edge e no Chrome sem instalar nada.
 
-O conteúdo é o mesmo `Registro` da aba REGISTRO da planilha — a página só
+O conteúdo é o mesmo `Registro` da aba REGISTRO DE APURAÇÃO da planilha — a página só
 desenha, não calcula.
 """
 from __future__ import annotations
@@ -164,7 +164,7 @@ def _folha_resumo(r: reg.Registro, firma: str, emissao: dt.datetime) -> str:
 
     pendentes = [f"{item.codigo:03d}" for item in r.resumo if item.aguarda_ajuste]
     observacao = (
-        "* Linha que depende de ajuste ainda não conferido na aba AJUSTES "
+        "* Linha que depende de ajuste ainda não conferido na aba AJUSTES MANUAIS "
         f"({', '.join(pendentes)}): o valor impresso não é o final."
         if pendentes else ""
     )

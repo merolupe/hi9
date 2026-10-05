@@ -34,14 +34,18 @@ entrega a apuração em `.xlsx`, com a memória de cálculo linha a linha.
 
 | Aba da saída | Conteúdo |
 |---|---|
-| RESUMO | Procedência, volume, situação da equalização e categorias |
-| REGISTRO | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por filial e o totalizador do grupo |
-| APURAÇÃO EFETIVA | CFOP → carga efetiva → produto, com operação, % da regra, % efetivo, ICMS a estornar, a apropriar e o CHECK |
-| APURAÇÃO POR FILIAL | Crédito bruto, estorno, crédito indevido, mantido, débito e saldo — mais a memória do benefício, o FADEFE e a segregação por atividade |
+| REGISTRO DE APURAÇÃO | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por filial e o totalizador do grupo |
+| APURAÇÃO EFETIVA | CFOP → carga efetiva → produto, com operação, % do crédito estornado, ICMS a estornar e a apropriar |
+| RESUMO E DETALHES | Crédito bruto, estorno, crédito indevido, mantido, débito e saldo — mais o saldo credor a transportar, a memória do benefício e da centralização em fórmula, o FADEFE e a segregação por atividade |
+| REGISTRO 1200 | Os Registros 1200 e 1210 da EFD de Rio Brilhante |
+| AJUSTES MANUAIS | Formulário das parcelas sem documento e da conferência |
 | TRANSFERÊNCIAS | O que transferir para a centralizadora depois de fechar a competência |
-| PENDÊNCIAS | O que bloqueia o encerramento da competência |
-| POR ESTABELECIMENTO E CARGA | O recorte por carga efetiva |
+| PENDÊNCIAS | O que bloqueia o encerramento da competência — só aparece quando há |
 | BASE TRATADA | Uma linha por linha do Livro, com toda a rastreabilidade |
+| AJUSTES NO SANKHYA | Os lançamentos de Ajuste de Apuração a digitar no Sankhya, com autofiltro |
+
+RESUMO e POR ESTABELECIMENTO E CARGA saem ocultas. Nenhuma aba tem painel
+congelado; toda tabela tem borda cinza.
 
 O comando `apurabot base-tratada` para no tratamento e na classificação, sem
 apurar — serve para conferir o Livro antes de fechar o mês.

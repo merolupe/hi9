@@ -6,7 +6,8 @@ Três visões da mesma competência, cada uma respondendo a uma pergunta diferen
                      alíquota e produto, com a conta à vista e o CHECK fechando
                      linha a linha.
 
-`REGISTRO`           o espelho do Registro de Apuração do ICMS, um bloco por
+`REGISTRO DE APURAÇÃO`
+                     o espelho do Registro de Apuração do ICMS, um bloco por
                      estabelecimento e um totalizador no fim — que é o que o
                      PDF do ERP, emitido filial a filial, não mostra.
 
@@ -15,7 +16,7 @@ Três visões da mesma competência, cada uma respondendo a uma pergunta diferen
 
 E duas que servem de roteiro para o que se digita fora da ferramenta:
 
-`AJUSTES A LANÇAR`   o Registro desmontado em lançamentos de "Ajuste de
+`AJUSTES NO SANKHYA` o Registro desmontado em lançamentos de "Ajuste de
                      Apuração" do Sankhya, com a observação padrão de cada um.
 
 `REGISTRO 1200`      o controle do crédito recebido por transferência — os
@@ -41,6 +42,17 @@ VERMELHO = Font(bold=True, color="B00020")
 VERDE = Font(bold=True, color="1E7B34")
 
 ROTULO_SEM_ATIVIDADE = "(não segregada)"
+
+ABA_REGISTRO = "REGISTRO DE APURAÇÃO"
+ABA_EFETIVA = "APURAÇÃO EFETIVA"
+ABA_TRANSFERENCIAS = "TRANSFERÊNCIAS"
+ABA_LANCAMENTOS = "AJUSTES NO SANKHYA"
+ABA_1200 = "REGISTRO 1200"
+
+#: O título da aba de lançamentos é o único texto dela: o resto é a tabela.
+TITULO_LANCAMENTOS = (
+    "AJUSTES PARA GUIAR AJUSTES DO SANKHYA - Utilizar após finalizar ajustes manuais"
+)
 
 #: Como a categoria da operação aparece na conferência. O nome interno é
 #: `frete_transferencia`; quem lê a planilha lê "Frete de Transferência".
@@ -236,7 +248,7 @@ def _numero(valor) -> float:
 
 def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
     """Conferência do crédito, do estorno e da apropriação, por CFOP e produto."""
-    aba = wb.create_sheet("APURAÇÃO EFETIVA")
+    aba = wb.create_sheet(ABA_EFETIVA)
     _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 26, 14, 16, 16])
 
     aba.append(["APURAÇÃO EFETIVA — crédito, estorno e apropriação por CFOP e produto"])
@@ -252,8 +264,6 @@ def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
         apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
     ):
         _bloco_efetiva(aba, filial)
-
-    aba.freeze_panes = "A3"
 
 
 def _bloco_efetiva(aba, filial) -> None:
@@ -493,12 +503,7 @@ def _blocos_de_fechamento(aba, filial) -> None:
     _moeda(aba, linha, range(4, 6))
     for celula in aba[linha]:
         celula.font = Font(bold=True)
-
-    if filial.beneficio:
-        _vazio(aba)
-        _titulo(aba, "BENEFÍCIO FISCAL", 7, fundo=FUNDO_CLARO, fonte=Font(bold=True))
-        for passo in filial.beneficio.memoria:
-            aba.append(["", passo])
+    # A memória do benefício fiscal mora na aba RESUMO E DETALHES, em fórmula.
 
 
 def _carga_media(valores: dict[str, float]) -> float | None:
@@ -530,23 +535,17 @@ CABECALHO_VALORES = [
 
 def aba_registro(wb, apuracao: Apuracao, params, ajustes=None) -> list:
     """Espelho do Registro de Apuração — um bloco por filial e o totalizador."""
-    aba = wb.create_sheet("REGISTRO")
+    aba = wb.create_sheet(ABA_REGISTRO)
     _larguras(aba, COLUNAS_REGISTRO)
 
     aba.append(["REGISTRO DE APURAÇÃO DO ICMS"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
-    aba.append([
-        "Espelho do livro por estabelecimento. As linhas do resumo marcadas "
-        "AGUARDA AJUSTE dependem de lançamento aprovado que não nasce do Livro Fiscal."
-    ])
 
     registros = reg.montar(apuracao, params, ajustes)
     for registro in registros:
         _bloco_registro(aba, registro)
     if len(registros) > 1:
         _bloco_registro(aba, reg.totalizador(registros, apuracao.base.competencia))
-
-    aba.freeze_panes = "A3"
     return registros
 
 
@@ -638,8 +637,9 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
     _vazio(aba)
     _titulo(aba, "RESUMO DA APURAÇÃO DO IMPOSTO", 7,
             fundo=FUNDO_CLARO, fonte=Font(bold=True))
-    _cabecalho(aba, ["Código", "Descrição", "Coluna Auxiliar", "Valores", "Somas",
-                     "", "Situação"])
+    # Sem a coluna "Situação": a marca de linha que aguarda ajuste fica na
+    # tela e no PDF, onde o fiscal confere; a planilha é o espelho do livro.
+    _cabecalho(aba, ["Código", "Descrição", "Coluna Auxiliar", "Valores", "Somas"])
     if registro.gerencial:
         aba.append([
             "", "As linhas 011 a 014 são a soma do resultado de cada "
@@ -654,8 +654,7 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
         aba.append([
             f"{item.codigo:03d}", item.rotulo, None,
             None if soma else item.valor,
-            item.valor if soma else None, "",
-            "AGUARDA AJUSTE" if item.aguarda_ajuste else "",
+            item.valor if soma else None,
         ])
         linha = onde[item.codigo] = aba.max_row
         _somar_no_resumo(aba, item.codigo, onde)
@@ -663,8 +662,6 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
         if soma:
             for celula in aba[linha]:
                 celula.font = Font(bold=True)
-        if item.aguarda_ajuste:
-            aba.cell(row=linha, column=7).fill = FUNDO_ATENCAO
         if item.codigo == 13:
             aba.cell(row=linha, column=5).font = VERMELHO if item.valor else VERDE
 
@@ -680,7 +677,7 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
 
 def aba_transferencias(wb, apuracao: Apuracao) -> None:
     """O que transferir para a centralizadora depois de fechar a competência."""
-    aba = wb.create_sheet("TRANSFERÊNCIAS")
+    aba = wb.create_sheet(ABA_TRANSFERENCIAS)
     _larguras(aba, [34, 34, 18, 18, 18, 30, 22, 16])
 
     aba.append(["TRANSFERÊNCIAS DE SALDO A EMITIR"])
@@ -741,7 +738,7 @@ def aba_transferencias(wb, apuracao: Apuracao) -> None:
 
 
 # --------------------------------------------------------------------------
-# AJUSTES A LANÇAR — o Registro desmontado em lançamentos do Sankhya
+# AJUSTES NO SANKHYA — o Registro desmontado em lançamentos do Sankhya
 # --------------------------------------------------------------------------
 
 def aba_lancamentos(wb, apuracao: Apuracao, params, registros=None,
@@ -750,42 +747,21 @@ def aba_lancamentos(wb, apuracao: Apuracao, params, registros=None,
 
     As seis primeiras colunas são as do relatório de Ajuste de Apuração do
     Sankhya, na mesma ordem, para conferir um contra o outro depois de lançar.
+    O título e a tabela, sem linha em branco no meio: é para filtrar.
     """
     from . import lancamentos as lanc
 
     roteiro = lanc.montar(apuracao, params, registros, ajustes)
-    aba = wb.create_sheet("AJUSTES A LANÇAR")
+    aba = wb.create_sheet(ABA_LANCAMENTOS)
     _larguras(aba, [32, 26, 16, 12, 70, 46, 44, 9])
 
-    aba.append([f"AJUSTES A LANÇAR NO SANKHYA — competência {roteiro.competencia}"])
+    aba.append([TITULO_LANCAMENTOS])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
-    for texto in (
-        "Tudo o que entra como Ajuste de Apuração, calculado e declarado, um "
-        "lançamento por linha — na ordem das colunas do relatório do Sankhya.",
-        "Observação padrão em amarelo é parcela sem código cadastrado em "
-        "parametros/lancamentos_sankhya.yaml: escolha o código no Sankhya e "
-        "cadastre-o, para o mês seguinte já sair pronto.",
-    ):
-        aba.append([texto])
-    if roteiro.aguardando:
-        aba.append([
-            "Ainda sem conferência de ajustes (aba AJUSTES): "
-            + ", ".join(roteiro.aguardando)
-            + ". A lista só traz o que já foi calculado ou declarado."
-        ])
-        aba.cell(row=aba.max_row, column=1).fill = FUNDO_ATENCAO
-
-    _vazio(aba)
-    _cabecalho(aba, [
+    cabecalho = _cabecalho(aba, [
         "Nome Fantasia", "Tipo apuração", "Valor", "Observação padrão",
         "Observação", "Complemento", "De onde vem", "Linha",
     ])
-    aba.freeze_panes = aba.cell(row=aba.max_row + 1, column=1)
-    anterior = None
     for x in roteiro.lancamentos:
-        if anterior is not None and x.estabelecimento != anterior:
-            _vazio(aba)
-        anterior = x.estabelecimento
         aba.append([
             x.estabelecimento, x.tipo, x.valor,
             int(x.observacao_padrao) if x.observacao_padrao.isdigit()
@@ -799,23 +775,8 @@ def aba_lancamentos(wb, apuracao: Apuracao, params, registros=None,
             for coluna in (4, 5):
                 aba.cell(row=aba.max_row, column=coluna).fill = FUNDO_ATENCAO
     if not roteiro.lancamentos:
-        aba.append(["", "Nenhum ajuste nesta competência."])
-
-    _vazio(aba)
-    _vazio(aba)
-    _titulo(aba, "CONFERÊNCIA COM O REGISTRO", 5)
-    aba.append([
-        "A soma dos lançamentos de cada linha tem que ser o valor da linha no "
-        "Registro. DIVERGE quer dizer que falta ou sobra lançamento."
-    ])
-    _cabecalho(aba, ["Nome Fantasia", "Tipo apuração", "Lançamentos",
-                     "Registro", "Confere"])
-    for nome, linha, lancado, alvo in roteiro.conferencia:
-        confere = abs(lancado - alvo) < lanc.CENTAVO
-        aba.append([nome, f"{linha:03d} {lanc.TIPO_APURACAO[linha]}", lancado,
-                    alvo, "OK" if confere else "DIVERGE"])
-        _moeda(aba, aba.max_row, range(3, 5))
-        aba.cell(row=aba.max_row, column=5).font = VERDE if confere else VERMELHO
+        aba.append(["Nenhum ajuste nesta competência."])
+    aba.auto_filter.ref = f"A{cabecalho}:H{aba.max_row}"
 
 
 # --------------------------------------------------------------------------
@@ -829,7 +790,7 @@ def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
     controles = cc.montar(apuracao, params, ajustes)
     if not controles:
         return
-    aba = wb.create_sheet("REGISTRO 1200")
+    aba = wb.create_sheet(ABA_1200)
     _larguras(aba, [34, 20, 18, 18, 18, 18, 18, 50])
 
     competencia = apuracao.base.competencia
@@ -855,9 +816,13 @@ def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
                          "CRÉD_APR", "CRÉD_RECEB", "CRÉD_UTIL", "SLD_CRED_FIM"])
         aba.append(["", c.cod_aj_apur, c.saldo_inicial, c.apropriado,
                     c.recebido, c.utilizado, c.saldo_final])
-        _moeda(aba, aba.max_row, range(3, 8))
+        n = aba.max_row
+        _moeda(aba, n, range(3, 8))
         if c.saldo_inicial is None:
-            aba.cell(row=aba.max_row, column=3).fill = FUNDO_ATENCAO
+            aba.cell(row=n, column=3).fill = FUNDO_ATENCAO
+        else:
+            # A conta do 1200 à vista: inicial + apropriado + recebido − utilizado.
+            aba.cell(row=n, column=7).value = f"=C{n}+D{n}+E{n}-F{n}"
 
         _vazio(aba)
         _cabecalho(aba, ["Registro 1210", "TIPO_UTIL", "NR_DOC",
@@ -877,37 +842,3 @@ def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
             if linha:
                 aba.append(["", linha])
 
-        _vazio(aba)
-        aba.append(["Crédito recebido — notas do Livro Fiscal"])
-        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-        _cabecalho(aba, ["", "NF-e", "Data", "Emitente", "Valor", "", "",
-                         "Chave NF-e"])
-        for nota in c.notas:
-            aba.append(["", nota.numero, nota.data, nota.parceiro, nota.valor,
-                        None, None, nota.chave])
-            _moeda(aba, aba.max_row, range(5, 6))
-        if not c.notas:
-            aba.append(["", "Nenhuma nota de recebimento no Livro do mês."])
-
-        _vazio(aba)
-        aba.append(["Crédito utilizado — ajustes da linha 006 com a observação "
-                    f"padrão {c.observacao_padrao_do_uso}"])
-        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
-        _cabecalho(aba, ["", "Valor", "Motivo", "Responsável", "Aprovador",
-                         "", "", "Onde foi informado"])
-        for a in c.utilizacoes:
-            aba.append(["", a.valor, a.motivo, a.responsavel, a.aprovador,
-                        None, None, a.onde])
-            _moeda(aba, aba.max_row, range(2, 3))
-        if not c.utilizacoes:
-            aba.append([
-                "", "Nenhum. Declare o uso na aba AJUSTES: linha 006, com "
-                f"{c.observacao_padrao_do_uso} na coluna observação padrão."
-            ])
-
-        _vazio(aba)
-        aba.append(["", "Saldo final a cadastrar como abertura da competência "
-                        "seguinte em parametros/saldos.yaml (creditos_controlados):",
-                    None, None, None, None, c.saldo_final])
-        aba.cell(row=aba.max_row, column=7).number_format = MOEDA
-        aba.cell(row=aba.max_row, column=7).font = Font(bold=True)

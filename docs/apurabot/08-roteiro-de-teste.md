@@ -210,19 +210,23 @@ pendência de "NF-e não escriturada", é defeito.
 
 **Faça:** clique em **Baixar a planilha**. Abra o arquivo no Excel.
 
-**Tem que acontecer:** um `.xlsx` chamado `Apuracao_AAAA-MM.xlsx`, com oito
-abas nesta ordem:
+**Tem que acontecer:** um `.xlsx` chamado `Apuracao_AAAA-MM.xlsx`, com as abas
+nesta ordem:
 
 | Aba | Confira |
 |---|---|
-| **RESUMO** | competência, arquivo e o SHA-256 do que foi lido |
-| **REGISTRO** | o mesmo da tela, com o detalhe por CFOP que a tela resume |
+| **REGISTRO DE APURAÇÃO** | o mesmo da tela, com o detalhe por CFOP que a tela resume |
 | **APURAÇÃO EFETIVA** | nenhuma linha em vermelho |
-| **APURAÇÃO POR FILIAL** | a memória do benefício, passo a passo |
+| **RESUMO E DETALHES** | a memória do benefício, passo a passo, com o valor em fórmula |
+| **REGISTRO 1200** | o saldo do crédito transferido de Rio Brilhante |
+| **AJUSTES MANUAIS** | o formulário dos ajustes sem documento |
 | **TRANSFERÊNCIAS** | o mesmo da tela, em tabela |
-| **PENDÊNCIAS** | vazia, se a faixa estava verde |
-| **POR ESTABELECIMENTO E CARGA** | o recorte por carga efetiva |
+| **PENDÊNCIAS** | só aparece se a faixa não estava verde |
 | **BASE TRATADA** | uma linha por linha do Livro, com a regra aplicada em texto |
+| **AJUSTES NO SANKHYA** | um lançamento por linha, com autofiltro |
+
+RESUMO e POR ESTABELECIMENTO E CARGA existem, mas ocultas: botão direito numa
+aba → *Reexibir*.
 
 **O teste mais importante da planilha:** na aba `APURAÇÃO EFETIVA`, procure
 qualquer linha em vermelho. Não pode haver nenhuma. O vermelho marca a linha em

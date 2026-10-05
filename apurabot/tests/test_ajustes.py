@@ -2,7 +2,7 @@
 
 Duas portas para as mesmas quatro linhas do Registro. O ajuste que pertence a
 um documento vai na linha dele, na BASE TRATADA; o que não pertence a nenhum vai
-na aba AJUSTES. O alvo é o Registro de Apuração de Rio Brilhante em 07/2026, que
+na aba AJUSTES MANUAIS. O alvo é o Registro de Apuração de Rio Brilhante em 07/2026, que
 declara R$ 335.101,41 na linha 003 — R$ 331.236,11 que a regra calcula sobre o
 Livro mais R$ 3.865,30 de ajuste.
 """
@@ -179,7 +179,7 @@ def test_o_registro_fecha_no_valor_que_o_erp_declara(reapurado, parametros):
 def test_as_duas_origens_somam_na_mesma_linha(reapurado):
     _, apuracao = reapurado
     de_onde = {a.onde.split(",")[0] for a in apuracao.ajustes.lancamentos}
-    assert de_onde == {"aba AJUSTES", "BASE TRATADA"}
+    assert de_onde == {f"aba {aj.ABA}", "BASE TRATADA"}
     assert len(apuracao.ajustes.lancamentos) == 4
 
 
