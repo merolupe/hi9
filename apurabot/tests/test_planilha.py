@@ -97,9 +97,14 @@ def test_nada_fica_congelado(planilha):
 
 
 def test_toda_tabela_tem_borda_cinza(planilha):
+    from apurabot.conferencia import ABAS_COM_FILIAL
+
     for aba in planilha.worksheets:
+        # A coluna A dessas abas é a chave do filtro por filial, não tabela.
+        filial = aba.title in ABAS_COM_FILIAL
         for linha in aba.iter_rows():
-            ocupadas = [c for c in linha if c.value not in (None, "")]
+            ocupadas = [c for c in linha if c.value not in (None, "")
+                        and not (filial and c.column == 1)]
             if len(ocupadas) < 2:
                 continue                # texto solto: título, nota, instrução
             for celula in ocupadas:
@@ -235,3 +240,16 @@ def test_arquivo_com_a_aba_de_nome_antigo_continua_sendo_lido(tmp_path):
     wb.save(destino)
     lidos = aj.ler_aba(destino)
     assert [p.valor for p in lidos.parcelas] == [100.0]
+
+
+def test_registro_e_apuracao_efetiva_filtram_por_filial(planilha):
+    """A2 é o filtro; toda linha abaixo diz de que filial ela é."""
+    from apurabot.conferencia import ABAS_COM_FILIAL
+
+    for nome in ABAS_COM_FILIAL:
+        aba = planilha[nome]
+        assert aba["A2"].value == "Filial", nome
+        assert aba.auto_filter.ref == f"A2:A{aba.max_row}", nome
+        vazias = [n for n in range(3, aba.max_row + 1)
+                  if not aba.cell(row=n, column=1).value]
+        assert vazias == [], (nome, vazias[:5])

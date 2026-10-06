@@ -67,8 +67,8 @@ def test_a_conferencia_agrupa_sempre_pela_carga_efetiva(planilha):
     """
     aba = planilha["APURAÇÃO EFETIVA"]
     cabecalhos = {
-        str(linha[2].value) for linha in aba.iter_rows(max_col=4)
-        if str(linha[0].value or "") == "CFOP"
+        str(linha[3].value) for linha in aba.iter_rows(max_col=5)
+        if str(linha[1].value or "") == "CFOP"
     }
     assert cabecalhos == {"Carga efetiva"}, cabecalhos
 
@@ -84,8 +84,8 @@ def test_a_aba_tem_uma_coluna_de_percentual_e_nenhum_check(planilha):
     """
     aba = planilha["APURAÇÃO EFETIVA"]
     cabecalhos = [
-        linha for linha in aba.iter_rows(max_col=11, values_only=True)
-        if str(linha[0] or "") == "CFOP"
+        linha for linha in aba.iter_rows(max_col=12, values_only=True)
+        if str(linha[1] or "") == "CFOP"
     ]
     assert cabecalhos
     for linha in cabecalhos:
@@ -217,7 +217,8 @@ def test_a_aba_de_pendencias_nao_cobra_mais_a_nota_de_transferencia(planilha):
 
 
 def test_o_registro_tem_um_bloco_por_filial_e_o_totalizador(planilha, apuracao):
-    primeira = [linha[0].value for linha in planilha["REGISTRO DE APURAÇÃO"].iter_rows(max_col=1)]
+    primeira = [linha[1].value
+                for linha in planilha["REGISTRO DE APURAÇÃO"].iter_rows(max_col=2)]
     for nome in apuracao.filiais:
         assert nome in primeira
     assert any(
@@ -322,7 +323,7 @@ def test_os_totais_da_aba_sao_formula_e_batem_com_o_motor(com_formulas, apuracao
     """
     aba = com_formulas["APURAÇÃO EFETIVA"]
     estabelecimento, conferidas = None, 0
-    for linha in aba.iter_rows(min_col=1, max_col=1):
+    for linha in aba.iter_rows(min_col=2, max_col=2):
         texto = str(linha[0].value or "")
         if "  —  " in texto:
             estabelecimento = texto.split("  —  ")[0]
@@ -330,22 +331,22 @@ def test_os_totais_da_aba_sao_formula_e_batem_com_o_motor(com_formulas, apuracao
             continue
         n = linha[0].row
         filial = apuracao.filiais[estabelecimento]
-        assert str(aba[f"E{n}"].value).startswith("=SUM("), estabelecimento
-        assert _avaliar(aba, "G", n) == pytest.approx(
+        assert str(aba[f"F{n}"].value).startswith("=SUM("), estabelecimento
+        assert _avaliar(aba, "H", n) == pytest.approx(
             filial.credito_bruto, abs=CENTAVO
         ), estabelecimento
         # A coluna soma o que não vira crédito: estorno da regra mais o
         # crédito indevido, que fica em parcela própria na apuração.
-        assert _avaliar(aba, "J", n) == pytest.approx(
+        assert _avaliar(aba, "K", n) == pytest.approx(
             filial.estorno + filial.credito_indevido, abs=CENTAVO
         ), estabelecimento
-        assert _avaliar(aba, "K", n) == pytest.approx(
+        assert _avaliar(aba, "L", n) == pytest.approx(
             filial.credito_mantido, abs=CENTAVO
         ), estabelecimento
         # A identidade que a coluna CHECK mostrava, conferida aqui em vez de
         # ocupar uma célula na planilha.
-        assert _avaliar(aba, "J", n) + _avaliar(aba, "K", n) == pytest.approx(
-            _avaliar(aba, "G", n), abs=CENTAVO
+        assert _avaliar(aba, "K", n) + _avaliar(aba, "L", n) == pytest.approx(
+            _avaliar(aba, "H", n), abs=CENTAVO
         ), estabelecimento
         conferidas += 1
     # Filial sem crédito de entrada não tem tabela — e por isso não tem TOTAL.
@@ -357,16 +358,16 @@ def test_o_fechamento_traz_a_carga_efetiva_de_cada_classificacao(planilha):
     """Cada linha do bloco CRÉDITOS diz em que carga aquela classificação está."""
     aba = planilha["APURAÇÃO EFETIVA"]
     cabecalhos = [
-        linha for linha in aba.iter_rows(max_col=7, values_only=True)
-        if linha[1] == "Classificação" and linha[2] == "Carga efetiva"
+        linha[1:] for linha in aba.iter_rows(max_col=8, values_only=True)
+        if linha[2] == "Classificação" and linha[3] == "Carga efetiva"
     ]
     assert cabecalhos, "o bloco CRÉDITOS não tem a coluna de carga efetiva"
 
     # Matéria-prima em Guará entra toda a 4%: a média ponderada tem que ser 4%.
     # Só o bloco CRÉDITOS: o de DÉBITOS não tem coluna de estorno nem de carga.
     linhas = [
-        linha for linha in aba.iter_rows(max_col=7, values_only=True)
-        if linha[1] == "Matéria-Prima" and linha[4] and linha[5] is not None
+        linha[1:] for linha in aba.iter_rows(max_col=8, values_only=True)
+        if linha[2] == "Matéria-Prima" and linha[5] and linha[6] is not None
     ]
     assert linhas
     assert all(l[2] == pytest.approx(0.04, abs=1e-6) for l in linhas), linhas
@@ -375,7 +376,7 @@ def test_o_fechamento_traz_a_carga_efetiva_de_cada_classificacao(planilha):
 def test_os_blocos_nao_ficam_colados(planilha, apuracao):
     """Duas linhas em branco antes de cada estabelecimento."""
     aba = planilha["APURAÇÃO EFETIVA"]
-    coluna = [linha[0].value for linha in aba.iter_rows(max_col=1)]
+    coluna = [linha[1].value for linha in aba.iter_rows(max_col=2)]
     titulos = [i for i, v in enumerate(coluna) if "  —  " in str(v or "")]
     assert len(titulos) == len(apuracao.filiais)
     for i in titulos:
