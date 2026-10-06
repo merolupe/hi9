@@ -7,11 +7,24 @@ regimes:
   sp_equilibrio_fiscal:
     descricao: >
       Mantém o crédito até a carga de saída e estorna o excedente.
-      estorno = valor_contabil × (carga_efetiva_entrada − carga_saida_referencia)
+      Até 08/2026: estorno = valor_contabil × (carga_efetiva − carga_saida_referencia).
+      De 09/2026: estorno = ICMS × (1 − carga_saida_referencia ÷ carga_efetiva).
     vigencia_inicio: 2025-01-01
     formula_estorno: excedente_sobre_carga_saida
     carga_saida_referencia: 4.0
     base_do_estorno: valor_contabil        # confirmado contra Julho/2026
+    # A partir de 09/2026 o estorno é o percentual exato da tabela do time
+    # fiscal, pela carga efetiva, sobre o ICMS:
+    #     carga  7% → 42,86%   ·   12% → 66,67%   ·   18% → 77,78%
+    # Até 08/2026 foi `valor_contabil × (carga − 4%)`, que é como julho e
+    # agosto foram lançados no Sankhya — e continuam reproduzíveis. As duas
+    # coincidem quando base e valor contábil são iguais; separam-se no CT-e
+    # com pedágio, em que o valor contábil passa da base.
+    formulas_por_vigencia:
+      - vigencia_inicio: 2026-09-01
+        formula_estorno: proporcional_carga_efetiva
+        casas_decimais_da_parcela: 4
+        base_do_estorno: valor_icms
     isentos_de_estorno:
       - materia_prima
       - produto_acabado
@@ -32,6 +45,18 @@ regimes:
       aba ENTRADAS, colunas "Parcela não tributada" e "Valor ICMS a estornar".
     vigencia_inicio: 2025-01-01
     formula_estorno: proporcional_parcela_nao_tributada
+    # A partir de 09/2026 a tabela entra pela CARGA EFETIVA, não pela
+    # alíquota: o benefício se dá pelo destaque. Nota que já veio com a base
+    # reduzida (carga 4%) não estorna; nota cheia a 7% estorna 42,86%, a 12%
+    # estorna 66,67%. Julho e agosto foram declarados pela alíquota e
+    # continuam assim.
+    formulas_por_vigencia:
+      - vigencia_inicio: 2026-09-01
+        formula_estorno: proporcional_carga_efetiva
+        carga_saida_referencia: 4.0
+        casas_decimais_da_parcela: 4
+    # A APURAÇÃO EFETIVA mostra a alíquota da nota e a redução de base.
+    mostra_reducao_de_base: true
     base_do_estorno: valor_icms
 
     # A parcela não tributada NÃO é uma tabela: é uma fórmula. O benefício
@@ -80,6 +105,18 @@ regimes:
     vigencia_inicio: 2025-01-01
     homologado: true
     formula_estorno: proporcional_parcela_nao_tributada
+    # A partir de 09/2026 a tabela entra pela CARGA EFETIVA, não pela
+    # alíquota: o benefício se dá pelo destaque. Nota que já veio com a base
+    # reduzida (carga 4%) não estorna; nota cheia a 7% estorna 42,86%, a 12%
+    # estorna 66,67%. Julho e agosto foram declarados pela alíquota e
+    # continuam assim.
+    formulas_por_vigencia:
+      - vigencia_inicio: 2026-09-01
+        formula_estorno: proporcional_carga_efetiva
+        carga_saida_referencia: 4.0
+        casas_decimais_da_parcela: 4
+    # A APURAÇÃO EFETIVA mostra a alíquota da nota e a redução de base.
+    mostra_reducao_de_base: true
     base_do_estorno: valor_icms
     carga_de_referencia: 4.0
     casas_decimais_da_parcela: 4

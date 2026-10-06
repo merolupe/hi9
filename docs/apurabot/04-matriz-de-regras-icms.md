@@ -107,13 +107,30 @@ descreve o enquadramento.
 
 ## 3. SP — equilíbrio fiscal (carga de saída 4%)
 
+**A partir de 09/2026** o estorno é o percentual exato da tabela do time fiscal,
+pela carga efetiva da entrada, aplicado sobre o ICMS:
+
 ```
-estorno         = valor contábil × (carga efetiva da entrada − carga de saída)
+estorno         = ICMS destacado × (1 − carga de saída ÷ carga efetiva)
 crédito mantido = ICMS destacado − estorno
 carga de saída  = 4%
 ```
 
-A base do estorno é o **valor contábil**, não a base de ICMS.
+| Carga efetiva | % do crédito estornado |
+|---|---|
+| 4% | 0,00% |
+| 7% | 42,86% |
+| 12% | 66,67% |
+| 18% | 77,78% |
+
+**Até 08/2026** a fórmula foi `valor contábil × (carga efetiva − 4%)`, e é como
+julho e agosto foram lançados no Sankhya — a vigência em `regimes.yaml`
+(`formulas_por_vigencia`) mantém os dois meses reproduzíveis. As duas fórmulas
+dão o mesmo número quando base e valor contábil coincidem. Separam-se no CT-e
+com pedágio ou outro valor fora da base: ali o valor contábil passa da base, e a
+fórmula antiga estornava mais que o percentual da tabela — 68% num frete de 12%,
+em vez de 66,67%. Em 09/2026 a diferença foi de R$ 15.970,85 em Guará e
+R$ 606,99 em Registro.
 
 | Categoria da entrada | Dentro do estado | Fora do estado |
 |---|---|---|
@@ -127,8 +144,8 @@ A base do estorno é o **valor contábil**, não a base de ICMS.
 | **Retorno de industrialização** | Não estorna | Não estorna |
 | **CIAP** | Mantém 100% conforme saídas tributadas | idem |
 
-Pela fórmula: carga 7% estorna 3 pontos; 12% estorna 8; 17% estorna 13; 18%
-estorna 14.
+Em pontos de carga: 7% estorna 3 pontos; 12% estorna 8; 18% estorna 14 — o
+que sobra é sempre 4%.
 
 ### 3.1. Por que SP e MS não se comparam em percentual
 
@@ -180,7 +197,35 @@ está na `BASE TRATADA`.
 
 ## 4. MS — estorno proporcional, atividade e benefício de Rio Brilhante
 
-### 4.1. O estorno é fórmula, e a chave é a alíquota
+### 4.1. O estorno é fórmula — pela carga efetiva, a partir de 09/2026
+
+**A partir de 09/2026 a tabela entra pela carga efetiva**, não pela alíquota: o
+benefício se dá pelo destaque. A tabela "Carga Tributária ICMS" do time fiscal
+é a de **redução de base** — quanto o fornecedor reduz a base para cada
+alíquota chegar a 4%. Nota que já veio com a base reduzida chegou a 4% e não
+estorna; nota cheia estorna a redução que não foi feita na origem:
+
+```
+parcela estornada = 1 − 4% ÷ carga efetiva
+```
+
+| Nota | Alíquota | Redução de base | Carga efetiva | Estorno |
+|---|---|---|---|---|
+| Zinco, base reduzida | 7% | 42,86% | 4% | 0,00% |
+| Retorno de armazém, base reduzida | 12% | 66,67% | 4% | 0,00% |
+| Saco, base cheia | 7% | — | 7% | 42,86% |
+| Frete, base cheia | 12% | — | 12% | 66,67% |
+
+A APURAÇÃO EFETIVA de MS mostra a cadeia inteira: alíquota da nota e redução
+de base nas duas últimas colunas, carga efetiva e % do crédito estornado no
+meio. Em 09/2026 o estorno de Rio Brilhante foi de R$ 102.458,58 (pela
+alíquota) para R$ 50.402,49.
+
+**Até 08/2026** — e é como julho e agosto foram declarados, reproduzidos ao
+centavo — a chave foi a alíquota, como descrito abaixo. A vigência está em
+`regimes.yaml` (`formulas_por_vigencia`).
+
+#### Até 08/2026: a chave era a alíquota
 
 Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor contábil. O
 crédito é limitado à **carga de referência de 4%**, e o que passa dela se estorna:
