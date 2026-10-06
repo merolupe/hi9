@@ -175,6 +175,11 @@ COLUNAS_EFETIVA = [
     "% do crédito estornado", "ICMS a estornar", "ICMS a apropriar",
 ]
 
+#: Só nos regimes que declaram `mostra_reducao_de_base` (MS): de onde a carga
+#: efetiva veio. Ficam no fim para não deslocar as colunas das fórmulas.
+COLUNAS_DA_REDUCAO = ["Alíquota da nota", "Redução de base"]
+COL_ALIQUOTA, COL_REDUCAO = 12, 13
+
 #: Colunas por letra, para montar as fórmulas.
 COL_CONTABIL, COL_BASE, COL_ICMS = 5, 6, 7
 COL_PERCENTUAL, COL_ESTORNAR, COL_APROPRIAR = 9, 10, 11
@@ -249,7 +254,7 @@ def _numero(valor) -> float:
 def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
     """Conferência do crédito, do estorno e da apropriação, por CFOP e produto."""
     aba = wb.create_sheet(ABA_EFETIVA)
-    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 26, 14, 16, 16])
+    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 26, 14, 16, 16, 12, 14])
 
     aba.append(["APURAÇÃO EFETIVA — crédito, estorno e apropriação por CFOP e produto"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
@@ -260,20 +265,22 @@ def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
         "estorno mais a apropriação não fecham o crédito."
     ])
 
+    regimes = (params.regimes.get("regimes") or {}) if params else {}
     for filial in sorted(
         apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
     ):
-        _bloco_efetiva(aba, filial)
+        reducao = bool((regimes.get(filial.regime) or {}).get("mostra_reducao_de_base"))
+        _bloco_efetiva(aba, filial, reducao)
 
 
-def _bloco_efetiva(aba, filial) -> None:
+def _bloco_efetiva(aba, filial, reducao: bool = False) -> None:
     # Respiro entre estabelecimentos — os blocos ficavam colados.
     _vazio(aba)
     _vazio(aba)
     _titulo(
         aba,
         f"{filial.estabelecimento}  —  {filial.uf}  —  regime {filial.regime}",
-        len(COLUNAS_EFETIVA),
+        len(COLUNAS_EFETIVA) + (len(COLUNAS_DA_REDUCAO) if reducao else 0),
     )
     entradas = [a for a in filial.apuradas if a.resultado.credito_bruto]
     if not entradas:
@@ -281,7 +288,7 @@ def _bloco_efetiva(aba, filial) -> None:
         _blocos_de_fechamento(aba, filial)
         return
 
-    _cabecalho(aba, COLUNAS_EFETIVA)
+    _cabecalho(aba, COLUNAS_EFETIVA + (COLUNAS_DA_REDUCAO if reducao else []))
 
     # CFOP → CARGA EFETIVA EQUALIZADA → produto × operação, somando em cada
     # nível. A carga é a chave nos dois regimes: é a grandeza que o documento
@@ -290,7 +297,11 @@ def _bloco_efetiva(aba, filial) -> None:
     for apurada in entradas:
         cfop = apurada.tratada.origem.cfop_int
         carga = apurada.tratada.carga.carga
-        produto = (_nome_do_produto(apurada), _rotulo_atividade(apurada))
+        # Onde a redução aparece, a alíquota entra na chave: cada linha de
+        # produto tem uma alíquota só, e a redução sai exata.
+        aliquota = _numero(apurada.tratada.origem.dados.get("aliquota_icms")) \
+            if reducao else None
+        produto = (_nome_do_produto(apurada), _rotulo_atividade(apurada), aliquota)
         por_cfop = arvore.setdefault(cfop, {"descricao": "", "cargas": {}})
         por_cfop["descricao"] = por_cfop["descricao"] or _descricao_cfop(apurada)
         por_carga = por_cfop["cargas"].setdefault(carga, {})
@@ -311,9 +322,15 @@ def _bloco_efetiva(aba, filial) -> None:
             linha_carga = _linha_de_grupo(
                 aba, _agregar([produtos]), nivel=1, valor_da_chave=carga
             )
+            if reducao:
+                aliquotas = {chave[2] for chave in produtos}
+                if len(aliquotas) == 1:
+                    _reducao(aba, linha_carga, aliquotas.pop(), carga)
             folhas = [
-                _linha_de_produto(aba, produtos[chave], carga, *chave)
-                for chave in sorted(produtos, key=lambda p: (p[0].casefold(), p[1]))
+                _linha_de_produto(aba, produtos[chave], carga, *chave,
+                                  reducao=reducao)
+                for chave in sorted(produtos, key=lambda p: (p[0].casefold(), p[1],
+                                                             p[2] or 0))
             ]
             _somatorio(aba, linha_carga, folhas)
             linhas_de_carga.append(linha_carga)
@@ -403,8 +420,25 @@ def _linha_de_grupo(
     return linha
 
 
+def _reducao(aba, linha: int, aliquota: float | None, carga: float | None) -> None:
+    """Alíquota da nota e a redução de base que a levou à carga efetiva.
+
+    redução = 1 − carga ÷ alíquota. Pela carga equalizada, e não por base ÷
+    valor contábil: o frete com pedágio tem valor contábil maior que a base e
+    não tem redução nenhuma.
+    """
+    if not aliquota:
+        return
+    aba.cell(row=linha, column=COL_ALIQUOTA).value = _percentual(aliquota)
+    if carga is not None:
+        celula = aba.cell(row=linha, column=COL_REDUCAO)
+        celula.value = round(max(1.0 - float(carga) / float(aliquota), 0.0), 4)
+        celula.number_format = PERCENTUAL
+
+
 def _linha_de_produto(
-    aba, somas: Somas, valor_da_chave: float | None, produto: str, operacao: str
+    aba, somas: Somas, valor_da_chave: float | None, produto: str, operacao: str,
+    aliquota: float | None = None, *, reducao: bool = False,
 ) -> int:
     aba.append([
         "", "", _percentual(valor_da_chave), produto,
@@ -415,6 +449,8 @@ def _linha_de_produto(
     _derivadas(aba, linha)
     _formatos_da_linha(aba, linha)
     aba.row_dimensions[linha].outlineLevel = 2
+    if reducao:
+        _reducao(aba, linha, aliquota, valor_da_chave)
     if not somas.fecha:
         # A identidade quebrou. Sem coluna de CHECK, o aviso é a própria linha.
         for celula in aba[linha]:

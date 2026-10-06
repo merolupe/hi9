@@ -38,7 +38,7 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.27 | 29/09/2026 | Botão Registro em PDF: o Registro de Apuração no desenho do Sankhya, salvo em PDF pelo navegador |
 | 0.1.28 | 30/09/2026 | A planilha enxuta: abas por prioridade, nomes novos, memórias em fórmula, nada congelado e borda em toda tabela |
 | 0.1.29 | 05/10/2026 | Amostra grátis (CFOP 1911/2911) deixa de cair em SEM REGRA: vai para crédito indevido em todo regime |
-| **0.1.30** | **06/10/2026** | **SP estorna o percentual exato da tabela (42,86% · 66,67% · 77,78%) sobre o ICMS, de 09/2026 em diante** |
+| **0.1.30** | **06/10/2026** | **De 09/2026: SP e MS estornam o percentual exato da tabela pela carga efetiva; a APURAÇÃO EFETIVA de MS mostra alíquota e redução de base** |
 
 ## 0.1.28 — a planilha enxuta
 

@@ -297,3 +297,36 @@ def test_sp_de_setembro_isentos_continuam_isentos(parametros):
     r = calcular(_sp((2026, 9, 10), "materia_prima", 12.0, 1_200.0, 10_000.0),
                  parametros)
     assert r.estorno == 0.0
+
+
+# -- MS a partir de 09/2026: a tabela entra pela carga efetiva ----------------
+
+def _ms(data, categoria, carga, icms, contabil, aliquota):
+    import datetime as dt
+
+    linha = tratada("HINOVE (RIO BRILHANTE)", categoria, carga, icms, contabil,
+                    aliquota=aliquota)
+    linha.origem.dados["data_movimento"] = dt.datetime(*data)
+    return linha
+
+
+@pytest.mark.parametrize("aliquota, carga, percentual", [
+    (7.0, 4.0, 0.0),        # base reduzida pelo fornecedor: já chegou a 4%
+    (12.0, 4.0, 0.0),       # retorno de armazém com a base reduzida
+    (17.0, 4.0, 0.0),       # importação a 17% com a base reduzida
+    (7.0, 7.0, 0.4286),     # nota cheia a 7%
+    (12.0, 12.0, 0.6667),   # frete cheio a 12%
+])
+def test_ms_de_setembro_estorna_pela_carga_efetiva(parametros, aliquota, carga,
+                                                   percentual):
+    icms = 10_000.0 * carga / 100
+    r = calcular(_ms((2026, 9, 10), "embalagem", carga, icms, 10_000.0, aliquota),
+                 parametros)
+    assert r.estorno == pytest.approx(icms * percentual, abs=0.005)
+
+
+def test_ms_ate_agosto_continua_pela_aliquota(parametros):
+    """Julho e agosto foram declarados assim: 7% reduzida a 4% estorna 42,86%."""
+    r = calcular(_ms((2026, 8, 31), "embalagem", 4.0, 400.0, 10_000.0, 7.0),
+                 parametros)
+    assert r.estorno == pytest.approx(400.0 * 0.4286, abs=0.005)
