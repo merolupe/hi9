@@ -45,7 +45,7 @@ _INTERVALO = re.compile(r"SUM\(([A-Z]{1,2})(\d+):([A-Z]{1,2})(\d+)\)")
 
 
 def avaliar(aba, coordenada: str) -> float:
-    """Resolve SUM, MAX, as quatro operações e referências a outras células."""
+    """Resolve SUM, MAX, MIN, ROUND, as quatro operações e referências."""
     valor = aba[coordenada].value
     if not (isinstance(valor, str) and valor.startswith("=")):
         return float(valor or 0.0)
@@ -57,8 +57,10 @@ def avaliar(aba, coordenada: str) -> float:
 
     expressao = _INTERVALO.sub(soma, expressao)
     expressao = _REFERENCIA.sub(lambda m: repr(avaliar(aba, m.group(0))), expressao)
-    return float(eval(expressao.replace("MAX", "max"), {"__builtins__": {}},
-                      {"max": max}))
+    for funcao in ("MAX", "MIN", "ROUND"):
+        expressao = expressao.replace(funcao, funcao.lower())
+    return float(eval(expressao, {"__builtins__": {}},
+                      {"max": max, "min": min, "round": round}))
 
 
 def _linha(aba, rotulo: str, coluna: int = 1) -> int:
@@ -145,10 +147,11 @@ def test_ajustes_no_sankhya_e_titulo_e_tabela(planilha):
 
 # -- REGISTRO 1200 -----------------------------------------------------------
 
-def test_o_1200_termina_nas_linhas_da_efd(planilha):
+def test_o_txt_do_sped_traz_as_linhas_da_efd(planilha):
     aba = planilha["REGISTRO 1200"]
+    n = _linha(aba, "TXT do SPED") + 1
+    assert str(aba[f"A{n}"].value).startswith("|1200|")
     textos = [str(c.value) for linha in aba.iter_rows() for c in linha if c.value]
-    assert textos[-1].startswith("|1200|")
     for sumido in ("Crédito recebido", "Crédito utilizado", "Saldo final a cadastrar"):
         assert not any(t.startswith(sumido) for t in textos), sumido
 
@@ -159,9 +162,26 @@ def test_o_saldo_final_do_1200_e_formula(gerada, planilha, parametros):
     apuracao, _ = gerada
     (controle,) = cc.montar(apuracao, parametros)
     aba = planilha["REGISTRO 1200"]
-    n = _linha(aba, "Registro 1200") + 1
+    n = _linha(aba, "Agosto")           # o mês em apuração, abaixo do histórico
+    assert _linha(aba, "Janeiro") == _linha(aba, "Registro 1200") + 1
     assert aba[f"G{n}"].value == f"=C{n}+D{n}+E{n}-F{n}"
     assert avaliar(aba, f"G{n}") == pytest.approx(controle.saldo_final, abs=CENTAVO)
+
+
+def test_a_conta_do_uso_chega_ao_numero_do_motor(gerada, planilha, parametros):
+    from apurabot import controle_de_creditos as cc
+
+    apuracao, _ = gerada
+    (controle,) = cc.montar(apuracao, parametros)
+    aba = planilha["REGISTRO 1200"]
+    for rotulo, esperado in (
+        ("Total de crédito disponível", controle.disponivel),
+        ("30% do saldo devedor", controle.teto),
+        ("Total de crédito a utilizar", controle.a_utilizar),
+    ):
+        n = _linha(aba, rotulo)
+        assert str(aba[f"B{n}"].value).startswith("="), rotulo
+        assert avaliar(aba, f"B{n}") == pytest.approx(esperado, abs=CENTAVO), rotulo
 
 
 # -- RESUMO E DETALHES: as memórias em fórmula --------------------------------

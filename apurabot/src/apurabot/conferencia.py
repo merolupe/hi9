@@ -38,6 +38,10 @@ TITULO = Font(bold=True, color="FFFFFF")
 FUNDO = PatternFill("solid", fgColor="1F3864")
 FUNDO_CLARO = PatternFill("solid", fgColor="D9E2F3")
 FUNDO_ATENCAO = PatternFill("solid", fgColor="FFF2CC")
+# REGISTRO 1200: os meses já transmitidos em cinza, o mês em apuração em azul.
+FUNDO_TRANSMITIDO = PatternFill("solid", fgColor="D9D9D9")
+FUNDO_MES_ANTERIOR = PatternFill("solid", fgColor="A6A6A6")
+FUNDO_MES_ATUAL = PatternFill("solid", fgColor="8DB4E2")
 MOEDA = "#,##0.00"
 PERCENTUAL = "0.00%"
 VERMELHO = Font(bold=True, color="B00020")
@@ -878,45 +882,56 @@ def aba_lancamentos(wb, apuracao: Apuracao, params, registros=None,
 # --------------------------------------------------------------------------
 
 def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
-    """O 1200/1210 de cada crédito controlado, pronto para conferir e copiar."""
+    """O 1200/1210 de cada crédito controlado, com o histórico e o teto do uso.
+
+    Os meses já transmitidos do ano ficam acima do mês em apuração: é deles que
+    vem o saldo transportado. Embaixo, a conta do uso — transportado + recebido
+    é o disponível, e o que se pode usar é o menor entre ele e o teto sobre o
+    saldo devedor do próprio mês.
+    """
     from . import controle_de_creditos as cc
 
     controles = cc.montar(apuracao, params, ajustes)
     if not controles:
         return
     aba = wb.create_sheet(ABA_1200)
-    _larguras(aba, [34, 20, 18, 18, 18, 18, 18, 50])
+    _larguras(aba, [34, 20, 18, 18, 18, 18, 18])
 
     competencia = apuracao.base.competencia
     aba.append([f"REGISTROS 1200 E 1210 DA EFD — competência {competencia}"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
-    aba.append([
-        "Saldo inicial + apropriado + recebido − utilizado = saldo final. O "
-        "utilizado é o ajuste declarado na linha 006 com a observação padrão "
-        "do controle; quanto usar é decisão do fiscal."
-    ])
 
     for c in controles:
         _vazio(aba)
-        _titulo(aba, f"{c.estabelecimento} — {c.cod_aj_apur}", 7)
-        aba.append(["", c.descricao])
+        if len(controles) > 1:
+            _titulo(aba, f"{c.estabelecimento} — {c.cod_aj_apur}", 7)
         for motivo in c.pendencias:
-            aba.append(["", f"PENDENTE: {motivo}"])
-            aba.cell(row=aba.max_row, column=2).fill = FUNDO_ATENCAO
-            aba.cell(row=aba.max_row, column=2).font = VERMELHO
+            aba.append([f"PENDENTE: {motivo}"])
+            aba.cell(row=aba.max_row, column=1).fill = FUNDO_ATENCAO
+            aba.cell(row=aba.max_row, column=1).font = VERMELHO
 
-        _vazio(aba)
         _cabecalho(aba, ["Registro 1200", "COD_AJ_APUR", "SLD_CRED",
                          "CRÉD_APR", "CRÉD_RECEB", "CRÉD_UTIL", "SLD_CRED_FIM"])
-        aba.append(["", c.cod_aj_apur, c.saldo_inicial, c.apropriado,
-                    c.recebido, c.utilizado, c.saldo_final])
-        n = aba.max_row
-        _moeda(aba, n, range(3, 8))
-        if c.saldo_inicial is None:
-            aba.cell(row=n, column=3).fill = FUNDO_ATENCAO
-        else:
-            # A conta do 1200 à vista: inicial + apropriado + recebido − utilizado.
+        for mes in c.historico:
+            aba.append([_nome_do_mes(mes.competencia), c.cod_aj_apur,
+                        mes.saldo_inicial, mes.apropriado, mes.recebido,
+                        mes.utilizado, None])
+            n = aba.max_row
             aba.cell(row=n, column=7).value = f"=C{n}+D{n}+E{n}-F{n}"
+            _moeda(aba, n, range(3, 8))
+            for coluna in range(1, 8):
+                aba.cell(row=n, column=coluna).fill = (
+                    FUNDO_MES_ANTERIOR if coluna == 1 else FUNDO_TRANSMITIDO)
+
+        aba.append([_nome_do_mes(competencia), c.cod_aj_apur, c.saldo_inicial,
+                    c.apropriado, c.recebido, c.utilizado or None, None])
+        atual = aba.max_row
+        aba.cell(row=atual, column=1).fill = FUNDO_MES_ATUAL
+        _moeda(aba, atual, range(3, 8))
+        if c.saldo_inicial is None:
+            aba.cell(row=atual, column=3).fill = FUNDO_ATENCAO
+        aba.cell(row=atual, column=7).value = (
+            f"=C{atual}+D{atual}+E{atual}-F{atual}")
 
         _vazio(aba)
         _cabecalho(aba, ["Registro 1210", "TIPO_UTIL", "NR_DOC",
@@ -929,10 +944,86 @@ def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
         else:
             aba.append(["", "Sem crédito utilizado no mês: não há 1210."])
 
-        _vazio(aba)
-        aba.append(["Como vai no arquivo da EFD"])
-        aba.cell(row=aba.max_row, column=1).font = Font(bold=True)
+        _titulo(aba, "TXT do SPED", 3)
         for linha in (c.linha_1200(), c.linha_1210()):
             if linha:
-                aba.append(["", linha])
+                aba.append([linha])
+
+        _vazio(aba)
+        _conta_do_uso(aba, c, atual)
+
+
+def _conta_do_uso(aba, c, atual: int) -> None:
+    """Disponível = transportado + recebido; a utilizar = o menor entre ele e o teto."""
+    local = _nome_curto(c.estabelecimento)
+    percentual = c.percentual_do_teto
+    rotulos = [
+        ("Valor recebido por transf. de crédito", f"=E{atual}"),
+        ("Valor transportado",
+         f"=C{atual}" if c.saldo_inicial is not None else None),
+    ]
+    inicio = aba.max_row + 1
+    rotulos += [
+        ("Total de crédito disponível", f"=B{inicio}+B{inicio + 1}"),
+        (f"Saldo devedor de {local}", c.saldo_devedor),
+    ]
+    if percentual is not None:
+        rotulos += [
+            (f"{percentual:g}% do saldo devedor",
+             f"=ROUND(B{inicio + 3}*{percentual:g}/100,2)"),
+            ("Total de crédito a utilizar",
+             f"=MAX(MIN(B{inicio + 2},B{inicio + 4}),0)"),
+        ]
+    else:
+        rotulos.append(("Total de crédito a utilizar", f"=B{inicio + 2}"))
+
+    for rotulo, valor in rotulos:
+        aba.append([rotulo, valor])
+        n = aba.max_row
+        aba.cell(row=n, column=1).font = TITULO
+        aba.cell(row=n, column=1).fill = FUNDO
+        aba.cell(row=n, column=2).number_format = MOEDA
+        if valor is None:
+            aba.cell(row=n, column=2).fill = FUNDO_ATENCAO
+    aba.cell(row=aba.max_row, column=2).font = Font(bold=True)
+
+    notas = []
+    if c.saldo_devedor is not None:
+        notas.append("Saldo devedor: linha 011 do Registro, antes do uso do "
+                     "crédito (já com o saldo recebido pela centralização).")
+    if c.origem_do_saldo_inicial:
+        notas.append(f"Valor transportado: {c.origem_do_saldo_inicial}.")
+    if c.recebido_declarado is not None and abs(
+            c.recebido_declarado - c.recebido_no_livro) >= 0.005:
+        notas.append(
+            f"Recebido: declarado em parametros/saldos.yaml. O Livro traz "
+            f"{_reais(c.recebido_no_livro)}, o valor do documento.")
+    notas.append("O utilizado (CRÉD_UTIL) é o ajuste declarado na linha 006 com "
+                 f"a observação padrão {c.observacao_padrao_do_uso or '—'}.")
+    _vazio(aba)
+    for nota in notas:
+        aba.append([nota])
+        aba.cell(row=aba.max_row, column=1).font = Font(italic=True, size=9)
+
+
+MESES = ("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho",
+         "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro")
+
+
+def _nome_do_mes(competencia: str) -> str:
+    return MESES[int(competencia[5:7]) - 1]
+
+
+def _nome_curto(estabelecimento: str) -> str:
+    """"HINOVE (RIO BRILHANTE)" → "Rio Brilhante"."""
+    if "(" not in estabelecimento or ")" not in estabelecimento:
+        return estabelecimento
+    dentro = estabelecimento[estabelecimento.index("(") + 1:
+                             estabelecimento.rindex(")")]
+    return " ".join(p.capitalize() if len(p) > 2 else p.lower()
+                    for p in dentro.split())
+
+
+def _reais(valor: float) -> str:
+    return "R$ " + f"{valor:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
 

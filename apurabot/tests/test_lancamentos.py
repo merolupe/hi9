@@ -7,6 +7,7 @@ Registro do ERP e é pulado quando o arquivo real não está na máquina.
 """
 from __future__ import annotations
 
+import dataclasses
 from types import SimpleNamespace
 
 import openpyxl
@@ -177,7 +178,9 @@ def test_agosto_fecha_como_o_resumo_do_sped(reapurado, parametros):
     (controle,) = cc.montar(apuracao, parametros)
     assert controle.utilizado == pytest.approx(UTILIZADO)
     assert controle.saldo_final == pytest.approx(62_287.65, abs=CENTAVO)
-    assert controle.pendencias == []
+    # O Livro sintético tem saldo devedor de 17.000,00: o uso real de agosto
+    # passa do teto dele, e só isso fica pendente.
+    assert [p for p in controle.pendencias if "teto" not in p] == []
     assert controle.linha_1200() == (
         "|1200|MS090004|108426,33|0|62720|108858,68|62287,65|")
     assert controle.linha_1210() == f"|1210|MS03||108858,68|{CHAVE}|"
@@ -207,6 +210,112 @@ def test_a_aba_traz_as_linhas_da_efd(reapurado, tmp_path):
     texto = [c for linha in _linhas(planilha["REGISTRO 1200"]) for c in linha]
     assert "|1200|MS090004|108426,33|0|62720|108858,68|62287,65|" in texto
     assert f"|1210|MS03||108858,68|{CHAVE}|" in texto
+
+
+def _sem(params, **trocas):
+    """Os parâmetros com blocos de `saldos.yaml` trocados — para o teste."""
+    return dataclasses.replace(params, saldos={**params.saldos, **trocas})
+
+
+def test_o_teto_e_30_do_saldo_devedor_antes_do_uso(reapurado, parametros):
+    """Saldo devedor do Livro sintético: 17.000,00 de débito, sem crédito.
+
+    O uso declarado já abateu a linha 011; o teto se mede antes dele.
+    """
+    _, apuracao = reapurado
+    (controle,) = cc.montar(apuracao, parametros)
+    assert controle.percentual_do_teto == 30
+    assert controle.saldo_devedor == pytest.approx(17_000.00)
+    assert controle.teto == pytest.approx(5_100.00)
+    assert controle.disponivel == pytest.approx(ABERTURA_DE_AGOSTO + RECEBIDO)
+    assert controle.a_utilizar == pytest.approx(5_100.00)
+    assert any("teto de 30%" in p for p in controle.pendencias)
+
+
+def test_dentro_do_teto_nao_ha_pendencia(agosto, parametros, tmp_path):
+    base, apuracao = agosto
+    devolvido = _devolver(base, apuracao, tmp_path, valor=5_000.00)
+    base = tratar(devolvido, parametros=parametros)
+    apuracao = apurar(base, parametros, ajustes=ler_ajustes(devolvido))
+    (controle,) = cc.montar(apuracao, parametros)
+    assert controle.saldo_devedor == pytest.approx(17_000.00)
+    assert controle.pendencias == []
+
+
+def test_o_teto_limita_so_quando_o_disponivel_passa_dele(agosto, parametros):
+    """Sem saldo transportado nem recebido, a utilizar é o disponível."""
+    _, apuracao = agosto
+    (controle,) = cc.montar(apuracao, parametros)
+    controle.saldo_inicial, controle.notas = 0.0, []
+    assert controle.disponivel == 0
+    assert controle.a_utilizar == 0
+
+
+def test_setembro_abre_no_fim_de_agosto_transmitido(parametros, tmp_path):
+    """Sem saldo declarado no mês, o 1200 abre no SLD_CRED_FIM do anterior."""
+    base = tratar(_livro(tmp_path / "setembro.xlsx", mes=9), parametros=parametros)
+    sem_declaracao = _sem(parametros, creditos_controlados=[])
+    (controle,) = cc.montar(apurar(base, sem_declaracao), sem_declaracao)
+    assert controle.saldo_inicial == pytest.approx(62_287.65, abs=CENTAVO)
+    assert "transmitido" in controle.origem_do_saldo_inicial
+    assert not any("não declarado" in p for p in controle.pendencias)
+
+
+def test_abertura_diferente_do_fim_anterior_fica_pendente(parametros, tmp_path):
+    base = tratar(_livro(tmp_path / "setembro.xlsx", mes=9), parametros=parametros)
+    outro = _sem(parametros, creditos_controlados=[{
+        "competencia": "2026-09",
+        "por_estabelecimento": {2: {"MS090004": 50_000.00}},
+    }])
+    (controle,) = cc.montar(apurar(base, outro), outro)
+    assert controle.saldo_inicial == pytest.approx(50_000.00)
+    assert any("mês anterior" in p for p in controle.pendencias)
+
+
+def test_o_recebido_declarado_vale_sobre_o_livro(parametros, tmp_path):
+    """A NF-e vem com desconto: o Livro tem o documento, não o crédito."""
+    base = tratar(_livro(tmp_path / "setembro.xlsx", mes=9), parametros=parametros)
+    outro = _sem(parametros, creditos_controlados=[{
+        "competencia": "2026-09",
+        "por_estabelecimento": {2: {"MS090004": 62_287.65}},
+        "recebido_por_estabelecimento": {2: {"MS090004": 70_000.00}},
+    }])
+    (controle,) = cc.montar(apurar(base, outro), outro)
+    assert controle.recebido_no_livro == pytest.approx(RECEBIDO)
+    assert controle.recebido == pytest.approx(70_000.00)
+    assert controle.linha_1200().split("|")[5] == "70000"
+
+
+def test_o_historico_transmitido_fecha_mes_a_mes(parametros):
+    """O SLD_CRED de cada mês é o SLD_CRED_FIM do anterior — a EFD entregue."""
+    meses = sorted(parametros.transmitidos_do_controle(2, "MS090004").items())
+    assert [m for m, _ in meses][:1] == ["2026-01"]
+    for (_, antes), (mes, depois) in zip(meses, meses[1:]):
+        fim = (antes["sld_cred"] + antes["cred_apr"] + antes["cred_receb"]
+               - antes["cred_util"])
+        assert depois["sld_cred"] == pytest.approx(fim, abs=CENTAVO), mes
+
+
+def test_a_aba_mostra_o_ano_e_a_conta_do_uso(parametros, tmp_path):
+    base = tratar(_livro(tmp_path / "setembro.xlsx", mes=9), parametros=parametros)
+    planilha = openpyxl.load_workbook(
+        escrever(base, tmp_path / "s.xlsx", apurar(base, parametros)))
+    aba = planilha["REGISTRO 1200"]
+    coluna_a = [linha[0] for linha in aba.iter_rows(values_only=True)]
+    meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+             "Julho", "Agosto", "Setembro"]
+    inicio = coluna_a.index("Janeiro")
+    assert coluna_a[inicio:inicio + 9] == meses
+    for rotulo in ("TXT do SPED", "Valor recebido por transf. de crédito",
+                   "Valor transportado", "Total de crédito disponível",
+                   "Saldo devedor de Rio Brilhante", "30% do saldo devedor",
+                   "Total de crédito a utilizar"):
+        assert rotulo in coluna_a, rotulo
+    linha = coluna_a.index("Total de crédito a utilizar") + 1
+    assert aba.cell(row=linha, column=2).value.startswith("=MAX(MIN(")
+    setembro = inicio + 9
+    assert aba.cell(row=setembro, column=7).value == (
+        f"=C{setembro}+D{setembro}+E{setembro}-F{setembro}")
 
 
 @pytest.mark.parametrize("valor, esperado", [

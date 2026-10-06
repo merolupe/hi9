@@ -39,7 +39,8 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.28 | 30/09/2026 | A planilha enxuta: abas por prioridade, nomes novos, memórias em fórmula, nada congelado e borda em toda tabela |
 | 0.1.29 | 05/10/2026 | Amostra grátis (CFOP 1911/2911) deixa de cair em SEM REGRA: vai para crédito indevido em todo regime |
 | 0.1.30 | 06/10/2026 | De 09/2026: SP e MS estornam o percentual exato da tabela pela carga efetiva; a APURAÇÃO EFETIVA de MS mostra alíquota e redução de base |
-| **0.1.31** | **06/10/2026** | **REGISTRO DE APURAÇÃO e APURAÇÃO EFETIVA filtram por filial: a coluna A diz o estabelecimento de cada linha, com o filtro em A2** |
+| 0.1.31 | 06/10/2026 | REGISTRO DE APURAÇÃO e APURAÇÃO EFETIVA filtram por filial: a coluna A diz o estabelecimento de cada linha, com o filtro em A2 |
+| **0.1.32** | **06/10/2026** | **REGISTRO 1200 reformulado: o ano transmitido, o TXT do SPED e a conta do uso — disponível, teto de 30% do saldo devedor e total a utilizar** |
 
 ## 0.1.28 — a planilha enxuta
 

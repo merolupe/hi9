@@ -96,8 +96,14 @@ saldos_credores:
 # seguinte pronto na aba REGISTRO 1200. O que é cada campo está em
 # `controle_de_creditos.yaml`.
 #
-# Competência ausente deste bloco não é saldo zero: o 1200 sai marcado, com o
-# saldo inicial em aberto (regra 4 do repositório).
+# Competência ausente deste bloco não é saldo zero: o 1200 abre no saldo final
+# do mês anterior transmitido (bloco `creditos_controlados_transmitidos`,
+# abaixo) e, sem ele, sai marcado, com o saldo inicial em aberto (regra 4 do
+# repositório).
+#
+# `recebido_por_estabelecimento` declara o CRÉD_RECEB do mês quando o Livro
+# não o traz inteiro: a NF-e de transferência vem com desconto, e o Livro só
+# tem o valor do documento. Sem a declaração, vale o Livro.
 
 creditos_controlados:
 
@@ -123,3 +129,36 @@ creditos_controlados:
     por_estabelecimento:
       2:                      # HINOVE (RIO BRILHANTE)
         MS090004: 62287.65
+    # O crédito da NF-e 247431 da ADECOAGRO (CRÉD_RECEB). O Livro traz o
+    # documento, 57.702,40, líquido do desconto de 8%.
+    recebido_por_estabelecimento:
+      2:                      # HINOVE (RIO BRILHANTE)
+        MS090004: 62720.00
+
+# ---------------------------------------------------------------------------
+# O 1200 como foi transmitido — o histórico do estoque, mês a mês.
+# ---------------------------------------------------------------------------
+# A aba REGISTRO 1200 mostra os meses já transmitidos do ano, acima do mês em
+# apuração: é o histórico que explica o saldo transportado. Cada mês traz os
+# campos do 1200 da EFD entregue; o SLD_CRED_FIM é a conta, não se declara.
+#
+# Quando a competência não tem saldo inicial no bloco `creditos_controlados`,
+# ele sai do SLD_CRED_FIM do mês anterior declarado aqui. Para abrir outubro,
+# basta incluir setembro depois de transmitido.
+
+creditos_controlados_transmitidos:
+
+  - empresa: 2                          # HINOVE (RIO BRILHANTE)
+    cod_aj_apur: MS090004
+    origem: >
+      EFD de 01 a 07/2026 (planilha "SPED Jan-Jul 2026 Consolidado", com o
+      julho retificado: 46.138,68 utilizados) e a tela do 1200 de 08/2026.
+    meses:
+      "2026-01": { sld_cred: 0.00,      cred_receb: 62720.00, cred_util: 62720.00 }
+      "2026-02": { sld_cred: 0.00,      cred_receb: 62720.00, cred_util: 42450.48 }
+      "2026-03": { sld_cred: 20269.52,  cred_receb: 62720.00, cred_util: 82989.52 }
+      "2026-04": { sld_cred: 0.00,      cred_receb: 62720.00, cred_util: 10168.81 }
+      "2026-05": { sld_cred: 52551.19,  cred_receb: 62720.00, cred_util: 67288.96 }
+      "2026-06": { sld_cred: 47982.23,  cred_receb: 62720.00, cred_util: 18857.22 }
+      "2026-07": { sld_cred: 91845.01,  cred_receb: 62720.00, cred_util: 46138.68 }
+      "2026-08": { sld_cred: 108426.33, cred_receb: 62720.00, cred_util: 108858.68 }

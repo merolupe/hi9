@@ -251,7 +251,7 @@ saldo credor, então a hipótese não foi testada contra documento.
 
 **Padrão assumido:** fica fora do cálculo e abate só a dedução.
 
-## 15. 🟡 Crédito outorgado de MS — o controle entrou; falta a base dos 30%
+## 15. 🟢 Crédito outorgado de MS — o controle e o teto de 30%
 
 O benefício de Rio Brilhante tem um **estoque** de crédito outorgado, controlado
 à parte pelo time fiscal sob o código de ajuste **MS090004** — "Apropriação de
@@ -316,6 +316,26 @@ de **62.720,00**. Lendo `valor_contabil`, como está hoje em
 `controle_de_creditos.yaml` (`campo_do_valor`), a ferramenta fica 5.017,60
 abaixo da EFD. Falta saber em que coluna do extrato do Livro os 62.720,00
 aparecem.
+
+**O teto dos 30% — adotado em 06/10/2026 (versão 0.1.32).** O item 1 foi
+respondido pelo time: o crédito disponível — o saldo transportado do mês
+anterior mais o recebido no mês — pode ser usado até **30% do saldo devedor do
+próprio mês**. A base é a linha 011 do Registro de Rio Brilhante antes do uso
+do crédito, já com o saldo de Corumbá recebido pela centralização. A EFD de 01
+a 08/2026 confirma a regra como teto: nenhum mês passou dele, e maio chegou a
+29,6%. O percentual mora em `controle_de_creditos.yaml`, com vigência, e a aba
+`REGISTRO 1200` mostra o disponível, o teto e o total a utilizar. Quanto usar,
+dentro do teto, continua declarado na linha 006.
+
+**A coluna do recebido — contornada.** O Livro só traz o valor do documento
+(57.702,40). O crédito da NF-e passa a ser declarado por competência em
+`saldos.yaml` (`recebido_por_estabelecimento`): 62.720,00 em 09/2026. Sem a
+declaração, vale o Livro, e a aba diz a diferença.
+
+**Atenção ao benefício.** A dedução da linha 012 não passa do saldo devedor.
+Usar o crédito acima de *saldo devedor − benefício* zera o imposto antes do
+benefício entrar inteiro: o excedente sai do estoque sem reduzir o que se
+recolhe.
 
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 
