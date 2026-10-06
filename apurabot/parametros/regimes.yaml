@@ -45,16 +45,12 @@ regimes:
       aba ENTRADAS, colunas "Parcela não tributada" e "Valor ICMS a estornar".
     vigencia_inicio: 2025-01-01
     formula_estorno: proporcional_parcela_nao_tributada
-    # A partir de 09/2026 a tabela entra pela CARGA EFETIVA, não pela
-    # alíquota: o benefício se dá pelo destaque. Nota que já veio com a base
-    # reduzida (carga 4%) não estorna; nota cheia a 7% estorna 42,86%, a 12%
-    # estorna 66,67%. Julho e agosto foram declarados pela alíquota e
-    # continuam assim.
-    formulas_por_vigencia:
-      - vigencia_inicio: 2026-09-01
-        formula_estorno: proporcional_carga_efetiva
-        carga_saida_referencia: 4.0
-        casas_decimais_da_parcela: 4
+    # A chave é a ALÍQUOTA NOMINAL da nota, também na nota que já veio com a
+    # base reduzida: o crédito fica limitado a 4% da base de cálculo. Zinco a
+    # 7% reduzido a carga de 4% estorna 42,86%; retorno a 12% reduzido,
+    # 66,67%. A leitura pela carga efetiva (4% do valor da operação) chegou a
+    # valer no main para 09/2026 e foi revertida em 06/10/2026, antes de
+    # setembro ser transmitido — decisão pendente nº 20.
     # A APURAÇÃO EFETIVA mostra a alíquota da nota e a redução de base.
     mostra_reducao_de_base: true
     base_do_estorno: valor_icms
@@ -105,16 +101,12 @@ regimes:
     vigencia_inicio: 2025-01-01
     homologado: true
     formula_estorno: proporcional_parcela_nao_tributada
-    # A partir de 09/2026 a tabela entra pela CARGA EFETIVA, não pela
-    # alíquota: o benefício se dá pelo destaque. Nota que já veio com a base
-    # reduzida (carga 4%) não estorna; nota cheia a 7% estorna 42,86%, a 12%
-    # estorna 66,67%. Julho e agosto foram declarados pela alíquota e
-    # continuam assim.
-    formulas_por_vigencia:
-      - vigencia_inicio: 2026-09-01
-        formula_estorno: proporcional_carga_efetiva
-        carga_saida_referencia: 4.0
-        casas_decimais_da_parcela: 4
+    # A chave é a ALÍQUOTA NOMINAL da nota, também na nota que já veio com a
+    # base reduzida: o crédito fica limitado a 4% da base de cálculo. Zinco a
+    # 7% reduzido a carga de 4% estorna 42,86%; retorno a 12% reduzido,
+    # 66,67%. A leitura pela carga efetiva (4% do valor da operação) chegou a
+    # valer no main para 09/2026 e foi revertida em 06/10/2026, antes de
+    # setembro ser transmitido — decisão pendente nº 20.
     # A APURAÇÃO EFETIVA mostra a alíquota da nota e a redução de base.
     mostra_reducao_de_base: true
     base_do_estorno: valor_icms

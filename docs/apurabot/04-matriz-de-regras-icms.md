@@ -197,35 +197,34 @@ está na `BASE TRATADA`.
 
 ## 4. MS — estorno proporcional, atividade e benefício de Rio Brilhante
 
-### 4.1. O estorno é fórmula — pela carga efetiva, a partir de 09/2026
+### 4.1. O estorno é fórmula — pela alíquota nominal da nota
 
-**A partir de 09/2026 a tabela entra pela carga efetiva**, não pela alíquota: o
-benefício se dá pelo destaque. A tabela "Carga Tributária ICMS" do time fiscal
-é a de **redução de base** — quanto o fornecedor reduz a base para cada
-alíquota chegar a 4%. Nota que já veio com a base reduzida chegou a 4% e não
-estorna; nota cheia estorna a redução que não foi feita na origem:
+A tabela de MS é **travada pela alíquota da nota**, também quando o fornecedor
+já reduziu a base e a carga efetiva chegou a 4%:
 
-```
-parcela estornada = 1 − 4% ÷ carga efetiva
-```
+| Alíquota da nota | % do crédito estornado |
+|---|---|
+| 4% | 0,00% |
+| 7% | 42,86% |
+| 12% | 66,67% |
+| 17% | 76,47% |
 
-| Nota | Alíquota | Redução de base | Carga efetiva | Estorno |
-|---|---|---|---|---|
-| Zinco, base reduzida | 7% | 42,86% | 4% | 0,00% |
-| Retorno de armazém, base reduzida | 12% | 66,67% | 4% | 0,00% |
-| Saco, base cheia | 7% | — | 7% | 42,86% |
-| Frete, base cheia | 12% | — | 12% | 66,67% |
+O crédito que fica é **4% da base de cálculo**. Exemplo do time, o silicato de
+cálcio: valor 5.497,32, base 3.141,16 (reduzida em 42,86%), alíquota 7%, ICMS
+219,88. Estorna 42,86% = 94,24 e fica 125,64 — 4% da base, 2,29% do valor.
 
-A APURAÇÃO EFETIVA de MS mostra a cadeia inteira: alíquota da nota e redução
-de base nas duas últimas colunas, carga efetiva e % do crédito estornado no
-meio. Em 09/2026 o estorno de Rio Brilhante foi de R$ 102.458,58 (pela
-alíquota) para R$ 50.402,49.
+**A leitura pela carga efetiva foi tentada e revertida.** Por ela (crédito
+limitado a 4% do valor da operação), nota que já chega a 4% não estornaria, e
+o estorno de Rio Brilhante em 09/2026 cairia de R$ 102.458,58 para
+R$ 50.402,49. Chegou ao main em 06/10/2026 e foi revertida no mesmo dia, antes
+de setembro ser transmitido: vale a alíquota nominal, como em julho e agosto.
+A dúvida fica registrada na decisão pendente nº 20.
 
-**Até 08/2026** — e é como julho e agosto foram declarados, reproduzidos ao
-centavo — a chave foi a alíquota, como descrito abaixo. A vigência está em
-`regimes.yaml` (`formulas_por_vigencia`).
+A APURAÇÃO EFETIVA de MS mostra a cadeia inteira: carga efetiva e % do
+crédito estornado no meio, alíquota da nota e redução de base nas duas
+últimas colunas — é o que explica por que a nota de carga 4% estorna 42,86%.
 
-#### Até 08/2026: a chave era a alíquota
+#### A mecânica
 
 Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor contábil. O
 crédito é limitado à **carga de referência de 4%**, e o que passa dela se estorna:

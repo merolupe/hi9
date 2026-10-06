@@ -347,8 +347,8 @@ seguinte**. Usar o crédito acima de *saldo devedor − benefício* zera o impos
 antes do benefício entrar inteiro: o excedente sai do estoque sem reduzir o que
 se recolhe, e o benefício que não coube se perde. O crédito a utilizar é o
 menor de três limites: (a) o teto de 30%, (b) o saldo devedor que o benefício
-não cobre e (c) o disponível. Em 09/2026: 67.888,56, 52.636,20 e 125.007,65 —
-a utilizar 52.636,20. Uso declarado acima de (b) sai pendente, com o benefício
+não cobre e (c) o disponível — o menor deles é o total a utilizar, que a aba
+`REGISTRO 1200` mostra a cada competência. Uso declarado acima de (b) sai pendente, com o benefício
 perdido.
 
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
@@ -426,3 +426,24 @@ sobre benefício que não foi fruído.
 012? Até a resposta, a aba `REGISTRO 1200` mostra as duas bases lado a lado,
 e a guia continua sobre o calculado. Com o uso recomendado (decisão nº 15), as
 duas coincidem.
+
+## 20. 🟡 MS — o limite de 4% é sobre a base de cálculo ou sobre o valor?
+
+O estorno proporcional de MS limita o crédito a 4%. Na nota cheia as duas
+leituras dão o mesmo; na nota que o fornecedor já entregou com a base reduzida
+(Convênio 100/97), elas se separam:
+
+| | Pela alíquota nominal (vale) | Pela carga efetiva |
+|---|---|---|
+| Limite | 4% da **base de cálculo** | 4% do **valor da operação** |
+| Silicato 7%, base reduzida em 42,86% | estorna 42,86%: fica 125,64 | não estorna: fica 219,88 |
+| Rio Brilhante, 09/2026 | estorno de 102.458,58 | estorno de 50.402,49 |
+
+**Padrão adotado (06/10/2026):** alíquota nominal, como julho e agosto foram
+declarados e como a apuração individualizada de Corumbá calcula a "parcela não
+tributada". A leitura pela carga efetiva chegou a valer no main para 09/2026 e
+foi revertida antes da transmissão.
+
+**Pergunta ao consultor:** na entrada de insumo com base reduzida, em que a
+carga efetiva já é 4%, o estorno se aplica de novo pela alíquota nominal da
+nota, ou a nota já está no limite?
