@@ -299,7 +299,7 @@ def test_sp_de_setembro_isentos_continuam_isentos(parametros):
     assert r.estorno == 0.0
 
 
-# -- MS a partir de 09/2026: a tabela entra pela carga efetiva ----------------
+# -- MS: a chave é a alíquota nominal, também com a base reduzida -------------
 
 def _ms(data, categoria, carga, icms, contabil, aliquota):
     import datetime as dt
@@ -310,23 +310,27 @@ def _ms(data, categoria, carga, icms, contabil, aliquota):
     return linha
 
 
+@pytest.mark.parametrize("data", [(2026, 8, 31), (2026, 9, 10), (2026, 10, 1)])
 @pytest.mark.parametrize("aliquota, carga, percentual", [
-    (7.0, 4.0, 0.0),        # base reduzida pelo fornecedor: já chegou a 4%
-    (12.0, 4.0, 0.0),       # retorno de armazém com a base reduzida
-    (17.0, 4.0, 0.0),       # importação a 17% com a base reduzida
+    (7.0, 4.0, 0.4286),     # base reduzida pelo fornecedor: estorna de novo
+    (12.0, 4.0, 0.6667),    # retorno de armazém com a base reduzida
+    (17.0, 4.0, 0.7647),    # importação a 17% com a base reduzida
     (7.0, 7.0, 0.4286),     # nota cheia a 7%
     (12.0, 12.0, 0.6667),   # frete cheio a 12%
+    (4.0, 4.0, 0.0),        # alíquota de 4%: nada a estornar
 ])
-def test_ms_de_setembro_estorna_pela_carga_efetiva(parametros, aliquota, carga,
-                                                   percentual):
+def test_ms_estorna_pela_aliquota_nominal(parametros, data, aliquota, carga,
+                                          percentual):
+    """O crédito fica em 4% da base de cálculo — antes e depois de 09/2026."""
     icms = 10_000.0 * carga / 100
-    r = calcular(_ms((2026, 9, 10), "embalagem", carga, icms, 10_000.0, aliquota),
+    r = calcular(_ms(data, "embalagem", carga, icms, 10_000.0, aliquota),
                  parametros)
     assert r.estorno == pytest.approx(icms * percentual, abs=0.005)
 
 
-def test_ms_ate_agosto_continua_pela_aliquota(parametros):
-    """Julho e agosto foram declarados assim: 7% reduzida a 4% estorna 42,86%."""
-    r = calcular(_ms((2026, 8, 31), "embalagem", 4.0, 400.0, 10_000.0, 7.0),
+def test_silicato_com_base_reduzida_fica_com_4_da_base(parametros):
+    """O exemplo do time: 5.497,32 de valor, base 3.141,16 a 7%, ICMS 219,88."""
+    r = calcular(_ms((2026, 9, 10), "embalagem", 4.0, 219.88, 5_497.32, 7.0),
                  parametros)
-    assert r.estorno == pytest.approx(400.0 * 0.4286, abs=0.005)
+    assert r.estorno == pytest.approx(94.24, abs=0.005)
+    assert 219.88 - r.estorno == pytest.approx(3_141.16 * 0.04, abs=0.01)

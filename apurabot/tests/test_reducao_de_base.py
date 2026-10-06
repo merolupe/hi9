@@ -81,11 +81,13 @@ def test_a_reducao_explica_a_carga(planilha, produto, carga, aliquota, reducao):
     assert linha[12] == pytest.approx(reducao, abs=0.00005)
 
 
-def test_quem_ja_veio_reduzido_nao_estorna_e_quem_veio_cheio_estorna(planilha):
+def test_o_estorno_e_pela_aliquota_mesmo_com_a_base_reduzida(planilha):
+    """Zinco reduzido a 4% estorna como o saco cheio: os dois são de 7%."""
     linhas = _linhas_de_produto(planilha)
-    assert linhas["ZINCO 15 GR"][9] == pytest.approx(0.0)
-    assert linhas["CLORETO DE AMONIO"][9] == pytest.approx(0.0)
+    assert linhas["ZINCO 15 GR"][9] == pytest.approx(3_299.84 * 0.4286, abs=0.01)
     assert linhas["SACO SOLD. 50KG"][9] == pytest.approx(3_351.60 * 0.4286, abs=0.01)
+    assert linhas["CLORETO DE AMONIO"][9] == pytest.approx(16_638.72 * 0.6667,
+                                                            abs=0.01)
 
 
 def test_cada_linha_da_aba_diz_a_filial_e_o_filtro_esta_nela(planilha):
