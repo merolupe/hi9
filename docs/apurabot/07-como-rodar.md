@@ -226,7 +226,7 @@ dentro, com todas as colunas do Sankhya. É um arquivo só, ida e volta.
 
 *Tem documento* — "esta nota foi lançada errada", "esta entrada não devia ter
 crédito". Preencha na **linha da nota**, na aba `BASE TRATADA`, nas cinco
-colunas de cabeçalho marrom:
+primeiras colunas de cabeçalho marrom:
 
 | Coluna | O que informar |
 |---|---|
@@ -237,6 +237,27 @@ colunas de cabeçalho marrom:
 | `ajuste_aprovador` | quem aprovou |
 
 Estabelecimento e atividade não se digitam: a linha já diz os dois.
+
+**A atividade da linha, quando o caso foge do CFOP (MS).** Em Rio Brilhante e
+Corumbá a atividade sai do CFOP — e é ela que dimensiona o benefício. Quando
+uma operação específica não é o que o CFOP diz, marque as linhas dela nas
+outras quatro colunas marrons:
+
+| Coluna | O que informar |
+|---|---|
+| `atividade_ajustada` | `industrial`, `comercial`, `importados` ou `prestacional_outras` |
+| `atividade_motivo` | por quê (obrigatório) |
+| `atividade_responsavel` | quem apurou |
+| `atividade_aprovador` | quem aprovou |
+
+Exemplo: matéria-prima comprada por transmissão de propriedade com a
+mercadoria já no armazém (2923), que volta por retorno de armazenagem (2906)
+para ir à produção. Pelo CFOP as duas são comerciais; marcadas, vão para o
+industrial — e o benefício cai, porque o crédito industrial abate o saldo
+devedor sobre o qual ele incide. A marca vale só para as linhas marcadas: a
+regra do CFOP continua a mesma para as outras notas. Sem motivo, responsável
+ou aprovador, a linha sai `SEM REGRA` e bloqueia o fechamento. Fora de MS a
+coluna não tem efeito.
 
 *Não tem documento* — uma parcela do Registro que não pertence a nota nenhuma.
 Vai na aba **`AJUSTES MANUAIS`**, bloco `PARCELAS SEM DOCUMENTO`, com o estabelecimento

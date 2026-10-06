@@ -215,6 +215,15 @@ Efeito medido em 08/2026: os R$ 55.369,48 de crédito das três linhas de Rio
 Brilhante saem de `SEM REGRA` para Comercial. O crédito industrial não muda, e
 **o benefício fiscal fica idêntico** — R$ 442.528,58.
 
+**Exceção por caso — 06/10/2026 (versão 0.1.33).** A regra continua: 2923 é
+comercial. Mas em 09/2026 apareceu a compra de matéria-prima por transmissão de
+propriedade com a mercadoria já no armazém (NK 42-00-05 e cloreto de amônio,
+em Rio Brilhante), que volta por retorno de armazenagem e vai à produção. Não
+é regra do produto nem do CFOP: é o caso. O time fiscal marca as linhas da
+operação na `BASE TRATADA`, coluna `atividade_ajustada`, com aprovação. Em
+09/2026, marcando a compra (2923) e os retornos (2906), o benefício de Rio
+Brilhante cai de R$ 173.659,00 para R$ 122.366,82.
+
 ## 14. 🟢 Saldo credor de abertura — respondida para 07/2026
 
 A linha 009 do Registro é o crédito que veio do mês anterior. Não está no Livro

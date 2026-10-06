@@ -10,8 +10,17 @@ exclusivamente sobre o saldo devedor da atividade industrial. Sem esta camada
 não existe "crédito da parcela incentivada", e o benefício não tem como ser
 calculado.
 
-Ordem de avaliação: descrição primeiro, CFOP depois. O que não casar em nenhuma
-regra recebe `SEM REGRA` e bloqueia o encerramento da competência.
+Ordem de avaliação: a atividade declarada na linha, a descrição, o CFOP. O que
+não casar em nenhuma regra recebe `SEM REGRA` e bloqueia o encerramento da
+competência.
+
+A atividade declarada é para o caso, não para a regra. Quando uma operação foge
+do que o CFOP diz — matéria-prima comprada por transmissão de propriedade com a
+mercadoria já no armazém, que volta por retorno de armazenagem (CFOP comercial)
+para ir à produção —, o time fiscal marca as linhas dela na BASE TRATADA, na
+coluna `atividade_ajustada`, com motivo, responsável e aprovador, e devolve o
+arquivo. Como todo ajuste: declarada sem aprovação, não vale — a linha sai
+`SEM REGRA` e diz o que falta, em vez de cair no CFOP calada.
 
 Uma regra de descrição pode declarar `vigencia_inicio` e `vigencia_fim`: aí é a
 data do movimento do documento que decide se ela se aplica. É o que permite
@@ -72,6 +81,11 @@ def classificar(
     entrada = str(linha.dados.get("entrada_saida") or "") != "Saída"
     lado = "credito" if entrada else "debito"
 
+    # 0. A atividade declarada para a linha vence tudo — é decisão do caso.
+    declarada = _declarada(linha.dados, mapa, destino)
+    if declarada is not None:
+        return declarada
+
     # 1. A descrição vence o CFOP.
     #
     # O CFOP do serviço de transporte diz quem contratou o frete, não o que o
@@ -110,6 +124,37 @@ def classificar(
         ),
         destino=destino,
     )
+
+
+def _declarada(dados: dict[str, Any], mapa: dict[str, Any],
+               destino: str | None) -> ResultadoAtividade | None:
+    """A atividade informada na coluna `atividade_ajustada`, se houver."""
+    valor = " ".join(str(dados.get("atividade_ajustada") or "").split())
+    if not valor:
+        return None
+    validas = {a.casefold(): a for a in (mapa.get("por_cfop") or {})}
+    atividade = validas.get(valor.casefold().replace("/", "_").replace(" ", "_"))
+    faltam = [
+        rotulo for campo, rotulo in (
+            ("atividade_motivo", "motivo"),
+            ("atividade_responsavel", "responsável"),
+            ("atividade_aprovador", "aprovador"),
+        )
+        if not str(dados.get(campo) or "").strip()
+    ]
+    if atividade is None:
+        motivo = (f"atividade declarada {valor!r} não existe — use "
+                  + ", ".join(sorted(validas.values())))
+    elif faltam:
+        motivo = (f"atividade {atividade} declarada sem "
+                  + ", ".join(faltam) + " — preencha para valer")
+    else:
+        return ResultadoAtividade(
+            atividade=atividade,
+            regra=f"declarada na linha: {str(dados['atividade_motivo']).strip()}",
+            destino=destino,
+        )
+    return ResultadoAtividade(atividade=SEM_REGRA, regra=motivo, destino=destino)
 
 
 def _vigente(regra: dict[str, Any], data) -> bool:

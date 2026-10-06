@@ -96,6 +96,9 @@ CAMPOS_ESSENCIAIS = frozenset(COLUNAS[c] for c in ESSENCIAIS)
 COLUNAS_DE_AJUSTE = (
     "ajuste_linha", "ajuste_valor", "ajuste_motivo",
     "ajuste_responsavel", "ajuste_aprovador",
+    # A atividade declarada para a linha — ver `nucleo/atividade.py`.
+    "atividade_ajustada", "atividade_motivo",
+    "atividade_responsavel", "atividade_aprovador",
 )
 
 #: Todo nome de campo que o leitor reconhece como cabeçalho.
