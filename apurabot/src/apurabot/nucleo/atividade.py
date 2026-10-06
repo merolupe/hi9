@@ -126,6 +126,13 @@ def classificar(
     )
 
 
+#: Os nomes que o time fiscal escreve — os mesmos que a planilha mostra.
+APELIDOS = {
+    "produção": INDUSTRIAL, "producao": INDUSTRIAL,
+    "prestacional": PRESTACIONAL, "outras": PRESTACIONAL,
+}
+
+
 def _declarada(dados: dict[str, Any], mapa: dict[str, Any],
                destino: str | None) -> ResultadoAtividade | None:
     """A atividade informada na coluna `atividade_ajustada`, se houver."""
@@ -133,7 +140,8 @@ def _declarada(dados: dict[str, Any], mapa: dict[str, Any],
     if not valor:
         return None
     validas = {a.casefold(): a for a in (mapa.get("por_cfop") or {})}
-    atividade = validas.get(valor.casefold().replace("/", "_").replace(" ", "_"))
+    chave = "_".join(valor.casefold().replace("/", " ").split())
+    atividade = validas.get(APELIDOS.get(chave, chave))
     faltam = [
         rotulo for campo, rotulo in (
             ("atividade_motivo", "motivo"),
@@ -144,7 +152,7 @@ def _declarada(dados: dict[str, Any], mapa: dict[str, Any],
     ]
     if atividade is None:
         motivo = (f"atividade declarada {valor!r} não existe — use "
-                  + ", ".join(sorted(validas.values())))
+                  "Produção, Comercial, Importados ou Prestacional / Outras")
     elif faltam:
         motivo = (f"atividade {atividade} declarada sem "
                   + ", ".join(faltam) + " — preencha para valer")

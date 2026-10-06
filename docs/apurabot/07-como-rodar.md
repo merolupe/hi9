@@ -245,7 +245,7 @@ outras quatro colunas marrons:
 
 | Coluna | O que informar |
 |---|---|
-| `atividade_ajustada` | `industrial`, `comercial`, `importados` ou `prestacional_outras` |
+| `atividade_ajustada` | `Produção` (ou `industrial`), `Comercial`, `Importados` ou `Prestacional / Outras` |
 | `atividade_motivo` | por quê (obrigatório) |
 | `atividade_responsavel` | quem apurou |
 | `atividade_aprovador` | quem aprovou |
