@@ -16,10 +16,18 @@ em lugares diferentes — o saldo declarado em `saldos.yaml`, a nota no Livro
 Fiscal e o ajuste declarado na linha 006 — e fecha a conta. Se o uso passar do
 que o estoque tem, o 1200 sai marcado em vez de ficar negativo.
 
-O que ela mostra é o limite: o disponível (saldo transportado + recebido) pode
-ser usado até um percentual do saldo devedor do próprio mês — a linha 011 do
-Registro, antes do uso. O total a utilizar é o menor dos dois, e uso declarado
-acima do teto sai pendente.
+O que ela mostra é quanto usar — o menor de três limites:
+
+    (a) o teto: um percentual do saldo devedor do próprio mês (a linha 011 do
+        Registro, antes do uso);
+    (b) o saldo devedor que o benefício fiscal não cobre. O benefício é
+        dedução da linha 012, depois do saldo devedor, e não passa dele; a
+        sobra não vai para o mês seguinte. Usar o crédito acima de (b) tira do
+        estoque o que o benefício cobriria de graça;
+    (c) o disponível: saldo transportado + recebido.
+
+Uso declarado acima de (a) ou de (c) sai pendente; acima de (b), sai pendente
+com o benefício que deixou de ser aproveitado.
 
 Os parâmetros estão em `parametros/controle_de_creditos.yaml`.
 """
@@ -87,6 +95,13 @@ class Controle:
     saldo_devedor: float | None = None
     #: Percentual do saldo devedor que limita o uso; `None` = sem teto vigente.
     percentual_do_teto: float | None = None
+    #: O benefício fiscal calculado do mês (dedução da linha 012), antes do
+    #: limite do saldo devedor. Zero quando o estabelecimento não tem.
+    beneficio: float = 0.0
+    #: Parte do saldo devedor que veio de outro estabelecimento (centralização).
+    recebido_da_centralizacao: float = 0.0
+    #: Percentual do FADEFE sobre o benefício; zero quando não há.
+    percentual_fadefe: float = 0.0
 
     @property
     def recebido_no_livro(self) -> float:
@@ -111,11 +126,31 @@ class Controle:
         return round(self.saldo_devedor * self.percentual_do_teto / 100, 2)
 
     @property
+    def nao_coberto_pelo_beneficio(self) -> float | None:
+        """(b) O saldo devedor que sobra depois do benefício."""
+        if self.saldo_devedor is None:
+            return None
+        return round(max(self.saldo_devedor - self.beneficio, 0.0), 2)
+
+    @property
     def a_utilizar(self) -> float:
-        """O máximo a usar no mês: o disponível, limitado ao teto."""
-        if self.teto is None:
-            return self.disponivel
-        return max(min(self.disponivel, self.teto), 0.0)
+        """Quanto usar no mês: o menor entre o teto, o que o benefício não
+        cobre e o disponível."""
+        limites = [self.disponivel, self.teto, self.nao_coberto_pelo_beneficio]
+        return round(max(min(v for v in limites if v is not None), 0.0), 2)
+
+    # -- o resultado de um uso ------------------------------------------
+
+    def beneficio_deduzido(self, uso: float) -> float:
+        """A linha 012 com esse uso: o benefício, até o saldo devedor."""
+        devedor = max((self.saldo_devedor or 0.0) - uso, 0.0)
+        return round(min(self.beneficio, devedor), 2)
+
+    def beneficio_perdido(self, uso: float) -> float:
+        return round(self.beneficio - self.beneficio_deduzido(uso), 2)
+
+    def a_recolher(self, uso: float) -> float:
+        return round(max((self.saldo_devedor or 0.0) - uso - self.beneficio, 0.0), 2)
 
     @property
     def utilizado(self) -> float:
@@ -152,6 +187,14 @@ class Controle:
                 f"o utilizado ({_brl(self.utilizado)}) passa do teto de "
                 f"{self.percentual_do_teto:g}% do saldo devedor "
                 f"({_brl(self.teto)}) — confira o ajuste da linha 006"
+            )
+        perdido = self.beneficio_perdido(self.utilizado) if self.utilizado else 0.0
+        if self.saldo_devedor is not None and perdido >= CENTAVO:
+            motivos.append(
+                f"o utilizado deixa {_brl(perdido)} do benefício sem aproveitar "
+                f"— a sobra não passa para o mês seguinte; o uso que zera o "
+                f"imposto com o benefício inteiro é "
+                f"{_brl(self.nao_coberto_pelo_beneficio)}"
             )
         if (self.saldo_inicial is not None and self.saldo_final_anterior is not None
                 and abs(self.saldo_inicial - self.saldo_final_anterior) >= CENTAVO):
@@ -251,6 +294,13 @@ def montar(apuracao, params, ajustes=None) -> list[Controle]:
                              for r in reg.montar(apuracao, params, ajustes)}
             controle.saldo_devedor = _saldo_devedor_antes_do_uso(
                 registros.get(nome), controle.utilizado)
+        filial = apuracao.filiais.get(nome)
+        if filial is not None:
+            controle.beneficio = round(filial.credito_presumido, 2)
+            if filial.beneficio:
+                controle.percentual_fadefe = filial.beneficio.percentual_fadefe
+            controle.recebido_da_centralizacao = round(
+                apuracao.centralizacao_no_registro(nome).recebe_debito, 2)
         controles.append(controle)
     return controles
 

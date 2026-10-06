@@ -176,12 +176,25 @@ def test_a_conta_do_uso_chega_ao_numero_do_motor(gerada, planilha, parametros):
     aba = planilha["REGISTRO 1200"]
     for rotulo, esperado in (
         ("Total de crédito disponível", controle.disponivel),
-        ("30% do saldo devedor", controle.teto),
+        ("(a) 30% do saldo devedor", controle.teto),
+        ("(b) Saldo devedor que o benefício não cobre",
+         controle.nao_coberto_pelo_beneficio),
         ("Total de crédito a utilizar", controle.a_utilizar),
     ):
         n = _linha(aba, rotulo)
         assert str(aba[f"B{n}"].value).startswith("="), rotulo
         assert avaliar(aba, f"B{n}") == pytest.approx(esperado, abs=CENTAVO), rotulo
+
+    # O resultado: a coluna C é o uso recomendado, que não perde benefício.
+    uso = controle.a_utilizar
+    for rotulo, esperado in (
+        ("Benefício deduzido (linha 012)", controle.beneficio_deduzido(uso)),
+        ("Benefício não aproveitado", 0.0),
+        ("ICMS a recolher", controle.a_recolher(uso)),
+        ("Saldo a transportar para o mês seguinte", controle.disponivel - uso),
+    ):
+        n = _linha(aba, rotulo)
+        assert avaliar(aba, f"C{n}") == pytest.approx(esperado, abs=CENTAVO), rotulo
 
 
 # -- RESUMO E DETALHES: as memórias em fórmula --------------------------------

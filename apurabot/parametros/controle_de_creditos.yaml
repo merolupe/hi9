@@ -30,6 +30,11 @@
 # sai pendente. O teto de 30% foi conferido contra a EFD de 01 a 08/2026: o uso
 # ficou abaixo dele em todos os meses (maio chegou a 29,6%).
 #
+# Abaixo do teto, o benefício também limita: ele é dedução da linha 012, não
+# passa do saldo devedor e a sobra não vai para o mês seguinte. O crédito a
+# utilizar é o menor entre o teto, o saldo devedor que o benefício não cobre e
+# o disponível — conta, não parâmetro.
+#
 # Fonte: EFD de Rio Brilhante de 01 a 07/2026 (planilha "SPED Jan-Jul 2026
 # Consolidado") e o relatório de Ajuste de Apuração do Sankhya de 08/2026.
 # Decisão pendente nº 15 em docs/apurabot/06-decisoes-pendentes.md.

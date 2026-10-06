@@ -332,10 +332,15 @@ dentro do teto, continua declarado na linha 006.
 `saldos.yaml` (`recebido_por_estabelecimento`): 62.720,00 em 09/2026. Sem a
 declaração, vale o Livro, e a aba diz a diferença.
 
-**Atenção ao benefício.** A dedução da linha 012 não passa do saldo devedor.
-Usar o crédito acima de *saldo devedor − benefício* zera o imposto antes do
-benefício entrar inteiro: o excedente sai do estoque sem reduzir o que se
-recolhe.
+**O benefício limita o uso — respondido em 06/10/2026.** A dedução da linha
+012 não passa do saldo devedor, e **a sobra do benefício não passa para o mês
+seguinte**. Usar o crédito acima de *saldo devedor − benefício* zera o imposto
+antes do benefício entrar inteiro: o excedente sai do estoque sem reduzir o que
+se recolhe, e o benefício que não coube se perde. O crédito a utilizar é o
+menor de três limites: (a) o teto de 30%, (b) o saldo devedor que o benefício
+não cobre e (c) o disponível. Em 09/2026: 67.888,56, 52.636,20 e 125.007,65 —
+a utilizar 52.636,20. Uso declarado acima de (b) sai pendente, com o benefício
+perdido.
 
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 
@@ -400,3 +405,15 @@ matéria-prima (mantém em SP, estorno proporcional em MS). Nesse caso o
 caminho certo é o fornecedor emitir a nota como venda ou bonificação, não
 como amostra; enquanto isso não acontece, a exceção vai por produto em
 `produtos.yaml`, e não pelo CFOP.
+
+## 19. 🟡 FADEFE — sobre o benefício calculado ou o deduzido?
+
+A guia do FADEFE (2%) sai hoje sobre o benefício **calculado** de Rio
+Brilhante. Quando o uso do crédito do art. 68 passa do saldo devedor que o
+benefício não cobre, a linha 012 deduz menos que o calculado — e a guia sairia
+sobre benefício que não foi fruído.
+
+**Pergunta:** a base do FADEFE é o benefício calculado ou o deduzido na linha
+012? Até a resposta, a aba `REGISTRO 1200` mostra as duas bases lado a lado,
+e a guia continua sobre o calculado. Com o uso recomendado (decisão nº 15), as
+duas coincidem.

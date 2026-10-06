@@ -179,8 +179,9 @@ def test_agosto_fecha_como_o_resumo_do_sped(reapurado, parametros):
     assert controle.utilizado == pytest.approx(UTILIZADO)
     assert controle.saldo_final == pytest.approx(62_287.65, abs=CENTAVO)
     # O Livro sintético tem saldo devedor de 17.000,00: o uso real de agosto
-    # passa do teto dele, e só isso fica pendente.
-    assert [p for p in controle.pendencias if "teto" not in p] == []
+    # passa do teto e do benefício dele, e só isso fica pendente.
+    assert [p for p in controle.pendencias
+            if "teto" not in p and "benefício" not in p] == []
     assert controle.linha_1200() == (
         "|1200|MS090004|108426,33|0|62720|108858,68|62287,65|")
     assert controle.linha_1210() == f"|1210|MS03||108858,68|{CHAVE}|"
@@ -286,6 +287,50 @@ def test_o_recebido_declarado_vale_sobre_o_livro(parametros, tmp_path):
     assert controle.linha_1200().split("|")[5] == "70000"
 
 
+def _setembro(**campos) -> cc.Controle:
+    """O 1200 de Rio Brilhante de 09/2026, com os números da simulação."""
+    controle = cc.Controle(
+        estabelecimento=RB, empresa=2, cod_aj_apur="MS090004", descricao="",
+        tipo_util="MS03", competencia="2026-09", saldo_inicial=62_287.65,
+        recebido_declarado=62_720.00, saldo_devedor=226_295.20,
+        percentual_do_teto=30.0, beneficio=173_659.00, percentual_fadefe=2.0,
+    )
+    for campo, valor in campos.items():
+        setattr(controle, campo, valor)
+    return controle
+
+
+def test_o_beneficio_limita_o_uso_abaixo_do_teto():
+    """Setembro: o teto é 67.888,56, mas o benefício cobre tudo menos 52.636,20."""
+    c = _setembro()
+    assert c.teto == pytest.approx(67_888.56)
+    assert c.nao_coberto_pelo_beneficio == pytest.approx(52_636.20)
+    assert c.a_utilizar == pytest.approx(52_636.20)
+    assert c.a_recolher(c.a_utilizar) == 0
+    assert c.beneficio_perdido(c.a_utilizar) == 0
+
+
+def test_usar_acima_do_que_o_beneficio_nao_cobre_perde_beneficio():
+    """62.720,00 zera o imposto igual, mas 10.083,80 de benefício não entram."""
+    c = _setembro(utilizacoes=[SimpleNamespace(valor=62_720.00)])
+    assert c.a_recolher(c.utilizado) == 0
+    assert c.beneficio_deduzido(c.utilizado) == pytest.approx(163_575.20)
+    assert c.beneficio_perdido(c.utilizado) == pytest.approx(10_083.80)
+    assert any("10.083,80 do benefício" in p for p in c.pendencias)
+
+
+def test_uso_dentro_dos_tres_limites_nao_tem_pendencia():
+    c = _setembro(utilizacoes=[SimpleNamespace(valor=52_636.20)],
+                  notas=[cc.NotaRecebida("247431", "23/09/2026", CHAVE, "", 57_702.40)])
+    assert c.pendencias == []
+
+
+def test_sem_beneficio_o_limite_e_o_teto():
+    c = _setembro(beneficio=0.0)
+    assert c.nao_coberto_pelo_beneficio == pytest.approx(226_295.20)
+    assert c.a_utilizar == pytest.approx(67_888.56)
+
+
 def test_o_historico_transmitido_fecha_mes_a_mes(parametros):
     """O SLD_CRED de cada mês é o SLD_CRED_FIM do anterior — a EFD entregue."""
     meses = sorted(parametros.transmitidos_do_controle(2, "MS090004").items())
@@ -308,8 +353,13 @@ def test_a_aba_mostra_o_ano_e_a_conta_do_uso(parametros, tmp_path):
     assert coluna_a[inicio:inicio + 9] == meses
     for rotulo in ("TXT do SPED", "Valor recebido por transf. de crédito",
                    "Valor transportado", "Total de crédito disponível",
-                   "Saldo devedor de Rio Brilhante", "30% do saldo devedor",
-                   "Total de crédito a utilizar"):
+                   "Saldo devedor de Rio Brilhante (antes do uso)",
+                   "(a) 30% do saldo devedor",
+                   "Benefício fiscal do mês (dedução da linha 012)",
+                   "(b) Saldo devedor que o benefício não cobre",
+                   "(c) Total de crédito disponível",
+                   "Total de crédito a utilizar", "Benefício não aproveitado",
+                   "Saldo a transportar para o mês seguinte"):
         assert rotulo in coluna_a, rotulo
     linha = coluna_a.index("Total de crédito a utilizar") + 1
     assert aba.cell(row=linha, column=2).value.startswith("=MAX(MIN(")

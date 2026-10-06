@@ -895,7 +895,7 @@ def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
     if not controles:
         return
     aba = wb.create_sheet(ABA_1200)
-    _larguras(aba, [34, 20, 18, 18, 18, 18, 18])
+    _larguras(aba, [48, 20, 18, 18, 18, 18, 18])
 
     competencia = apuracao.base.competencia
     aba.append([f"REGISTROS 1200 E 1210 DA EFD — competência {competencia}"])
@@ -954,43 +954,119 @@ def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
 
 
 def _conta_do_uso(aba, c, atual: int) -> None:
-    """Disponível = transportado + recebido; a utilizar = o menor entre ele e o teto."""
-    local = _nome_curto(c.estabelecimento)
-    percentual = c.percentual_do_teto
-    rotulos = [
-        ("Valor recebido por transf. de crédito", f"=E{atual}"),
-        ("Valor transportado",
-         f"=C{atual}" if c.saldo_inicial is not None else None),
-    ]
-    inicio = aba.max_row + 1
-    rotulos += [
-        ("Total de crédito disponível", f"=B{inicio}+B{inicio + 1}"),
-        (f"Saldo devedor de {local}", c.saldo_devedor),
-    ]
-    if percentual is not None:
-        rotulos += [
-            (f"{percentual:g}% do saldo devedor",
-             f"=ROUND(B{inicio + 3}*{percentual:g}/100,2)"),
-            ("Total de crédito a utilizar",
-             f"=MAX(MIN(B{inicio + 2},B{inicio + 4}),0)"),
-        ]
-    else:
-        rotulos.append(("Total de crédito a utilizar", f"=B{inicio + 2}"))
+    """Estoque, quanto usar e o resultado do uso — os três blocos da conta.
 
-    for rotulo, valor in rotulos:
-        aba.append([rotulo, valor])
+    Tudo em fórmula sobre as linhas de cima: quem confere vê de onde sai cada
+    número. Só o saldo devedor e o benefício entram como valor, porque vêm do
+    Registro.
+    """
+    linhas: dict[str, int] = {}
+
+    def rotulo(chave: str, texto: str, valor, *, recuo=False, destaque=False):
+        aba.append([("    " if recuo else "") + texto, valor])
         n = aba.max_row
-        aba.cell(row=n, column=1).font = TITULO
-        aba.cell(row=n, column=1).fill = FUNDO
+        linhas[chave] = n
+        celula = aba.cell(row=n, column=1)
+        if recuo:
+            celula.font = Font(italic=True, size=9)
+        else:
+            celula.font, celula.fill = TITULO, FUNDO
         aba.cell(row=n, column=2).number_format = MOEDA
         if valor is None:
             aba.cell(row=n, column=2).fill = FUNDO_ATENCAO
-    aba.cell(row=aba.max_row, column=2).font = Font(bold=True)
+        if destaque:
+            aba.cell(row=n, column=2).font = Font(bold=True)
+        return n
+
+    def b(chave: str) -> str:
+        return f"B{linhas[chave]}"
+
+    # -- 1. o estoque ------------------------------------------------------
+    rotulo("recebido", "Valor recebido por transf. de crédito", f"=E{atual}")
+    rotulo("transportado", "Valor transportado",
+           f"=C{atual}" if c.saldo_inicial is not None else None)
+    rotulo("disponivel", "Total de crédito disponível",
+           f"={b('recebido')}+{b('transportado')}", destaque=True)
+
+    # -- 2. quanto usar: o menor de três limites ---------------------------
+    _vazio(aba)
+    local = _nome_curto(c.estabelecimento)
+    rotulo("devedor", f"Saldo devedor de {local} (antes do uso)", c.saldo_devedor)
+    if c.saldo_devedor is not None and c.recebido_da_centralizacao:
+        rotulo("proprio", f"próprio de {local}",
+               round(c.saldo_devedor - c.recebido_da_centralizacao, 2), recuo=True)
+        rotulo("centralizado", "recebido pela centralização",
+               c.recebido_da_centralizacao, recuo=True)
+    limites = []
+    if c.percentual_do_teto is not None:
+        p = c.percentual_do_teto
+        rotulo("teto", f"(a) {p:g}% do saldo devedor",
+               f"=ROUND({b('devedor')}*{p:g}/100,2)")
+        limites.append(b("teto"))
+    rotulo("beneficio", "Benefício fiscal do mês (dedução da linha 012)",
+           c.beneficio)
+    rotulo("nao_coberto", "(b) Saldo devedor que o benefício não cobre",
+           f"=MAX({b('devedor')}-{b('beneficio')},0)")
+    limites.append(b("nao_coberto"))
+    rotulo("limite_disponivel", "(c) Total de crédito disponível",
+           f"={b('disponivel')}")
+    limites.append(b("limite_disponivel"))
+    rotulo("a_utilizar", "Total de crédito a utilizar",
+           f"=MAX(MIN({','.join(limites)}),0)", destaque=True)
+
+    # -- 3. o resultado: o uso declarado ao lado do recomendado -------------
+    _vazio(aba)
+    _cabecalho(aba, ["Resultado do uso", "Declarado (006)", "A utilizar"])
+    usos = {"B": f"=F{atual}", "C": f"={b('a_utilizar')}"}
+    resultado = [
+        ("uso", "Crédito usado", lambda col: usos[col]),
+        ("deduzido", "Benefício deduzido (linha 012)",
+         lambda col: f"=MIN({b('beneficio')},MAX({b('devedor')}-{col}{{uso}},0))"),
+        ("perdido", "Benefício não aproveitado",
+         lambda col: f"={b('beneficio')}-{col}{{deduzido}}"),
+        ("recolher", "ICMS a recolher",
+         lambda col: f"=MAX({b('devedor')}-{col}{{uso}}-{b('beneficio')},0)"),
+    ]
+    if c.percentual_fadefe:
+        f = c.percentual_fadefe
+        resultado += [
+            ("fadefe_calculado", f"FADEFE {f:g}% sobre o benefício calculado",
+             lambda col: f"=ROUND({b('beneficio')}*{f:g}/100,2)"),
+            ("fadefe_deduzido", f"FADEFE {f:g}% sobre o benefício deduzido",
+             lambda col: f"=ROUND({col}{{deduzido}}*{f:g}/100,2)"),
+        ]
+    resultado.append(("transportar", "Saldo a transportar para o mês seguinte",
+                      lambda col: f"={b('disponivel')}-{col}{{uso}}"))
+    for chave, texto, formula in resultado:
+        aba.append([texto])
+        n = aba.max_row
+        linhas[chave] = n
+        aba.cell(row=n, column=1).font = TITULO
+        aba.cell(row=n, column=1).fill = FUNDO
+        for coluna in ("B", "C"):
+            celula = aba[f"{coluna}{n}"]
+            celula.value = formula(coluna).format(**linhas)
+            celula.number_format = MOEDA
+    if c.utilizado and c.saldo_devedor is not None \
+            and c.beneficio_perdido(c.utilizado) >= 0.005:
+        aba[f"B{linhas['perdido']}"].fill = FUNDO_ATENCAO
+        aba[f"B{linhas['perdido']}"].font = VERMELHO
 
     notas = []
     if c.saldo_devedor is not None:
         notas.append("Saldo devedor: linha 011 do Registro, antes do uso do "
                      "crédito (já com o saldo recebido pela centralização).")
+    notas.append("O benefício é dedução da linha 012 e não passa do saldo "
+                 "devedor; a sobra não vai para o mês seguinte. Por isso o uso "
+                 "para em (b): acima dele, o crédito sai do estoque sem reduzir "
+                 "o imposto.")
+    if c.percentual_fadefe:
+        notas.append("FADEFE: a guia sai hoje sobre o benefício calculado; as "
+                     "duas bases ficam lado a lado até a confirmação (decisão "
+                     "pendente nº 19).")
+    if c.recebido > c.a_utilizar + 0.005:
+        notas.append(f"O recebido no mês passa do crédito a utilizar em "
+                     f"{_reais(c.recebido - c.a_utilizar)}: o estoque cresce.")
     if c.origem_do_saldo_inicial:
         notas.append(f"Valor transportado: {c.origem_do_saldo_inicial}.")
     if c.recebido_declarado is not None and abs(
