@@ -106,6 +106,43 @@ class Parametros:
             return None if valor is None else float(valor)
         return None
 
+    def recebido_do_controle(self, competencia: str, empresa: int,
+                             codigo: str) -> float | None:
+        """Crédito recebido no mês (CRÉD_RECEB), quando declarado.
+
+        A NF-e de transferência vem com desconto, e o Livro Fiscal só traz o
+        valor do documento. `None` quando não declarado: vale o Livro.
+        """
+        for item in self.saldos.get("creditos_controlados") or []:
+            if str(item.get("competencia") or "") != competencia:
+                continue
+            declarados = item.get("recebido_por_estabelecimento") or {}
+            por_codigo = declarados.get(empresa) or declarados.get(str(empresa))
+            valor = (por_codigo or {}).get(codigo)
+            return None if valor is None else float(valor)
+        return None
+
+    def transmitidos_do_controle(self, empresa: int,
+                                 codigo: str) -> dict[str, dict[str, float]]:
+        """O 1200 de cada mês já transmitido, por competência (AAAA-MM).
+
+        Cada mês traz `sld_cred`, `cred_apr`, `cred_receb` e `cred_util`; o
+        campo ausente é zero.
+        """
+        for item in self.saldos.get("creditos_controlados_transmitidos") or []:
+            if int(item.get("empresa") or 0) != int(empresa):
+                continue
+            if str(item.get("cod_aj_apur") or "") != codigo:
+                continue
+            return {
+                str(competencia): {
+                    campo: float((valores or {}).get(campo) or 0.0)
+                    for campo in ("sld_cred", "cred_apr", "cred_receb", "cred_util")
+                }
+                for competencia, valores in (item.get("meses") or {}).items()
+            }
+        return {}
+
 
 def carregar(pasta: Path | str | None = None) -> Parametros:
     """Lê os arquivos de parâmetros de `pasta` — os obrigatórios e os opcionais."""

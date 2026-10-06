@@ -251,7 +251,7 @@ saldo credor, então a hipótese não foi testada contra documento.
 
 **Padrão assumido:** fica fora do cálculo e abate só a dedução.
 
-## 15. 🟡 Crédito outorgado de MS — o controle entrou; falta a base dos 30%
+## 15. 🟢 Crédito outorgado de MS — o controle e o teto de 30%
 
 O benefício de Rio Brilhante tem um **estoque** de crédito outorgado, controlado
 à parte pelo time fiscal sob o código de ajuste **MS090004** — "Apropriação de
@@ -317,6 +317,31 @@ de **62.720,00**. Lendo `valor_contabil`, como está hoje em
 abaixo da EFD. Falta saber em que coluna do extrato do Livro os 62.720,00
 aparecem.
 
+**O teto dos 30% — adotado em 06/10/2026 (versão 0.1.32).** O item 1 foi
+respondido pelo time: o crédito disponível — o saldo transportado do mês
+anterior mais o recebido no mês — pode ser usado até **30% do saldo devedor do
+próprio mês**. A base é a linha 011 do Registro de Rio Brilhante antes do uso
+do crédito, já com o saldo de Corumbá recebido pela centralização. A EFD de 01
+a 08/2026 confirma a regra como teto: nenhum mês passou dele, e maio chegou a
+29,6%. O percentual mora em `controle_de_creditos.yaml`, com vigência, e a aba
+`REGISTRO 1200` mostra o disponível, o teto e o total a utilizar. Quanto usar,
+dentro do teto, continua declarado na linha 006.
+
+**A coluna do recebido — contornada.** O Livro só traz o valor do documento
+(57.702,40). O crédito da NF-e passa a ser declarado por competência em
+`saldos.yaml` (`recebido_por_estabelecimento`): 62.720,00 em 09/2026. Sem a
+declaração, vale o Livro, e a aba diz a diferença.
+
+**O benefício limita o uso — respondido em 06/10/2026.** A dedução da linha
+012 não passa do saldo devedor, e **a sobra do benefício não passa para o mês
+seguinte**. Usar o crédito acima de *saldo devedor − benefício* zera o imposto
+antes do benefício entrar inteiro: o excedente sai do estoque sem reduzir o que
+se recolhe, e o benefício que não coube se perde. O crédito a utilizar é o
+menor de três limites: (a) o teto de 30%, (b) o saldo devedor que o benefício
+não cobre e (c) o disponível. Em 09/2026: 67.888,56, 52.636,20 e 125.007,65 —
+a utilizar 52.636,20. Uso declarado acima de (b) sai pendente, com o benefício
+perdido.
+
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 
 O critério de classificação de frete em MS foi confirmado em 03/09/2026:
@@ -380,3 +405,15 @@ matéria-prima (mantém em SP, estorno proporcional em MS). Nesse caso o
 caminho certo é o fornecedor emitir a nota como venda ou bonificação, não
 como amostra; enquanto isso não acontece, a exceção vai por produto em
 `produtos.yaml`, e não pelo CFOP.
+
+## 19. 🟡 FADEFE — sobre o benefício calculado ou o deduzido?
+
+A guia do FADEFE (2%) sai hoje sobre o benefício **calculado** de Rio
+Brilhante. Quando o uso do crédito do art. 68 passa do saldo devedor que o
+benefício não cobre, a linha 012 deduz menos que o calculado — e a guia sairia
+sobre benefício que não foi fruído.
+
+**Pergunta:** a base do FADEFE é o benefício calculado ou o deduzido na linha
+012? Até a resposta, a aba `REGISTRO 1200` mostra as duas bases lado a lado,
+e a guia continua sobre o calculado. Com o uso recomendado (decisão nº 15), as
+duas coincidem.

@@ -173,11 +173,35 @@ Observação. O código de cada parcela calculada vem de
 tabela começa na segunda linha, sem linha em branco entre os estabelecimentos,
 e já sai com autofiltro.
 
-**REGISTRO 1200** — *como fica o estoque do crédito transferido?* Saldo
-inicial (de `saldos.yaml`) + recebido (a NF-e de CFOP 1601 do Livro) −
-utilizado (o ajuste da linha 006 com a observação padrão 87) = saldo final.
-O saldo final é fórmula. Sai com as linhas `|1200|` e `|1210|` como vão para o
-arquivo da EFD; o saldo final é a abertura do mês seguinte em `saldos.yaml`.
+**REGISTRO 1200** — *quanto do crédito transferido posso usar no mês?* Em
+cima, o 1200 de cada mês já transmitido no ano (em cinza, de `saldos.yaml`) e
+o do mês em apuração (em azul): saldo inicial + recebido − utilizado = saldo
+final, em fórmula. O utilizado é o ajuste da linha 006 com a observação padrão
+87. Depois vêm o 1210 e o **TXT do SPED**, com as linhas `|1200|` e `|1210|`
+como vão para o arquivo da EFD.
+
+Embaixo, a conta do uso, em três blocos e em fórmula:
+
+1. **Estoque** — valor recebido por transferência + valor transportado = total
+   de crédito disponível.
+2. **Quanto usar** — o menor de três limites:
+   - **(a)** 30% do saldo devedor de Rio Brilhante, a linha 011 do Registro
+     antes do uso (com a abertura: próprio e recebido pela centralização);
+   - **(b)** o saldo devedor que o benefício fiscal não cobre. O benefício é
+     dedução da linha 012, não passa do saldo devedor e a sobra não vai para o
+     mês seguinte: crédito usado acima de (b) sai do estoque sem reduzir o
+     imposto;
+   - **(c)** o total de crédito disponível.
+
+   O menor deles é o **total de crédito a utilizar**.
+3. **Resultado do uso** — o uso declarado na linha 006 ao lado do total a
+   utilizar: benefício deduzido, benefício não aproveitado, ICMS a recolher,
+   FADEFE nas duas bases (decisão pendente nº 19) e saldo a transportar.
+
+Uso declarado acima do teto, do disponível ou do que o benefício não cobre sai
+pendente no topo da aba. Para abrir o mês
+seguinte, inclua o mês transmitido em `saldos.yaml`, no bloco
+`creditos_controlados_transmitidos`: o saldo inicial sai dele.
 
 ### Os ajustes, e como devolver o arquivo
 
