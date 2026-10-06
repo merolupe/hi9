@@ -50,6 +50,8 @@ COLUNAS_CALCULADAS = [
 COLUNAS_DE_AJUSTE = [
     ("ajuste_linha", 14), ("ajuste_valor", 15), ("ajuste_motivo", 46),
     ("ajuste_responsavel", 20), ("ajuste_aprovador", 20),
+    ("atividade_ajustada", 18), ("atividade_motivo", 46),
+    ("atividade_responsavel", 20), ("atividade_aprovador", 20),
 ]
 
 
@@ -147,6 +149,8 @@ def _aba_base(wb, base: BaseTratada) -> None:
             # pode apagar o ajuste de quem o escreveu.
             d.get("ajuste_linha"), d.get("ajuste_valor"), d.get("ajuste_motivo"),
             d.get("ajuste_responsavel"), d.get("ajuste_aprovador"),
+            d.get("atividade_ajustada"), d.get("atividade_motivo"),
+            d.get("atividade_responsavel"), d.get("atividade_aprovador"),
             *(d.get(campo) for campo in demais),
         ])
     primeira_moeda = len(COLUNAS_DE_PROCEDENCIA) + 13      # valor_contabil
