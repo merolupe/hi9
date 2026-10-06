@@ -61,15 +61,24 @@ def test_sem_aprovacao_nao_vale(mapa, falta):
 
 def test_atividade_que_nao_existe_nao_vale(mapa):
     resultado = ativ.classificar(
-        _retorno(**{**APROVADA, "atividade_ajustada": "produção"}), mapa)
+        _retorno(**{**APROVADA, "atividade_ajustada": "fábrica"}), mapa)
     assert resultado.atividade == ativ.SEM_REGRA
-    assert "industrial" in resultado.regra
+    assert "Produção" in resultado.regra
 
 
-def test_maiuscula_e_espaco_nao_atrapalham(mapa):
+@pytest.mark.parametrize("escrito, esperado", [
+    (" Industrial ", ativ.INDUSTRIAL),
+    ("Produção", ativ.INDUSTRIAL),
+    ("producao", ativ.INDUSTRIAL),
+    ("Comercial", ativ.COMERCIAL),
+    ("Prestacional / Outras", ativ.PRESTACIONAL),
+    ("prestacional_outras", ativ.PRESTACIONAL),
+])
+def test_vale_o_nome_que_a_planilha_mostra(mapa, escrito, esperado):
+    """A conferência escreve "Produção"; o parâmetro, "industrial". Os dois valem."""
     resultado = ativ.classificar(
-        _retorno(**{**APROVADA, "atividade_ajustada": " Industrial "}), mapa)
-    assert resultado.atividade == ativ.INDUSTRIAL
+        _retorno(**{**APROVADA, "atividade_ajustada": escrito}), mapa)
+    assert resultado.atividade == esperado
 
 
 def test_a_marca_volta_no_arquivo_e_muda_a_apuracao(parametros, tmp_path):
