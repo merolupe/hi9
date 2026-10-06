@@ -55,17 +55,18 @@ def planilha(parametros, tmp_path_factory):
 
 def _linhas_de_produto(planilha):
     aba = planilha["APURAÇÃO EFETIVA"]
+    # A coluna A é a filial; o resto vem uma casa à direita.
     return {
-        linha[3]: linha for linha in aba.iter_rows(values_only=True)
-        if linha[3] and linha[0] in (None, "") and linha[2]
+        linha[4]: linha[1:] for linha in aba.iter_rows(values_only=True)
+        if linha[4] and linha[1] in (None, "") and linha[3]
     }
 
 
 def test_ms_mostra_aliquota_e_reducao_no_fim_da_tabela(planilha):
     aba = planilha["APURAÇÃO EFETIVA"]
     cabecalho = next(linha for linha in aba.iter_rows(values_only=True)
-                     if linha[0] == "CFOP")
-    assert list(cabecalho[11:13]) == ["Alíquota da nota", "Redução de base"]
+                     if linha[1] == "CFOP")
+    assert list(cabecalho[12:14]) == ["Alíquota da nota", "Redução de base"]
 
 
 @pytest.mark.parametrize("produto, carga, aliquota, reducao", [
@@ -85,3 +86,20 @@ def test_quem_ja_veio_reduzido_nao_estorna_e_quem_veio_cheio_estorna(planilha):
     assert linhas["ZINCO 15 GR"][9] == pytest.approx(0.0)
     assert linhas["CLORETO DE AMONIO"][9] == pytest.approx(0.0)
     assert linhas["SACO SOLD. 50KG"][9] == pytest.approx(3_351.60 * 0.4286, abs=0.01)
+
+
+def test_cada_linha_da_aba_diz_a_filial_e_o_filtro_esta_nela(planilha):
+    """Escolher a filial no filtro de A2 mostra o bloco inteiro dela."""
+    aba = planilha["APURAÇÃO EFETIVA"]
+    assert aba["A2"].value == "Filial"
+    assert aba.auto_filter.ref == f"A2:A{aba.max_row}"
+    for numero in range(3, aba.max_row + 1):
+        assert aba.cell(row=numero, column=1).value == RB, numero
+
+
+def test_as_formulas_andam_junto_com_a_coluna(planilha):
+    """Os totais somam as mesmas linhas, agora uma coluna à direita."""
+    aba = planilha["APURAÇÃO EFETIVA"]
+    total = next(c.row for c in aba["B"] if c.value == "TOTAL")
+    assert str(aba[f"H{total}"].value).startswith("=SUM(H")
+    assert str(aba[f"L{total}"].value) == f"=H{total}-K{total}"

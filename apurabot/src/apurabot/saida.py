@@ -14,7 +14,7 @@ from openpyxl.utils import get_column_letter
 from . import __version__
 from .ajustes import ABA as ABA_AJUSTES
 from .apuracao import Apuracao, apurar
-from .conferencia import (ABA_1200, ABA_EFETIVA, ABA_LANCAMENTOS, ABA_REGISTRO,
+from .conferencia import (ABAS_COM_FILIAL, ABA_1200, ABA_EFETIVA, ABA_LANCAMENTOS, ABA_REGISTRO,
                           ABA_TRANSFERENCIAS, aba_apuracao_efetiva,
                           aba_lancamentos, aba_registro, aba_registro_1200,
                           aba_transferencias)
@@ -759,8 +759,12 @@ def _bordas(aba) -> None:
                     aba.cell(row=n, column=coluna).border = BORDA
         bloco.clear()
 
+    # Onde a coluna A é a filial de cada linha (o filtro), ela não conta: está
+    # preenchida em toda linha, inclusive nas que separam as tabelas.
+    filial = aba.title in ABAS_COM_FILIAL
     for linha in aba.iter_rows():
-        ocupadas = [c.column for c in linha if _ocupada(c)]
+        ocupadas = [c.column for c in linha
+                    if _ocupada(c) and not (filial and c.column == 1)]
         if ocupadas:
             bloco.append((linha, ocupadas))
         else:

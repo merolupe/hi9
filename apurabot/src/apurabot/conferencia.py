@@ -24,6 +24,8 @@ E duas que servem de roteiro para o que se digita fora da ferramenta:
 """
 from __future__ import annotations
 
+from copy import copy
+
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
@@ -266,11 +268,15 @@ def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
     ])
 
     regimes = (params.regimes.get("regimes") or {}) if params else {}
+    faixas = []
     for filial in sorted(
         apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
     ):
         reducao = bool((regimes.get(filial.regime) or {}).get("mostra_reducao_de_base"))
+        inicio = aba.max_row + 1
         _bloco_efetiva(aba, filial, reducao)
+        faixas.append((inicio, aba.max_row, filial.estabelecimento))
+    coluna_de_filial(aba, faixas)
 
 
 def _bloco_efetiva(aba, filial, reducao: bool = False) -> None:
@@ -578,11 +584,63 @@ def aba_registro(wb, apuracao: Apuracao, params, ajustes=None) -> list:
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
 
     registros = reg.montar(apuracao, params, ajustes)
-    for registro in registros:
-        _bloco_registro(aba, registro)
+    blocos = list(registros)
     if len(registros) > 1:
-        _bloco_registro(aba, reg.totalizador(registros, apuracao.base.competencia))
+        blocos.append(reg.totalizador(registros, apuracao.base.competencia))
+    faixas = []
+    for registro in blocos:
+        inicio = aba.max_row + 1
+        _bloco_registro(aba, registro)
+        faixas.append((inicio, aba.max_row, registro.estabelecimento))
+    coluna_de_filial(aba, faixas)
     return registros
+
+
+#: Abas em que a coluna A é a filial de cada linha, para o filtro.
+ABAS_COM_FILIAL = (ABA_REGISTRO, ABA_EFETIVA)
+
+
+def coluna_de_filial(aba, faixas: list[tuple[int, int, str]]) -> None:
+    """Coluna A com a filial de cada linha, e o filtro do Excel nela.
+
+    A aba empilha um bloco por estabelecimento. Escolher a filial no filtro da
+    célula A2 mostra só o bloco dela — título, tabelas, linhas em branco e
+    totais —, porque TODA linha do bloco leva o nome, inclusive as vazias:
+    linha sem nome sobraria na tela ou sumiria junto. O filtro cobre a aba
+    inteira por intervalo explícito, então as linhas em branco não o cortam.
+
+    A coluna entra depois de a aba estar pronta: as demais andam uma casa para
+    a direita e cada fórmula é traduzida junto, como faria o Excel ao inserir
+    uma coluna. Nenhuma outra aba aponta para estas duas.
+    """
+    from openpyxl.formula.translate import Translator
+
+    larguras = [
+        aba.column_dimensions[get_column_letter(i)].width
+        for i in range(1, aba.max_column + 1)
+    ]
+    aba.insert_cols(1)
+    for linha in aba.iter_rows(min_col=2):
+        for celula in linha:
+            valor = celula.value
+            if isinstance(valor, str) and valor.startswith("="):
+                origem = f"{get_column_letter(celula.column - 1)}{celula.row}"
+                celula.value = Translator(valor, origin=origem).translate_formula(
+                    celula.coordinate)
+    _larguras(aba, [26] + larguras)
+
+    # O título da aba volta para A1: com a coluna nova estreita, ele transborda.
+    titulo = aba.cell(row=1, column=2)
+    aba.cell(row=1, column=1, value=titulo.value).font = copy(titulo.font)
+    titulo.value = None
+
+    cinza = Font(color="808080", size=9)
+    for inicio, fim, nome in faixas:
+        for numero in range(inicio, fim + 1):
+            aba.cell(row=numero, column=1, value=nome).font = cinza
+    cabecalho = aba.cell(row=2, column=1, value="Filial")
+    cabecalho.font, cabecalho.fill = TITULO, FUNDO
+    aba.auto_filter.ref = f"A2:A{aba.max_row}"
 
 
 def _bloco_registro(aba, registro: reg.Registro) -> None:
