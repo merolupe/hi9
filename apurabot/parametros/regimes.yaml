@@ -7,11 +7,24 @@ regimes:
   sp_equilibrio_fiscal:
     descricao: >
       Mantém o crédito até a carga de saída e estorna o excedente.
-      estorno = valor_contabil × (carga_efetiva_entrada − carga_saida_referencia)
+      Até 08/2026: estorno = valor_contabil × (carga_efetiva − carga_saida_referencia).
+      De 09/2026: estorno = ICMS × (1 − carga_saida_referencia ÷ carga_efetiva).
     vigencia_inicio: 2025-01-01
     formula_estorno: excedente_sobre_carga_saida
     carga_saida_referencia: 4.0
     base_do_estorno: valor_contabil        # confirmado contra Julho/2026
+    # A partir de 09/2026 o estorno é o percentual exato da tabela do time
+    # fiscal, pela carga efetiva, sobre o ICMS:
+    #     carga  7% → 42,86%   ·   12% → 66,67%   ·   18% → 77,78%
+    # Até 08/2026 foi `valor_contabil × (carga − 4%)`, que é como julho e
+    # agosto foram lançados no Sankhya — e continuam reproduzíveis. As duas
+    # coincidem quando base e valor contábil são iguais; separam-se no CT-e
+    # com pedágio, em que o valor contábil passa da base.
+    formulas_por_vigencia:
+      - vigencia_inicio: 2026-09-01
+        formula_estorno: proporcional_carga_efetiva
+        casas_decimais_da_parcela: 4
+        base_do_estorno: valor_icms
     isentos_de_estorno:
       - materia_prima
       - produto_acabado

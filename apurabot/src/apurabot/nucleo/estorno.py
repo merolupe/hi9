@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..base_tratada import LinhaTratada
+from . import atividade as ativ
 from ..formato import reais
 from ..parametros import Parametros
 
@@ -18,6 +19,7 @@ from ..parametros import Parametros
 EXCEDENTE = "excedente_sobre_carga_saida"
 INTEGRAL = "integral"
 PROPORCIONAL = "proporcional_parcela_nao_tributada"
+PROPORCIONAL_CARGA = "proporcional_carga_efetiva"
 NENHUM = "nenhum"
 
 
@@ -105,6 +107,7 @@ def calcular(tratada: LinhaTratada, params: Parametros) -> ResultadoEstorno:
             regra=f"{categoria} não estorna neste regime",
         )
 
+    regime = _vigente_na_data(regime, dados.get("data_movimento"))
     formula = regime.get("formula_estorno")
     if formula is None:
         raise RegimeDesconhecido(
@@ -120,6 +123,25 @@ def calcular(tratada: LinhaTratada, params: Parametros) -> ResultadoEstorno:
         regime=nome_regime,
         regra=regra,
     )
+
+
+def _vigente_na_data(regime: dict[str, Any], data) -> dict[str, Any]:
+    """O regime com a fórmula que vale na data do documento.
+
+    `formulas_por_vigencia` troca a fórmula — e o que vem com ela — a partir de
+    uma data, sem reescrever o mês anterior (regra 3 do repositório). Fora de
+    todas as vigências, vale a fórmula do próprio regime — e também quando o
+    documento não traz data, porque não há como dizer de que mês ele é.
+    """
+    if not hasattr(data, "year"):
+        return regime
+    if hasattr(data, "date"):
+        data = data.date()              # datetime → date, como a vigência
+    for versao in regime.get("formulas_por_vigencia") or []:
+        if ativ._vigente(versao, data):
+            return {**regime, **{k: v for k, v in versao.items()
+                                 if not k.startswith("vigencia_")}}
+    return regime
 
 
 def _aplicar(
@@ -171,6 +193,23 @@ def _aplicar(
             f"{'—' if carga is None else format(carga, 'g') + '%'})",
         )
 
+    if formula == PROPORCIONAL_CARGA:
+        # A tabela do time fiscal: o percentual estornado é a parcela da carga
+        # efetiva que passa da carga de saída, aplicada sobre o ICMS.
+        #     7% → 42,86%   ·   12% → 66,67%   ·   18% → 77,78%
+        referencia = float(regime.get("carga_saida_referencia", 0.0))
+        if carga is None or carga <= referencia:
+            return 0.0, f"carga {carga}% não excede a de saída ({referencia:g}%)"
+        parcela = 1.0 - referencia / float(carga)
+        casas = regime.get("casas_decimais_da_parcela")
+        if casas is not None:
+            parcela = round(parcela, int(casas))
+        return (
+            icms * parcela,
+            f"parcela = 1 − {referencia:g}/{carga:g} = {parcela:.4f}; "
+            f"ICMS {reais(icms)} × {parcela:.4f}",
+        )
+
     if formula == EXCEDENTE:
         referencia = float(regime.get("carga_saida_referencia", 0.0))
         if carga is None or carga <= referencia:
@@ -185,7 +224,7 @@ def _aplicar(
 
     raise RegimeDesconhecido(
         f"fórmula de estorno {formula!r} não é reconhecida — as válidas são "
-        f"{EXCEDENTE}, {INTEGRAL}, {PROPORCIONAL} e {NENHUM}"
+        f"{EXCEDENTE}, {INTEGRAL}, {PROPORCIONAL}, {PROPORCIONAL_CARGA} e {NENHUM}"
     )
 
 
