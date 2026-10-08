@@ -74,7 +74,7 @@ def test_o_credito_vai_inteiro_para_indevido_em_todo_regime(apuracao, nome):
     assert filial.estorno == pytest.approx(0.0)
 
 
-def test_em_ms_a_amostra_tem_atividade(apuracao):
-    """A GIA de MS segrega por atividade: sem ela, a linha bloquearia."""
+def test_onde_se_segrega_a_amostra_tem_atividade(apuracao):
+    """Rio Brilhante segrega por atividade: sem ela, a linha bloquearia."""
     _, apuracao = apuracao
     assert apuracao.sem_regra_de_atividade == []

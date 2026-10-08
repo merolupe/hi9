@@ -78,9 +78,20 @@ feita apenas para dimensionar o benefício fiscal, e o benefício é só de Rio
 Brilhante — cujo mapa está conferido ao centavo contra a GIA retificadora de
 25/08/2026.
 
-Em Corumbá a segregação continua saindo, porque o mapa é da UF e a ferramenta
-não classifica por estabelecimento. Ela é informativa: não dimensiona benefício
-nenhum e não alimenta declaração nenhuma.
+**Consequência na ferramenta (08/10/2026): Corumbá não segrega mais.** Só
+segrega o estabelecimento que tem `beneficio_fiscal` em `filiais.yaml` — hoje,
+só Rio Brilhante. Em Corumbá a divisão não dimensionava benefício nenhum nem
+alimentava declaração, mas aparecia na planilha como se alimentasse. Agora:
+
+* a aba `RESUMO E DETALHES` só traz Rio Brilhante no bloco de segregação;
+* a `APURAÇÃO EFETIVA` de Corumbá classifica pela categoria do produto, como as
+  filiais de SP, MT e PR, e não por Produção/Comercial;
+* CFOP sem atividade cadastrada e ajuste manual sem atividade deixam de travar o
+  encerramento em Corumbá.
+
+Nenhum número muda: o estorno, o crédito indevido, o saldo devedor que Corumbá
+transfere para a linha 002 de Rio Brilhante e o benefício saem iguais. Rodada de
+09/2026 conferida antes e depois.
 
 ## 7. 🟡 MS — o que acontece quando o centralizado tem saldo credor?
 

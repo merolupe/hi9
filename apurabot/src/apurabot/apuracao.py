@@ -1,9 +1,9 @@
 """Camadas 5 a 8 — apuração de ICMS por estabelecimento.
 
 Aplica o regime de cada filial sobre a base tratada e consolida crédito bruto,
-crédito mantido, estorno e débito. Onde a UF exige — hoje MS —, o resultado sai
-também segregado por atividade, porque é a segregação que dimensiona o
-benefício fiscal.
+crédito mantido, estorno e débito. No estabelecimento com benefício fiscal —
+hoje Rio Brilhante —, o resultado sai também segregado por atividade, porque é
+a segregação que dimensiona o benefício.
 
 Centralização de SP e DIFAL ficam para as entregas seguintes.
 """
@@ -335,7 +335,7 @@ class Apuracao:
     #: Os ajustes que de fato valeram: os que chegaram de fora somados aos que
     #: vieram escritos nas linhas do Livro. É esta a versão que o Registro usa.
     ajustes: AjustesDaApuracao = field(default_factory=lambda: AjustesDaApuracao())
-    #: Parcela da aba AJUSTES MANUAIS sem atividade, onde a UF exige a segregação.
+    #: Parcela da aba AJUSTES MANUAIS sem atividade, onde o estabelecimento segrega.
     ajustes_sem_atividade: list[aj.Ajuste] = field(default_factory=list)
 
     @property
@@ -498,7 +498,7 @@ def apurar(
                 uf=uf,
                 regime=resultado.regime,
                 codigo=int(ficha["codigo"]) if ficha.get("codigo") is not None else None,
-                segrega_por_atividade=ativ.mapa_da_uf(uf, params) is not None,
+                segrega_por_atividade=_segrega_por_atividade(ficha, uf, params),
             )
         filial.credito_bruto += resultado.credito_bruto
         filial.credito_mantido += resultado.credito_mantido
@@ -613,7 +613,7 @@ def _difal(
                 uf=uf,
                 regime=str(ficha.get("regime") or ""),
                 codigo=int(ficha["codigo"]) if ficha.get("codigo") is not None else None,
-                segrega_por_atividade=ativ.mapa_da_uf(uf, params) is not None,
+                segrega_por_atividade=_segrega_por_atividade(ficha, uf, params),
             )
         filial.difal += valor
 
@@ -649,14 +649,34 @@ def _ajustes_das_linhas(
         ajustes.somar(ajuste, atividade=atividade)
 
 
+def _segrega_por_atividade(ficha: dict, uf: str, params: Parametros) -> bool:
+    """Só segrega quem tem benefício fiscal no cadastro.
+
+    A segregação existe para dimensionar o benefício, que incide sobre o saldo
+    devedor da atividade industrial. Em estabelecimento sem benefício ela não
+    alimenta conta nem declaração — mostrá-la faria parecer que alimenta.
+    Decisão nº 6 de `docs/apurabot/06-decisoes-pendentes.md`.
+    """
+    if not ficha.get("beneficio_fiscal"):
+        return False
+    if ativ.mapa_da_uf(uf, params) is None:
+        # Sem o mapa o benefício sairia zerado sem que ninguém percebesse.
+        raise ativ.MapaDeAtividadeAusente(
+            f"{ficha.get('nome')} tem benefício fiscal, mas a UF {uf or '?'} "
+            "não tem mapa de atividades em regimes.yaml, bloco `atividades`"
+        )
+    return True
+
+
 def _sem_atividade(
     ajustes: AjustesDaApuracao, filiais: dict[str, ApuracaoFilial]
 ) -> list[aj.Ajuste]:
     """Parcelas sem documento que não disseram a atividade onde ela importa.
 
-    Onde a UF segrega — hoje MS —, é a atividade que dimensiona o benefício.
-    Uma parcela lançada sem ela mudaria o incentivo sem que ninguém tivesse
-    decidido. Nas demais UFs a atividade não existe, e não faz falta.
+    Onde o estabelecimento segrega — hoje só Rio Brilhante —, é a atividade
+    que dimensiona o benefício. Uma parcela lançada sem ela mudaria o
+    incentivo sem que ninguém tivesse decidido. Nos demais a atividade não
+    existe, e não faz falta.
     """
     return [
         ajuste

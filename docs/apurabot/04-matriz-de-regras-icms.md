@@ -283,6 +283,12 @@ benefício**, porque o crédito presumido incide exclusivamente sobre o saldo
 devedor da atividade industrial. Sem ela não existe "crédito da parcela
 incentivada" e o benefício não tem como ser calculado.
 
+Por isso **só segrega o estabelecimento com benefício fiscal** — a marca
+`beneficio_fiscal` em `filiais.yaml`, hoje só Rio Brilhante. Corumbá é MS, mas
+sem benefício a divisão não alimenta conta nem declaração (decisão pendente
+nº 6). Estabelecimento com benefício em UF sem mapa de atividades interrompe a
+apuração, em vez de calcular benefício zero.
+
 A atividade sai do **CFOP**, com uma exceção: o CFOP do serviço de transporte diz
 quem contratou o frete, não o que o frete carrega — e é o que ele carrega que
 decide. Por isso a **descrição vence o CFOP** quando casa.
@@ -500,8 +506,8 @@ contariam histórias diferentes do mesmo mês.
 **Onde ele é informado depende de ter documento ou não.** O que pertence a uma
 nota vai na linha dela, e aí o estabelecimento e a atividade saem da linha —
 ninguém os digita e ninguém os erra. O que não pertence a nota nenhuma é
-declarado à parte, com o estabelecimento escrito; onde a UF segrega por
-atividade, a atividade também, porque é ela que dimensiona o benefício.
+declarado à parte, com o estabelecimento escrito; onde o estabelecimento
+segrega por atividade, a atividade também, porque é ela que dimensiona o benefício.
 
 **`ANOTAR` marca sem lançar.** Um ICMS reconhecido como indevido mas tratado
 fora da competência — por anuência, por exemplo — não pode alterar a apuração

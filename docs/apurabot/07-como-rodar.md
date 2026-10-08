@@ -126,7 +126,7 @@ Um `.xlsx`, com as abas por prioridade de leitura:
 |---|---|
 | **REGISTRO DE APURAÇÃO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo. Filtro por filial em A2 |
 | **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → carga efetiva → produto, com a operação e o % do crédito estornado; em MS, também a alíquota da nota e a redução de base. Filtro por filial em A2 |
-| **RESUMO E DETALHES** | Crédito, estorno, débito e saldo por estabelecimento; saldo credor que vai para o mês seguinte; memória do benefício e da centralização em fórmula; FADEFE, segregação por atividade e detalhe por carga |
+| **RESUMO E DETALHES** | Crédito, estorno, débito e saldo por estabelecimento; saldo credor que vai para o mês seguinte; memória do benefício e da centralização em fórmula; FADEFE, segregação por atividade (só de quem tem benefício fiscal) e detalhe por carga |
 | **REGISTRO 1200** | Os Registros 1200 e 1210 da EFD de Rio Brilhante: o estoque do crédito recebido por transferência |
 | **AJUSTES MANUAIS** | Formulário: as parcelas sem documento e a conferência de cada estabelecimento |
 | **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |

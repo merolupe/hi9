@@ -263,8 +263,8 @@ def test_ajuste_incompleto_na_linha_vira_pendencia(base_julho, parametros, tmp_p
                for p in t.pendencias)
 
 
-def test_parcela_sem_atividade_onde_a_uf_segrega_bloqueia(base_julho, parametros):
-    """Em MS a atividade dimensiona o benefício: lançar sem ela move o incentivo."""
+def test_parcela_sem_atividade_onde_se_segrega_bloqueia(base_julho, parametros):
+    """Em Rio Brilhante a atividade dimensiona o benefício: lançar sem ela move o incentivo."""
     declarados = aj.Declarados(parcelas=[
         aj.Ajuste(estabelecimento=RB, linha=3, valor=1_000.0, motivo="m",
                   responsavel="r", aprovador="a", onde="aba AJUSTES, linha 9")
@@ -276,7 +276,7 @@ def test_parcela_sem_atividade_onde_a_uf_segrega_bloqueia(base_julho, parametros
     assert any("segrega por atividade" in m for m in apuracao.bloqueios_de_ajuste)
 
 
-def test_onde_a_uf_nao_segrega_a_atividade_nao_faz_falta(base_julho, parametros):
+def test_onde_nao_se_segrega_a_atividade_nao_faz_falta(base_julho, parametros):
     from apurabot.apuracao import de_declarados
 
     declarados = aj.Declarados(parcelas=[
