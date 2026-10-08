@@ -372,7 +372,7 @@ def _aba_apuracao(wb, apuracao: Apuracao) -> None:
                 PERCENTUAL if coluna in (3, 5) else MOEDA
             )
 
-    _secao(aba, "Segregação por atividade (exigida pela GIA de MS)")
+    _secao(aba, "Segregação por atividade — base do benefício fiscal")
     _cabecalho_de_bloco(aba, ["estabelecimento", "atividade", "linhas",
                               "credito_bruto", "estorno", "credito_mantido",
                               "debito", "debito_intra", "debito_inter", "saldo"])

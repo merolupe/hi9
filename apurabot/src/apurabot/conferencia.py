@@ -198,8 +198,8 @@ EXCEDENTE = "excedente_sobre_carga_saida"
 
 def _rotulo_atividade(apurada: LinhaApurada) -> str:
     if not apurada.atividade:
-        # A UF não segrega por atividade: mostra a categoria da equalização,
-        # que é o corte que faz sentido ali.
+        # O estabelecimento não segrega por atividade: mostra a categoria da
+        # equalização, que é o corte que faz sentido ali.
         return (
             rotulo_da_categoria(apurada.tratada.classificacao.categoria)
             or ROTULO_SEM_ATIVIDADE

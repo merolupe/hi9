@@ -29,7 +29,7 @@ e o [08 — Roteiro de teste](../docs/apurabot/08-roteiro-de-teste.md) para a
 primeira validação na máquina.
 
 Lê o Livro Fiscal, equaliza a carga efetiva de cada linha, classifica a operação,
-aplica a regra tributária de cada UF, segrega por atividade onde a UF exige e
+aplica a regra tributária de cada UF, segrega por atividade onde há benefício fiscal e
 entrega a apuração em `.xlsx`, com a memória de cálculo linha a linha.
 
 | Aba da saída | Conteúdo |
@@ -87,7 +87,7 @@ src/apurabot/
   nucleo/carga.py      equalização da carga efetiva
   nucleo/classificacao.py
   nucleo/estorno.py    regra tributária por regime
-  nucleo/atividade.py  segregação por atividade (GIA de MS)
+  nucleo/atividade.py  segregação por atividade (base do benefício)
   nucleo/beneficio.py  crédito presumido do Termo de Acordo e FADEFE
   nucleo/centralizacao.py  transferência de saldo entre estabelecimentos
   nucleo/registro.py   Registro de Apuração — livro por CFOP e resumo de 14 linhas
