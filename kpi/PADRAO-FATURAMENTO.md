@@ -85,3 +85,15 @@ O gerador calcula a posição a partir do número de colunas e da escala do eixo
 
 Máximo fixo em `1.200.000` com unidade de `200.000` enquanto a meta acumulada
 couber. O gerador sobe o máximo se a meta passar do topo.
+
+## Faixa de pontos de atenção (rodapé)
+
+Entrou na S42. Ocupa a largura toda em `y = 6,12"`: barra navy `1F3864` com
+`Pontos de atenção da semana` em branco 12,5pt, e abaixo uma caixa branca com
+borda `BFCDE4` para o texto, Lato 9,5pt `333F50`, uma linha.
+
+Para abrir espaço, o quadro do gráfico e a coluna de cartões foram comprimidos
+em 0,62" e a tabela subiu de `y = 5,42"` para `4,80"`. Essas posições estão
+fixadas no gerador — mexer nelas no PowerPoint quebra a próxima geração.
+
+O texto vem de `--atencao`; sem a flag a caixa fica como está.

@@ -225,7 +225,7 @@ def slide_do_faturamento(pac):
 
 def monta_tabela(d, atual):
     """Devolve o XML das celulas da tabela, dimensionado para o numero de colunas."""
-    X0, LBL, X1, H, TOPO = 0.50, 1.40, 12.83, 0.24, 5.42
+    X0, LBL, X1, H, TOPO = 0.50, 1.40, 12.83, 0.24, 4.80
     n = len(d['colunas'])
     CW = (X1 - (X0 + LBL)) / n
 
@@ -348,7 +348,7 @@ def posicao_destaque(pac, slide, grafico, maximo, d):
 
 
 def gerar(base, historico, saida, semana, orc_acum, real_acum, orc_sem, real_sem,
-          meta_3q=None, meta_anual=None, capa=None):
+          meta_3q=None, meta_anual=None, capa=None, atencao=None):
     d = carregar(historico)
     idx = aplicar_semana(d, semana, orc_acum, real_acum, orc_sem, real_sem)
     if meta_3q:
@@ -363,7 +363,7 @@ def gerar(base, historico, saida, semana, orc_acum, real_acum, orc_sem, real_sem
 
         # ---- tabela
         antigas = [m for m in formas(x)
-                   if caixa(m.group()) and 5.35 <= caixa(m.group())[1] <= 6.70
+                   if caixa(m.group()) and 4.75 <= caixa(m.group())[1] <= 6.02
                    and 'name="Rectangle' in m.group()]
         for m in reversed(antigas):
             x = x[:m.start()] + x[m.end():]
@@ -381,30 +381,34 @@ def gerar(base, historico, saida, semana, orc_acum, real_acum, orc_sem, real_sem
             if rot.endswith('ºQ') and i >= 2:
                 ref_q = d['realizado_acumulado'][i]
 
-        x = set_texto(x, 8.90, 1.33, '%s de %s' % (dinheiro(ra), dinheiro(oa)))
-        x = set_texto(x, 11.08, 1.08, pct(at_ac))
-        x = set_texto(x, 8.97, 2.00, '%s abaixo da meta' % dinheiro(df_ac))
-        x = set_texto(x, 11.18, 1.73, '▼ %s' % pct(1 - at_ac))
-        x = set_texto(x, 8.90, 3.60, 'DÉFICIT SEMANAL · S%s' % semana)
-        x = set_texto(x, 8.91, 3.20, '%s de %s' % (dinheiro(rs), dinheiro(os_)))
-        x = set_texto(x, 11.26, 3.61, '▼ %s' % pct(1 - at_se))
-        x = set_texto(x, 11.08, 2.90, pct(at_se))
-        x = set_texto(x, 8.91, 3.85, '%s abaixo da meta' % dinheiro(df_se))
+        x = set_texto(x, 8.90, 1.24, '%s de %s' % (dinheiro(ra), dinheiro(oa)))
+        x = set_texto(x, 11.08, 1.03, pct(at_ac))
+        x = set_texto(x, 8.97, 1.82, '%s abaixo da meta' % dinheiro(df_ac))
+        x = set_texto(x, 11.18, 1.59, '▼ %s' % pct(1 - at_ac))
+        x = set_texto(x, 8.90, 3.21, 'DÉFICIT SEMANAL · S%s' % semana)
+        x = set_texto(x, 8.91, 2.86, '%s de %s' % (dinheiro(rs), dinheiro(os_)))
+        x = set_texto(x, 11.26, 3.22, '▼ %s' % pct(1 - at_se))
+        x = set_texto(x, 11.08, 2.61, pct(at_se))
+        x = set_texto(x, 8.91, 3.42, '%s abaixo da meta' % dinheiro(df_se))
         if d.get('meta_3q'):
-            x = set_texto(x, 10.09, 4.46, '%s atingido' % pct(ref_q / d['meta_3q'], 1))
+            x = set_texto(x, 10.09, 3.96, '%s atingido' % pct(ref_q / d['meta_3q'], 1))
         if d.get('meta_anual'):
-            x = set_texto(x, 10.13, 5.02, '%s atingido' % pct(ra / d['meta_anual'], 1))
+            x = set_texto(x, 10.13, 4.44, '%s atingido' % pct(ra / d['meta_anual'], 1))
 
         # ---- anotacoes dentro do grafico
         # as duas caixas sao alinhadas a direita e terminam em 8,50", antes dos cartoes
-        m = achar(x, 6.36, 2.41)
-        x = set_geometria(x, m, 5.60, 2.41, 2.90, 0.60)
-        x = set_texto(x, 5.60, 2.41, 'Orçado Sem.: %s' % br(os_), par=0)
-        x = set_texto(x, 5.60, 2.41, 'Realizado Sem.: %s' % br(rs), par=1)
-        m = achar(x, 7.14, 2.90)
-        x = set_geometria(x, m, 4.40, 3.08, 4.10, 0.30)
-        x = set_texto(x, 4.40, 3.08,
+        m = achar(x, 6.36, 2.23)
+        x = set_geometria(x, m, 5.60, 2.23, 2.90, 0.60)
+        x = set_texto(x, 5.60, 2.23, 'Orçado Sem.: %s' % br(os_), par=0)
+        x = set_texto(x, 5.60, 2.23, 'Realizado Sem.: %s' % br(rs), par=1)
+        m = achar(x, 7.14, 2.65)
+        x = set_geometria(x, m, 4.40, 2.85, 4.10, 0.30)
+        x = set_texto(x, 4.40, 2.85,
                       'Diferença S%s  ·  ▼ %s  (%s)' % (semana, dinheiro(df_se), pct(1 - at_se)))
+
+        # ---- faixa de pontos de atencao (rodape)
+        if atencao is not None:
+            x = set_texto(x, 0.50, 6.39, atencao)
 
         pac.grava(slide, x)
 
@@ -450,6 +454,8 @@ def main():
     p.add_argument('--meta-3q', default=None)
     p.add_argument('--meta-anual', default=None)
     p.add_argument('--capa', default=None, help='numero da semana da reuniao, ex.: 42')
+    p.add_argument('--atencao', default=None,
+                   help='texto da faixa "Pontos de atenção da semana" (vazio limpa)')
     a = p.parse_args()
 
     destino = gerar(
@@ -459,7 +465,7 @@ def main():
         ler(a.real_sem) if a.real_sem else None,
         ler(a.meta_3q) if a.meta_3q else None,
         ler(a.meta_anual) if a.meta_anual else None,
-        a.capa)
+        a.capa, a.atencao)
     print('gerado: %s' % destino)
 
 
