@@ -249,3 +249,88 @@ def test_linha_sem_icms_nao_exige_filial_cadastrada(parametros):
     """Cadastro incompleto não pode travar linha que nem apura ICMS."""
     r = calcular(tratada("EMPRESA QUALQUER", "—", 12.0, 0.0, 1000.0), parametros)
     assert r.credito_bruto == 0.0 and r.debito == 0.0
+
+
+# -- SP a partir de 09/2026: o percentual exato da tabela ---------------------
+
+def _sp(data, categoria, carga, icms, contabil, aliquota=None):
+    """Entrada de Guará com data de movimento — é ela que escolhe a fórmula."""
+    import datetime as dt
+
+    linha = tratada("HINOVE (FILIAL GUARÁ)", categoria, carga, icms, contabil,
+                    aliquota=aliquota)
+    linha.origem.dados["data_movimento"] = dt.datetime(*data)
+    return linha
+
+
+@pytest.mark.parametrize("carga, percentual", [
+    (7.0, 0.4286), (12.0, 0.6667), (18.0, 0.7778),
+])
+def test_sp_de_setembro_estorna_o_percentual_da_tabela(parametros, carga, percentual):
+    """A tabela do time fiscal: 7% → 42,86%, 12% → 66,67%, 18% → 77,78%."""
+    icms = carga * 100
+    r = calcular(_sp((2026, 9, 10), "frete_venda", carga, icms, 10_000.0), parametros)
+    assert r.estorno == pytest.approx(icms * percentual, abs=0.005)
+    assert r.confere
+
+
+def test_sp_cte_com_pedagio_estorna_o_percentual_e_nao_o_contabil(parametros):
+    """Valor contábil acima da base: o percentual continua o da tabela."""
+    r = calcular(_sp((2026, 9, 10), "frete_venda", 12.0, 1_388.65, 12_652.20),
+                 parametros)
+    assert r.estorno == pytest.approx(1_388.65 * 0.6667, abs=0.005)
+
+
+def test_sp_ate_agosto_continua_sobre_o_valor_contabil(parametros):
+    """Julho e agosto foram lançados assim — e continuam reproduzíveis."""
+    r = calcular(_sp((2026, 8, 31), "frete_venda", 12.0, 1_388.65, 12_652.20),
+                 parametros)
+    assert r.estorno == pytest.approx(12_652.20 * 0.08, abs=0.005)
+
+
+def test_sp_de_setembro_carga_de_4_nao_estorna(parametros):
+    r = calcular(_sp((2026, 9, 10), "frete_compra", 4.0, 400.0, 10_000.0), parametros)
+    assert r.estorno == 0.0
+
+
+def test_sp_de_setembro_isentos_continuam_isentos(parametros):
+    r = calcular(_sp((2026, 9, 10), "materia_prima", 12.0, 1_200.0, 10_000.0),
+                 parametros)
+    assert r.estorno == 0.0
+
+
+# -- MS: a chave é a alíquota nominal, também com a base reduzida -------------
+
+def _ms(data, categoria, carga, icms, contabil, aliquota):
+    import datetime as dt
+
+    linha = tratada("HINOVE (RIO BRILHANTE)", categoria, carga, icms, contabil,
+                    aliquota=aliquota)
+    linha.origem.dados["data_movimento"] = dt.datetime(*data)
+    return linha
+
+
+@pytest.mark.parametrize("data", [(2026, 8, 31), (2026, 9, 10), (2026, 10, 1)])
+@pytest.mark.parametrize("aliquota, carga, percentual", [
+    (7.0, 4.0, 0.4286),     # base reduzida pelo fornecedor: estorna de novo
+    (12.0, 4.0, 0.6667),    # retorno de armazém com a base reduzida
+    (17.0, 4.0, 0.7647),    # importação a 17% com a base reduzida
+    (7.0, 7.0, 0.4286),     # nota cheia a 7%
+    (12.0, 12.0, 0.6667),   # frete cheio a 12%
+    (4.0, 4.0, 0.0),        # alíquota de 4%: nada a estornar
+])
+def test_ms_estorna_pela_aliquota_nominal(parametros, data, aliquota, carga,
+                                          percentual):
+    """O crédito fica em 4% da base de cálculo — antes e depois de 09/2026."""
+    icms = 10_000.0 * carga / 100
+    r = calcular(_ms(data, "embalagem", carga, icms, 10_000.0, aliquota),
+                 parametros)
+    assert r.estorno == pytest.approx(icms * percentual, abs=0.005)
+
+
+def test_silicato_com_base_reduzida_fica_com_4_da_base(parametros):
+    """O exemplo do time: 5.497,32 de valor, base 3.141,16 a 7%, ICMS 219,88."""
+    r = calcular(_ms((2026, 9, 10), "embalagem", 4.0, 219.88, 5_497.32, 7.0),
+                 parametros)
+    assert r.estorno == pytest.approx(94.24, abs=0.005)
+    assert 219.88 - r.estorno == pytest.approx(3_141.16 * 0.04, abs=0.01)

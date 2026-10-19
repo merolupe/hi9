@@ -33,7 +33,55 @@ de mudanças que o time fiscal viu funcionar.
 | 0.1.22 | 03/09/2026 | A centralização passa a lançar as duas pontas: quem transfere zera o próprio Registro |
 | 0.1.23 | 03/09/2026 | O saldo mostrado passa a ser o final, o mesmo do Registro, em todo lugar |
 | 0.1.24 | 09/09/2026 | A janela ganha a identidade da Hinove e conta o que está fazendo enquanto apura |
-| **0.1.25** | **09/09/2026** | **A marca no tamanho do mockup, o slogan e a abertura sem rodapé** |
+| 0.1.25 | 09/09/2026 | A marca no tamanho do mockup, o slogan e a abertura sem rodapé |
+| 0.1.26 | 29/09/2026 | Abas AJUSTES A LANÇAR (roteiro do Sankhya) e REGISTRO 1200 (crédito transferido de Rio Brilhante) |
+| 0.1.27 | 29/09/2026 | Botão Registro em PDF: o Registro de Apuração no desenho do Sankhya, salvo em PDF pelo navegador |
+| 0.1.28 | 30/09/2026 | A planilha enxuta: abas por prioridade, nomes novos, memórias em fórmula, nada congelado e borda em toda tabela |
+| 0.1.29 | 05/10/2026 | Amostra grátis (CFOP 1911/2911) deixa de cair em SEM REGRA: vai para crédito indevido em todo regime |
+| 0.1.36 | 08/10/2026 | Só segrega por atividade quem tem benefício fiscal: Corumbá deixa de mostrar Produção/Comercial |
+| 0.1.30 | 06/10/2026 | De 09/2026: SP e MS estornam o percentual exato da tabela pela carga efetiva; a APURAÇÃO EFETIVA de MS mostra alíquota e redução de base |
+| 0.1.31 | 06/10/2026 | REGISTRO DE APURAÇÃO e APURAÇÃO EFETIVA filtram por filial: a coluna A diz o estabelecimento de cada linha, com o filtro em A2 |
+| 0.1.32 | 06/10/2026 | REGISTRO 1200 reformulado: o ano transmitido, o TXT do SPED e a conta do uso — o crédito a utilizar é o menor entre o disponível, o teto de 30% do saldo devedor e o que o benefício não cobre; o resultado do uso declarado mostra o benefício perdido |
+| 0.1.33 | 06/10/2026 | Atividade declarada por linha na BASE TRATADA: a operação que foge do CFOP vai para a atividade certa, com aprovação, sem mudar a regra |
+| 0.1.34 | 06/10/2026 | A atividade declarada aceita o nome que a planilha mostra: Produção, Comercial, Importados, Prestacional / Outras |
+| **0.1.35** | **06/10/2026** | **MS volta à alíquota nominal: a tabela fica travada pela alíquota da nota (7% → 42,86%, 12% → 66,67%, 17% → 76,47%), também com a base reduzida** |
+
+## 0.1.28 — a planilha enxuta
+
+Pedido da rodada prévia de 09/2026: a planilha trazia informação demais, e
+repetida.
+
+**As abas, por prioridade de leitura:**
+
+| Antes | Agora |
+|---|---|
+| REGISTRO | **REGISTRO DE APURAÇÃO**, a primeira aba |
+| APURAÇÃO EFETIVA | a segunda |
+| APURAÇÃO POR FILIAL | **RESUMO E DETALHES**, a terceira |
+| AJUSTES | **AJUSTES MANUAIS** |
+| AJUSTES A LANÇAR | **AJUSTES NO SANKHYA**, a última |
+| RESUMO, POR ESTABELECIMENTO E CARGA | ocultas |
+| PENDÊNCIAS | só aparece quando há pendência |
+
+Arquivo gerado antes da troca continua sendo lido: a aba `AJUSTES` preenchida
+volta como se fosse a `AJUSTES MANUAIS`.
+
+**O que saiu.** A coluna `AGUARDA AJUSTE` do Registro (a marca continua na tela
+e no PDF); a memória do benefício na `APURAÇÃO EFETIVA`, que repetia a da aba
+seguinte; o texto da convenção de caixa; o cabeçalho de quatro linhas e a
+conferência com o Registro na aba do Sankhya; e, no `REGISTRO 1200`, tudo depois
+das linhas da EFD.
+
+**AJUSTES NO SANKHYA** é o título e a tabela, sem linha em branco entre os
+estabelecimentos, com autofiltro.
+
+**Memória com valor em célula própria, e em fórmula.** O benefício fiscal (crédito
+da parcela incentivada, rateio, base, crédito presumido), a centralização (saldo
+residual, recebido, saldo final do grupo), o saldo credor que vai para o mês
+seguinte, o FADEFE, o saldo por atividade, o crédito mantido por carga e o saldo
+final do 1200. Um teste resolve cada fórmula e confere com o motor.
+
+**Nenhum painel congelado, e borda cinza-média em toda tabela.**
 
 ## 0.1.19 — o que mudou, em detalhe
 

@@ -129,7 +129,7 @@ from apurabot.nucleo import atividade as ativ            # noqa: E402
 RB = "HINOVE (RIO BRILHANTE)"
 
 # Linha 003 do Registro: "Estorno de créditos para ajuste de apuração do ICMS".
-# Não nasce de documento no Livro Fiscal: é declarado na aba AJUSTES.
+# Não nasce de documento no Livro Fiscal: é declarado na aba AJUSTES MANUAIS.
 AJUSTE_ESTORNO_INDUSTRIAL = 3_865.30
 
 # GIA - Apuração Final, quadros "Débitos de ICMS" e "Créditos de ICMS".
@@ -167,12 +167,15 @@ def apuracao_com_ajustes(base_julho):
     )
 
 
-def test_so_ms_segrega_por_atividade(apuracao):
-    """SP, MT e PR apuram por estabelecimento; MS, por atividade."""
-    segregam = sorted(
-        f.uf for f in apuracao.filiais.values() if f.segrega_por_atividade
-    )
-    assert set(segregam) == {"MS"}
+def test_so_rio_brilhante_segrega_por_atividade(apuracao):
+    """A segregação dimensiona o benefício, e o benefício é só de Rio Brilhante.
+
+    Corumbá é MS e não segrega: ali ela não alimentaria conta nem declaração.
+    """
+    segregam = [
+        f.estabelecimento for f in apuracao.filiais.values() if f.segrega_por_atividade
+    ]
+    assert segregam == [RB]
 
 
 def test_nenhuma_linha_fica_sem_atividade(apuracao):

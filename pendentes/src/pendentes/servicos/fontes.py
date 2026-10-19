@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Sequence
 
-from ..cabecalho import Mapa
+from ..cabecalho import Mapa, ate_a_ultima  # noqa: F401  (reexportada)
 from ..chaves import (
     CNPJ_ZERADO, analisar_numero_de_nfse, cnpj as so_cnpj, cnpj_utilizavel,
 )
@@ -246,24 +246,6 @@ def ler_anexos(linhas: Sequence[Sequence[Any]], mapa: Mapa) -> list[Anexo]:
 
 
 # -- o fim do relatório -----------------------------------------------------
-
-def ate_a_ultima(linhas: Sequence[Sequence[Any]], mapa: Mapa,
-                 ancora: str) -> list[list[Any]]:
-    """As linhas até a última que tem a coluna-âncora preenchida.
-
-    O relatório costuma trazer rodapé, total ou linha em branco no fim. O VBA
-    resolve com `Cells(Rows.Count, coluna).End(xlUp).Row`, que é exatamente
-    isto: a última linha com aquela coluna preenchida manda, e o que vem
-    depois não existe. Linha vazia **no meio** continua entrando — ela é dado
-    incompleto, não fim de arquivo.
-    """
-    indice = mapa[ancora]
-    ultima = -1
-    for i, linha in enumerate(linhas):
-        if 0 <= indice < len(linha) and texto_de(linha[indice]).strip():
-            ultima = i
-    return [list(linha) for linha in linhas[:ultima + 1]]
-
 
 def chave_de_valor_de(valor: Any) -> str:
     """Atalho para quem precisa da chave de valor sem montar um registro."""

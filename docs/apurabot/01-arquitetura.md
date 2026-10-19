@@ -62,8 +62,8 @@ exigência central do documento de escopo.
                                            → sem regra = pendência
 
                           5. REGRAS        por UF/regime e vigência
-                             TRIBUTÁRIAS     + segregação por ATIVIDADE onde a
-                                             UF exige (industrial, comercial,
+                             TRIBUTÁRIAS     + segregação por ATIVIDADE onde há
+                                             benefício (industrial, comercial,
                                              importados, prestacional/outras)
 
                           6. CÁLCULO       crédito bruto, crédito mantido,

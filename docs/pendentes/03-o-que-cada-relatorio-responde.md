@@ -6,16 +6,22 @@
 
 ---
 
-## 1. As duas perguntas
+## 1. As duas perguntas — e a terceira, que é sobre as outras duas
 
 | Ferramenta | A pergunta |
 |---|---|
 | **GerarPendentes** (mercadoria) | *Quais notas emitidas contra a Hinove ainda não foram lançadas, de quem é a responsabilidade e há quantos dias estão paradas?* |
 | **GerarServPend** (serviço) | *Quais notas de serviço ainda não foram lançadas, qual pedido de compra e qual requisitante estão por trás delas, e o quanto o ASIS deixa de capturar?* |
 
-As duas fazem o mesmo movimento: pegam **tudo o que foi emitido** contra a
-empresa, pegam **tudo o que foi lançado** no Sankhya, e mostram a diferença.
-O que sobra é a pendência.
+| **Resumo Executivo** (as duas) | *Onde está concentrado o que sobrou — em qual categoria, em qual unidade, com qual guardião — e quais notas são as mais antigas e as mais caras?* |
+
+As duas primeiras fazem o mesmo movimento: pegam **tudo o que foi emitido**
+contra a empresa, pegam **tudo o que foi lançado** no Sankhya, e mostram a
+diferença. O que sobra é a pendência.
+
+A terceira não cruza nada: ela lê o que as duas produziram, **depois** de a
+classificação estar fechada, e responde onde a pendência dói. Está detalhada em
+[07 — O Resumo Executivo](07-resumo-executivo.md).
 
 ## 2. GerarPendentes — mercadoria
 
@@ -31,15 +37,48 @@ O que sobra é a pendência.
 
 | Aba | O que tem nela | Quem olha |
 |---|---|---|
-| **Resumo Executivo** | o painel: quanto, de quem, e as dez maiores | quem abre o e-mail no celular |
 | **Pendentes** | o que é das áreas de negócio | os guardiões |
 | **PENDENTES FIS-FAT** | o que é do Fiscal e do Faturamento | o time fiscal |
 | `CTe` · `Manifestados` · `Entradas 3os` · `Lançados` | o que saiu da lista, e **por quê** | quem precisa conferir uma saída |
 | **Descartados** *(nova)* | XML de terceiro e NF-e destinada a transporte | quem quiser medir o descarte |
 
-As quatro abas do meio ficam ocultas, como hoje — são evidência de auditoria, e
+As cinco abas de baixo ficam ocultas, como hoje — são evidência de auditoria, e
 continuam reexibíveis por clique direito. A aba `Descartados` é a única novidade:
 hoje essas linhas somem sem deixar rastro, e não há como dizer quantas foram.
+
+**O `Resumo Executivo` não vem nesta versão.** O painel deixou de ser cópia da
+aba de hoje e virou outra coisa: um resumo automático das **duas** frentes —
+mercadorias e serviços —, com três categorias (Diretos, Indiretos e Serviços) e
+layout revisto. A decisão é de 15/09/2026, do Compliance Tributário, e está em
+[06 — Próximas rodadas](06-proximas-rodadas.md).
+
+Enquanto ele não vem, quem roda vê os números na própria tela da Central —
+quantas pendências, de quem, quanto valem e o que exige revisão — e o e-mail
+segue com as duas abas de sempre.
+
+### A célula âmbar é sugestão da ferramenta
+
+`[FATO]` Desde 22/09/2026 a ferramenta **preenche** `Categoria`, `Guardião` e
+`Tipo de Operação` quando a célula está vazia e a base de conhecimento tem o
+que propor. O que ela preencheu sai com **fundo âmbar claro**.
+
+Três coisas que vale saber antes de confiar na cor:
+
+* **o que você escreveu nunca é sobrescrito.** A célula âmbar estava vazia;
+* **categoria e operação erram pouco, guardião erra mais.** Medido contra a
+  semana 38: categoria acertou 44 de 44 e operação 18 de 18 no grau de
+  evidência firme; guardião acerta cerca de três em cada quatro. Confira o
+  guardião âmbar antes de cobrar alguém;
+* **a operação sai na sua redação.** Se o time passa a escrever `Compra Uso
+  Consumo` no lugar de `Compra Uso e Consumo`, a ferramenta acompanha na
+  semana seguinte — ela escreve a grafia que o livro mais usa, não a que
+  aprendeu;
+* **um guardião proposto encaminha a nota** — se a base propõe `Faturamento`,
+  a nota vai para a `PENDENTES FIS-FAT`, como iria se você tivesse escrito.
+
+A tela conta quantas células foram preenchidas, por coluna, sob o título
+"confira antes de cobrar". Quem não quiser o preenchimento desliga por coluna
+no parâmetro `pre_categorizacao`.
 
 ### Por que uma nota sai da lista
 
@@ -82,6 +121,35 @@ não é a destinatária).
 A última aba é a que mede o **buraco da fonte externa**. Ela não é lista de
 pendência: é a resposta para "o ASIS está pegando tudo?". Na execução de
 referência, 127 lançamentos não tinham contraparte.
+
+### O que sai do relatório, e por quê
+
+`[FATO]` Duas regras do time fiscal, de 22/09/2026. As duas tiram a nota da
+`Pendentes` **depois** do confronto, e as duas escrevem por quê:
+
+**A nota cancelada na prefeitura que a nossa base não sabe.** Acontece de a
+NFS-e ser cancelada na prefeitura e o evento de cancelamento nunca chegar à
+base de serviços. Do lado de cá a nota continua emitida, nunca é lançada, e
+volta toda semana como pendência de alguém. Quando isso é descoberto, quem
+remodela a planilha escreve `cancelada` em **`Guardiao`, `Gestor de apoio` e
+no `Retorno`** — os três, porque um campo sozinho é digitação e os três juntos
+são uma afirmação. Na semana seguinte a nota sai da `Pendentes` e vai para a
+aba `Fora do relatorio`.
+
+A marca vive no **livro de classificação**, que é onde a classificação da
+semana passada já mora, e a aba é lida de volta junto com a `Pendentes`. São
+dois caminhos para a mesma conclusão: perder o arquivo não faz a nota voltar,
+e escrever direto na aba também funciona.
+
+**A exceção cadastrada.** Parceiro e valor que o time decidiu não cobrar — por
+exemplo, um prestador cuja nota de valor fixo é tratada por fora. Não é regra
+derivável de nada: é decisão, e por isso é **cadastro**, com parceiro, valor e
+o motivo que vai para a planilha. Nasce vazia, e vazia não exclui nada.
+
+**Nenhuma das duas apaga.** A aba `Fora do relatorio` traz a nota inteira — as
+36 colunas da `Pendentes` — mais a coluna `Motivo`, e a tela conta quantas
+saíram por cada motivo. É a mesma decisão da aba `Descartados` de mercadorias:
+esconder, e não apagar, para que o volume excluído seja mensurável.
 
 ### Como o confronto casa uma nota com um lançamento
 

@@ -180,7 +180,7 @@ def _ajustes(apuracao: Apuracao) -> None:
     if not a.lancamentos and not a.anotacoes:
         _titulo("Ajustes")
         print("  Nenhum declarado. As linhas 002, 003, 006 e 007 do registro")
-        print("  saem marcadas até alguém assinar a conferência na aba AJUSTES.")
+        print("  saem marcadas até alguém assinar a conferência na aba AJUSTES MANUAIS.")
 
 
 def _saldo_credor(apuracao: Apuracao) -> None:

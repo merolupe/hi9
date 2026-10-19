@@ -9,8 +9,9 @@
 #   candidatas    = cargas nominais ≤ alíquota do ICMS
 #   carga_efetiva = candidata mais próxima da carga_bruta
 #
-# Aderência medida contra a classificação manual de Julho/2026: 99,87%
-# (2.333 de 2.336 linhas). Ver docs/apurabot/05-achados-julho-2026.md.
+# Na primeira conferência contra a classificação manual, as únicas
+# divergências eram erro da apuração manual. Ver
+# docs/apurabot/05-achados-julho-2026.md § 3.
 
 equalizacao:
   # Cargas nominais homologadas — o que se espera encontrar na base.

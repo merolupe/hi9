@@ -70,7 +70,13 @@ Na página:
 3. o resultado aparece na tela — apuração por estabelecimento, Registro de
    Apuração, transferências a emitir, memória do benefício e as pendências, se
    houver;
-4. **Baixar a planilha** salva o `.xlsx` completo em Downloads.
+4. **Baixar a planilha** salva o `.xlsx` completo em Downloads;
+5. **Registro em PDF** abre o Registro de Apuração numa aba nova, no desenho do
+   PDF que o Sankhya emite — por estabelecimento, uma folha de entradas e
+   saídas por CFOP e uma do resumo. A janela de impressão abre sozinha: escolha
+   o destino **Salvar como PDF**. No alto da página dá para imprimir um
+   estabelecimento só. O PDF é gerado pelo próprio navegador (Edge ou Chrome),
+   sem instalar nada.
 
 Para fechar: feche a janela preta que abriu junto, ou tecle Ctrl+C nela. A pasta temporária com o arquivo enviado é apagada no encerramento — nada do Livro Fiscal fica na máquina.
 
@@ -114,26 +120,32 @@ conferir o Livro antes de fechar o mês.
 
 ## 5. O que sai
 
-Um `.xlsx`, com as abas na ordem da conclusão para o detalhe:
+Um `.xlsx`, com as abas por prioridade de leitura:
 
 | Aba | Conteúdo |
 |---|---|
-| **RESUMO** | Procedência do arquivo, período que o livro cobre, volume, equalização e categorias |
-| **REGISTRO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo |
-| **AJUSTES** | Formulário: as parcelas sem documento e a conferência de cada estabelecimento |
-| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → carga efetiva → produto, com a operação e o % do crédito estornado |
-| **APURAÇÃO POR FILIAL** | Crédito, estorno, débito e saldo por estabelecimento; segregação por atividade, memória do benefício e FADEFE |
+| **REGISTRO DE APURAÇÃO** | Espelho do Registro de Apuração: entradas e saídas por CFOP, resumo em 14 linhas, um bloco por estabelecimento e o totalizador do grupo. Filtro por filial em A2 |
+| **APURAÇÃO EFETIVA** | Crédito, estorno e apropriação por CFOP → carga efetiva → produto, com a operação e o % do crédito estornado; em MS, também a alíquota da nota e a redução de base. Filtro por filial em A2 |
+| **RESUMO E DETALHES** | Crédito, estorno, débito e saldo por estabelecimento; saldo credor que vai para o mês seguinte; memória do benefício e da centralização em fórmula; FADEFE, segregação por atividade (só de quem tem benefício fiscal) e detalhe por carga |
+| **REGISTRO 1200** | Os Registros 1200 e 1210 da EFD de Rio Brilhante: o estoque do crédito recebido por transferência |
+| **AJUSTES MANUAIS** | Formulário: as parcelas sem documento e a conferência de cada estabelecimento |
 | **TRANSFERÊNCIAS** | O que transferir para a centralizadora depois de fechar a competência |
-| **PENDÊNCIAS** | O que bloqueia o encerramento — as mesmas que a tela mostra |
-| **POR ESTABELECIMENTO E CARGA** | O recorte por carga efetiva |
+| **PENDÊNCIAS** | O que bloqueia o encerramento — as mesmas que a tela mostra. Só aparece quando há pendência |
 | **BASE TRATADA** | Uma linha por linha do Livro — o extrato inteiro, a regra aplicada e as colunas de ajuste |
+| **AJUSTES NO SANKHYA** | Tudo o que entra no Sankhya como Ajuste de Apuração — calculado e declarado —, um lançamento por linha, com a observação padrão e autofiltro |
+
+Duas abas saem **ocultas**: **RESUMO** (procedência, volume, equalização e
+categorias — os mesmos números da tela) e **POR ESTABELECIMENTO E CARGA** (o
+recorte por carga efetiva). Para vê-las, clique com o botão direito numa aba e
+use *Reexibir*.
+
+Nenhuma aba tem painel congelado, e toda tabela sai com borda cinza.
 
 Três delas respondem a perguntas diferentes sobre o mesmo mês:
 
-**REGISTRO** — *quanto deu?* É o espelho do livro, conferível contra o PDF que o
-ERP emite. Diferente do PDF, sai num arquivo só e com totalizador do grupo.
-Linhas do resumo marcadas `AGUARDA AJUSTE` dependem de lançamento aprovado que
-não nasce do Livro Fiscal.
+**REGISTRO DE APURAÇÃO** — *quanto deu?* É o espelho do livro, conferível contra
+o PDF que o ERP emite. Diferente do PDF, sai num arquivo só e com totalizador do
+grupo.
 
 **APURAÇÃO EFETIVA** — *por que deu isso?* Uma linha por produto, como na
 apuração manual: não é o Livro repetido, é o Livro somado. Linha inteira em
@@ -147,11 +159,56 @@ cálculo em MS; ela está na `BASE TRATADA`. Ver
 **BASE TRATADA** — *o que o motor leu?* Uma linha por linha do Livro, com carga
 efetiva, categoria, regime e a regra aplicada, em texto.
 
+E duas são roteiro para o que se digita fora da ferramenta:
+
+**AJUSTES NO SANKHYA** — *o que digitar no Sankhya?* É a última aba, porque só
+se usa depois de fechados os ajustes manuais. No Sankhya as linhas 002,
+003, 006, 007 e 012 não se digitam como total: cada parcela é um lançamento de
+Ajuste de Apuração. A aba lista todos — o estorno, o crédito indevido, o DIFAL,
+as duas pontas da centralização e o benefício, que a apuração calcula, mais o
+que foi declarado na aba `AJUSTES MANUAIS` —, nas colunas do relatório de Ajuste
+de Apuração do Sankhya: Nome Fantasia, Tipo apuração, Valor, Observação padrão e
+Observação. O código de cada parcela calculada vem de
+`parametros/lancamentos_sankhya.yaml`; parcela sem código sai em amarelo. A
+tabela começa na segunda linha, sem linha em branco entre os estabelecimentos,
+e já sai com autofiltro.
+
+**REGISTRO 1200** — *quanto do crédito transferido posso usar no mês?* Em
+cima, o 1200 de cada mês já transmitido no ano (em cinza, de `saldos.yaml`) e
+o do mês em apuração (em azul): saldo inicial + recebido − utilizado = saldo
+final, em fórmula. O utilizado é o ajuste da linha 006 com a observação padrão
+87. Depois vêm o 1210 e o **TXT do SPED**, com as linhas `|1200|` e `|1210|`
+como vão para o arquivo da EFD.
+
+Embaixo, a conta do uso, em três blocos e em fórmula:
+
+1. **Estoque** — valor recebido por transferência + valor transportado = total
+   de crédito disponível.
+2. **Quanto usar** — o menor de três limites:
+   - **(a)** 30% do saldo devedor de Rio Brilhante, a linha 011 do Registro
+     antes do uso (com a abertura: próprio e recebido pela centralização);
+   - **(b)** o saldo devedor que o benefício fiscal não cobre. O benefício é
+     dedução da linha 012, não passa do saldo devedor e a sobra não vai para o
+     mês seguinte: crédito usado acima de (b) sai do estoque sem reduzir o
+     imposto;
+   - **(c)** o total de crédito disponível.
+
+   O menor deles é o **total de crédito a utilizar**.
+3. **Resultado do uso** — o uso declarado na linha 006 ao lado do total a
+   utilizar: benefício deduzido, benefício não aproveitado, ICMS a recolher,
+   FADEFE nas duas bases (decisão pendente nº 19) e saldo a transportar.
+
+Uso declarado acima do teto, do disponível ou do que o benefício não cobre sai
+pendente no topo da aba. Para abrir o mês
+seguinte, inclua o mês transmitido em `saldos.yaml`, no bloco
+`creditos_controlados_transmitidos`: o saldo inicial sai dele.
+
 ### Os ajustes, e como devolver o arquivo
 
 As linhas **002, 003, 006 e 007** do Registro não vêm de documento: são
-decisões da apuração. Enquanto ninguém as declarar, o `REGISTRO` mostra
-`AGUARDA AJUSTE` — o total sai, mas não é o final.
+decisões da apuração. Enquanto ninguém as declarar, a tela e o PDF do Registro
+mostram `AGUARDA AJUSTE` — o total sai, mas não é o final. A planilha não
+repete a marca: ela é o espelho do livro.
 
 Declarar é preencher e **devolver o mesmo arquivo**:
 
@@ -169,7 +226,7 @@ dentro, com todas as colunas do Sankhya. É um arquivo só, ida e volta.
 
 *Tem documento* — "esta nota foi lançada errada", "esta entrada não devia ter
 crédito". Preencha na **linha da nota**, na aba `BASE TRATADA`, nas cinco
-colunas de cabeçalho marrom:
+primeiras colunas de cabeçalho marrom:
 
 | Coluna | O que informar |
 |---|---|
@@ -181,10 +238,35 @@ colunas de cabeçalho marrom:
 
 Estabelecimento e atividade não se digitam: a linha já diz os dois.
 
+**A atividade da linha, quando o caso foge do CFOP (MS).** Em Rio Brilhante e
+Corumbá a atividade sai do CFOP — e é ela que dimensiona o benefício. Quando
+uma operação específica não é o que o CFOP diz, marque as linhas dela nas
+outras quatro colunas marrons:
+
+| Coluna | O que informar |
+|---|---|
+| `atividade_ajustada` | `Produção` (ou `industrial`), `Comercial`, `Importados` ou `Prestacional / Outras` |
+| `atividade_motivo` | por quê (obrigatório) |
+| `atividade_responsavel` | quem apurou |
+| `atividade_aprovador` | quem aprovou |
+
+Exemplo: matéria-prima comprada por transmissão de propriedade com a
+mercadoria já no armazém (2923), que volta por retorno de armazenagem (2906)
+para ir à produção. Pelo CFOP as duas são comerciais; marcadas, vão para o
+industrial — e o benefício cai, porque o crédito industrial abate o saldo
+devedor sobre o qual ele incide. A marca vale só para as linhas marcadas: a
+regra do CFOP continua a mesma para as outras notas. Sem motivo, responsável
+ou aprovador, a linha sai `SEM REGRA` e bloqueia o fechamento. Fora de MS a
+coluna não tem efeito.
+
 *Não tem documento* — uma parcela do Registro que não pertence a nota nenhuma.
-Vai na aba **`AJUSTES`**, bloco `PARCELAS SEM DOCUMENTO`, com o estabelecimento
+Vai na aba **`AJUSTES MANUAIS`**, bloco `PARCELAS SEM DOCUMENTO`, com o estabelecimento
 escrito. Em MS informe também a atividade, porque é ela que dimensiona o
-benefício.
+benefício. A última coluna, `observação padrão`, é o código com que a parcela
+entra no Sankhya — opcional, mas é ela que dá o código na aba
+`AJUSTES NO SANKHYA`. O uso do crédito recebido por transferência de Rio Brilhante
+vai aqui, na linha `006`, com a observação padrão `87`: é ele que vira o
+utilizado do `REGISTRO 1200`.
 
 **O sentido vem da linha, não do sinal:**
 
@@ -210,7 +292,7 @@ tomou; completar por conta própria é o que a ferramenta não faz.
 
 Célula vazia diz duas coisas ao mesmo tempo — "não tem ajuste" e "ninguém olhou
 ainda" —, e a ferramenta não escolhe uma. Por isso alguém assina, no bloco
-`CONFERÊNCIA` da aba `AJUSTES`:
+`CONFERÊNCIA` da aba `AJUSTES MANUAIS`:
 
 | estabelecimento | conferido por | conferido em | observação |
 |---|---|---|---|
@@ -253,7 +335,7 @@ O código (`11`, acima) é o da empresa, o mesmo do Livro Fiscal. Estabeleciment
 que não aparece na competência declarada abriu o mês sem saldo credor.
 
 **De onde tirar o número:** da apuração do mês anterior. A tela, a planilha
-(aba `APURAÇÃO POR FILIAL`) e o comando trazem o bloco **Saldo credor** com três
+(aba `RESUMO E DETALHES`) e o comando trazem o bloco **Saldo credor** com três
 colunas — o que veio, o que o mês apurou e o que vai para a competência
 seguinte. A última coluna é exatamente o que se cadastra:
 
@@ -263,7 +345,7 @@ seguinte. A última coluna é exatamente o que se cadastra:
 ```
 
 Se a competência não estiver declarada, a apuração roda assim mesmo, com todo
-mundo abrindo o mês zerado — e o `REGISTRO` marca a linha 009 como
+mundo abrindo o mês zerado — e o Registro, na tela e no PDF, marca a linha 009 como
 `AGUARDA AJUSTE`, para ninguém confundir "não tinha saldo" com "ninguém disse".
 
 ---

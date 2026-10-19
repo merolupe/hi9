@@ -18,6 +18,18 @@ from .texto import so_digitos, texto_de
 #: O CNPJ que o Portal de Compras usa como "sem parceiro". Não indexa nada.
 CNPJ_ZERADO = "00000000000000"
 
+#: O que se grava no lugar do código do parceiro quando o ERP não tem cadastro.
+#:
+#: É o **quinto** conceito duplicado entre os dois módulos VBA — os outros
+#: quatro são detecção de cabeçalho, mapa de cabeçalho, normalização de texto e
+#: tradução do farol. Está aqui, e não em cada domínio, porque é literalmente a
+#: mesma string escrita na mesma situação nos dois: mercadorias a grava em
+#: `Cód. Parceiro` pela regra A2, e serviços a devolve quando o CNPJ do
+#: prestador não está no cadastro do Sankhya.
+#:
+#: A grafia é a do VBA e não se mexe: é célula que o time lê e filtra.
+SEM_CADASTRO = "Sem cadastro"
+
 
 def chave_de_acesso(valor: Any) -> str:
     """Os 44 dígitos da chave, sem pontuação, sem espaço, sem apóstrofo.

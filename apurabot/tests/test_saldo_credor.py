@@ -84,10 +84,24 @@ def test_a_abertura_de_julho_vem_do_registro_do_erp(parametros):
 
 
 def test_a_abertura_de_agosto_e_a_linha_014_de_julho(parametros):
-    """A virada do mês: o que julho transporta é o que agosto recebe."""
+    """A virada do mês: o que julho transporta é o que agosto recebe.
+
+    Guará pelo Registro de julho retificado em 25/09/2026; Barra do Garças pela
+    linha 009 do Registro de agosto.
+    """
     assert parametros.saldos_credores("2026-08") == {
-        CODIGO_GUARA: pytest.approx(2_215_164.28, abs=CENTAVO),
+        CODIGO_GUARA: pytest.approx(1_376_818.13, abs=CENTAVO),
         CODIGO_LONDRINA: pytest.approx(A_TRANSPORTAR_LONDRINA, abs=CENTAVO),
+        8: pytest.approx(3_014.07, abs=CENTAVO),
+    }
+
+
+def test_a_abertura_de_setembro_e_a_linha_014_de_agosto(parametros):
+    """Registros de 08/2026: Guará retificado em 28/09, Londrina, Barra do Garças."""
+    assert parametros.saldos_credores("2026-09") == {
+        CODIGO_GUARA: pytest.approx(960_376.58, abs=CENTAVO),
+        CODIGO_LONDRINA: pytest.approx(379_388.66, abs=CENTAVO),
+        8: pytest.approx(3_014.07, abs=CENTAVO),
     }
 
 
@@ -312,7 +326,7 @@ def test_a_planilha_entrega_a_abertura_do_mes_seguinte(base_julho, parametros, t
 
     destino = tmp_path / "com_saldo.xlsx"
     escrever(base_julho, destino, apurar(base_julho, parametros))
-    aba = openpyxl.load_workbook(destino)["APURAÇÃO POR FILIAL"]
+    aba = openpyxl.load_workbook(destino)["RESUMO E DETALHES"]
     celulas = [c.value for linha in aba.iter_rows() for c in linha]
     texto = "\n".join(str(v) for v in celulas if v)
 

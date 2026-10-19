@@ -149,6 +149,15 @@ class Ingestao:
 # -- onde o livro mora -----------------------------------------------------
 
 def _raiz() -> Path:
+    """A pasta que contém `dados/`: a que a Central publicou, ou a do código.
+
+    A Central põe os dados fora da pasta do código (`HINOVE_DADOS`, ver
+    `central/dados.py`) para uma versão nova não começar vazia. Sem a
+    variável — testes, uso avulso —, é a pasta do código, como sempre foi.
+    """
+    externa = os.environ.get("HINOVE_DADOS", "").strip()
+    if externa:
+        return Path(externa)
     for pasta in Path(__file__).resolve().parents:
         if (pasta / "vendor" / "openpyxl").is_dir():
             return pasta

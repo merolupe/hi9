@@ -6,14 +6,25 @@ Três visões da mesma competência, cada uma respondendo a uma pergunta diferen
                      alíquota e produto, com a conta à vista e o CHECK fechando
                      linha a linha.
 
-`REGISTRO`           o espelho do Registro de Apuração do ICMS, um bloco por
+`REGISTRO DE APURAÇÃO`
+                     o espelho do Registro de Apuração do ICMS, um bloco por
                      estabelecimento e um totalizador no fim — que é o que o
                      PDF do ERP, emitido filial a filial, não mostra.
 
 `TRANSFERÊNCIAS`     o que precisa ser transferido para a centralizadora depois
                      que a competência fechar.
+
+E duas que servem de roteiro para o que se digita fora da ferramenta:
+
+`AJUSTES NO SANKHYA` o Registro desmontado em lançamentos de "Ajuste de
+                     Apuração" do Sankhya, com a observação padrão de cada um.
+
+`REGISTRO 1200`      o controle do crédito recebido por transferência — os
+                     Registros 1200 e 1210 da EFD.
 """
 from __future__ import annotations
+
+from copy import copy
 
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -27,6 +38,10 @@ TITULO = Font(bold=True, color="FFFFFF")
 FUNDO = PatternFill("solid", fgColor="1F3864")
 FUNDO_CLARO = PatternFill("solid", fgColor="D9E2F3")
 FUNDO_ATENCAO = PatternFill("solid", fgColor="FFF2CC")
+# REGISTRO 1200: os meses já transmitidos em cinza, o mês em apuração em azul.
+FUNDO_TRANSMITIDO = PatternFill("solid", fgColor="D9D9D9")
+FUNDO_MES_ANTERIOR = PatternFill("solid", fgColor="A6A6A6")
+FUNDO_MES_ATUAL = PatternFill("solid", fgColor="8DB4E2")
 MOEDA = "#,##0.00"
 PERCENTUAL = "0.00%"
 VERMELHO = Font(bold=True, color="B00020")
@@ -34,11 +49,23 @@ VERDE = Font(bold=True, color="1E7B34")
 
 ROTULO_SEM_ATIVIDADE = "(não segregada)"
 
+ABA_REGISTRO = "REGISTRO DE APURAÇÃO"
+ABA_EFETIVA = "APURAÇÃO EFETIVA"
+ABA_TRANSFERENCIAS = "TRANSFERÊNCIAS"
+ABA_LANCAMENTOS = "AJUSTES NO SANKHYA"
+ABA_1200 = "REGISTRO 1200"
+
+#: O título da aba de lançamentos é o único texto dela: o resto é a tabela.
+TITULO_LANCAMENTOS = (
+    "AJUSTES PARA GUIAR AJUSTES DO SANKHYA - Utilizar após finalizar ajustes manuais"
+)
+
 #: Como a categoria da operação aparece na conferência. O nome interno é
 #: `frete_transferencia`; quem lê a planilha lê "Frete de Transferência".
 #: A BASE TRATADA continua com o nome interno de propósito — é por ele que a
 #: ferramenta relê o próprio arquivo.
 ROTULO_DA_CATEGORIA = {
+    "amostra_gratis": "Amostra Grátis",
     "ativo_imobilizado": "Ativo Imobilizado",
     "ciap": "CIAP",
     "complemento_icms": "Complemento de ICMS",
@@ -154,6 +181,11 @@ COLUNAS_EFETIVA = [
     "% do crédito estornado", "ICMS a estornar", "ICMS a apropriar",
 ]
 
+#: Só nos regimes que declaram `mostra_reducao_de_base` (MS): de onde a carga
+#: efetiva veio. Ficam no fim para não deslocar as colunas das fórmulas.
+COLUNAS_DA_REDUCAO = ["Alíquota da nota", "Redução de base"]
+COL_ALIQUOTA, COL_REDUCAO = 12, 13
+
 #: Colunas por letra, para montar as fórmulas.
 COL_CONTABIL, COL_BASE, COL_ICMS = 5, 6, 7
 COL_PERCENTUAL, COL_ESTORNAR, COL_APROPRIAR = 9, 10, 11
@@ -166,8 +198,8 @@ EXCEDENTE = "excedente_sobre_carga_saida"
 
 def _rotulo_atividade(apurada: LinhaApurada) -> str:
     if not apurada.atividade:
-        # A UF não segrega por atividade: mostra a categoria da equalização,
-        # que é o corte que faz sentido ali.
+        # O estabelecimento não segrega por atividade: mostra a categoria da
+        # equalização, que é o corte que faz sentido ali.
         return (
             rotulo_da_categoria(apurada.tratada.classificacao.categoria)
             or ROTULO_SEM_ATIVIDADE
@@ -227,8 +259,8 @@ def _numero(valor) -> float:
 
 def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
     """Conferência do crédito, do estorno e da apropriação, por CFOP e produto."""
-    aba = wb.create_sheet("APURAÇÃO EFETIVA")
-    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 26, 14, 16, 16])
+    aba = wb.create_sheet(ABA_EFETIVA)
+    _larguras(aba, [10, 32, 13, 46, 16, 16, 15, 26, 14, 16, 16, 12, 14])
 
     aba.append(["APURAÇÃO EFETIVA — crédito, estorno e apropriação por CFOP e produto"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
@@ -239,22 +271,26 @@ def aba_apuracao_efetiva(wb, apuracao: Apuracao, params) -> None:
         "estorno mais a apropriação não fecham o crédito."
     ])
 
+    regimes = (params.regimes.get("regimes") or {}) if params else {}
+    faixas = []
     for filial in sorted(
         apuracao.filiais.values(), key=lambda f: (f.uf, f.estabelecimento)
     ):
-        _bloco_efetiva(aba, filial)
+        reducao = bool((regimes.get(filial.regime) or {}).get("mostra_reducao_de_base"))
+        inicio = aba.max_row + 1
+        _bloco_efetiva(aba, filial, reducao)
+        faixas.append((inicio, aba.max_row, filial.estabelecimento))
+    coluna_de_filial(aba, faixas)
 
-    aba.freeze_panes = "A3"
 
-
-def _bloco_efetiva(aba, filial) -> None:
+def _bloco_efetiva(aba, filial, reducao: bool = False) -> None:
     # Respiro entre estabelecimentos — os blocos ficavam colados.
     _vazio(aba)
     _vazio(aba)
     _titulo(
         aba,
         f"{filial.estabelecimento}  —  {filial.uf}  —  regime {filial.regime}",
-        len(COLUNAS_EFETIVA),
+        len(COLUNAS_EFETIVA) + (len(COLUNAS_DA_REDUCAO) if reducao else 0),
     )
     entradas = [a for a in filial.apuradas if a.resultado.credito_bruto]
     if not entradas:
@@ -262,7 +298,7 @@ def _bloco_efetiva(aba, filial) -> None:
         _blocos_de_fechamento(aba, filial)
         return
 
-    _cabecalho(aba, COLUNAS_EFETIVA)
+    _cabecalho(aba, COLUNAS_EFETIVA + (COLUNAS_DA_REDUCAO if reducao else []))
 
     # CFOP → CARGA EFETIVA EQUALIZADA → produto × operação, somando em cada
     # nível. A carga é a chave nos dois regimes: é a grandeza que o documento
@@ -271,7 +307,11 @@ def _bloco_efetiva(aba, filial) -> None:
     for apurada in entradas:
         cfop = apurada.tratada.origem.cfop_int
         carga = apurada.tratada.carga.carga
-        produto = (_nome_do_produto(apurada), _rotulo_atividade(apurada))
+        # Onde a redução aparece, a alíquota entra na chave: cada linha de
+        # produto tem uma alíquota só, e a redução sai exata.
+        aliquota = _numero(apurada.tratada.origem.dados.get("aliquota_icms")) \
+            if reducao else None
+        produto = (_nome_do_produto(apurada), _rotulo_atividade(apurada), aliquota)
         por_cfop = arvore.setdefault(cfop, {"descricao": "", "cargas": {}})
         por_cfop["descricao"] = por_cfop["descricao"] or _descricao_cfop(apurada)
         por_carga = por_cfop["cargas"].setdefault(carga, {})
@@ -292,9 +332,15 @@ def _bloco_efetiva(aba, filial) -> None:
             linha_carga = _linha_de_grupo(
                 aba, _agregar([produtos]), nivel=1, valor_da_chave=carga
             )
+            if reducao:
+                aliquotas = {chave[2] for chave in produtos}
+                if len(aliquotas) == 1:
+                    _reducao(aba, linha_carga, aliquotas.pop(), carga)
             folhas = [
-                _linha_de_produto(aba, produtos[chave], carga, *chave)
-                for chave in sorted(produtos, key=lambda p: (p[0].casefold(), p[1]))
+                _linha_de_produto(aba, produtos[chave], carga, *chave,
+                                  reducao=reducao)
+                for chave in sorted(produtos, key=lambda p: (p[0].casefold(), p[1],
+                                                             p[2] or 0))
             ]
             _somatorio(aba, linha_carga, folhas)
             linhas_de_carga.append(linha_carga)
@@ -384,8 +430,25 @@ def _linha_de_grupo(
     return linha
 
 
+def _reducao(aba, linha: int, aliquota: float | None, carga: float | None) -> None:
+    """Alíquota da nota e a redução de base que a levou à carga efetiva.
+
+    redução = 1 − carga ÷ alíquota. Pela carga equalizada, e não por base ÷
+    valor contábil: o frete com pedágio tem valor contábil maior que a base e
+    não tem redução nenhuma.
+    """
+    if not aliquota:
+        return
+    aba.cell(row=linha, column=COL_ALIQUOTA).value = _percentual(aliquota)
+    if carga is not None:
+        celula = aba.cell(row=linha, column=COL_REDUCAO)
+        celula.value = round(max(1.0 - float(carga) / float(aliquota), 0.0), 4)
+        celula.number_format = PERCENTUAL
+
+
 def _linha_de_produto(
-    aba, somas: Somas, valor_da_chave: float | None, produto: str, operacao: str
+    aba, somas: Somas, valor_da_chave: float | None, produto: str, operacao: str,
+    aliquota: float | None = None, *, reducao: bool = False,
 ) -> int:
     aba.append([
         "", "", _percentual(valor_da_chave), produto,
@@ -396,6 +459,8 @@ def _linha_de_produto(
     _derivadas(aba, linha)
     _formatos_da_linha(aba, linha)
     aba.row_dimensions[linha].outlineLevel = 2
+    if reducao:
+        _reducao(aba, linha, aliquota, valor_da_chave)
     if not somas.fecha:
         # A identidade quebrou. Sem coluna de CHECK, o aviso é a própria linha.
         for celula in aba[linha]:
@@ -484,12 +549,7 @@ def _blocos_de_fechamento(aba, filial) -> None:
     _moeda(aba, linha, range(4, 6))
     for celula in aba[linha]:
         celula.font = Font(bold=True)
-
-    if filial.beneficio:
-        _vazio(aba)
-        _titulo(aba, "BENEFÍCIO FISCAL", 7, fundo=FUNDO_CLARO, fonte=Font(bold=True))
-        for passo in filial.beneficio.memoria:
-            aba.append(["", passo])
+    # A memória do benefício fiscal mora na aba RESUMO E DETALHES, em fórmula.
 
 
 def _carga_media(valores: dict[str, float]) -> float | None:
@@ -521,24 +581,70 @@ CABECALHO_VALORES = [
 
 def aba_registro(wb, apuracao: Apuracao, params, ajustes=None) -> list:
     """Espelho do Registro de Apuração — um bloco por filial e o totalizador."""
-    aba = wb.create_sheet("REGISTRO")
+    aba = wb.create_sheet(ABA_REGISTRO)
     _larguras(aba, COLUNAS_REGISTRO)
 
     aba.append(["REGISTRO DE APURAÇÃO DO ICMS"])
     aba.cell(row=1, column=1).font = Font(bold=True, size=14)
-    aba.append([
-        "Espelho do livro por estabelecimento. As linhas do resumo marcadas "
-        "AGUARDA AJUSTE dependem de lançamento aprovado que não nasce do Livro Fiscal."
-    ])
 
     registros = reg.montar(apuracao, params, ajustes)
-    for registro in registros:
-        _bloco_registro(aba, registro)
+    blocos = list(registros)
     if len(registros) > 1:
-        _bloco_registro(aba, reg.totalizador(registros, apuracao.base.competencia))
-
-    aba.freeze_panes = "A3"
+        blocos.append(reg.totalizador(registros, apuracao.base.competencia))
+    faixas = []
+    for registro in blocos:
+        inicio = aba.max_row + 1
+        _bloco_registro(aba, registro)
+        faixas.append((inicio, aba.max_row, registro.estabelecimento))
+    coluna_de_filial(aba, faixas)
     return registros
+
+
+#: Abas em que a coluna A é a filial de cada linha, para o filtro.
+ABAS_COM_FILIAL = (ABA_REGISTRO, ABA_EFETIVA)
+
+
+def coluna_de_filial(aba, faixas: list[tuple[int, int, str]]) -> None:
+    """Coluna A com a filial de cada linha, e o filtro do Excel nela.
+
+    A aba empilha um bloco por estabelecimento. Escolher a filial no filtro da
+    célula A2 mostra só o bloco dela — título, tabelas, linhas em branco e
+    totais —, porque TODA linha do bloco leva o nome, inclusive as vazias:
+    linha sem nome sobraria na tela ou sumiria junto. O filtro cobre a aba
+    inteira por intervalo explícito, então as linhas em branco não o cortam.
+
+    A coluna entra depois de a aba estar pronta: as demais andam uma casa para
+    a direita e cada fórmula é traduzida junto, como faria o Excel ao inserir
+    uma coluna. Nenhuma outra aba aponta para estas duas.
+    """
+    from openpyxl.formula.translate import Translator
+
+    larguras = [
+        aba.column_dimensions[get_column_letter(i)].width
+        for i in range(1, aba.max_column + 1)
+    ]
+    aba.insert_cols(1)
+    for linha in aba.iter_rows(min_col=2):
+        for celula in linha:
+            valor = celula.value
+            if isinstance(valor, str) and valor.startswith("="):
+                origem = f"{get_column_letter(celula.column - 1)}{celula.row}"
+                celula.value = Translator(valor, origin=origem).translate_formula(
+                    celula.coordinate)
+    _larguras(aba, [26] + larguras)
+
+    # O título da aba volta para A1: com a coluna nova estreita, ele transborda.
+    titulo = aba.cell(row=1, column=2)
+    aba.cell(row=1, column=1, value=titulo.value).font = copy(titulo.font)
+    titulo.value = None
+
+    cinza = Font(color="808080", size=9)
+    for inicio, fim, nome in faixas:
+        for numero in range(inicio, fim + 1):
+            aba.cell(row=numero, column=1, value=nome).font = cinza
+    cabecalho = aba.cell(row=2, column=1, value="Filial")
+    cabecalho.font, cabecalho.fill = TITULO, FUNDO
+    aba.auto_filter.ref = f"A2:A{aba.max_row}"
 
 
 def _bloco_registro(aba, registro: reg.Registro) -> None:
@@ -629,8 +735,9 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
     _vazio(aba)
     _titulo(aba, "RESUMO DA APURAÇÃO DO IMPOSTO", 7,
             fundo=FUNDO_CLARO, fonte=Font(bold=True))
-    _cabecalho(aba, ["Código", "Descrição", "Coluna Auxiliar", "Valores", "Somas",
-                     "", "Situação"])
+    # Sem a coluna "Situação": a marca de linha que aguarda ajuste fica na
+    # tela e no PDF, onde o fiscal confere; a planilha é o espelho do livro.
+    _cabecalho(aba, ["Código", "Descrição", "Coluna Auxiliar", "Valores", "Somas"])
     if registro.gerencial:
         aba.append([
             "", "As linhas 011 a 014 são a soma do resultado de cada "
@@ -645,8 +752,7 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
         aba.append([
             f"{item.codigo:03d}", item.rotulo, None,
             None if soma else item.valor,
-            item.valor if soma else None, "",
-            "AGUARDA AJUSTE" if item.aguarda_ajuste else "",
+            item.valor if soma else None,
         ])
         linha = onde[item.codigo] = aba.max_row
         _somar_no_resumo(aba, item.codigo, onde)
@@ -654,8 +760,6 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
         if soma:
             for celula in aba[linha]:
                 celula.font = Font(bold=True)
-        if item.aguarda_ajuste:
-            aba.cell(row=linha, column=7).fill = FUNDO_ATENCAO
         if item.codigo == 13:
             aba.cell(row=linha, column=5).font = VERMELHO if item.valor else VERDE
 
@@ -671,7 +775,7 @@ def _bloco_de_resumo(aba, registro: reg.Registro) -> None:
 
 def aba_transferencias(wb, apuracao: Apuracao) -> None:
     """O que transferir para a centralizadora depois de fechar a competência."""
-    aba = wb.create_sheet("TRANSFERÊNCIAS")
+    aba = wb.create_sheet(ABA_TRANSFERENCIAS)
     _larguras(aba, [34, 34, 18, 18, 18, 30, 22, 16])
 
     aba.append(["TRANSFERÊNCIAS DE SALDO A EMITIR"])
@@ -729,3 +833,273 @@ def aba_transferencias(wb, apuracao: Apuracao) -> None:
             aba.append(["", instrucao])
         if not grupo.instrucoes:
             aba.append(["", "Nada a transferir nesta competência."])
+
+
+# --------------------------------------------------------------------------
+# AJUSTES NO SANKHYA — o Registro desmontado em lançamentos do Sankhya
+# --------------------------------------------------------------------------
+
+def aba_lancamentos(wb, apuracao: Apuracao, params, registros=None,
+                    ajustes=None) -> None:
+    """Um lançamento de "Ajuste de Apuração" por linha, como o Sankhya lista.
+
+    As seis primeiras colunas são as do relatório de Ajuste de Apuração do
+    Sankhya, na mesma ordem, para conferir um contra o outro depois de lançar.
+    O título e a tabela, sem linha em branco no meio: é para filtrar.
+    """
+    from . import lancamentos as lanc
+
+    roteiro = lanc.montar(apuracao, params, registros, ajustes)
+    aba = wb.create_sheet(ABA_LANCAMENTOS)
+    _larguras(aba, [32, 26, 16, 12, 70, 46, 44, 9])
+
+    aba.append([TITULO_LANCAMENTOS])
+    aba.cell(row=1, column=1).font = Font(bold=True, size=14)
+    cabecalho = _cabecalho(aba, [
+        "Nome Fantasia", "Tipo apuração", "Valor", "Observação padrão",
+        "Observação", "Complemento", "De onde vem", "Linha",
+    ])
+    for x in roteiro.lancamentos:
+        aba.append([
+            x.estabelecimento, x.tipo, x.valor,
+            int(x.observacao_padrao) if x.observacao_padrao.isdigit()
+            else (x.observacao_padrao or None),
+            x.texto or ("(sem observação padrão cadastrada)"
+                        if x.sem_codigo else "(código fora do catálogo)"),
+            x.complemento or None, x.origem, f"{x.linha:03d}",
+        ])
+        _moeda(aba, aba.max_row, range(3, 4))
+        if x.sem_codigo or not x.texto:
+            for coluna in (4, 5):
+                aba.cell(row=aba.max_row, column=coluna).fill = FUNDO_ATENCAO
+    if not roteiro.lancamentos:
+        aba.append(["Nenhum ajuste nesta competência."])
+    aba.auto_filter.ref = f"A{cabecalho}:H{aba.max_row}"
+
+
+# --------------------------------------------------------------------------
+# REGISTRO 1200 — controle de créditos fiscais
+# --------------------------------------------------------------------------
+
+def aba_registro_1200(wb, apuracao: Apuracao, params, ajustes=None) -> None:
+    """O 1200/1210 de cada crédito controlado, com o histórico e o teto do uso.
+
+    Os meses já transmitidos do ano ficam acima do mês em apuração: é deles que
+    vem o saldo transportado. Embaixo, a conta do uso — transportado + recebido
+    é o disponível, e o que se pode usar é o menor entre ele e o teto sobre o
+    saldo devedor do próprio mês.
+    """
+    from . import controle_de_creditos as cc
+
+    controles = cc.montar(apuracao, params, ajustes)
+    if not controles:
+        return
+    aba = wb.create_sheet(ABA_1200)
+    _larguras(aba, [48, 20, 18, 18, 18, 18, 18])
+
+    competencia = apuracao.base.competencia
+    aba.append([f"REGISTROS 1200 E 1210 DA EFD — competência {competencia}"])
+    aba.cell(row=1, column=1).font = Font(bold=True, size=14)
+
+    for c in controles:
+        _vazio(aba)
+        if len(controles) > 1:
+            _titulo(aba, f"{c.estabelecimento} — {c.cod_aj_apur}", 7)
+        for motivo in c.pendencias:
+            aba.append([f"PENDENTE: {motivo}"])
+            aba.cell(row=aba.max_row, column=1).fill = FUNDO_ATENCAO
+            aba.cell(row=aba.max_row, column=1).font = VERMELHO
+
+        _cabecalho(aba, ["Registro 1200", "COD_AJ_APUR", "SLD_CRED",
+                         "CRÉD_APR", "CRÉD_RECEB", "CRÉD_UTIL", "SLD_CRED_FIM"])
+        for mes in c.historico:
+            aba.append([_nome_do_mes(mes.competencia), c.cod_aj_apur,
+                        mes.saldo_inicial, mes.apropriado, mes.recebido,
+                        mes.utilizado, None])
+            n = aba.max_row
+            aba.cell(row=n, column=7).value = f"=C{n}+D{n}+E{n}-F{n}"
+            _moeda(aba, n, range(3, 8))
+            for coluna in range(1, 8):
+                aba.cell(row=n, column=coluna).fill = (
+                    FUNDO_MES_ANTERIOR if coluna == 1 else FUNDO_TRANSMITIDO)
+
+        aba.append([_nome_do_mes(competencia), c.cod_aj_apur, c.saldo_inicial,
+                    c.apropriado, c.recebido, c.utilizado or None, None])
+        atual = aba.max_row
+        aba.cell(row=atual, column=1).fill = FUNDO_MES_ATUAL
+        _moeda(aba, atual, range(3, 8))
+        if c.saldo_inicial is None:
+            aba.cell(row=atual, column=3).fill = FUNDO_ATENCAO
+        aba.cell(row=atual, column=7).value = (
+            f"=C{atual}+D{atual}+E{atual}-F{atual}")
+
+        _vazio(aba)
+        _cabecalho(aba, ["Registro 1210", "TIPO_UTIL", "NR_DOC",
+                         "VL_CRED_UTIL", "CHV_DOCe"])
+        if c.utilizado:
+            aba.append(["", c.tipo_util, None, c.utilizado, c.chave or None])
+            _moeda(aba, aba.max_row, range(4, 5))
+            if not c.chave:
+                aba.cell(row=aba.max_row, column=5).fill = FUNDO_ATENCAO
+        else:
+            aba.append(["", "Sem crédito utilizado no mês: não há 1210."])
+
+        _titulo(aba, "TXT do SPED", 3)
+        for linha in (c.linha_1200(), c.linha_1210()):
+            if linha:
+                aba.append([linha])
+
+        _vazio(aba)
+        _conta_do_uso(aba, c, atual)
+
+
+def _conta_do_uso(aba, c, atual: int) -> None:
+    """Estoque, quanto usar e o resultado do uso — os três blocos da conta.
+
+    Tudo em fórmula sobre as linhas de cima: quem confere vê de onde sai cada
+    número. Só o saldo devedor e o benefício entram como valor, porque vêm do
+    Registro.
+    """
+    linhas: dict[str, int] = {}
+
+    def rotulo(chave: str, texto: str, valor, *, recuo=False, destaque=False):
+        aba.append([("    " if recuo else "") + texto, valor])
+        n = aba.max_row
+        linhas[chave] = n
+        celula = aba.cell(row=n, column=1)
+        if recuo:
+            celula.font = Font(italic=True, size=9)
+        else:
+            celula.font, celula.fill = TITULO, FUNDO
+        aba.cell(row=n, column=2).number_format = MOEDA
+        if valor is None:
+            aba.cell(row=n, column=2).fill = FUNDO_ATENCAO
+        if destaque:
+            aba.cell(row=n, column=2).font = Font(bold=True)
+        return n
+
+    def b(chave: str) -> str:
+        return f"B{linhas[chave]}"
+
+    # -- 1. o estoque ------------------------------------------------------
+    rotulo("recebido", "Valor recebido por transf. de crédito", f"=E{atual}")
+    rotulo("transportado", "Valor transportado",
+           f"=C{atual}" if c.saldo_inicial is not None else None)
+    rotulo("disponivel", "Total de crédito disponível",
+           f"={b('recebido')}+{b('transportado')}", destaque=True)
+
+    # -- 2. quanto usar: o menor de três limites ---------------------------
+    _vazio(aba)
+    local = _nome_curto(c.estabelecimento)
+    rotulo("devedor", f"Saldo devedor de {local} (antes do uso)", c.saldo_devedor)
+    if c.saldo_devedor is not None and c.recebido_da_centralizacao:
+        rotulo("proprio", f"próprio de {local}",
+               round(c.saldo_devedor - c.recebido_da_centralizacao, 2), recuo=True)
+        rotulo("centralizado", "recebido pela centralização",
+               c.recebido_da_centralizacao, recuo=True)
+    limites = []
+    if c.percentual_do_teto is not None:
+        p = c.percentual_do_teto
+        rotulo("teto", f"(a) {p:g}% do saldo devedor",
+               f"=ROUND({b('devedor')}*{p:g}/100,2)")
+        limites.append(b("teto"))
+    rotulo("beneficio", "Benefício fiscal do mês (dedução da linha 012)",
+           c.beneficio)
+    rotulo("nao_coberto", "(b) Saldo devedor que o benefício não cobre",
+           f"=MAX({b('devedor')}-{b('beneficio')},0)")
+    limites.append(b("nao_coberto"))
+    rotulo("limite_disponivel", "(c) Total de crédito disponível",
+           f"={b('disponivel')}")
+    limites.append(b("limite_disponivel"))
+    rotulo("a_utilizar", "Total de crédito a utilizar",
+           f"=MAX(MIN({','.join(limites)}),0)", destaque=True)
+
+    # -- 3. o resultado: o uso declarado ao lado do recomendado -------------
+    _vazio(aba)
+    _cabecalho(aba, ["Resultado do uso", "Declarado (006)", "A utilizar"])
+    usos = {"B": f"=F{atual}", "C": f"={b('a_utilizar')}"}
+    resultado = [
+        ("uso", "Crédito usado", lambda col: usos[col]),
+        ("deduzido", "Benefício deduzido (linha 012)",
+         lambda col: f"=MIN({b('beneficio')},MAX({b('devedor')}-{col}{{uso}},0))"),
+        ("perdido", "Benefício não aproveitado",
+         lambda col: f"={b('beneficio')}-{col}{{deduzido}}"),
+        ("recolher", "ICMS a recolher",
+         lambda col: f"=MAX({b('devedor')}-{col}{{uso}}-{b('beneficio')},0)"),
+    ]
+    if c.percentual_fadefe:
+        f = c.percentual_fadefe
+        resultado += [
+            ("fadefe_calculado", f"FADEFE {f:g}% sobre o benefício calculado",
+             lambda col: f"=ROUND({b('beneficio')}*{f:g}/100,2)"),
+            ("fadefe_deduzido", f"FADEFE {f:g}% sobre o benefício deduzido",
+             lambda col: f"=ROUND({col}{{deduzido}}*{f:g}/100,2)"),
+        ]
+    resultado.append(("transportar", "Saldo a transportar para o mês seguinte",
+                      lambda col: f"={b('disponivel')}-{col}{{uso}}"))
+    for chave, texto, formula in resultado:
+        aba.append([texto])
+        n = aba.max_row
+        linhas[chave] = n
+        aba.cell(row=n, column=1).font = TITULO
+        aba.cell(row=n, column=1).fill = FUNDO
+        for coluna in ("B", "C"):
+            celula = aba[f"{coluna}{n}"]
+            celula.value = formula(coluna).format(**linhas)
+            celula.number_format = MOEDA
+    if c.utilizado and c.saldo_devedor is not None \
+            and c.beneficio_perdido(c.utilizado) >= 0.005:
+        aba[f"B{linhas['perdido']}"].fill = FUNDO_ATENCAO
+        aba[f"B{linhas['perdido']}"].font = VERMELHO
+
+    notas = []
+    if c.saldo_devedor is not None:
+        notas.append("Saldo devedor: linha 011 do Registro, antes do uso do "
+                     "crédito (já com o saldo recebido pela centralização).")
+    notas.append("O benefício é dedução da linha 012 e não passa do saldo "
+                 "devedor; a sobra não vai para o mês seguinte. Por isso o uso "
+                 "para em (b): acima dele, o crédito sai do estoque sem reduzir "
+                 "o imposto.")
+    if c.percentual_fadefe:
+        notas.append("FADEFE: a guia sai hoje sobre o benefício calculado; as "
+                     "duas bases ficam lado a lado até a confirmação (decisão "
+                     "pendente nº 19).")
+    if c.recebido > c.a_utilizar + 0.005:
+        notas.append(f"O recebido no mês passa do crédito a utilizar em "
+                     f"{_reais(c.recebido - c.a_utilizar)}: o estoque cresce.")
+    if c.origem_do_saldo_inicial:
+        notas.append(f"Valor transportado: {c.origem_do_saldo_inicial}.")
+    if c.recebido_declarado is not None and abs(
+            c.recebido_declarado - c.recebido_no_livro) >= 0.005:
+        notas.append(
+            f"Recebido: declarado em parametros/saldos.yaml. O Livro traz "
+            f"{_reais(c.recebido_no_livro)}, o valor do documento.")
+    notas.append("O utilizado (CRÉD_UTIL) é o ajuste declarado na linha 006 com "
+                 f"a observação padrão {c.observacao_padrao_do_uso or '—'}.")
+    _vazio(aba)
+    for nota in notas:
+        aba.append([nota])
+        aba.cell(row=aba.max_row, column=1).font = Font(italic=True, size=9)
+
+
+MESES = ("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho",
+         "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro")
+
+
+def _nome_do_mes(competencia: str) -> str:
+    return MESES[int(competencia[5:7]) - 1]
+
+
+def _nome_curto(estabelecimento: str) -> str:
+    """"HINOVE (RIO BRILHANTE)" → "Rio Brilhante"."""
+    if "(" not in estabelecimento or ")" not in estabelecimento:
+        return estabelecimento
+    dentro = estabelecimento[estabelecimento.index("(") + 1:
+                             estabelecimento.rindex(")")]
+    return " ".join(p.capitalize() if len(p) > 2 else p.lower()
+                    for p in dentro.split())
+
+
+def _reais(valor: float) -> str:
+    return "R$ " + f"{valor:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+

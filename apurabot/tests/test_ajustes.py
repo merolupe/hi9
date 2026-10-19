@@ -2,7 +2,7 @@
 
 Duas portas para as mesmas quatro linhas do Registro. O ajuste que pertence a
 um documento vai na linha dele, na BASE TRATADA; o que não pertence a nenhum vai
-na aba AJUSTES. O alvo é o Registro de Apuração de Rio Brilhante em 07/2026, que
+na aba AJUSTES MANUAIS. O alvo é o Registro de Apuração de Rio Brilhante em 07/2026, que
 declara R$ 335.101,41 na linha 003 — R$ 331.236,11 que a regra calcula sobre o
 Livro mais R$ 3.865,30 de ajuste.
 """
@@ -179,7 +179,7 @@ def test_o_registro_fecha_no_valor_que_o_erp_declara(reapurado, parametros):
 def test_as_duas_origens_somam_na_mesma_linha(reapurado):
     _, apuracao = reapurado
     de_onde = {a.onde.split(",")[0] for a in apuracao.ajustes.lancamentos}
-    assert de_onde == {"aba AJUSTES", "BASE TRATADA"}
+    assert de_onde == {f"aba {aj.ABA}", "BASE TRATADA"}
     assert len(apuracao.ajustes.lancamentos) == 4
 
 
@@ -263,8 +263,8 @@ def test_ajuste_incompleto_na_linha_vira_pendencia(base_julho, parametros, tmp_p
                for p in t.pendencias)
 
 
-def test_parcela_sem_atividade_onde_a_uf_segrega_bloqueia(base_julho, parametros):
-    """Em MS a atividade dimensiona o benefício: lançar sem ela move o incentivo."""
+def test_parcela_sem_atividade_onde_se_segrega_bloqueia(base_julho, parametros):
+    """Em Rio Brilhante a atividade dimensiona o benefício: lançar sem ela move o incentivo."""
     declarados = aj.Declarados(parcelas=[
         aj.Ajuste(estabelecimento=RB, linha=3, valor=1_000.0, motivo="m",
                   responsavel="r", aprovador="a", onde="aba AJUSTES, linha 9")
@@ -276,7 +276,7 @@ def test_parcela_sem_atividade_onde_a_uf_segrega_bloqueia(base_julho, parametros
     assert any("segrega por atividade" in m for m in apuracao.bloqueios_de_ajuste)
 
 
-def test_onde_a_uf_nao_segrega_a_atividade_nao_faz_falta(base_julho, parametros):
+def test_onde_nao_se_segrega_a_atividade_nao_faz_falta(base_julho, parametros):
     from apurabot.apuracao import de_declarados
 
     declarados = aj.Declarados(parcelas=[

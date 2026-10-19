@@ -107,13 +107,30 @@ descreve o enquadramento.
 
 ## 3. SP — equilíbrio fiscal (carga de saída 4%)
 
+**A partir de 09/2026** o estorno é o percentual exato da tabela do time fiscal,
+pela carga efetiva da entrada, aplicado sobre o ICMS:
+
 ```
-estorno         = valor contábil × (carga efetiva da entrada − carga de saída)
+estorno         = ICMS destacado × (1 − carga de saída ÷ carga efetiva)
 crédito mantido = ICMS destacado − estorno
 carga de saída  = 4%
 ```
 
-A base do estorno é o **valor contábil**, não a base de ICMS.
+| Carga efetiva | % do crédito estornado |
+|---|---|
+| 4% | 0,00% |
+| 7% | 42,86% |
+| 12% | 66,67% |
+| 18% | 77,78% |
+
+**Até 08/2026** a fórmula foi `valor contábil × (carga efetiva − 4%)`, e é como
+julho e agosto foram lançados no Sankhya — a vigência em `regimes.yaml`
+(`formulas_por_vigencia`) mantém os dois meses reproduzíveis. As duas fórmulas
+dão o mesmo número quando base e valor contábil coincidem. Separam-se no CT-e
+com pedágio ou outro valor fora da base: ali o valor contábil passa da base, e a
+fórmula antiga estornava mais que o percentual da tabela — 68% num frete de 12%,
+em vez de 66,67%. Em 09/2026 a diferença foi de R$ 15.970,85 em Guará e
+R$ 606,99 em Registro.
 
 | Categoria da entrada | Dentro do estado | Fora do estado |
 |---|---|---|
@@ -127,8 +144,8 @@ A base do estorno é o **valor contábil**, não a base de ICMS.
 | **Retorno de industrialização** | Não estorna | Não estorna |
 | **CIAP** | Mantém 100% conforme saídas tributadas | idem |
 
-Pela fórmula: carga 7% estorna 3 pontos; 12% estorna 8; 17% estorna 13; 18%
-estorna 14.
+Em pontos de carga: 7% estorna 3 pontos; 12% estorna 8; 18% estorna 14 — o
+que sobra é sempre 4%.
 
 ### 3.1. Por que SP e MS não se comparam em percentual
 
@@ -180,7 +197,34 @@ está na `BASE TRATADA`.
 
 ## 4. MS — estorno proporcional, atividade e benefício de Rio Brilhante
 
-### 4.1. O estorno é fórmula, e a chave é a alíquota
+### 4.1. O estorno é fórmula — pela alíquota nominal da nota
+
+A tabela de MS é **travada pela alíquota da nota**, também quando o fornecedor
+já reduziu a base e a carga efetiva chegou a 4%:
+
+| Alíquota da nota | % do crédito estornado |
+|---|---|
+| 4% | 0,00% |
+| 7% | 42,86% |
+| 12% | 66,67% |
+| 17% | 76,47% |
+
+O crédito que fica é **4% da base de cálculo**. Exemplo do time, o silicato de
+cálcio: valor 5.497,32, base 3.141,16 (reduzida em 42,86%), alíquota 7%, ICMS
+219,88. Estorna 42,86% = 94,24 e fica 125,64 — 4% da base, 2,29% do valor.
+
+**A leitura pela carga efetiva foi tentada e revertida.** Por ela (crédito
+limitado a 4% do valor da operação), nota que já chega a 4% não estornaria, e
+o estorno de Rio Brilhante em 09/2026 cairia de R$ 102.458,58 para
+R$ 50.402,49. Chegou ao main em 06/10/2026 e foi revertida no mesmo dia, antes
+de setembro ser transmitido: vale a alíquota nominal, como em julho e agosto.
+A dúvida fica registrada na decisão pendente nº 20.
+
+A APURAÇÃO EFETIVA de MS mostra a cadeia inteira: carga efetiva e % do
+crédito estornado no meio, alíquota da nota e redução de base nas duas
+últimas colunas — é o que explica por que a nota de carga 4% estorna 42,86%.
+
+#### A mecânica
 
 Em MS o estorno incide sobre o **valor do ICMS**, e não sobre o valor contábil. O
 crédito é limitado à **carga de referência de 4%**, e o que passa dela se estorna:
@@ -238,6 +282,12 @@ Isso não é formalidade de declaração. **É a segregação que dimensiona o
 benefício**, porque o crédito presumido incide exclusivamente sobre o saldo
 devedor da atividade industrial. Sem ela não existe "crédito da parcela
 incentivada" e o benefício não tem como ser calculado.
+
+Por isso **só segrega o estabelecimento com benefício fiscal** — a marca
+`beneficio_fiscal` em `filiais.yaml`, hoje só Rio Brilhante. Corumbá é MS, mas
+sem benefício a divisão não alimenta conta nem declaração (decisão pendente
+nº 6). Estabelecimento com benefício em UF sem mapa de atividades interrompe a
+apuração, em vez de calcular benefício zero.
 
 A atividade sai do **CFOP**, com uma exceção: o CFOP do serviço de transporte diz
 quem contratou o frete, não o que o frete carrega — e é o que ele carrega que
@@ -409,6 +459,25 @@ documento, não a leitura gerencial.
 Sobrescrever o saldo credor à mão continua possível, mas é exceção registrada, não
 rotina.
 
+### 5.1.1. Amostra grátis não dá crédito
+
+Entrada de amostra grátis (**CFOP 1911 e 2911**) vai inteira para **crédito
+indevido**, em qualquer UF e regime — linha 003 do Registro, fora do estorno.
+
+- A amostra que cumpre o Convênio ICMS 29/90 — diminuto ou nenhum valor
+  comercial, quantidade estritamente necessária para dar a conhecer a
+  mercadoria, embalagem com "amostra grátis" — sai **isenta** (RICMS/SP e
+  RICMS/MS, Anexo I, art. 3º). Isenção não gera crédito na entrada.
+- A que chega com ICMS destacado não cumpriu essas condições e foi tributada
+  na saída. Mas o que decide o crédito é o destino, e o destino da amostra é
+  teste e avaliação, não o produto vendido: é **uso e consumo**, sem crédito
+  (LC 87/96, art. 33, I).
+
+Parametrizado em `classificacao.yaml` (categoria `amostra_gratis`) e em
+`regimes.yaml` (`creditos_indevidos` que valem para todos os regimes). Em MS a
+amostra entra na atividade "Prestacional/Outras". **Não homologado** — ver a
+decisão pendente nº 18.
+
 ### 5.2. Os ajustes: quatro linhas, e o sentido vem da linha
 
 As linhas **002, 003, 006 e 007** do Registro não nascem de documento. São
@@ -437,8 +506,8 @@ contariam histórias diferentes do mesmo mês.
 **Onde ele é informado depende de ter documento ou não.** O que pertence a uma
 nota vai na linha dela, e aí o estabelecimento e a atividade saem da linha —
 ninguém os digita e ninguém os erra. O que não pertence a nota nenhuma é
-declarado à parte, com o estabelecimento escrito; onde a UF segrega por
-atividade, a atividade também, porque é ela que dimensiona o benefício.
+declarado à parte, com o estabelecimento escrito; onde o estabelecimento
+segrega por atividade, a atividade também, porque é ela que dimensiona o benefício.
 
 **`ANOTAR` marca sem lançar.** Um ICMS reconhecido como indevido mas tratado
 fora da competência — por anuência, por exemplo — não pode alterar a apuração

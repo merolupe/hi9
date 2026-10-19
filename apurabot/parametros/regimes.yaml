@@ -7,11 +7,24 @@ regimes:
   sp_equilibrio_fiscal:
     descricao: >
       Mantém o crédito até a carga de saída e estorna o excedente.
-      estorno = valor_contabil × (carga_efetiva_entrada − carga_saida_referencia)
+      Até 08/2026: estorno = valor_contabil × (carga_efetiva − carga_saida_referencia).
+      De 09/2026: estorno = ICMS × (1 − carga_saida_referencia ÷ carga_efetiva).
     vigencia_inicio: 2025-01-01
     formula_estorno: excedente_sobre_carga_saida
     carga_saida_referencia: 4.0
     base_do_estorno: valor_contabil        # confirmado contra Julho/2026
+    # A partir de 09/2026 o estorno é o percentual exato da tabela do time
+    # fiscal, pela carga efetiva, sobre o ICMS:
+    #     carga  7% → 42,86%   ·   12% → 66,67%   ·   18% → 77,78%
+    # Até 08/2026 foi `valor_contabil × (carga − 4%)`, que é como julho e
+    # agosto foram lançados no Sankhya — e continuam reproduzíveis. As duas
+    # coincidem quando base e valor contábil são iguais; separam-se no CT-e
+    # com pedágio, em que o valor contábil passa da base.
+    formulas_por_vigencia:
+      - vigencia_inicio: 2026-09-01
+        formula_estorno: proporcional_carga_efetiva
+        casas_decimais_da_parcela: 4
+        base_do_estorno: valor_icms
     isentos_de_estorno:
       - materia_prima
       - produto_acabado
@@ -32,6 +45,14 @@ regimes:
       aba ENTRADAS, colunas "Parcela não tributada" e "Valor ICMS a estornar".
     vigencia_inicio: 2025-01-01
     formula_estorno: proporcional_parcela_nao_tributada
+    # A chave é a ALÍQUOTA NOMINAL da nota, também na nota que já veio com a
+    # base reduzida: o crédito fica limitado a 4% da base de cálculo. Zinco a
+    # 7% reduzido a carga de 4% estorna 42,86%; retorno a 12% reduzido,
+    # 66,67%. A leitura pela carga efetiva (4% do valor da operação) chegou a
+    # valer no main para 09/2026 e foi revertida em 06/10/2026, antes de
+    # setembro ser transmitido — decisão pendente nº 20.
+    # A APURAÇÃO EFETIVA mostra a alíquota da nota e a redução de base.
+    mostra_reducao_de_base: true
     base_do_estorno: valor_icms
 
     # A parcela não tributada NÃO é uma tabela: é uma fórmula. O benefício
@@ -80,6 +101,14 @@ regimes:
     vigencia_inicio: 2025-01-01
     homologado: true
     formula_estorno: proporcional_parcela_nao_tributada
+    # A chave é a ALÍQUOTA NOMINAL da nota, também na nota que já veio com a
+    # base reduzida: o crédito fica limitado a 4% da base de cálculo. Zinco a
+    # 7% reduzido a carga de 4% estorna 42,86%; retorno a 12% reduzido,
+    # 66,67%. A leitura pela carga efetiva (4% do valor da operação) chegou a
+    # valer no main para 09/2026 e foi revertida em 06/10/2026, antes de
+    # setembro ser transmitido — decisão pendente nº 20.
+    # A APURAÇÃO EFETIVA mostra a alíquota da nota e a redução de base.
+    mostra_reducao_de_base: true
     base_do_estorno: valor_icms
     carga_de_referencia: 4.0
     casas_decimais_da_parcela: 4
@@ -101,6 +130,25 @@ regimes:
       como saldo credor. Ver decisão pendente nº 1.
     vigencia_inicio: 2025-01-01
     formula_estorno: nenhum
+
+# ---------------------------------------------------------------------------
+# Créditos indevidos que valem em todo regime
+# ---------------------------------------------------------------------------
+# Somam-se aos `creditos_indevidos` de cada regime. O crédito da linha vai
+# inteiro para a coluna de crédito indevido (linha 003 do Registro), fora do
+# estorno.
+creditos_indevidos:
+  - cfop: [1911, 2911]
+    motivo: >
+      Entrada de amostra grátis. A amostra que atende ao Convênio ICMS 29/90
+      (diminuto valor, quantidade só para dar a conhecer a mercadoria, venda
+      proibida) sai isenta — RICMS/SP Anexo I art. 3º, RICMS/MS Anexo I art.
+      3º — e isenção não gera crédito. A que veio com ICMS destacado não
+      cumpriu essas condições, mas continua sendo amostra, destinada a teste
+      ou avaliação, e não a integrar o produto: é uso e consumo, sem crédito
+      (LC 87/96, art. 33, I). Se a amostra entrar na produção, a regra muda —
+      ver decisão pendente nº 18.
+    homologado: false
 
 beneficios_fiscais:
 
@@ -275,7 +323,8 @@ atividades:
                   1923, 2923]                # armazém: transmissão de propriedade
       prestacional_outras:
         debito: [5910, 6910, 5911, 6911, 5949, 6949]
-        credito: [1604, 2604, 1949, 2949]
+        credito: [1604, 2604, 1949, 2949,
+                  1911, 2911]                # amostra grátis: outras entradas
 
 # ---------------------------------------------------------------------------
 # DIFAL — diferencial de alíquota nas entradas de uso, consumo e ativo

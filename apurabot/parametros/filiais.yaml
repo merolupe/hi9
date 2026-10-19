@@ -7,6 +7,10 @@
 #
 # Revisão: Gerência Fiscal/Tributária | Vigência: a partir de 2026-01-01
 
+# A FIRMA do cabeçalho do Registro de Apuração é a razão social, a mesma em
+# todo estabelecimento — é assim que o Sankhya imprime o documento.
+razao_social: HINOVE AGROCIÊNCIA S.A.
+
 filiais:
   - codigo: 1
     nome: HINOVE (MATRIZ)

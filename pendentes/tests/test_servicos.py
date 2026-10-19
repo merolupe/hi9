@@ -256,11 +256,25 @@ def test_lancamento_com_cnpj_zerado_nao_indexa_e_e_contado():
     assert len(enriquecimento.lancamentos_de(registros(*linhas), TOPS)) == 1
 
 
-def test_parceiro_sem_cadastro_fica_com_o_nome_que_o_asis_trouxe():
+def test_parceiro_sem_cadastro_fica_com_o_nome_do_asis_e_o_cnpj():
+    """Quem recebe a linha `Sem cadastro` precisa do CNPJ para cadastrar."""
     cadastro = _cadastro(linha_portal(1, "1", "99888777000166", 10.00))
     assert cadastro.codigo_do_parceiro("11111111111111") == "Sem cadastro"
     assert cadastro.nome_do_parceiro("11111111111111", "OFICINA DO ZE") == (
-        "OFICINA DO ZE")
+        "OFICINA DO ZE (CNPJ 11.111.111/1111-11)")
+
+
+def test_prestador_pessoa_fisica_sem_cadastro_mostra_o_cpf():
+    cadastro = _cadastro(linha_portal(1, "1", "99888777000166", 10.00))
+    assert cadastro.nome_do_parceiro("12345678901", "JOAO DA SILVA") == (
+        "JOAO DA SILVA (CPF 123.456.789-01)")
+    assert cadastro.nome_do_parceiro("12345678901", "") == "CPF 123.456.789-01"
+
+
+def test_parceiro_cadastrado_fica_so_com_o_nome_do_sankhya():
+    cadastro = _cadastro(linha_portal(1, "1", "99888777000166", 10.00))
+    assert "CNPJ" not in str(cadastro.nome_do_parceiro("99888777000166",
+                                                       "OUTRO NOME"))
 
 
 def test_o_de_para_de_filiais_vem_do_proprio_export_e_o_que_falta_fica_visivel():

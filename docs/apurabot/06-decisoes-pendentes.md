@@ -20,8 +20,9 @@ saldo credor se acumula.** É o que `regimes.yaml` já fazia; o que faltava era 
 confirmação de que o crédito não se perde por falta de débito.
 
 Deixou de ser irrelevante: Londrina saiu de R$ 13.882,40 em 07/2026 para
-R$ 38.384,29 em 08/2026, e o saldo transportado de agosto é a soma dos dois —
-R$ 52.266,69.
+R$ 38.384,29 em 08/2026. O saldo que agosto transporta é a abertura do mês mais
+o crédito dele: 341.004,37 + 38.384,29 = R$ 379.388,66, a linha 014 do Registro
+de 08/2026.
 
 ## 2. 🟢 Itens fora do processo produtivo para o DIFAL
 
@@ -77,9 +78,20 @@ feita apenas para dimensionar o benefício fiscal, e o benefício é só de Rio
 Brilhante — cujo mapa está conferido ao centavo contra a GIA retificadora de
 25/08/2026.
 
-Em Corumbá a segregação continua saindo, porque o mapa é da UF e a ferramenta
-não classifica por estabelecimento. Ela é informativa: não dimensiona benefício
-nenhum e não alimenta declaração nenhuma.
+**Consequência na ferramenta (08/10/2026): Corumbá não segrega mais.** Só
+segrega o estabelecimento que tem `beneficio_fiscal` em `filiais.yaml` — hoje,
+só Rio Brilhante. Em Corumbá a divisão não dimensionava benefício nenhum nem
+alimentava declaração, mas aparecia na planilha como se alimentasse. Agora:
+
+* a aba `RESUMO E DETALHES` só traz Rio Brilhante no bloco de segregação;
+* a `APURAÇÃO EFETIVA` de Corumbá classifica pela categoria do produto, como as
+  filiais de SP, MT e PR, e não por Produção/Comercial;
+* CFOP sem atividade cadastrada e ajuste manual sem atividade deixam de travar o
+  encerramento em Corumbá.
+
+Nenhum número muda: o estorno, o crédito indevido, o saldo devedor que Corumbá
+transfere para a linha 002 de Rio Brilhante e o benefício saem iguais. Rodada de
+09/2026 conferida antes e depois.
 
 ## 7. 🟡 MS — o que acontece quando o centralizado tem saldo credor?
 
@@ -214,6 +226,15 @@ Efeito medido em 08/2026: os R$ 55.369,48 de crédito das três linhas de Rio
 Brilhante saem de `SEM REGRA` para Comercial. O crédito industrial não muda, e
 **o benefício fiscal fica idêntico** — R$ 442.528,58.
 
+**Exceção por caso — 06/10/2026 (versão 0.1.33).** A regra continua: 2923 é
+comercial. Mas em 09/2026 apareceu a compra de matéria-prima por transmissão de
+propriedade com a mercadoria já no armazém (NK 42-00-05 e cloreto de amônio,
+em Rio Brilhante), que volta por retorno de armazenagem e vai à produção. Não
+é regra do produto nem do CFOP: é o caso. O time fiscal marca as linhas da
+operação na `BASE TRATADA`, coluna `atividade_ajustada`, com aprovação. Em
+09/2026, marcando a compra (2923) e os retornos (2906), o benefício de Rio
+Brilhante cai de R$ 173.659,00 para R$ 122.366,82.
+
 ## 14. 🟢 Saldo credor de abertura — respondida para 07/2026
 
 A linha 009 do Registro é o crédito que veio do mês anterior. Não está no Livro
@@ -250,7 +271,7 @@ saldo credor, então a hipótese não foi testada contra documento.
 
 **Padrão assumido:** fica fora do cálculo e abate só a dedução.
 
-## 15. 🟡 Crédito outorgado de MS — o controle não está na ferramenta
+## 15. 🟢 Crédito outorgado de MS — o controle e o teto de 30%
 
 O benefício de Rio Brilhante tem um **estoque** de crédito outorgado, controlado
 à parte pelo time fiscal sob o código de ajuste **MS090004** — "Apropriação de
@@ -283,9 +304,63 @@ dos 30% contra julho leva a conclusão errada.
    ganhar um bloco próprio, com o utilizado saindo calculado — é a linha 012 do
    Registro, limitada ao que o estoque tem.
 
-**Padrão assumido:** nenhum. O crédito outorgado entra hoje como ajuste
-declarado na aba `AJUSTES`, com o valor que o time fiscal informar. A ferramenta
-não controla o estoque nem confere se o utilizado cabe nele.
+**Onde o estoque mora — resolvido em 29/09/2026 (versão 0.1.26).** O controle
+é o Registro 1200 da EFD de Rio Brilhante (`MS090004`, uso `MS03` no 1210), e
+a ferramenta passou a montá-lo na aba `REGISTRO 1200`:
+
+| Campo | De onde vem |
+|---|---|
+| SLD_CRED | `saldos.yaml`, bloco `creditos_controlados` — 108.426,33 em 08/2026, 62.287,65 em 09/2026 |
+| CRÉD_RECEB | a NF-e de CFOP 1601 do Livro do mês |
+| CRÉD_UTIL | o ajuste declarado na linha 006 com a observação padrão 87 do Sankhya |
+| SLD_CRED_FIM | a conta; negativo sai pendente |
+
+O resumo da EFD de 01 a 07/2026 foi dado por certo como está — as
+inconsistências de março, junho e julho serão retificadas.
+
+**Padrão assumido:** quanto usar continua sendo decisão do time fiscal, e entra
+declarado. A ferramenta fecha a conta e acusa o uso acima do estoque.
+
+**Agosto conferido contra a EFD (30/09/2026).** A tela do 1200 de 08/2026 abre
+com SLD_CRED de **108.426,33** — R$ 22.334,68 acima dos 86.091,65 da planilha
+consolidada de 01 a 07/2026; vale a EFD — e fecha:
+
+```
+108.426,33 + 62.720,00 recebidos − 108.858,68 utilizados = 62.287,65
+```
+
+**Ainda em aberto:** o item 1 acima (a base dos 30%), e a coluna do recebido.
+O Registro de Apuração de 08/2026 de Rio Brilhante traz o CFOP 1601 com valor
+contábil de **57.702,40** — líquido do desconto —, e o 1200 registra o crédito
+de **62.720,00**. Lendo `valor_contabil`, como está hoje em
+`controle_de_creditos.yaml` (`campo_do_valor`), a ferramenta fica 5.017,60
+abaixo da EFD. Falta saber em que coluna do extrato do Livro os 62.720,00
+aparecem.
+
+**O teto dos 30% — adotado em 06/10/2026 (versão 0.1.32).** O item 1 foi
+respondido pelo time: o crédito disponível — o saldo transportado do mês
+anterior mais o recebido no mês — pode ser usado até **30% do saldo devedor do
+próprio mês**. A base é a linha 011 do Registro de Rio Brilhante antes do uso
+do crédito, já com o saldo de Corumbá recebido pela centralização. A EFD de 01
+a 08/2026 confirma a regra como teto: nenhum mês passou dele, e maio chegou a
+29,6%. O percentual mora em `controle_de_creditos.yaml`, com vigência, e a aba
+`REGISTRO 1200` mostra o disponível, o teto e o total a utilizar. Quanto usar,
+dentro do teto, continua declarado na linha 006.
+
+**A coluna do recebido — contornada.** O Livro só traz o valor do documento
+(57.702,40). O crédito da NF-e passa a ser declarado por competência em
+`saldos.yaml` (`recebido_por_estabelecimento`): 62.720,00 em 09/2026. Sem a
+declaração, vale o Livro, e a aba diz a diferença.
+
+**O benefício limita o uso — respondido em 06/10/2026.** A dedução da linha
+012 não passa do saldo devedor, e **a sobra do benefício não passa para o mês
+seguinte**. Usar o crédito acima de *saldo devedor − benefício* zera o imposto
+antes do benefício entrar inteiro: o excedente sai do estoque sem reduzir o que
+se recolhe, e o benefício que não coube se perde. O crédito a utilizar é o
+menor de três limites: (a) o teto de 30%, (b) o saldo devedor que o benefício
+não cobre e (c) o disponível — o menor deles é o total a utilizar, que a aba
+`REGISTRO 1200` mostra a cada competência. Uso declarado acima de (b) sai pendente, com o benefício
+perdido.
 
 ## 17. 🟢 MS — o frete: custo é produção, despesa é comercial
 
@@ -331,3 +406,55 @@ Aplicá-la para trás mudaria o que julho já declarou:
 
 **Respondido em 03/09/2026: julho NÃO é retificado.** Fica como foi declarado, e
 a vigência da regra permanece em `regimes.yaml`.
+
+## 18. 🟡 Amostra grátis — alguma entra na produção?
+
+A primeira amostra grátis apareceu em 08/2026: CFOP 1911, produto 401002431,
+"amostra grátis fertilizante sólido", com ICMS destacado. Caiu em `SEM REGRA`
+porque nem o prefixo 4 do produto nem o CFOP 1911 tinham regra.
+
+**Padrão assumido (29/09/2026):** toda entrada de amostra grátis (1911 e 2911)
+é **crédito indevido** — ver `04-matriz-de-regras-icms.md`, item 5.1.1. A
+amostra, por definição, serve para dar a conhecer a mercadoria e não pode ser
+vendida; na fábrica, o destino esperado é laboratório, teste de campo ou
+avaliação de fornecedor — uso e consumo.
+
+**Pergunta:** alguma amostra é usada como insumo, misturada ao que se produz
+e vende? Se sim, ela deixa de ser amostra na prática, e o crédito segue a
+matéria-prima (mantém em SP, estorno proporcional em MS). Nesse caso o
+caminho certo é o fornecedor emitir a nota como venda ou bonificação, não
+como amostra; enquanto isso não acontece, a exceção vai por produto em
+`produtos.yaml`, e não pelo CFOP.
+
+## 19. 🟡 FADEFE — sobre o benefício calculado ou o deduzido?
+
+A guia do FADEFE (2%) sai hoje sobre o benefício **calculado** de Rio
+Brilhante. Quando o uso do crédito do art. 68 passa do saldo devedor que o
+benefício não cobre, a linha 012 deduz menos que o calculado — e a guia sairia
+sobre benefício que não foi fruído.
+
+**Pergunta:** a base do FADEFE é o benefício calculado ou o deduzido na linha
+012? Até a resposta, a aba `REGISTRO 1200` mostra as duas bases lado a lado,
+e a guia continua sobre o calculado. Com o uso recomendado (decisão nº 15), as
+duas coincidem.
+
+## 20. 🟡 MS — o limite de 4% é sobre a base de cálculo ou sobre o valor?
+
+O estorno proporcional de MS limita o crédito a 4%. Na nota cheia as duas
+leituras dão o mesmo; na nota que o fornecedor já entregou com a base reduzida
+(Convênio 100/97), elas se separam:
+
+| | Pela alíquota nominal (vale) | Pela carga efetiva |
+|---|---|---|
+| Limite | 4% da **base de cálculo** | 4% do **valor da operação** |
+| Silicato 7%, base reduzida em 42,86% | estorna 42,86%: fica 125,64 | não estorna: fica 219,88 |
+| Rio Brilhante, 09/2026 | estorno de 102.458,58 | estorno de 50.402,49 |
+
+**Padrão adotado (06/10/2026):** alíquota nominal, como julho e agosto foram
+declarados e como a apuração individualizada de Corumbá calcula a "parcela não
+tributada". A leitura pela carga efetiva chegou a valer no main para 09/2026 e
+foi revertida antes da transmissão.
+
+**Pergunta ao consultor:** na entrada de insumo com base reduzida, em que a
+carga efetiva já é 4%, o estorno se aplica de novo pela alíquota nominal da
+nota, ou a nota já está no limite?

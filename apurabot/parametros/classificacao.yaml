@@ -72,6 +72,13 @@ excecoes_cfop:
   - cfop: [1902, 1903, 2902, 2903, 1906, 2906]
     categoria: retorno_industrializacao
     regra: mantem_100
+  - cfop: [1911, 2911]
+    categoria: amostra_gratis
+    regra: credito_indevido
+    descricao: Entrada de amostra grátis
+    # Sem crédito: ver `creditos_indevidos` em regimes.yaml e a decisão
+    # pendente nº 18. Incluída em 29/09/2026, quando a primeira amostra (produto
+    # 401002431, "amostra grátis fertilizante sólido") caiu em SEM REGRA.
 
 # ---------------------------------------------------------------------------
 # 4. Fretes — a finalidade vem na descrição do CT-e (coluna R)

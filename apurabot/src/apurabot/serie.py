@@ -24,6 +24,7 @@ sem valor fica vazio, e vazio se lê como "ninguém preencheu".
 from __future__ import annotations
 
 import datetime as dt
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -61,8 +62,18 @@ class Mes:
         return self.saldo is None and self.a_recolher is None and not self.observacao
 
 
+def pasta_padrao() -> Path:
+    """`competencias/` na pasta que a Central publicou, ou a do código.
+
+    A Central põe os dados fora da pasta do código (`HINOVE_DADOS`, ver
+    `central/dados.py`) para uma versão nova não começar vazia.
+    """
+    externa = os.environ.get("HINOVE_DADOS", "").strip()
+    return Path(externa) / "competencias" if externa else PASTA_PADRAO
+
+
 def caminho(ano: int, pasta: Path | str | None = None) -> Path:
-    return Path(pasta or PASTA_PADRAO) / f"serie-{ano}.yaml"
+    return Path(pasta or pasta_padrao()) / f"serie-{ano}.yaml"
 
 
 def ler(ano: int, pasta: Path | str | None = None) -> dict[str, Mes]:

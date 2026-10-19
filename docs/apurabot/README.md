@@ -12,7 +12,7 @@ GIA entregue e com o Registro de Apuração do ERP.** 259 testes automáticos.
 |---|---|
 | Equalização de carga | por algoritmo, com cada divergência exigida por teste |
 | Estorno por filial | exato nas 7 |
-| Segregação por atividade (MS) | industrial, comercial e prestacional conferidos contra a GIA |
+| Segregação por atividade (Rio Brilhante) | industrial, comercial e prestacional conferidos contra a GIA |
 | Benefício de Rio Brilhante | cadeia inteira, do crédito industrial ao FADEFE |
 | Centralização | saldo consolidado na centralizadora, com a NF-e de transferência cobrada |
 | Extração | `Movimento Livros Fiscais` é o padrão; a antiga continua suportada |

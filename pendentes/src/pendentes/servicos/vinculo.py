@@ -47,6 +47,9 @@ from .fontes import Anexo, NotaDeServico
 #: filial vira **lista bloqueante**, com o CNPJ nomeado.
 SEM_CADASTRO_DE_PARCEIRO = "Sem cadastro de parceiro"
 NAO_ENCONTRADO = "Nao encontrado"
+#: Um pedido só, com a razão de valor 1 — a nota está anexada a ele. É o
+#: único rótulo que põe a nota em fila de lançamento (`colunas.RETORNO_EM_FILA`).
+EXATO = "Exato"
 
 #: Quantas colunas o bloco ocupa na `Pendentes`: da 29 à 36.
 LARGURA = 8
@@ -70,6 +73,11 @@ class Vinculo:
     @property
     def encontrado(self) -> bool:
         return bool(self.fator)
+
+    @property
+    def exato(self) -> bool:
+        """Um pedido só, sem ambiguidade — não os `Exato (ambiguo: …)`."""
+        return self.confianca == EXATO
 
     def como_colunas(self) -> list[Any]:
         """As oito colunas, na ordem em que entram na `Pendentes`."""
@@ -117,7 +125,7 @@ def _candidato(anexo: Anexo, dia_da_emissao: Any) -> bool:
 
 def _rotulo(exatos: int, multiplos: int) -> str:
     if exatos == 1:
-        return "Exato"
+        return EXATO
     if exatos > 1:
         return f"Exato (ambiguo: {exatos} candidatos)"
     if multiplos == 1:

@@ -123,9 +123,9 @@ def test_carga_efetiva_bate_com_a_classificacao_manual(base_julho):
     """A equalização reproduz a coluna preenchida à mão.
 
     As três divergências aceitas são as notas da ICL Aditivos em Rio Brilhante
-    (CST 00, alíquota 7%), reclassificadas manualmente para 4% ao aplicar a
-    regra de MS de limitar o crédito mantido. São intervenção, não erro de
-    algoritmo — ver docs/apurabot/05-achados-julho-2026.md.
+    (CST 00, alíquota 7%), que a planilha manual passou para 4%. O erro é da
+    apuração manual: o limite de crédito de MS já estava no estorno — ver
+    docs/apurabot/05-achados-julho-2026.md § 3.
     """
     iguais, divergentes = 0, []
     for t in base_julho.linhas:
@@ -148,7 +148,7 @@ def test_totais_por_estabelecimento_e_carga_batem_com_a_dinamica(base_julho, din
     """Os totais reproduzem a aba Dinamica, com uma exceção conhecida.
 
     A exceção é a mesma das três notas da ICL Aditivos: a planilha manual as
-    moveu de 7% para 4% ao aplicar a regra de MS de limitar o crédito mantido.
+    moveu, por erro, de 7% para 4%.
     Isso desloca exatamente R$ 9.019,01 de ICMS entre os dois grupos de entrada
     de Rio Brilhante. O teste exige que a diferença seja essa e só essa — se
     aparecer em outro grupo, ou com outro valor, ele falha.

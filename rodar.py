@@ -15,6 +15,7 @@ ferramentas para escolher.
     python rodar.py                    abre a Central no navegador
     python rodar.py dixml lote.zip --saida "pasta\\de\\saida"
     python rodar.py fiscalbot "Movimento_Livros_Fiscais.xls"
+    python rodar.py pendentes mercadorias XML31.xls CE31.xls
     python rodar.py pendentes servicos ASIS.xlsx PC27.xls Conferencia.xls
     python rodar.py apurabot apurar "caminho\\do\\livro.xls"
     python rodar.py --help
@@ -36,6 +37,8 @@ sys.path.insert(0, str(RAIZ / "central" / "src"))
 #: Comandos antigos, de quando o repositório era só o Apurabot. Continuam
 #: valendo: `rodar.py apurar livro.xls` é `rodar.py apurabot apurar livro.xls`.
 ALIAS_DO_APURABOT = ("apurar", "base-tratada", "janela")
+
+FERRAMENTAS = ("central", "apurabot", "dixml", "fiscalbot", "pendentes")
 
 AJUDA = """
 Central de Ferramentas Fiscais — Hinove Agrociência S.A.
@@ -78,6 +81,17 @@ def main(argv: list[str]) -> int:
     else:
         ferramenta, resto = argv[0], argv[1:]
 
+    if ferramenta not in FERRAMENTAS:
+        print(f"Não conheço a ferramenta {ferramenta!r}.\n{AJUDA}", file=sys.stderr)
+        return 2
+
+    # Os dados do time moram fora da pasta do código (Documentos\\Hinove), e
+    # uma versão nova, extraída noutra pasta, os encontra sem ninguém copiar
+    # nada. Ver `central/dados.py`.
+    from central import dados
+    for linha in dados.preparar().mensagens():
+        print(linha)
+
     if ferramenta == "central":
         from central.cli import main as rodar
     elif ferramenta == "apurabot":
@@ -92,9 +106,8 @@ def main(argv: list[str]) -> int:
     elif ferramenta == "pendentes":
         import central                       # idem
         from pendentes.cli import main as rodar
-    else:
-        print(f"Não conheço a ferramenta {ferramenta!r}.\n{AJUDA}", file=sys.stderr)
-        return 2
+    else:                                    # pragma: no cover
+        raise AssertionError(ferramenta)
 
     return rodar(resto)
 

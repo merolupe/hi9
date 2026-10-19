@@ -8,6 +8,11 @@ do setor aparecer na janela, ela precisa dizer três coisas:
 3. **o que devolve** — números para a tela e, quando houver, uma planilha
    para baixar (`Resultado`).
 
+Quem pede mais de um relatório pode declarar também **como conferir** o que
+chegou (`conferir`, que devolve uma `Conferencia`): a tela passa a mostrar a
+lista dos relatórios esperados, marca cada um conforme o arquivo chega — de
+uma vez ou aos poucos — e só acende o botão de gerar quando nada falta.
+
 Só isso. A ferramenta não sabe que existe navegador, não monta HTML e não
 conhece as outras — quem costura é a central. Foi assim que o DiXML entrou
 sem nenhuma linha de interface própria, e é assim que os próximos entram.
@@ -42,6 +47,90 @@ class Entrada:
     apoio: str
     extensoes: tuple[str, ...]
     varios: bool = False
+
+
+# -- o que cada arquivo anexado é ------------------------------------------
+
+@dataclass(frozen=True)
+class Anexo:
+    """Um arquivo já enviado. `indice` é a posição dele entre os recebidos."""
+
+    indice: int
+    nome: str
+    problema: str = ""
+    bloqueia: bool = False
+
+
+@dataclass(frozen=True)
+class Documento:
+    """Um relatório que a ferramenta espera, e os arquivos que o preencheram."""
+
+    id: str
+    rotulo: str
+    obrigatorio: bool
+    anexos: list[Anexo] = field(default_factory=list)
+
+    @property
+    def estado(self) -> str:
+        """`ok`, `falta` (obrigatório sem arquivo), `opcional` ou `repetido`."""
+        if len(self.anexos) > 1:
+            return "repetido"
+        if self.anexos:
+            return "ok"
+        return "falta" if self.obrigatorio else "opcional"
+
+
+@dataclass(frozen=True)
+class Conferencia:
+    """O quadro da tela de anexar: o que já veio, o que falta, o que sobrou.
+
+    É o **quarto** item do contrato, e é opcional. A ferramenta que pede mais
+    de um relatório e reconhece cada um pelo cabeçalho declara `conferir`; a
+    Central mostra então a lista dos relatórios esperados, marca cada um
+    conforme os arquivos chegam — aos poucos, em quantas levas a pessoa quiser
+    — e só libera o botão de gerar quando nada impede.
+    """
+
+    documentos: list[Documento] = field(default_factory=list)
+    soltos: list[Anexo] = field(default_factory=list)
+
+    @property
+    def pendencias(self) -> list[str]:
+        """O que impede de gerar, em frase. Lista vazia: pode gerar."""
+        recado = []
+        for doc in self.documentos:
+            if doc.estado == "falta":
+                recado.append(f"Falta o {doc.rotulo}.")
+            elif doc.estado == "repetido":
+                nomes = " e ".join(a.nome for a in doc.anexos)
+                recado.append(f"{nomes} são, os dois, o {doc.rotulo}. "
+                              f"Tire um.")
+        for solto in self.soltos:
+            if solto.bloqueia:
+                recado.append(f"{solto.nome}: {solto.problema}.")
+        return recado
+
+    @property
+    def pronta(self) -> bool:
+        return not self.pendencias
+
+
+def _conferencia(respondido: dict, nomes: list[str]) -> Conferencia:
+    """O texto puro da ferramenta vira o quadro da Central."""
+    documentos = [Documento(d["id"], d["rotulo"], bool(d["obrigatorio"]))
+                  for d in respondido.get("documentos") or []]
+    por_id = {d.id: d for d in documentos}
+    soltos = []
+    for indice, (nome, achado) in enumerate(
+            zip(nomes, respondido.get("arquivos") or [])):
+        anexo = Anexo(indice, nome, str(achado.get("problema") or ""),
+                      bool(achado.get("bloqueia")))
+        destino = por_id.get(achado.get("papel") or "")
+        if destino is None:
+            soltos.append(anexo)
+        else:
+            destino.anexos.append(anexo)
+    return Conferencia(documentos, soltos)
 
 
 # -- o que a ferramenta devolve --------------------------------------------
@@ -102,6 +191,8 @@ class Secao:
     explicacao: str
     campos: tuple[Campo, ...]
     fixa: bool = False
+    #: Tabela de consulta: a tela mostra, não edita.
+    somente_leitura: bool = False
 
 
 @dataclass(frozen=True)
@@ -119,7 +210,10 @@ class Configuracao:
     resumo: str
     secoes: Callable[[], list[Secao]]
     ler: Callable[[], dict[str, list[dict]]]
-    gravar: Callable[[dict, str], tuple[bool, list[dict]]]
+    #: Sem `gravar`, a tela é só de consulta: não há botão de salvar.
+    gravar: Callable[[dict, str], tuple[bool, list[dict]]] | None = None
+    #: O texto do botão que abre a tela, na página da ferramenta.
+    rotulo: str = "⚙ Regras e parâmetros"
 
 
 @dataclass(frozen=True)
@@ -136,6 +230,9 @@ class Ferramenta:
     detalhe: str = ""
     executar: Callable[[list[Path], Path], Resultado] | None = None
     configuracao: Configuracao | None = None
+    #: Quando declarado, os arquivos são anexados aos poucos e conferidos um a
+    #: um; o botão de gerar só acende quando a `Conferencia` está pronta.
+    conferir: Callable[[list[Path]], Conferencia] | None = None
 
 
 # -- DiXML -----------------------------------------------------------------
@@ -224,6 +321,39 @@ def _rodar_fiscalbot(arquivos: list[Path], saida: Path) -> Resultado:
 
 # -- GerarServPend ---------------------------------------------------------
 
+def _rodar_gerarpendentes(arquivos: list[Path], saida: Path) -> Resultado:
+    """Cruza o XML com a Conferência de Entradas e resume para a tela.
+
+    Mesmo desenho do GerarServPend: a ferramenta devolve o painel em texto
+    puro e quem traduz para `Ficha` e `Lista` é este arquivo. A importação é
+    tardia, dentro da função, para a Central abrir mesmo que uma ferramenta
+    esteja quebrada.
+    """
+    from pendentes.mercadorias.execucao import gerar
+
+    execucao = gerar(arquivos, saida)
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+        planilha=execucao.planilha,
+    )
+
+
+def _conferir_gerarpendentes(arquivos: list[Path]) -> Conferencia:
+    from pendentes.mercadorias.execucao import conferir
+
+    return _conferencia(conferir(arquivos), [a.name for a in arquivos])
+
+
+def _conferir_gerarservpend(arquivos: list[Path]) -> Conferencia:
+    from pendentes.servicos.execucao import conferir
+
+    return _conferencia(conferir(arquivos), [a.name for a in arquivos])
+
+
 def _rodar_gerarservpend(arquivos: list[Path], saida: Path) -> Resultado:
     """Confronta o ASIS com os lançamentos do Sankhya e resume para a tela.
 
@@ -244,6 +374,83 @@ def _rodar_gerarservpend(arquivos: list[Path], saida: Path) -> Resultado:
     )
 
 
+def _rodar_resumo(arquivos: list[Path], saida: Path) -> Resultado:
+    """Monta o painel semanal sobre o relatório já classificado.
+
+    A terceira rotina das notas pendentes, e a única que recebe a **saída** das
+    outras duas em vez de um export do Sankhya. Mesmo desenho: a ferramenta
+    devolve o painel em texto e quem traduz para `Ficha` e `Lista` é aqui.
+    """
+    from pendentes.resumo.execucao import gerar
+
+    execucao = gerar(arquivos, saida)
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+        planilha=execucao.planilha,
+    )
+
+
+def _rodar_conhecimento(arquivos: list[Path], saida: Path) -> Resultado:
+    """Importa a base de pré-categorização, ou a mede contra um relatório.
+
+    Duas coisas numa entrada só, decididas pelo **conteúdo** do que foi
+    arrastado: planilha já classificada é gabarito e a base é medida contra
+    ela; `.csv` e `.json` são fonte e a base é refeita. É o mesmo princípio do
+    reconhecimento de papel — nada é decidido pelo nome do arquivo.
+    """
+    from pendentes.conhecimento import base as conhecido
+    from pendentes.conhecimento.importacao import importar
+    from pendentes.conhecimento.simulacao import simular
+    from pendentes.servicos import historico
+
+    planilhas = [a for a in arquivos
+                 if a.suffix.lower() in (".xls", ".xlsx", ".xlsm")]
+    portais = [a for a in planilhas if historico.e_portal_de_compras(a)]
+    if portais:
+        # O Portal de Compras de período longo alimenta o histórico de
+        # parceiros e pedidos que o GerarServPend consulta.
+        if len(portais) != len(arquivos):
+            raise ValueError(
+                "O Portal de Compras vai sozinho: ele alimenta o histórico de "
+                "parceiros e pedidos, e não se mistura com a base de "
+                "classificação nem com a planilha que a mede.")
+        execucao = historico.carregar_relatorios(portais)
+    elif planilhas and len(planilhas) == len(arquivos):
+        execucao = simular(planilhas, conhecido.carregar())
+    else:
+        execucao = importar([a for a in arquivos if a not in planilhas])
+
+    return Resultado(
+        titulo=execucao.titulo(),
+        fichas=[Ficha(rotulo, valor) for rotulo, valor in execucao.fichas()],
+        listas=[Lista(titulo, itens, tom)
+                for titulo, itens, tom in execucao.listas()],
+    )
+
+
+def _secoes_de(declaradas: list[dict]) -> list[Secao]:
+    """As seções que a ferramenta descreve em dicionários, nos tipos da Central.
+
+    A ferramenta não conhece `Secao` nem `Campo` — se conhecesse, importaria
+    a Central. Quem traduz é aqui.
+    """
+    return [
+        Secao(
+            id=s["id"], titulo=s["titulo"], explicacao=s["explicacao"],
+            fixa=s["fixa"], somente_leitura=bool(s.get("somente_leitura")),
+            campos=tuple(
+                Campo(c["chave"], c["rotulo"], c["largura"], c["ajuda"], c["tipo"])
+                for c in s["campos"]
+            ),
+        )
+        for s in declaradas
+    ]
+
+
 def _configuracao_do_fiscalbot() -> Configuracao:
     """A tela de regras do Fiscalbot.
 
@@ -253,17 +460,7 @@ def _configuracao_do_fiscalbot() -> Configuracao:
     def secoes() -> list[Secao]:
         from fiscalbot.configuracao import secoes as declaradas
 
-        return [
-            Secao(
-                id=s["id"], titulo=s["titulo"], explicacao=s["explicacao"],
-                fixa=s["fixa"],
-                campos=tuple(
-                    Campo(c["chave"], c["rotulo"], c["largura"], c["ajuda"], c["tipo"])
-                    for c in s["campos"]
-                ),
-            )
-            for s in declaradas()
-        ]
+        return _secoes_de(declaradas())
 
     def ler() -> dict:
         from fiscalbot.configuracao import ler as ler_base
@@ -280,6 +477,60 @@ def _configuracao_do_fiscalbot() -> Configuracao:
                "alíquotas e as listas de parceiros.",
         secoes=secoes, ler=ler, gravar=gravar,
     )
+
+
+def _configuracao_das_pendentes() -> Configuracao:
+    """A tela de parâmetros das notas pendentes.
+
+    Uma base só para as três rotinas — GerarPendentes, GerarServPend e o
+    Resumo Executivo leem o mesmo `parametros.yaml` —, e por isso a mesma
+    tela nas três. Lida tarde, como a do Fiscalbot.
+    """
+    def secoes() -> list[Secao]:
+        from pendentes.configuracao import secoes as declaradas
+
+        return _secoes_de(declaradas())
+
+    def ler() -> dict:
+        from pendentes.configuracao import ler as ler_base
+
+        return ler_base()
+
+    def gravar(dados: dict, responsavel: str) -> tuple[bool, list[dict]]:
+        from pendentes.configuracao import gravar as gravar_base
+
+        return gravar_base(dados, responsavel)
+
+    return Configuracao(
+        resumo="Unidades, filiais, guardiões, categorias, exceções de "
+               "serviços, confronto, semana, painel, pré-categorização e "
+               "nomes de coluna — a mesma base para as três rotinas.",
+        secoes=secoes, ler=ler, gravar=gravar,
+        rotulo="⚙ Parâmetros das pendentes",
+    )
+
+
+def _consulta_das_bases() -> Configuracao:
+    """A consulta das bases de conhecimento — só leitura."""
+    def secoes() -> list[Secao]:
+        from pendentes.conhecimento.consulta import secoes as declaradas
+
+        return _secoes_de(declaradas())
+
+    def ler() -> dict:
+        from pendentes.conhecimento.consulta import ler as ler_base
+
+        return ler_base()
+
+    return Configuracao(
+        resumo="O que as bases guardam: o histórico do Portal de Compras "
+               "(serviços) e a base de classificação de mercadorias. Só "
+               "consulta — para mudar, importe de novo.",
+        secoes=secoes, ler=ler, rotulo="🔎 Consultar as bases",
+    )
+
+
+CONFIGURACAO_DAS_PENDENTES = _configuracao_das_pendentes()
 
 
 # -- o catálogo ------------------------------------------------------------
@@ -332,14 +583,31 @@ FERRAMENTAS: list[Ferramenta] = [
     Ferramenta(
         id="gerarpendentes",
         nome="GerarPendentes",
-        resumo="Planilha de notas de mercadoria pendentes de entrada.",
+        resumo="Notas de mercadoria emitidas contra a Hinove que ainda não têm "
+               "entrada.",
         icone="📦",
-        estado=A_IMPORTAR,
-        detalhe="Porte em andamento: o núcleo comum das duas rotinas e o "
-                "motor de serviços já estão no repositório, em `pendentes/`, "
-                "com teste — o GerarServPend já roda. O motor de mercadorias "
-                "— limpeza, roteamento, conferência e Resumo Executivo — é a "
-                "entrega seguinte, e este botão só acende com ele.",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste os relatórios da semana",
+            apoio="o relatório de importação de <code>XML</code> e a "
+                  "<code>Conferência de Entradas</code> são obrigatórios; a "
+                  "planilha da semana passada, com as classificações "
+                  "preenchidas, entra se houver. De uma vez ou aos poucos, em "
+                  "qualquer ordem: cada arquivo é reconhecido pelo próprio "
+                  "cabeçalho, e a lista abaixo mostra o que já veio e o que "
+                  "falta.",
+            extensoes=(".xls", ".xlsx", ".xlsm"),
+            varios=True,
+        ),
+        verbo="Cruzando o XML com a Conferência de Entradas…",
+        detalhe="A classificação por guardião é herdada do livro da "
+                "ferramenta, não do arquivo — renomear ou perder a planilha "
+                "da semana passada não apaga mais o histórico. O que a "
+                "limpeza descarta passa a aparecer na aba Descartados, com o "
+                "motivo.",
+        executar=_rodar_gerarpendentes,
+        configuracao=CONFIGURACAO_DAS_PENDENTES,
+        conferir=_conferir_gerarpendentes,
     ),
     Ferramenta(
         id="gerarservpend",
@@ -353,8 +621,9 @@ FERRAMENTAS: list[Ferramenta] = [
             apoio="o <code>ASIS</code> (notas emitidas) e o <code>Portal de "
                   "Compras</code> são obrigatórios; a <code>Conferência de "
                   "Serviços</code> e a planilha da semana passada entram se "
-                  "houver. Em qualquer ordem: cada arquivo é reconhecido pelo "
-                  "próprio cabeçalho.",
+                  "houver. De uma vez ou aos poucos, em qualquer ordem: cada "
+                  "arquivo é reconhecido pelo próprio cabeçalho, e a lista "
+                  "abaixo mostra o que já veio e o que falta.",
             extensoes=(".xls", ".xlsx", ".xlsm"),
             varios=True,
         ),
@@ -365,6 +634,57 @@ FERRAMENTAS: list[Ferramenta] = [
                 "perder a planilha da semana passada não apaga mais o "
                 "histórico.",
         executar=_rodar_gerarservpend,
+        configuracao=CONFIGURACAO_DAS_PENDENTES,
+        conferir=_conferir_gerarservpend,
+    ),
+    Ferramenta(
+        id="resumoexecutivo",
+        nome="Resumo Executivo",
+        resumo="O painel da semana sobre as duas frentes, já classificadas.",
+        icone="📊",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste a planilha da semana",
+            apoio="a planilha que o <code>GerarPendentes</code> e o "
+                  "<code>GerarServPend</code> geraram, <b>depois</b> de "
+                  "classificada. As abas <code>Pendentes</code> e "
+                  "<code>Servicos</code> podem vir num arquivo só ou em dois.",
+            extensoes=(".xlsx",),
+            varios=True,
+        ),
+        verbo="Montando o painel da semana…",
+        detalhe="O painel entra na própria planilha, na primeira aba, e o "
+                "arquivo de entrada não é alterado. Roda por último: as "
+                "contas são por categoria, e categoria é o que a pessoa "
+                "confirma depois da geração.",
+        executar=_rodar_resumo,
+        configuracao=CONFIGURACAO_DAS_PENDENTES,
+    ),
+    Ferramenta(
+        id="conhecimento",
+        nome="Base de conhecimento",
+        resumo="O que o histórico já respondeu sobre cada parceiro — para "
+               "propor classificação, nunca para decidir por ela.",
+        icone="🧠",
+        estado=DISPONIVEL,
+        entrada=Entrada(
+            rotulo="Arraste a base, ou uma planilha já classificada",
+            apoio="a lista de parceiros (<code>.csv</code>) e as regras "
+                  "medidas (<code>.json</code>) refazem a base; uma planilha "
+                  "de semana já classificada, sozinha, <b>mede</b> a base "
+                  "contra ela e não altera nada. Um <code>Portal de "
+                  "Compras</code> de período longo, sozinho, entra no "
+                  "<b>histórico de parceiros e pedidos</b> dos serviços.",
+            extensoes=(".csv", ".json", ".xls", ".xlsx", ".xlsm"),
+            varios=True,
+        ),
+        verbo="Lendo o que o histórico já respondeu…",
+        detalhe="A base propõe; quem classifica é gente. Só o que a lista "
+                "curada e o histórico afirmam juntos, com três notas em duas "
+                "semanas, chega a poder preencher célula — o resto aparece "
+                "como sugestão, com a evidência ao lado.",
+        executar=_rodar_conhecimento,
+        configuracao=_consulta_das_bases(),
     ),
     Ferramenta(
         id="faturabot",
@@ -396,6 +716,11 @@ def catalogo() -> list[dict]:
             "verbo": f.verbo,
             "detalhe": f.detalhe,
             "tem_configuracao": f.configuracao is not None,
+            "rotulo_da_configuracao":
+                f.configuracao.rotulo if f.configuracao else "",
+            "configuracao_so_leitura":
+                bool(f.configuracao) and f.configuracao.gravar is None,
+            "confere": f.conferir is not None,
             "resumo_da_configuracao":
                 f.configuracao.resumo if f.configuracao else "",
             "entrada": None if f.entrada is None else {

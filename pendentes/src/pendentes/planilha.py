@@ -110,19 +110,63 @@ def _valor_do_xls(celula: Any, datemode: int) -> Any:
 def _ler_xlsx(caminho: Path, limite: int | None) -> list[Aba]:
     import openpyxl
 
-    livro = openpyxl.load_workbook(str(caminho), data_only=True, read_only=True)
+    # Aberto aqui, e não pelo nome: o openpyxl recusa um `.xlsx` de verdade
+    # quando ele se chama `.xls`, antes mesmo de olhar o conteúdo.
+    fluxo = caminho.open("rb")
+    try:
+        livro = openpyxl.load_workbook(fluxo, data_only=True, read_only=True)
+    except Exception:
+        fluxo.close()
+        raise
     try:
         abas = []
         for planilha in livro.worksheets:
+            # No modo de leitura rápida o openpyxl corta cada linha no tamanho
+            # que a etiqueta `<dimension>` do arquivo declara. O export do ASIS
+            # declara `A1` para a aba inteira — o Excel ignora a etiqueta e
+            # mostra tudo, e nós víamos só a célula "Processo". Esquecer a
+            # etiqueta faz cada linha vir até a última célula que ela tem.
+            planilha.reset_dimensions()
             linhas = []
             for linha in planilha.iter_rows(values_only=True):
                 linhas.append([c if c is not None else "" for c in linha])
                 if limite is not None and len(linhas) >= limite:
                     break
+            # Sem a etiqueta, cada linha termina na própria última célula;
+            # a matriz volta a ser retangular, como era com a etiqueta certa.
+            largura = max((len(linha) for linha in linhas), default=0)
+            for linha in linhas:
+                linha.extend([""] * (largura - len(linha)))
             abas.append(Aba(planilha.title, linhas))
         return abas
     finally:
         livro.close()
+        fluxo.close()
+
+
+#: Os primeiros bytes de cada formato. O `.xlsx` é um `.zip`; o `.xls`
+#: 97-2003 é um documento OLE.
+_ASSINATURA_XLSX = b"PK\x03\x04"
+_ASSINATURA_XLS = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+
+
+def _formato(caminho: Path) -> str:
+    """O formato de verdade, pelo conteúdo — `""` quando não reconhece.
+
+    A extensão mente com frequência: o arquivo da semana anterior é salvo como
+    `.xlsx` e renomeado para `XMLAnterior.xls`, e o Excel abre os dois sem
+    reclamar. Então quem decide o leitor é o começo do arquivo, e a extensão
+    só vale quando o conteúdo não diz nada.
+    """
+    with caminho.open("rb") as arquivo:
+        inicio = arquivo.read(8)
+    if inicio.startswith(_ASSINATURA_XLSX):
+        return ".xlsx"
+    if inicio.startswith(_ASSINATURA_XLS):
+        return ".xls"
+    if inicio.lstrip(b"\xef\xbb\xbf \t\r\n").startswith(b"<"):
+        return "html"
+    return ""
 
 
 def ler(caminho: Path | str, *, limite_de_linhas: int | None = None) -> Arquivo:
@@ -137,9 +181,20 @@ def ler(caminho: Path | str, *, limite_de_linhas: int | None = None) -> Arquivo:
         raise FileNotFoundError(f"Arquivo não encontrado: {caminho}")
     sufixo = caminho.suffix.lower()
     try:
-        if sufixo == ".xls":
+        if sufixo not in EXTENSOES:
+            raise PlanilhaIlegivel(
+                f"{caminho.name} não é uma planilha que a ferramenta leia. "
+                f"Esperado {', '.join(EXTENSOES)}."
+            )
+        formato = _formato(caminho) or sufixo
+        if formato == "html":
+            raise PlanilhaIlegivel(
+                f"{caminho.name} é uma página HTML com nome de planilha. "
+                f"Abra no Excel e salve como .xlsx antes de anexar."
+            )
+        if formato == ".xls":
             abas = _ler_xls(caminho, limite_de_linhas)
-        elif sufixo in (".xlsx", ".xlsm"):
+        elif formato in (".xlsx", ".xlsm"):
             abas = _ler_xlsx(caminho, limite_de_linhas)
         else:
             raise PlanilhaIlegivel(
