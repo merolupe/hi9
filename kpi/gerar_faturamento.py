@@ -18,6 +18,7 @@ Formato visual: ver kpi/PADRAO-FATURAMENTO.md.
 Dado fiscal nao entra no git — modelo, historico e saida ficam em competencias/.
 """
 import argparse
+import decimal
 import html
 import json
 import os
@@ -56,8 +57,16 @@ def ler(txt):
 
 
 def br(v, casas=1):
-    """1078603.2 -> '1.078.603,2'"""
-    s = ('%.*f' % (casas, v)).replace('.', ',')
+    """1078603.2 -> '1.078.603,2'
+
+    Arredondamento comercial: 56,25 vira 56,3 e nao 56,2. O `round` do Python
+    desempata para o par e o time confere contra a planilha, onde o Excel
+    desempata para cima — a diferenca de uma casa aparece na tabela e vira
+    pergunta na reuniao.
+    """
+    q = decimal.Decimal(1).scaleb(-casas)
+    d = decimal.Decimal(repr(float(v))).quantize(q, rounding=decimal.ROUND_HALF_UP)
+    s = ('%.*f' % (casas, d)).replace('.', ',')
     inteiro, _, dec = s.partition(',')
     neg = inteiro.startswith('-')
     inteiro = inteiro.lstrip('-')

@@ -20,6 +20,7 @@ Uso tipico:
 Depende so da biblioteca padrao. Para a planilha embutida dos graficos usa o
 openpyxl de vendor/, que e Python puro (regra 6 do repositorio).
 """
+import decimal
 import html
 import os
 import re
@@ -366,8 +367,16 @@ def ler_numero(txt):
 
 
 def br(v, casas=1):
-    """1078603.2 -> '1.078.603,2' (ponto de milhar, virgula decimal)."""
-    s = ('%.*f' % (casas, v)).replace('.', ',')
+    """1078603.2 -> '1.078.603,2' (ponto de milhar, virgula decimal).
+
+    Arredondamento comercial: 56,25 vira 56,3 e nao 56,2. O `round` do Python
+    desempata para o par e o time confere contra a planilha, onde o Excel
+    desempata para cima — a diferenca de uma casa aparece na tabela e vira
+    pergunta na reuniao.
+    """
+    q = decimal.Decimal(1).scaleb(-casas)
+    d = decimal.Decimal(repr(float(v))).quantize(q, rounding=decimal.ROUND_HALF_UP)
+    s = ('%.*f' % (casas, d)).replace('.', ',')
     inteiro, _, dec = s.partition(',')
     neg = inteiro.startswith('-')
     inteiro = inteiro.lstrip('-')

@@ -40,7 +40,11 @@ eixo; não encolha por causa dele.
 O gráfico de quantidade carrega também os trimestres (`1ºQ`, `2ºQ`) como
 categorias iniciais, com valores fracionários — são médias semanais do
 trimestre, não totais. Mostre com uma casa decimal e arredondamento comercial
-(`56,25` → `56,3`, não `56,2`).
+(`56,25` → `56,3`, não `56,2`); o `br()` do toolkit já arredonda assim.
+
+O gráfico de valor **não tem os trimestres**: começa na semana 35. São duas
+listas de categorias diferentes no mesmo slide, e misturar as duas deixa o
+empilhado deslocado em duas posições.
 
 ## Tabela auxiliar
 
@@ -54,8 +58,14 @@ colunas iguais às do gráfico de quantidade.
 | Altura da linha | 0,31, começando em `y` 4,92 |
 | Linha TOTAL | fundo `DCE6F5`, navy negrito |
 
-Corpo 11,5pt cabe em coluna de 0,64"; com mais semanas caia para 10,5pt — já
-aconteceu de `104,8` quebrar em duas linhas. Linhas alternam branco e `F5F8FD`.
+A fonte acompanha a largura da coluna: 12pt coube em 0,75", 8pt em 0,45" (dez
+colunas). Com mais semanas, encolha antes de renderizar — já aconteceu de
+`104,8` quebrar em duas linhas. Linhas alternam branco e `F5F8FD`.
+
+O teto do eixo da quantidade olha a **maior série** (`103` em Serviços na S42
+estourou o máximo de 100); o do valor olha a **soma da semana**, porque a área
+é empilhada — o pico de R$ 6,73 mi da S36 é a soma das três, não o Diretos
+sozinho.
 
 ## Faixas de atenção e positivos
 
@@ -80,3 +90,16 @@ hora da reunião.
 A planilha já veio com total que não batia com a soma das categorias (S36:
 total 60 contra 133 somados). Some as categorias, use o que fecha e avise a
 divergência — nunca escolha em silêncio.
+
+## Quando o slide não está no deck
+
+Já aconteceu de o time tirar o slide por uma semana e pedir de volta depois.
+O deck que chega não tem o slide **nem o histórico**, então procure o último
+deck que ainda o tinha e transplante a parte inteira: `slides/slideN.xml`, os
+dois `chartN.xml` com seus `_rels` e as duas planilhas embutidas, mais o
+`Override` no `[Content_Types].xml`, o `Relationship` em
+`ppt/_rels/presentation.xml.rels` e o `<p:sldId>` no fim do `sldIdLst`.
+
+As imagens do cabeçalho e do rodapé costumam já existir no deck de destino com
+**outro número** (`image3.png` de um é `image2.png` do outro) — confira pelo
+md5 e aponte os rels para as que já estão lá, em vez de duplicar arquivo.
