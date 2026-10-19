@@ -53,10 +53,17 @@ o rosa claro com texto vermelho que o slide usava até a S40.
 
 ### Colunas de fechamento de trimestre
 
+A partir da S43 a tabela é **trimestre a trimestre mais as semanas do
+trimestre corrente**: `1ºQ`, `2ºQ`, `3ºQ`, `40`, `41`, `42`… As semanas
+fechadas num trimestre somem dentro da coluna dele.
+
 `1ºQ`, `2ºQ`, `3ºQ`… entram como colunas normais nas linhas acumuladas.
 Nas duas linhas semanais não há valor: a célula recebe `–`, fundo `DCE6F5`,
-texto `7B8AA3`. As colunas `1ºQ` e `2ºQ` ficam cobertas pelo rótulo da linha,
-que se estende por elas.
+texto `7B8AA3`. O rótulo da linha fica sempre na própria coluna — não se
+estende mais sobre `1ºQ`/`2ºQ`.
+
+Com poucas colunas a fonte dos valores cresce até 10,5pt; rótulo e cabeçalho
+param em 9pt e 10pt, que é o que cabe na coluna de rótulos de 1,40".
 
 ## Cartões da direita
 

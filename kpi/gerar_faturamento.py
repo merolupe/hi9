@@ -229,9 +229,10 @@ def monta_tabela(d, atual):
     n = len(d['colunas'])
     CW = (X1 - (X0 + LBL)) / n
 
-    # a fonte dos valores encolhe junto com a coluna; 7,2pt coube em 0,64"
-    tam_valor = max(600, min(720, int(720 * CW / 0.643)))
-    tam_rotulo, tam_cab = 820, 900
+    # a fonte acompanha a largura da coluna; 7,2pt coube em 0,64"
+    tam_valor = max(600, min(1050, int(720 * CW / 0.643)))
+    # rotulo e cabecalho tem teto proprio: precisam caber em LBL (1,40")
+    tam_rotulo, tam_cab = min(900, tam_valor), min(1000, tam_valor)
 
     def col(i): return X0 + LBL + i * CW
 
@@ -252,14 +253,12 @@ def monta_tabela(d, atual):
         for i, v in enumerate(vals):
             t.append(celula(novo(), col(i), y, CW, H, fundo, br(v), BODY, False, tam_valor))
 
-    # as duas linhas semanais comecam depois do 1ºQ/2ºQ: o rotulo cobre essas colunas
-    vazias = sum(1 for i in range(n) if str(i) not in d['orcado_semanal']
-                 and d['colunas'][i] in ('1ºQ', '2ºQ'))
+    # linhas semanais: fechamento de trimestre nao tem valor, entra "–"
     for linha, chave in enumerate(('orcado_semanal', 'realizado_semanal')):
         y = TOPO + (linha + 3) * H
         rot = 'Orçado Semanal' if chave == 'orcado_semanal' else 'Realizado Semanal'
-        t.append(celula(novo(), X0, y, LBL + vazias * CW, H, ROW_LBL, rot, NAVY, True, tam_rotulo))
-        for i in range(vazias, n):
+        t.append(celula(novo(), X0, y, LBL, H, ROW_LBL, rot, NAVY, True, tam_rotulo))
+        for i in range(n):
             v = d[chave].get(str(i))
             if v is None:                      # fechamento de trimestre: nao se aplica
                 t.append(celula(novo(), col(i), y, CW, H, ROW_LBL, '–', MUTED, False, tam_valor))
