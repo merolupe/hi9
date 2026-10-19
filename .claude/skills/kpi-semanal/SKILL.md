@@ -5,10 +5,13 @@ description: Monta e atualiza os slides da reunião semanal do time Fiscal da Hi
 
 # KPI semanal — Fiscal/Faturamento/Tributário
 
-O time apresenta três indicadores toda segunda, sobre a semana que fechou.
-A reunião da semana N fala dos números da semana N−1: deck "S42" traz dados
-da semana 41. A capa leva o número da reunião; o subtítulo de cada slide, o
-da semana dos dados.
+O time apresenta os indicadores toda semana, sobre a semana que fechou.
+
+**O `Snn` que aparece no deck é sempre a semana dos dados**, não a da reunião:
+a capa do S41 diz `KPI SEMANAL – S41 (13/10)` e 13/10 cai na semana 42. Então
+o número é o mesmo na capa, nos cartões, nos subtítulos e na última coluna da
+tabela; só a data entre parênteses na capa anda uma semana à frente. Fazer a
+semana 42 é trocar todo `41` por `42` e a data para a terça seguinte.
 
 ## O deck é o estado — não há nada guardado aqui
 

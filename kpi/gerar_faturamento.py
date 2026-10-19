@@ -130,6 +130,18 @@ def achar(xml, x, y, tol=0.06):
     raise KeyError('forma em (%.2f, %.2f) nao encontrada' % (x, y))
 
 
+def achar_texto(xml, marca):
+    """Localiza a forma pelo texto que ela carrega.
+
+    As anotacoes dentro do grafico sao as unicas formas que o time arrasta de
+    semana para semana, entao posicao nao serve de ancora para elas.
+    """
+    for m in formas(xml):
+        if marca in re.sub(r'</a:t>\s*<a:t>', '', m.group()):
+            return m
+    raise KeyError('nenhuma forma com o texto %r' % marca)
+
+
 def troca_runs(bloco, novo):
     """Poe o texto no primeiro run e esvazia os demais, preservando a formatacao."""
     ts = list(re.finditer(r'<a:t>[^<]*</a:t>', bloco))
@@ -347,7 +359,7 @@ def posicao_destaque(pac, slide, grafico, maximo, d):
 
 
 def gerar(base, historico, saida, semana, orc_acum, real_acum, orc_sem, real_sem,
-          meta_3q=None, meta_anual=None, capa=None, atencao=None):
+          meta_3q=None, meta_anual=None, capa=None, atencao=None, data=None):
     d = carregar(historico)
     idx = aplicar_semana(d, semana, orc_acum, real_acum, orc_sem, real_sem)
     if meta_3q:
@@ -396,11 +408,11 @@ def gerar(base, historico, saida, semana, orc_acum, real_acum, orc_sem, real_sem
 
         # ---- anotacoes dentro do grafico
         # as duas caixas sao alinhadas a direita e terminam em 8,50", antes dos cartoes
-        m = achar(x, 6.36, 2.23)
+        m = achar_texto(x, 'Orçado Sem.:')
         x = set_geometria(x, m, 5.60, 2.23, 2.90, 0.60)
         x = set_texto(x, 5.60, 2.23, 'Orçado Sem.: %s' % br(os_), par=0)
         x = set_texto(x, 5.60, 2.23, 'Realizado Sem.: %s' % br(rs), par=1)
-        m = achar(x, 7.14, 2.65)
+        m = achar_texto(x, 'Diferença S')
         x = set_geometria(x, m, 4.40, 2.85, 4.10, 0.30)
         x = set_texto(x, 4.40, 2.85,
                       'Diferença S%s  ·  ▼ %s  (%s)' % (semana, dinheiro(df_se), pct(1 - at_se)))
@@ -426,6 +438,8 @@ def gerar(base, historico, saida, semana, orc_acum, real_acum, orc_sem, real_sem
             for nome in sorted(n for n in pac.nomes if re.match(r'ppt/slides/slide\d+\.xml$', n)):
                 s = pac.ler(nome)
                 novo = re.sub(r'KPI SEMANAL – S\d+', 'KPI SEMANAL – S%s' % capa, s)
+                if data:
+                    novo = re.sub(r'\(\d{2}/\d{2}\)', '(%s)' % data, novo)
                 if novo != s:
                     pac.grava(nome, novo)
                     break
@@ -453,6 +467,7 @@ def main():
     p.add_argument('--meta-3q', default=None)
     p.add_argument('--meta-anual', default=None)
     p.add_argument('--capa', default=None, help='numero da semana da reuniao, ex.: 42')
+    p.add_argument('--data', default=None, help='data da reuniao na capa, ex.: 20/10')
     p.add_argument('--atencao', default=None,
                    help='texto da faixa "Pontos de atenção da semana" (vazio limpa)')
     a = p.parse_args()
@@ -464,7 +479,7 @@ def main():
         ler(a.real_sem) if a.real_sem else None,
         ler(a.meta_3q) if a.meta_3q else None,
         ler(a.meta_anual) if a.meta_anual else None,
-        a.capa, a.atencao)
+        a.capa, a.atencao, a.data)
     print('gerado: %s' % destino)
 
 

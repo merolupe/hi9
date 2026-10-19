@@ -13,7 +13,7 @@ python3 kpi/gerar_faturamento.py \
     --base      deck_anterior.pptx \
     --historico competencias/kpi/faturamento.json \
     --saida     "REUNIAO_SEMANAL_-_S43_2026.pptx" \
-    --semana 42 --capa 43 \
+    --semana 42 --capa 42 --data 20/10 \
     --orc-acum 1.148.975,4 --real-acum 973.083,5 \
     --orc-sem     33.719,5 --real-sem    17.090,1 \
     --atencao "texto da faixa, ou vazio para limpar"
@@ -24,7 +24,20 @@ Ele refaz tabela, cartões, gráfico, eixo e destaque tracejado. O `--historico`
 a partir da tabela do próprio deck — ela tem a série inteira.
 
 Fechamento de trimestre entra como coluna sem valor semanal: omita
-`--orc-sem` e `--real-sem`.
+`--orc-sem` e `--real-sem`. `--atencao ""` limpa a faixa do rodapé.
+
+`--capa` e `--data` são o mesmo `Snn` dos dados e a data da reunião, que cai na
+semana seguinte (S42 → 20/10).
+
+**O gerador colapsa tabela e gráfico juntos**, porque os dois leem a mesma
+lista de colunas. Foi o pedido do time na S42 ("q1, q2, q3 e as semanas
+subsequentes") e vale para os dois; se um dia quiserem o gráfico com o
+histórico semanal cheio e a tabela compacta, aí é edição cirúrgica, não o
+gerador.
+
+As duas anotações dentro do gráfico são achadas **pelo texto** (`Orçado Sem.:`
+e `Diferença S`), não pela posição: são as únicas caixas que o time arrasta de
+uma semana para outra.
 
 ## Fórmulas dos cartões
 
