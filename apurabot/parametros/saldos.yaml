@@ -87,6 +87,31 @@ saldos_credores:
       7: 379388.66            # HINOVE (LONDRINA)
       8: 3014.07              # HINOVE (BARRA DO GARÇAS - MT)
 
+  - competencia: "2026-10"
+    homologado: true
+    origem: >
+      Linha 014 dos Registros de Apuração de 09/2026, um por estabelecimento.
+      Filial Guará (empresa 11), retificado em 23/10/2026: R$ 1.800.110,02 —
+      abriu setembro com R$ 960.376,58, recebeu R$ 1.000.980,00 na linha 006
+      (crédito de estabelecimento de produtor ou de cooperativa) e
+      R$ 98.243,03 de saldo devedor de Registro na linha 002, pela
+      centralização. Londrina (empresa 7), emitido em 07/10/2026:
+      R$ 391.581,06 — a abertura de setembro (R$ 379.388,66) mais o crédito
+      das entradas do próprio setembro (R$ 12.192,40), como nos meses
+      anteriores (decisão nº 1). Barra do Garças (empresa 8), emitido em
+      07/10/2026: R$ 3.014,07 — o estorno leva o crédito do mês e o saldo que
+      veio passa intacto. Registro (empresa 4), Rio Brilhante (empresa 2) e
+      Corumbá (empresa 9), emitidos em 07/10/2026, fecham setembro com a linha
+      014 em R$ 0,00: Registro transfere os R$ 98.243,03 de saldo devedor para
+      Guará, e Rio Brilhante fecha devedor (R$ 194.845,90 na linha 011,
+      R$ 31.595,30 a recolher depois da dedução da linha 012). Matriz
+      (empresa 1), emitido em 05/10/2026: sem movimento em setembro, todas as
+      linhas em R$ 0,00.
+    por_estabelecimento:
+      11: 1800110.02          # HINOVE (FILIAL GUARÁ)
+      7: 391581.06            # HINOVE (LONDRINA)
+      8: 3014.07              # HINOVE (BARRA DO GARÇAS - MT)
+
 # ---------------------------------------------------------------------------
 # Saldo inicial dos créditos controlados — Registro 1200 da EFD (SLD_CRED).
 # ---------------------------------------------------------------------------
@@ -153,6 +178,12 @@ creditos_controlados_transmitidos:
     origem: >
       EFD de 01 a 07/2026 (planilha "SPED Jan-Jul 2026 Consolidado", com o
       julho retificado: 46.138,68 utilizados) e a tela do 1200 de 08/2026.
+      Setembro sai do Registro de Apuração de 09/2026, emitido em 07/10/2026:
+      o uso é o ajuste da linha 006 ("crédito recebido em transferência,
+      art. 68"), R$ 83.505,38 — exatamente 30% do saldo devedor antes do uso
+      (194.845,90 + 83.505,38 = 278.351,28); o recebido é o crédito da NF-e
+      247431 declarado no bloco acima. A tela do 1200 de setembro não veio
+      anexada.
     meses:
       "2026-01": { sld_cred: 0.00,      cred_receb: 62720.00, cred_util: 62720.00 }
       "2026-02": { sld_cred: 0.00,      cred_receb: 62720.00, cred_util: 42450.48 }
@@ -162,3 +193,4 @@ creditos_controlados_transmitidos:
       "2026-06": { sld_cred: 47982.23,  cred_receb: 62720.00, cred_util: 18857.22 }
       "2026-07": { sld_cred: 91845.01,  cred_receb: 62720.00, cred_util: 46138.68 }
       "2026-08": { sld_cred: 108426.33, cred_receb: 62720.00, cred_util: 108858.68 }
+      "2026-09": { sld_cred: 62287.65,  cred_receb: 62720.00, cred_util: 83505.38 }

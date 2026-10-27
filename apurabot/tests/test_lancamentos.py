@@ -198,8 +198,8 @@ def test_uso_acima_do_estoque_fica_pendente(agosto, parametros, tmp_path):
 
 
 def test_competencia_sem_saldo_declarado_fica_pendente(parametros, tmp_path):
-    """Outubro ainda não tem abertura em saldos.yaml: não é zero, é aberto."""
-    base = tratar(_livro(tmp_path / "outubro.xlsx", mes=10), parametros=parametros)
+    """Novembro ainda não tem abertura em saldos.yaml: não é zero, é aberto."""
+    base = tratar(_livro(tmp_path / "novembro.xlsx", mes=11), parametros=parametros)
     (controle,) = cc.montar(apurar(base, parametros), parametros)
     assert controle.saldo_inicial is None
     assert any("não declarado" in p for p in controle.pendencias)
@@ -260,6 +260,14 @@ def test_setembro_abre_no_fim_de_agosto_transmitido(parametros, tmp_path):
     assert controle.saldo_inicial == pytest.approx(62_287.65, abs=CENTAVO)
     assert "transmitido" in controle.origem_do_saldo_inicial
     assert not any("não declarado" in p for p in controle.pendencias)
+
+
+def test_outubro_abre_no_fim_de_setembro_transmitido(parametros, tmp_path):
+    """62.287,65 + 62.720,00 recebidos − 83.505,38 da linha 006 de setembro."""
+    base = tratar(_livro(tmp_path / "outubro.xlsx", mes=10), parametros=parametros)
+    (controle,) = cc.montar(apurar(base, parametros), parametros)
+    assert controle.saldo_inicial == pytest.approx(41_502.27, abs=CENTAVO)
+    assert "transmitido" in controle.origem_do_saldo_inicial
 
 
 def test_abertura_diferente_do_fim_anterior_fica_pendente(parametros, tmp_path):
