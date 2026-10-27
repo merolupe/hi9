@@ -88,7 +88,7 @@ saldos_credores:
       8: 3014.07              # HINOVE (BARRA DO GARÇAS - MT)
 
   - competencia: "2026-10"
-    homologado: false
+    homologado: true
     origem: >
       Linha 014 dos Registros de Apuração de 09/2026, um por estabelecimento.
       Filial Guará (empresa 11), retificado em 23/10/2026: R$ 1.800.110,02 —
@@ -104,13 +104,9 @@ saldos_credores:
       Corumbá (empresa 9), emitidos em 07/10/2026, fecham setembro com a linha
       014 em R$ 0,00: Registro transfere os R$ 98.243,03 de saldo devedor para
       Guará, e Rio Brilhante fecha devedor (R$ 194.845,90 na linha 011,
-      R$ 31.595,30 a recolher depois da dedução da linha 012).
-    pendencia: >
-      Falta o Registro de 09/2026 da Matriz (empresa 1). Guará fechou setembro
-      credor, então a centralização não tinha saldo devedor para receber
-      crédito: se a Matriz fechou credora, o saldo ficou nela e não aparece em
-      Guará. Enquanto o documento não vier, a Matriz abre outubro zerada por
-      estar fora da lista — confirme antes de homologar.
+      R$ 31.595,30 a recolher depois da dedução da linha 012). Matriz
+      (empresa 1), emitido em 05/10/2026: sem movimento em setembro, todas as
+      linhas em R$ 0,00.
     por_estabelecimento:
       11: 1800110.02          # HINOVE (FILIAL GUARÁ)
       7: 391581.06            # HINOVE (LONDRINA)
