@@ -165,6 +165,13 @@ começar:
 | 3 | CNPJ + valor | média |
 | 4 | número da nota + valor, **sem CNPJ** | **fraca — exige revisão** |
 
+Nos caminhos 3 e 4, que não têm o número da nota junto com o CNPJ, a
+**data vem antes**: o lançamento só serve se o `Dt. Neg.` dele não for
+anterior à emissão da nota (com tolerância de poucos dias, ajustável na tela
+de parâmetros), e entre os que servem fica o de data mais próxima. É o que
+impede a nota de outubro de um prestador que cobra o mesmo valor todo mês de
+casar com o lançamento de abril. Sem data para conferir, a nota fica pendente.
+
 Um lançamento casa com no máximo uma nota, e uma nota com no máximo um
 lançamento. O que casou pelo caminho 4 sai marcado, e passa a **bloquear o
 encerramento da semana** até alguém olhar — hoje isso é uma frase na mensagem

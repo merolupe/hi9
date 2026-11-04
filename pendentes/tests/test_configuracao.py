@@ -136,6 +136,17 @@ def test_tolerancia_com_virgula_e_entendida():
         parametros.carregar())["tolerancia_da_razao"] == 0.01
 
 
+def test_dias_antes_da_emissao_grava_e_nao_aceita_negativo():
+    tela = configuracao.ler()
+    assert tela["confronto_servicos"][0]["tolerancia_de_emissao_dias"] == 5
+    tela["confronto_servicos"][0]["tolerancia_de_emissao_dias"] = "3"
+    assert configuracao.gravar(tela, "teste")[0]
+    assert parametros.confronto_de_servicos(
+        parametros.carregar())["tolerancia_de_emissao_dias"] == 3
+    tela["confronto_servicos"][0]["tolerancia_de_emissao_dias"] = "-1"
+    assert not configuracao.gravar(tela, "teste")[0]
+
+
 def test_semana_fixada_grava_com_aviso():
     tela = configuracao.ler()
     tela["semana"][0]["numero"] = "40"

@@ -161,6 +161,10 @@ def secoes() -> list[dict[str, Any]]:
                 _campo("marca_de_cancelada", "Marca de cancelada", 14,
                        "O que se escreve em Guardião, Gestor e Retorno para "
                        "tirar a nota cancelada na prefeitura."),
+                _campo("tolerancia_de_emissao_dias", "Dias antes da emissão", 10,
+                       "CNPJ+valor e nota+valor: quantos dias o Dt. Neg. do "
+                       "lançamento pode vir antes da emissão da nota.",
+                       "numero"),
             ],
             "fixa": True,
         },
@@ -279,6 +283,9 @@ def ler(dados: dict[str, Any] | None = None) -> dict[str, list[dict]]:
             "multiplo_minimo": _numero(confronto.get("multiplo_minimo")),
             "multiplo_maximo": _numero(confronto.get("multiplo_maximo")),
             "marca_de_cancelada": confronto.get("marca_de_cancelada", ""),
+            "tolerancia_de_emissao_dias": _numero(
+                parametros.confronto_de_servicos(dados)[
+                    "tolerancia_de_emissao_dias"]),
         }],
         "semana": [{
             "numero": semana.get("numero", ""),
@@ -467,6 +474,9 @@ def montar(tela: dict[str, Any], atual: dict[str, Any]
         "multiplo_maximo": _num(linha.get("multiplo_maximo"), relato, onde,
                                 "Múltiplo máx.", inteiro=True, minimo=1),
         "marca_de_cancelada": _texto(linha, "marca_de_cancelada"),
+        "tolerancia_de_emissao_dias": _num(
+            linha.get("tolerancia_de_emissao_dias"), relato, onde,
+            "Dias antes da emissão", inteiro=True, minimo=0),
     })
     if not confronto["prefixo_de_pedido"]:
         relato.erro(onde, "falta o prefixo de pedido.")

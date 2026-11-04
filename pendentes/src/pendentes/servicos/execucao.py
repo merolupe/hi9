@@ -85,6 +85,9 @@ class Execucao:
     # o que informa
     cnpj_descartados: int = 0
     datas_ilegiveis: int = 0
+    #: Pendentes que só casariam por CNPJ+valor (ou nota+valor) com um
+    #: lançamento de antes da emissão — a cronologia recusou.
+    barradas_pela_data: int = 0
     numeros_com_corte_de_ano: int = 0
     pedidos_de_outra_filial: int = 0
     colisoes_de_identidade: int = 0
@@ -147,6 +150,12 @@ class Execucao:
             itens.append(
                 f"{self.datas_ilegiveis} data(s) de emissão não interpretáveis, "
                 f"mantidas como texto na célula"
+            )
+        if self.barradas_pela_data:
+            itens.append(
+                f"{self.barradas_pela_data} nota(s) ficaram pendentes porque o "
+                f"único lançamento de mesmo CNPJ+valor (ou nota+valor) tem "
+                f"Dt. Neg. anterior à emissão, ou sem data para conferir"
             )
         if self.numeros_com_corte_de_ano:
             itens.append(
@@ -553,7 +562,9 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
     from .chaves import chave_de_nota_e_cnpj, indexar
 
     indices = indexar(lancamentos)
-    resultado = casc.confrontar(notas, lancamentos, indices)
+    resultado = casc.confrontar(
+        notas, lancamentos, indices,
+        tolerancia_de_emissao_dias=ajuste["tolerancia_de_emissao_dias"])
 
     # A Conferência de Serviços é opcional, e a falta de **qualquer** coluna
     # dela desliga só o bloco — o VBA aborta a execução inteira, e é um dos
@@ -617,6 +628,7 @@ def gerar(arquivos: Iterable[Path | str], saida: Path | str, *,
         1 for nota in notas if nota.cortou_prefixo_de_ano)
     execucao.datas_ilegiveis = sum(
         1 for nota in notas if nota.emissao and not nota.emissao_e_data)
+    execucao.barradas_pela_data = resultado.barradas_pela_data
 
     fora_do_mapa: list[str] = []
     linhas_lancadas: list[list[Any]] = []

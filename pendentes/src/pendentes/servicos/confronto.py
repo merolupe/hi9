@@ -28,11 +28,31 @@ chegou a ser lançada no Sankhya, aquele lançamento nunca é consumido e aparec
 em `Sem Correspondencia ASIS`, inflando a medida de lacuna de captura do ASIS
 com um caso que não é lacuna nenhuma. O remédio seria pior que a doença, e o
 número é aproximado por construção.
+
+### Nas chaves fracas, a cronologia vem antes do valor
+
+Os procedimentos 3 (CNPJ + valor) e 4 (nota + valor) não têm o par nota +
+CNPJ para ancorar o casamento, e o prestador que cobra o mesmo valor todo mês
+dá a eles uma dúzia de lançamentos com a mesma chave. Pegar "o primeiro livre",
+como a macro faz, casou a NFS-e de 01/10 com um lançamento de abril.
+
+Por isso, nesses dois passos, o lançamento só serve à nota se o `Dt. Neg.`
+dele **não for anterior à emissão** — com a tolerância de poucos dias que o
+time calibra na tela (`tolerancia_de_emissao_dias`). Não se lança uma nota
+antes de ela existir. Entre os lançamentos que passam, fica o de `Dt. Neg.`
+mais próximo da emissão; o empate vai para o primeiro, na ordem do relatório.
+
+Sem data de um dos lados, a cronologia não pode ser conferida e o casamento
+fraco não acontece: a nota fica pendente, que é o erro que alguém revisa. O
+erro contrário — dar como lançada uma nota que não foi — some do relatório.
+Os procedimentos 1 e 2 não passam por isso: o número da nota com o CNPJ já é
+a identidade.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Sequence
+from datetime import date, timedelta
+from typing import Any, Sequence
 
 from .chaves import (
     NENHUM, Indices, chave_de_cnpj_e_valor, chave_de_nota_e_cnpj,
@@ -60,6 +80,15 @@ NOMES = {
 #: encerramento da semana.
 PROCEDIMENTO_FRACO = 4
 
+#: Os procedimentos sem o par nota + CNPJ: neles, a cronologia é conferida
+#: antes de o lançamento ser consumido.
+PROCEDIMENTOS_COM_CRONOLOGIA = (3, 4)
+
+#: Quantos dias o `Dt. Neg.` pode vir antes da emissão. O valor de verdade
+#: é parâmetro (`confronto_servicos.tolerancia_de_emissao_dias`); este é o
+#: padrão de quem chama sem informar.
+TOLERANCIA_DE_EMISSAO_PADRAO = 5
+
 
 @dataclass
 class Confronto:
@@ -71,6 +100,9 @@ class Confronto:
     lancamento: list[int] = field(default_factory=list)
     #: Por lançamento: se já foi consumido por alguma nota.
     consumidos: list[bool] = field(default_factory=list)
+    #: Por nota: ficou pendente porque o lançamento livre de mesma chave
+    #: fraca era de antes da emissão (ou não tinha data para conferir).
+    barrada_pela_data: list[bool] = field(default_factory=list)
 
     def resolvida(self, posicao: int) -> bool:
         return self.procedimento[posicao] > PENDENTE
@@ -91,6 +123,10 @@ class Confronto:
     @property
     def sem_correspondencia(self) -> int:
         return sum(1 for consumido in self.consumidos if not consumido)
+
+    @property
+    def barradas_pela_data(self) -> int:
+        return sum(1 for b in self.barrada_pela_data if b)
 
     def por_procedimento(self) -> dict[int, int]:
         """Quantas notas cada procedimento resolveu.
@@ -132,13 +168,53 @@ def _indice(passo: int, indices: Indices):
     return indices.nota_e_valor
 
 
+def _dia(valor: Any) -> date | None:
+    """A data de uma célula já convertida; `None` se ela ficou como texto."""
+    if isinstance(valor, date):
+        return valor.date() if hasattr(valor, "hour") else valor
+    return None
+
+
+def _consumir_na_cronologia(indice, chave: str, nota: NotaDeServico,
+                            lancamentos: Sequence[Registro],
+                            consumidos: list[bool],
+                            tolerancia: int) -> tuple[int, bool]:
+    """O lançamento livre de `Dt. Neg.` mais próximo, entre os que cabem.
+
+    Devolve a posição (já marcada como consumida) e se houve lançamento livre
+    recusado pela data — é isso que a tela conta.
+    """
+    livres = [p for p in indice.posicoes.get(chave, ()) if not consumidos[p]]
+    if not livres:
+        return NENHUM, False
+    emissao = _dia(nota.emissao)
+    if emissao is None:
+        return NENHUM, True
+    piso = emissao - timedelta(days=tolerancia)
+    escolhido, distancia = NENHUM, None
+    for posicao in livres:
+        negociacao = _dia(lancamentos[posicao].data_de_negociacao)
+        if negociacao is None or negociacao < piso:
+            continue
+        dias = abs((negociacao - emissao).days)
+        if distancia is None or dias < distancia:
+            escolhido, distancia = posicao, dias
+    if escolhido == NENHUM:
+        return NENHUM, True
+    consumidos[escolhido] = True
+    return escolhido, False
+
+
 def confrontar(notas: Sequence[NotaDeServico], lancamentos: Sequence[Registro],
-               indices: Indices) -> Confronto:
+               indices: Indices, *,
+               tolerancia_de_emissao_dias: int = TOLERANCIA_DE_EMISSAO_PADRAO,
+               ) -> Confronto:
     """A cascata inteira: segrega as canceladas e roda os quatro passos."""
     resultado = Confronto(
         procedimento=segregar_canceladas(notas),
         lancamento=[NENHUM] * len(notas),
         consumidos=[False] * len(lancamentos),
+        barrada_pela_data=[False] * len(notas),
     )
 
     # O laço externo é o PASSO. Trocar estes dois `for` de lugar muda o
@@ -152,9 +228,18 @@ def confrontar(notas: Sequence[NotaDeServico], lancamentos: Sequence[Registro],
             chave = _chave(passo, nota)
             if chave is None:
                 continue
-            achou = indice.consumir(chave, resultado.consumidos)
+            if passo in PROCEDIMENTOS_COM_CRONOLOGIA:
+                achou, barrada = _consumir_na_cronologia(
+                    indice, chave, nota, lancamentos, resultado.consumidos,
+                    tolerancia_de_emissao_dias)
+                if barrada:
+                    resultado.barrada_pela_data[posicao] = True
+            else:
+                achou = indice.consumir(chave, resultado.consumidos)
             if achou != NENHUM:
                 resultado.procedimento[posicao] = passo
                 resultado.lancamento[posicao] = achou
+                # Barrada no 3 e casada no 4 não é barrada: resolveu.
+                resultado.barrada_pela_data[posicao] = False
 
     return resultado

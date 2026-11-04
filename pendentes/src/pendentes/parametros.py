@@ -277,6 +277,12 @@ def confronto_de_servicos(dados: dict[str, Any]) -> dict[str, Any]:
         "multiplo_minimo": int(bruto.get("multiplo_minimo") or 2),
         "multiplo_maximo": int(bruto.get("multiplo_maximo") or 12),
         "marca_de_cancelada": str(bruto.get("marca_de_cancelada") or "cancelada"),
+        # Entrou depois da carga de fábrica: quem já roda não tem a chave na
+        # base viva, e o padrão daqui é o que vale para essa pessoa. Zero é
+        # valor legítimo (nenhum dia antes da emissão), por isso não é `or`.
+        "tolerancia_de_emissao_dias": int(
+            5 if bruto.get("tolerancia_de_emissao_dias") in (None, "")
+            else bruto.get("tolerancia_de_emissao_dias")),
     }
 
 
