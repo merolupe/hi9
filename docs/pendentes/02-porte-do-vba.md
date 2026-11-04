@@ -365,7 +365,7 @@ rodar.
 | O quê | Hoje | Agora |
 |---|---|---|
 | Lançamento TOP 2020/2111 com CNPJ vazio ou zerado | não é indexado em lugar nenhum, some da análise e da aba inversa, **sem contagem e sem aviso** | contado e exibido em `Ficaram de fora da análise` |
-| Número de nota que sofreu o corte de prefixo de ano | o corte é premissa declarada em comentário, e invisível na execução | contado — quando um número legítimo de 13+ dígitos começando em `20` for mutilado, o número aparece |
+| Número de nota que sofreu o corte de prefixo de ano | o corte é premissa declarada em comentário, e invisível na execução | contado — quando um número legítimo de 13+ dígitos começando em `20` for mutilado, o número aparece. Desde 11/2026 o corte também reconhece o ano de **2 dígitos** (`2600000007703` → `7703`: 13 dígitos, ano de 21 a 49, zero depois), que o VBA não conhecia e deixava a nota pendente para sempre |
 | Nota que recebeu pedido de compra de outra filial | `mapPedido` é indexado só por CNPJ do parceiro e ninguém percebe | contado; é a medição que fundamenta a pendência 5 |
 
 `[FATO]` E uma quarta, que o VBA conta mas não mostra a lista: **os quatro
@@ -481,7 +481,7 @@ marcadas.
 | 2 | Achar que aplicar o formato **depois** de escrever resolve. `Insert Shift:=xlToRight` faz a coluna nova herdar o formato da vizinha, e gravar data em célula Texto converte o valor sem levantar exceção | **`escrita.preparar_aba` formata antes, e há teste** |
 | 3 | Buscar a pasta da semana recursivamente — encontraria `Serviços\Semana 30` querendo `Mercadorias\Semana 30` | o ambiente desapareceu |
 | 4 | Tratar o farol vazio como "Não" — são três estados, e vazio significa *sem pedido vinculado* | **`farol.py`, com teste** — e, desde a entrega 3, a distribuição dos três estados vai para a tela a cada execução |
-| 5 | Supor que o número da nota no ASIS é o número do lançamento — há prefixo de ano de 4 dígitos, e prefeituras que informam a RPS como número da nota | **`chaves.analisar_numero_de_nfse`, com teste** |
+| 5 | Supor que o número da nota no ASIS é o número do lançamento — há prefixo de ano de 4 dígitos (`2026…`) e, desde 11/2026, de 2 (`26…`, 13 dígitos), e prefeituras que informam a RPS como número da nota | **`chaves.analisar_numero_de_nfse`, com teste** |
 | 6 | Assumir que a chave de herança de serviços é nota + CNPJ. É nota + **Cod Parceiro** | **`execucao._chave_de_heranca`, com teste de ida e volta.** O livro guarda o CNPJ e **conta** a colisão — eliminá-la exige uma coluna nova na planilha, que é decisão pendente |
 | 7 | Assumir que as abas auxiliares têm o mesmo número de colunas da principal | **`mercadorias/colunas.py`, com teste**: 27 / 33 / 38 / 36 / 28, e a razão de cada largura |
 | 8 | Assumir que `Canceladas` (serviços) é `Pendentes` + 2 colunas. É layout próprio de 16 | **`colunas.CANCELADAS`, com teste que compara as duas ordens internas** |

@@ -25,6 +25,23 @@ def test_o_corte_so_vale_a_partir_de_treze_digitos_comecando_em_20():
     assert numero_de_nfse("1926000012345") == "1926000012345"  # não começa em 20
 
 
+def test_o_ano_de_dois_digitos_tambem_e_cortado():
+    """`2600000007703` é a nota 7703: ano `26` e a sequência de 11 dígitos."""
+    analise = analisar_numero_de_nfse("2600000007703")
+    assert analise.valor == "7703"
+    assert analise.cortou_prefixo_de_ano is True
+    assert numero_de_nfse(2600000007703) == "7703"
+    assert numero_de_nfse("2500000012345") == "12345"
+
+
+def test_o_ano_de_dois_digitos_exige_13_digitos_e_o_zero_depois_do_ano():
+    assert numero_de_nfse("260000007703") == "260000007703"      # 12 dígitos
+    assert numero_de_nfse("26000000077031") == "26000000077031"  # 14 dígitos
+    assert numero_de_nfse("2610000007703") == "2610000007703"    # sem o zero
+    assert numero_de_nfse("1900000007703") == "1900000007703"    # ano fora
+    assert numero_de_nfse("5000000007703") == "5000000007703"    # ano fora
+
+
 def test_zeros_a_esquerda_somem_mas_sobra_sempre_um_digito():
     assert numero_de_nfse("000123") == "123"
     assert numero_de_nfse("000") == "0"
