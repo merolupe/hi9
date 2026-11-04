@@ -374,6 +374,30 @@ macro só avisa que o procedimento 4 exige revisão; aqui os quatro números vê
 com a contagem, e a soma tem de dar `Lançadas` — é o teste de regressão
 visível, que dispensa abrir teste para conferir.
 
+### 6.3.1 A cronologia nas chaves fracas (04/11/2026)
+
+`[FATO]` **Muda célula, de propósito.** A planilha de 03/11/2026 deu como
+lançada, pelo procedimento 3, a NFS-e de um prestador recorrente emitida em
+01/10 — e o lançamento que ela consumiu era uma nota de abril. O prestador cobra
+o mesmo valor todo mês; com CNPJ + valor como chave, qualquer lançamento livre
+dele servia, e o VBA pega o primeiro. A mesma planilha tem outras duas linhas
+do mesmo prestador pelo procedimento 3, para notas de 03/08, com cara do
+mesmo defeito.
+
+| | VBA | Agora |
+|---|---|---|
+| Procedimentos 3 e 4 | o primeiro lançamento livre da chave | só o lançamento com `Dt. Neg.` **não anterior** à emissão — tolerância de `tolerancia_de_emissao_dias` (padrão 5) — e, entre eles, o de data mais próxima |
+| Sem data de um dos lados | casa | não casa: a nota fica pendente |
+| Procedimentos 1 e 2 | — | inalterados: número + CNPJ já é identidade |
+
+A tolerância tem de ficar abaixo do intervalo do prestador recorrente: com 30
+dias, o lançamento de setembro voltaria a pagar a nota de outubro. A tela
+conta, em `Ficaram de fora da análise`, as notas que ficaram pendentes porque
+a cronologia recusou o único lançamento que serviria. É desvio da macro:
+na comparação contra o padrão-ouro, notas que a macro dá como lançadas pelo
+procedimento 3 ou 4 podem aparecer aqui como pendentes, e é esta seção que
+explica a diferença.
+
 ### 6.4 O que a entrega de mercadorias corrigiu, e que não estava na lista
 
 `[FATO]` Quatro coisas que o VBA faz em silêncio e que agora têm número na

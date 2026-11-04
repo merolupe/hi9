@@ -188,6 +188,117 @@ def test_qualquer_conteudo_em_data_de_cancelamento_cancela_a_nota():
 
 
 # =========================================================================
+# A cronologia nas chaves fracas
+# =========================================================================
+
+RECORRENTE = "55444333000122"
+
+
+def test_cnpj_e_valor_nao_casa_com_lancamento_de_antes_da_emissao():
+    """O caso de 03/11/2026: a NFS-e de 01/10 casou com o lançamento de abril.
+
+    O prestador cobra o mesmo valor todo mês, e o único lançamento livre com
+    aquele CNPJ + valor era uma nota de abril. Lançar uma nota seis meses
+    antes de ela ser emitida não existe: a nota fica pendente.
+    """
+    resultado, _ = confrontar(
+        notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="01/10/2026")),
+        registros(linha_portal(1, "1104", RECORRENTE, 1800.00,
+                               negociacao="01/04/2026")),
+    )
+    assert resultado.procedimento == [confronto.PENDENTE]
+    assert resultado.sem_correspondencia == 1
+    assert resultado.barradas_pela_data == 1
+
+
+def test_entre_os_lancamentos_recorrentes_fica_o_da_mesma_emissao():
+    """Abril e setembro estão livres, outubro também: a nota de 01/10 leva
+    o de outubro, mesmo sendo o último da lista."""
+    resultado, lancamentos = confrontar(
+        notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="01/10/2026")),
+        registros(
+            linha_portal(1, "1104", RECORRENTE, 1800.00, negociacao="01/04/2026"),
+            linha_portal(2, "2905", RECORRENTE, 1800.00, negociacao="02/09/2026"),
+            linha_portal(3, "3102", RECORRENTE, 1800.00, negociacao="01/10/2026"),
+        ),
+    )
+    assert resultado.procedimento == [3]
+    assert lancamentos[resultado.lancamento[0]].numero == "3102"
+    assert resultado.barradas_pela_data == 0
+
+
+def test_o_lancamento_do_mes_anterior_nao_serve_a_nota_recorrente():
+    """Um mês antes é mais que a tolerância: o de setembro não paga outubro."""
+    resultado, _ = confrontar(
+        notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="01/10/2026")),
+        registros(linha_portal(1, "2905", RECORRENTE, 1800.00,
+                               negociacao="02/09/2026")),
+    )
+    assert resultado.procedimento == [confronto.PENDENTE]
+
+
+def test_dt_neg_poucos_dias_antes_da_emissao_ainda_casa():
+    """A tolerância cobre a data digitada com um ou dois dias de diferença."""
+    resultado, _ = confrontar(
+        notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="05/10/2026")),
+        registros(linha_portal(1, "3102", RECORRENTE, 1800.00,
+                               negociacao="01/10/2026")),
+    )
+    assert resultado.procedimento == [3]
+
+
+def test_a_tolerancia_vem_de_quem_chama():
+    as_notas = notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="05/10/2026"))
+    lancamentos = enriquecimento.lancamentos_de(registros(
+        linha_portal(1, "3102", RECORRENTE, 1800.00, negociacao="01/10/2026")), TOPS)
+    resultado = confronto.confrontar(
+        as_notas, lancamentos, chaves.indexar(lancamentos),
+        tolerancia_de_emissao_dias=0)
+    assert resultado.procedimento == [confronto.PENDENTE]
+
+
+def test_lancamento_tardio_casa():
+    """Lançar depois da emissão é o normal, por mais atrasado que seja."""
+    resultado, _ = confrontar(
+        notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="01/04/2026")),
+        registros(linha_portal(1, "3102", RECORRENTE, 1800.00,
+                               negociacao="20/10/2026")),
+    )
+    assert resultado.procedimento == [3]
+
+
+def test_sem_dt_neg_a_chave_fraca_nao_casa():
+    """Sem data não há como conferir a cronologia — e não se adivinha."""
+    resultado, _ = confrontar(
+        notas(linha_asis("3101", RECORRENTE, "1800.00", emissao="01/10/2026")),
+        registros(linha_portal(1, "3102", RECORRENTE, 1800.00, negociacao="")),
+    )
+    assert resultado.procedimento == [confronto.PENDENTE]
+    assert resultado.barradas_pela_data == 1
+
+
+def test_nota_mais_valor_tambem_confere_a_cronologia():
+    """O procedimento 4, sem CNPJ, passa pela mesma trava."""
+    resultado, _ = confrontar(
+        notas(linha_asis("1104", "11222333000144", "1800.00",
+                         emissao="01/10/2026")),
+        registros(linha_portal(1, "1104", RECORRENTE, 1800.00,
+                               negociacao="01/04/2026")),
+    )
+    assert resultado.procedimento == [confronto.PENDENTE]
+
+
+def test_nota_e_cnpj_nao_depende_da_data():
+    """Nos procedimentos 1 e 2 o número com o CNPJ já é a identidade."""
+    resultado, _ = confrontar(
+        notas(linha_asis("1104", RECORRENTE, "1800.00", emissao="01/10/2026")),
+        registros(linha_portal(1, "1104", RECORRENTE, 1800.00,
+                               negociacao="01/04/2026")),
+    )
+    assert resultado.procedimento == [1]
+
+
+# =========================================================================
 # As identidades aritméticas — o que a execução real vai confirmar
 # =========================================================================
 

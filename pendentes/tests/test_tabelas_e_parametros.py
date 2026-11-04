@@ -63,6 +63,18 @@ def test_a_fabrica_carrega_e_traz_os_parametros_do_confronto():
     assert confronto["tolerancia_da_razao"] == 0.005
     assert (confronto["multiplo_minimo"], confronto["multiplo_maximo"]) == (2, 12)
     assert confronto["cnpj_descartado"] == "00000000000000"
+    assert confronto["tolerancia_de_emissao_dias"] == 5
+
+
+def test_a_base_viva_antiga_sem_a_tolerancia_de_emissao_recebe_o_padrao():
+    """A carga de fábrica só semeia na primeira abertura: quem já roda não
+    tem a chave, e a trava de cronologia tem de valer para essa pessoa."""
+    ajuste = parametros.confronto_de_servicos(
+        {"confronto_servicos": {"tops_de_lancamento": ["2020"]}})
+    assert ajuste["tolerancia_de_emissao_dias"] == 5
+    zero = parametros.confronto_de_servicos(
+        {"confronto_servicos": {"tolerancia_de_emissao_dias": 0}})
+    assert zero["tolerancia_de_emissao_dias"] == 0
 
 
 def test_a_fabrica_nao_traz_nenhum_dado_da_empresa():

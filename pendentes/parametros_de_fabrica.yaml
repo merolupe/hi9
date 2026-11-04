@@ -24,6 +24,11 @@ confronto_servicos:
   tolerancia_da_razao: 0.005             # |valor do pedido / valor da nota - k|
   multiplo_minimo: 2                     # pedido global: de 2 notas...
   multiplo_maximo: 12                    # ...até 12
+  # Procedimentos 3 (CNPJ+valor) e 4 (nota+valor): o lançamento só casa se o
+  # Dt. Neg. dele não for anterior à emissão da nota em mais que estes dias.
+  # Menor que o intervalo do prestador recorrente (um mês), senão o lançamento
+  # do mês anterior volta a servir.
+  tolerancia_de_emissao_dias: 5
   # O que a pessoa escreve em `Guardiao`, `Gestor de apoio` e no `Retorno`
   # quando descobre que a NFS-e foi cancelada na prefeitura e o evento nunca
   # chegou à nossa base. Os três campos, e não um.
