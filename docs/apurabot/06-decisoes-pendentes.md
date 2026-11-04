@@ -458,3 +458,36 @@ foi revertida antes da transmissão.
 **Pergunta ao consultor:** na entrada de insumo com base reduzida, em que a
 carga efetiva já é 4%, o estorno se aplica de novo pela alíquota nominal da
 nota, ou a nota já está no limite?
+
+## 21. 🟢 Industrialização por encomenda — é industrial
+
+Em 10/2026 Rio Brilhante remeteu ureia, NBPT e big bag para a MULTITRANS
+(Paranaguá-PR) industrializar — o ensaque — e recebeu de volta. Os três CFOPs
+da operação não estavam no mapa de atividades, e as 27 linhas saíram
+`SEM REGRA`, travando o encerramento:
+
+| CFOP | Operação | Linhas | ICMS |
+|---|---|---|---|
+| 6901 | Remessa para industrialização por encomenda | 4 | débito 44.503,57 |
+| 2902 | Retorno da mercadoria usada na industrialização | 18 | crédito 32.473,29 |
+| 2124 | Industrialização efetuada por outra empresa | 5 | crédito 666,35 |
+
+**Respondida em 04/11/2026 pelo time fiscal: é industrial nas três pontas.**
+Cadastrado em `regimes.yaml`, bloco `atividades.ms.por_cfop`, com os pares
+intraestaduais (5901, 1902, 1124). Nenhuma competência anterior teve esses
+CFOPs, então nada do que já foi declarado muda.
+
+Efeito medido em 10/2026, Rio Brilhante, antes do uso do crédito do 1200:
+
+| | Antes (SEM REGRA) | Depois (industrial) |
+|---|---|---|
+| Crédito presumido (linha 012) | 34.181,94 | 60.433,41 |
+| Imposto a recolher (linha 013) | 152.952,87 | 126.701,39 |
+| FADEFE 2% | 683,64 | 1.208,67 |
+
+Quase todo o aumento vem do débito da remessa 6901, que passa a compor a base
+do incentivo. Se a remessa ficasse fora da atividade industrial e só os
+créditos do retorno e da industrialização entrassem nela, o benefício seria de
+R$ 25.986,39: são R$ 34.447,02 de benefício que dependem de a remessa contar
+como saída da atividade industrial para o Termo de Acordo n. 1.190/2018.
+

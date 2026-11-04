@@ -307,12 +307,22 @@ atividades:
     # de propriedade em armazém — a contraparte do 5934/6934, que já é
     # comercial. Decidido pela Gerência Fiscal/Tributária: é sempre comercial,
     # independentemente do produto ou da nota de transferência referenciada.
+    #
+    # Industrialização por encomenda é industrial nas três pontas: a remessa do
+    # insumo ao industrializador (5901/6901), o retorno da mercadoria usada na
+    # industrialização (1902/2902) e a cobrança da industrialização feita por
+    # outra empresa (1124/2124). Decidido pelo time fiscal em 04/11/2026, na
+    # rodada de 10/2026 — ensaque de ureia, NBPT e big bag na Multitrans, em
+    # Rio Brilhante. Nenhuma competência anterior teve esses CFOPs.
     por_cfop:
       industrial:
-        debito: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122]
+        debito: [5101, 6101, 5109, 6109, 5111, 6111, 5118, 6118, 5122, 6122,
+                 5901, 6901]                 # remessa p/ industr. por encomenda
         credito: [1101, 2101, 3101, 1111, 2111, 1116, 2116, 1122, 2122,
                   1151, 2151, 3151,          # transferência p/ industrialização
-                  1201, 2201, 3201]          # devolução de venda de produção
+                  1201, 2201, 3201,          # devolução de venda de produção
+                  1124, 2124,                # industrialização por outra empresa
+                  1902, 2902]                # retorno de industr. por encomenda
       comercial:
         debito: [5102, 6102, 5103, 6103, 5104, 6104, 5115, 6115, 5117, 6117,
                  5119, 6119, 5120, 6120, 5905, 6905, 5906, 6906, 5934, 6934]

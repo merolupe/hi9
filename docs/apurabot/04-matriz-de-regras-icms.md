@@ -295,7 +295,7 @@ decide. Por isso a **descrição vence o CFOP** quando casa.
 
 | Atividade | Débito | Crédito |
 |---|---|---|
-| Industrial | CFOP de venda de produção do estabelecimento (5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122) | CFOP de compra para industrialização (1101, 2101, 3101, …), transferência para industrialização (1151, 2151, 3151) e frete de custo |
+| Industrial | CFOP de venda de produção do estabelecimento (5101, 6101, 5118, 6118, 5109, 6109, 5111, 6111, 5122, 6122) e remessa para industrialização por encomenda (5901, 6901) | CFOP de compra para industrialização (1101, 2101, 3101, …), transferência para industrialização (1151, 2151, 3151), retorno da industrialização por encomenda (1902, 2902), industrialização feita por outra empresa (1124, 2124) e frete de custo |
 | Comercial | CFOP de venda de mercadoria de terceiros, remessa e retorno (5102, 6102, 5905, 6905, 5934, 6934, …) | CFOP de compra para comercialização (1102, 2102, 3102, …), transferência para comercialização (1152, 2152, 3152) e frete de venda |
 | Prestacional/Outras | Bonificação, doação, brinde e outras saídas (5910, 6910, 5949, 6949) | CIAP (1604, 2604) |
 
