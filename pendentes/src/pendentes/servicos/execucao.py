@@ -160,7 +160,7 @@ class Execucao:
         if self.numeros_com_corte_de_ano:
             itens.append(
                 f"{self.numeros_com_corte_de_ano} número(s) de nota tiveram o "
-                f"prefixo de ano de 4 dígitos removido para o confronto"
+                f"prefixo de ano (4 ou 2 dígitos) removido para o confronto"
             )
         if self.pedidos_de_outra_filial:
             itens.append(

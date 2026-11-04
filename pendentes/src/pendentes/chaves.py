@@ -78,6 +78,17 @@ class NumeroDeNota:
     removeu_zeros_a_esquerda: bool = False
 
 
+#: Os anos de dois dígitos aceitos na frente do número do Portal Nacional.
+#: `20` fica de fora: o número que começa em `20` já passa pelo corte de 4.
+ANOS_DE_DOIS_DIGITOS = range(21, 50)
+
+
+def _ano_de_dois_digitos(digitos: str) -> bool:
+    """`26` + 11 dígitos começando em zero: o número com o ano curto."""
+    return (len(digitos) == 13 and digitos[2] == "0"
+            and int(digitos[:2]) in ANOS_DE_DOIS_DIGITOS)
+
+
 def analisar_numero_de_nfse(valor: Any) -> NumeroDeNota:
     """A gramática do Portal Nacional, passo a passo — e o que ela cortou.
 
@@ -89,8 +100,17 @@ def analisar_numero_de_nfse(valor: Any) -> NumeroDeNota:
     1. só dígitos (de número, `Format "0"` antes, para não virar notação
        científica);
     2. se tem 13 dígitos ou mais e começa em `20`, **corta os 4 primeiros**;
+       se não, e tem **exatamente 13** dígitos com um ano de dois dígitos na
+       frente (`21` a `49`) seguido de zero, **corta os 2 primeiros**;
     3. tira zeros à esquerda, preservando ao menos um dígito;
     4. string vazia vira `0`.
+
+    O ano de dois dígitos não está no VBA. Ele apareceu em 11/2026: o ASIS
+    entregou `2600000007703` para a nota `7703` — o ano `26` e a sequência
+    de 11 dígitos, sem o `20` do século. Pela regra do VBA o número passava
+    inteiro e a nota nunca casava. O zero depois do ano é a trava: a
+    sequência do Portal Nacional vem completada com zeros, e um número de
+    prefeitura que só por acaso tivesse 13 dígitos dificilmente o teria.
 
     O passo 2 é uma suposição declarada: *lançamento do Sankhya não tem número
     com 10 dígitos ou mais*. No dia em que tiver, o número é mutilado em
@@ -106,9 +126,12 @@ def analisar_numero_de_nfse(valor: Any) -> NumeroDeNota:
         bruto = texto_de(valor)
 
     digitos = so_digitos(bruto)
-    cortou = len(digitos) >= 13 and digitos[:2] == "20"
-    if cortou:
-        digitos = digitos[4:]
+    if len(digitos) >= 13 and digitos[:2] == "20":
+        digitos, cortou = digitos[4:], True
+    elif _ano_de_dois_digitos(digitos):
+        digitos, cortou = digitos[2:], True
+    else:
+        cortou = False
 
     sem_zeros = digitos
     while len(sem_zeros) > 1 and sem_zeros[0] == "0":
